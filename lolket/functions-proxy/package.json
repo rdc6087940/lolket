@@ -1,0 +1,14 @@
+{
+  "name": "lolket-functions",
+  "description": "Firebase Functions v2 — Riot API 프록시",
+  "scripts": {
+    "serve": "firebase emulators:start --only functions",
+    "deploy": "firebase deploy --only functions"
+  },
+  "engines": { "node": "18" },
+  "main": "index.js",
+  "dependencies": {
+    "firebase-functions": "^4.5.0",
+    "firebase-admin": "^12.0.0"
+  }
+}

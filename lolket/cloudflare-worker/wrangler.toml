@@ -1,0 +1,7 @@
+name = "lolket-riot-proxy"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+# 환경변수는 대시보드에서 설정 (아래는 예시)
+# [vars]
+# RIOT_API_KEY = "RGAPI-..."
