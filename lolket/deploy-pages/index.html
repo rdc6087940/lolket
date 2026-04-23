@@ -1069,7 +1069,7 @@ body {
 
 .scoreboard-cols {
   display: grid;
-  grid-template-columns: 1fr 60px 90px 80px 80px 60px;
+  grid-template-columns: 1fr 64px 90px 60px 50px 154px;
   font-family: 'Rajdhani', sans-serif; font-size: 10px;
   font-weight: 700; letter-spacing: 1px;
   color: var(--text-muted); padding: 4px 14px;
@@ -1078,11 +1078,22 @@ body {
 }
 .scoreboard-row {
   display: grid;
-  grid-template-columns: 1fr 60px 90px 80px 80px 60px;
-  align-items: center; padding: 5px 14px;
+  grid-template-columns: 1fr 64px 90px 60px 50px 154px;
+  align-items: center; padding: 6px 14px;
   border-bottom: 1px solid rgba(30,45,64,0.5);
   transition: background .1s;
 }
+.sb-items {
+  display: flex; gap: 2px; align-items: center; flex-wrap: nowrap;
+}
+.sb-item-icon {
+  width: 20px; height: 20px; border-radius: 3px;
+  background: var(--bg-dark); border: 1px solid var(--border-subtle);
+  overflow: hidden; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.sb-item-icon img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.sb-item-icon.empty { opacity: .2; }
 .scoreboard-row:hover { background: rgba(255,255,255,0.02); }
 .scoreboard-row:last-child { border-bottom: none; }
 .sb-player {
@@ -1453,6 +1464,27 @@ body {
 .invite-status { font-size:10px; font-family:'Rajdhani',sans-serif; letter-spacing:1px; }
 .invite-status.active { color:var(--blue-bright); }
 .invite-status.used   { color:var(--text-muted); text-decoration:line-through; }
+
+/* ─── 결과 대진 카드 접기/펼치기 ─── */
+.result-match-card { border-radius:4px; overflow:hidden; margin-bottom:8px; }
+.result-match-header {
+  display:flex; align-items:center; gap:10px;
+  padding:10px 14px; cursor:pointer; user-select:none;
+  background:var(--bg-panel); border:1px solid var(--border-subtle);
+  transition:background .15s;
+}
+.result-match-header:hover { background:rgba(200,170,110,0.04); }
+.result-match-card.has-result .result-match-header { border-color:rgba(10,200,185,0.3); }
+.result-match-collapse-icon {
+  font-size:10px; color:var(--text-muted); flex-shrink:0;
+  transition:transform .2s; margin-left:auto;
+}
+.result-match-body {
+  background:var(--bg-dark); border:1px solid var(--border-subtle);
+  border-top:none; padding:12px 14px;
+  display:flex; flex-direction:column; gap:10px;
+}
+.result-match-body.collapsed { display:none; }
 </style>
 <!-- Firebase SDK -->
 <script type="module">
@@ -1485,13 +1517,9 @@ body {
   // 각 내전 문서에 _version 필드를 두고 runTransaction으로 CAS 처리
   async function fbSet(matchId, data) {
     const r = ref(db, getMatchPath(matchId));
-    return runTransaction(r, current => {
-      // 현재 서버 version이 클라이언트 version보다 높으면 중단 (다른 클라이언트가 먼저 썼음)
-      if (current && data._version !== undefined && current._version > data._version) {
-        return; // undefined 반환 = 트랜잭션 중단 (abort)
-      }
-      return { ...data, _version: (current?._version ?? 0) + 1, _updatedAt: Date.now() };
-    });
+    // 단순 set으로 저장 (트랜잭션 충돌 없음)
+    await set(r, { ...data, _updatedAt: Date.now() });
+    return { committed: true };
   }
 
   async function fbDelete(matchId) {
@@ -2317,7 +2345,8 @@ body {
           <div class="finish-banner-title">내전 종료</div>
           <div class="finish-banner-sub">모든 대진 결과가 입력되었습니다.</div>
         </div>
-        <button class="btn-next" style="opacity:1;" disabled>완료</button>
+        <button class="btn-primary" style="padding:10px 24px;font-size:13px;letter-spacing:2px;cursor:pointer;position:relative;z-index:10;"
+          onclick="finishMatch()">내전 완료</button>
       </div>
     </div>
     <div class="results-topbar">
@@ -2617,7 +2646,7 @@ function startStatusTimer() {
   setInterval(() => {
     if (!match) return;
     // 이미 단계 진행 중이거나 종료된 경우 타이머로 상태 변경하지 않음
-    const lockedStatuses = ['종류 선택','팀 짜기','대진표','결과 입력','내전 종료'];
+    const lockedStatuses = ['종류 선택','팀 짜기','대진표','결과 입력','내전 진행','내전 종료'];
     if (lockedStatuses.some(s => match.status?.includes(s))) return;
 
     const now   = new Date();
@@ -3057,7 +3086,8 @@ function goToStage4() {
   extraMatches = [];
   generateBracket();
   showScreen('screen-4');
-  match.status = '대진표';
+  match.status = '내전 진행';
+  document.getElementById('bar-status').textContent = '내전 진행';
   saveCurrentMatch();
   toast('4단계 대진표가 생성되었습니다', 'ok');
 }
@@ -3984,15 +4014,36 @@ async function copyBracketImage() {
 let extraMatchNextId = 1;
 
 function openExtraMatchModal() {
-  renderExtraMatchList();
-  document.getElementById('extra-match-modal').style.display = 'flex';
+  // 모달 없이 바로 대진 추가
+  addDirectExtraMatch();
 }
 function closeExtraMatchModal() {
   document.getElementById('extra-match-modal').style.display = 'none';
 }
+function addDirectExtraMatch() {
+  // 추가 대진 번호: 기존 추가 대진 개수 기준
+  const extraCount = resultMatches.filter(r => r.isExtra).length + 1;
+  const newId = resultMatchNextId++;
+  resultMatches.push({
+    id:         newId,
+    label:      `추가 대진 ${extraCount}`,
+    teamA:      null,
+    teamB:      null,
+    winner:     null,
+    customCode: '',
+    gameData:   null,
+    fetching:   false,
+    isExtra:    true,
+    extraId:    newId,
+  });
+  renderResultMatches();
+  saveCurrentMatch();
+  // 새로 추가된 카드 펼치기 (나머지는 건드리지 않음)
+  // 새 카드는 기본 펼침이므로 별도 처리 불필요
+  toast('추가 대진이 생성되었습니다', 'ok');
+}
 function addExtraMatch() {
-  extraMatches.push({ id: extraMatchNextId++, teamAId: null, teamBId: null });
-  renderExtraMatchList();
+  addDirectExtraMatch();
 }
 function deleteExtraMatch(id) {
   extraMatches = extraMatches.filter(m => m.id !== id);
@@ -4042,7 +4093,8 @@ function goToStage5() {
   pips[4].classList.add('active');
   initResultMatches();
   showScreen('screen-5');
-  match.status = '결과 입력';
+  match.status = '내전 진행';
+  document.getElementById('bar-status').textContent = '내전 진행';
   saveCurrentMatch();
   toast('5단계 결과 입력을 시작합니다', 'ok');
 }
@@ -4110,6 +4162,20 @@ function addResultMatch() {
   renderResultMatches();
 }
 
+// 카드별 접기 상태 — label 기준 (재렌더 시에도 상태 유지)
+const _rmCollapsed = {};  // { label: bool }
+
+function toggleResultCard(id) {
+  const rm = resultMatches.find(m => m.id === id);
+  if (!rm) return;
+  const key = rm.label;
+  _rmCollapsed[key] = !_rmCollapsed[key];
+  const body = document.getElementById(`rm-body-${id}`);
+  const icon = document.getElementById(`rm-icon-${id}`);
+  if (body) body.classList.toggle('collapsed', !!_rmCollapsed[key]);
+  if (icon) icon.style.transform = _rmCollapsed[key] ? 'rotate(-90deg)' : 'rotate(0deg)';
+}
+
 function renderResultMatches() {
   const list = document.getElementById('result-match-list');
   list.innerHTML = '';
@@ -4119,55 +4185,128 @@ function renderResultMatches() {
     card.className = `result-match-card${rm.winner ? ' has-result' : ''}`;
     card.id = `rm-${rm.id}`;
 
-    const nameA = rm.teamA ? getTeamName(rm.teamA) : '미정';
-    const nameB = rm.teamB ? getTeamName(rm.teamB) : '미정';
-    const colorA = rm.teamA ? getTeamColor(rm.teamA) : '#5B6474';
-    const colorB = rm.teamB ? getTeamColor(rm.teamB) : '#5B6474';
-
+    const nameBlue = rm.teamA ? getTeamName(rm.teamA) : null;
+    const nameRed  = rm.teamB ? getTeamName(rm.teamB) : null;
+    const colorBlue = rm.teamA ? getTeamColor(rm.teamA) : '#5B6474';
+    const colorRed  = rm.teamB ? getTeamColor(rm.teamB) : '#5B6474';
     const winA = rm.winner === 'a';
     const winB = rm.winner === 'b';
+    const isCollapsed = !!_rmCollapsed[rm.label];
 
-    // 팀 선택 옵션 (팀이 null인 경우)
-    const teamSelectA = rm.teamA ? `<span class="result-team-name ${winA?'winner':winB?'loser':''}" style="border-left:3px solid ${colorA};padding-left:8px;">${nameA}</span>`
-      : `<select onchange="setResultTeam(${rm.id},'a',this.value)" style="background:var(--bg-dark);border:1px solid var(--border-subtle);color:var(--text-white);padding:4px 8px;border-radius:2px;font-family:'Rajdhani',sans-serif;font-size:12px;outline:none;"><option value="">팀 선택</option>${teams.map(t=>`<option value="${t.id}">${getTeamName(t)}</option>`).join('')}</select>`;
-    const teamSelectB = rm.teamB ? `<span class="result-team-name ${winB?'winner':winA?'loser':''}" style="border-left:3px solid ${colorB};padding-left:8px;">${nameB}</span>`
-      : `<select onchange="setResultTeam(${rm.id},'b',this.value)" style="background:var(--bg-dark);border:1px solid var(--border-subtle);color:var(--text-white);padding:4px 8px;border-radius:2px;font-family:'Rajdhani',sans-serif;font-size:12px;outline:none;"><option value="">팀 선택</option>${teams.map(t=>`<option value="${t.id}">${getTeamName(t)}</option>`).join('')}</select>`;
+    // 헤더 팀 요약
+    const blueLabel = nameBlue || '블루팀 미정';
+    const redLabel  = nameRed  || '레드팀 미정';
+
+    // 결과 뱃지
+    const resultBadge = rm.winner
+      ? `<span style="font-size:10px;font-family:'Rajdhani',sans-serif;font-weight:700;letter-spacing:1px;padding:2px 8px;border-radius:2px;background:rgba(10,200,185,0.12);color:var(--blue-bright);border:1px solid rgba(10,200,185,0.3);">${rm.winner==='a'?blueLabel:redLabel} 승</span>`
+      : '';
+    const matchIdBadge = rm.customCode
+      ? `<span style="font-size:9px;font-family:'Rajdhani',sans-serif;color:var(--text-muted);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${rm.customCode}">${rm.customCode}</span>`
+      : '';
+
+    // 팀 선택 옵션
+    const teamOpts = teams.map(t => `<option value="${t.id}">${getTeamName(t)}</option>`).join('');
+
+    const blueSelStyle = 'background:#0A1628;border:1px solid #2A5FA5;color:#7EC8E3;padding:6px 10px;border-radius:3px;font-family:Rajdhani,sans-serif;font-size:12px;outline:none;cursor:pointer;width:140px;';
+    const redSelStyle  = 'background:#1A0808;border:1px solid #8B2020;color:#E57373;padding:6px 10px;border-radius:3px;font-family:Rajdhani,sans-serif;font-size:12px;outline:none;cursor:pointer;width:140px;';
 
     card.innerHTML = `
-      <div class="result-match-header">
-        <div class="result-match-label">${rm.label}</div>
-        <div class="result-match-teams">
-          ${teamSelectA}
-          <span class="result-vs">VS</span>
-          ${teamSelectB}
+      <div class="result-match-header" id="rm-hdr-${rm.id}">
+        <div class="result-match-label" style="cursor:pointer;flex:1;display:flex;align-items:center;gap:10px;"
+          onclick="toggleResultCard(${rm.id})">
+          ${rm.label}
+          <span style="font-size:11px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;font-weight:400;">
+            ${nameBlue?`<span style="color:#7EC8E3">${blueLabel}</span>`:'<span style="color:#5B6474">블루팀 미정</span>'}
+            <span style="margin:0 4px;">vs</span>
+            ${nameRed?`<span style="color:#E57373">${redLabel}</span>`:'<span style="color:#5B6474">레드팀 미정</span>'}
+          </span>
         </div>
-        <div class="result-match-actions">
-          <button class="win-btn ${winA ? 'active' : ''}" onclick="setWinner(${rm.id},'a')" ${!rm.teamA?'disabled':''}>
-            ${nameA === '미정' ? 'A 승' : nameA + ' 승'}
-          </button>
-          <button class="win-btn ${winB ? 'active' : ''}" onclick="setWinner(${rm.id},'b')" ${!rm.teamB?'disabled':''}>
-            ${nameB === '미정' ? 'B 승' : nameB + ' 승'}
-          </button>
-          <button onclick="deleteResultMatch(${rm.id})" style="background:transparent;border:none;color:var(--text-muted);cursor:pointer;font-size:13px;padding:2px 5px;" onmouseover="this.style.color='#E05050'" onmouseout="this.style.color='var(--text-muted)'">✕</button>
+        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+          ${matchIdBadge}
+          ${resultBadge}
+          <span id="rm-icon-${rm.id}" style="font-size:10px;color:var(--text-muted);cursor:pointer;transition:transform .2s;display:inline-block;transform:${isCollapsed?'rotate(-90deg)':'rotate(0deg)'}" onclick="toggleResultCard(${rm.id})">▼</span>
         </div>
       </div>
-      <div class="result-match-body">
-        <div style="display:flex;flex-direction:column;gap:6px;">
+      <div class="result-match-body${isCollapsed?' collapsed':''}" id="rm-body-${rm.id}">
+        <!-- 블루/레드 팀 선택 + 승자 버튼 -->
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:4px 0;">
+          <!-- 블루팀 -->
+          <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:160px;">
+            <div style="width:4px;height:32px;background:#2A5FA5;border-radius:2px;flex-shrink:0;"></div>
+            <div style="display:flex;flex-direction:column;gap:4px;">
+              <span style="font-size:9px;font-family:'Rajdhani',sans-serif;letter-spacing:1.5px;color:#7EC8E3;font-weight:700;">BLUE TEAM</span>
+              ${rm.teamA
+                ? `<span style="font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;color:${colorBlue};">${nameBlue}</span>`
+                : `<select id="rm-sel-blue-${rm.id}" style="${blueSelStyle}"
+                    onchange="setResultTeamDirect(${rm.id},'a',this.value)">
+                    <option value="">팀 선택...</option>${teamOpts}
+                  </select>`}
+            </div>
+          </div>
+          <!-- 승자 버튼 -->
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;">
+            <div style="display:flex;gap:6px;">
+              <button class="win-btn${winA?' active':''}" onclick="setWinner(${rm.id},'a')" ${!rm.teamA?'disabled':''}>
+                블루 승
+              </button>
+              <button class="win-btn${winB?' active':''}" onclick="setWinner(${rm.id},'b')" ${!rm.teamB?'disabled':''}>
+                레드 승
+              </button>
+            </div>
+            <span style="font-size:9px;font-family:'Rajdhani',sans-serif;color:var(--text-muted);letter-spacing:1px;">VS</span>
+          </div>
+          <!-- 레드팀 -->
+          <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:160px;justify-content:flex-end;">
+            <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end;">
+              <span style="font-size:9px;font-family:'Rajdhani',sans-serif;letter-spacing:1.5px;color:#E57373;font-weight:700;">RED TEAM</span>
+              ${rm.teamB
+                ? `<span style="font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;color:${colorRed};">${nameRed}</span>`
+                : `<select id="rm-sel-red-${rm.id}" style="${redSelStyle}"
+                    onchange="setResultTeamDirect(${rm.id},'b',this.value)">
+                    <option value="">팀 선택...</option>${teamOpts}
+                  </select>`}
+            </div>
+            <div style="width:4px;height:32px;background:#8B2020;border-radius:2px;flex-shrink:0;"></div>
+          </div>
+          <!-- 삭제 -->
+          <button onclick="deleteResultMatch(${rm.id})"
+            style="background:transparent;border:none;color:var(--text-muted);cursor:pointer;font-size:13px;padding:4px;flex-shrink:0;"
+            onmouseover="this.style.color='#E05050'" onmouseout="this.style.color='var(--text-muted)'">✕</button>
+        </div>
+        <!-- Match ID 입력 -->
+        <div style="display:flex;flex-direction:column;gap:6px;margin-top:4px;">
           <div class="custom-code-row">
             <input class="custom-code-input" type="text"
               placeholder="Match ID 입력 또는 아래 버튼으로 자동 검색"
-              value="${rm.customCode}"
+              value="${rm.customCode||''}"
               oninput="updateCustomCode(${rm.id},this.value)"
               onpaste="onMatchCodePaste(event,${rm.id})">
             <button class="btn-fetch-result" onclick="fetchGameResult(${rm.id})" ${rm.fetching?'disabled':''}>
-              ${rm.fetching ? '조회 중...' : 'Riot API 조회'}
+              ${rm.fetching?'조회 중...':'Riot API 조회'}
             </button>
           </div>
-          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-            <button onclick="autoFindMatch(${rm.id})" style="padding:3px 10px;background:rgba(200,170,110,0.1);border:1px solid rgba(200,170,110,0.35);border-radius:2px;color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all .15s;" onmouseover="this.style.background='rgba(200,170,110,0.2)'" onmouseout="this.style.background='rgba(200,170,110,0.1)'">
-              ✦ 최근 커스텀 게임 자동 검색
-            </button>
-            <span style="font-size:10px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;">— 참여 멤버의 최근 사용자 설정 게임을 찾습니다</span>
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+              <button onclick="autoFindMatch(${rm.id})"
+                style="padding:3px 10px;background:rgba(200,170,110,0.1);border:1px solid rgba(200,170,110,0.35);border-radius:2px;color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;cursor:pointer;"
+                onmouseover="this.style.background='rgba(200,170,110,0.2)'"
+                onmouseout="this.style.background='rgba(200,170,110,0.1)'">✦ 최근 커스텀 게임 자동 검색</button>
+              <span style="font-size:10px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;">— 참여 멤버의 최근 사용자 설정 게임을 찾습니다</span>
+            </div>
+            <!-- 저장/수정 버튼 -->
+            <div style="display:flex;gap:6px;align-items:center;">
+              ${rm.saved
+                ? `<span style="font-size:10px;font-family:'Rajdhani',sans-serif;color:var(--blue-bright);letter-spacing:1px;">✓ 저장됨</span>
+                   <button onclick="editResultMatch(${rm.id})"
+                     style="padding:4px 12px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--text-muted);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;"
+                     onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'"
+                     onmouseout="this.style.borderColor='var(--border-subtle)';this.style.color='var(--text-muted)'">수정</button>`
+                : `<button onclick="saveResultMatch(${rm.id})"
+                     style="padding:4px 12px;border-radius:2px;border:1px solid rgba(10,200,185,0.4);background:rgba(10,200,185,0.08);color:var(--blue-bright);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;"
+                     onmouseover="this.style.background='rgba(10,200,185,0.16)'"
+                     onmouseout="this.style.background='rgba(10,200,185,0.08)'">대진 저장</button>`}
+            </div>
           </div>
         </div>
         ${renderScoreboard(rm)}
@@ -4179,13 +4318,58 @@ function renderResultMatches() {
   checkAllResultsDone();
 }
 
-function setResultTeam(id, side, val) {
+// 팀 선택 — 재렌더 없이 데이터만 업데이트 후 헤더만 갱신
+function setResultTeamDirect(id, side, val) {
   const rm = resultMatches.find(m => m.id === id);
   if (!rm) return;
   const team = teams.find(t => t.id === parseInt(val)) || null;
   if (side === 'a') rm.teamA = team;
-  else rm.teamB = team;
-  renderResultMatches();
+  else              rm.teamB = team;
+  // 헤더 텍스트만 갱신 (다른 카드 건드리지 않음)
+  const hdr = document.getElementById(`rm-hdr-${id}`);
+  if (hdr) {
+    const nameBlue = rm.teamA ? getTeamName(rm.teamA) : null;
+    const nameRed  = rm.teamB ? getTeamName(rm.teamB) : null;
+    const label = hdr.querySelector('[onclick*="toggleResultCard"]');
+    if (label) {
+      const blueSpan = nameBlue ? `<span style="color:#7EC8E3">${nameBlue}</span>` : '<span style="color:#5B6474">블루팀 미정</span>';
+      const redSpan  = nameRed  ? `<span style="color:#E57373">${nameRed}</span>`  : '<span style="color:#5B6474">레드팀 미정</span>';
+      const small = label.querySelector('span');
+      if (small) small.innerHTML = `${blueSpan}<span style="margin:0 4px;">vs</span>${redSpan}`;
+    }
+  }
+  // select를 팀 이름 텍스트로 교체
+  if (side === 'a' && rm.teamA) {
+    const sel = document.getElementById(`rm-sel-blue-${id}`);
+    if (sel) {
+      const span = document.createElement('span');
+      span.style.cssText = `font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;color:${getTeamColor(rm.teamA)};`;
+      span.textContent = getTeamName(rm.teamA);
+      sel.replaceWith(span);
+    }
+  }
+  if (side === 'b' && rm.teamB) {
+    const sel = document.getElementById(`rm-sel-red-${id}`);
+    if (sel) {
+      const span = document.createElement('span');
+      span.style.cssText = `font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;color:${getTeamColor(rm.teamB)};`;
+      span.textContent = getTeamName(rm.teamB);
+      sel.replaceWith(span);
+    }
+  }
+  // 승자 버튼 활성화
+  const bodyEl = document.getElementById(`rm-body-${id}`);
+  if (bodyEl) {
+    bodyEl.querySelectorAll('.win-btn').forEach((btn, i) => {
+      if (i === 0) btn.disabled = !rm.teamA;
+      if (i === 1) btn.disabled = !rm.teamB;
+    });
+  }
+  saveCurrentMatch();
+}
+
+function setResultTeam(id, side, val) {
+  setResultTeamDirect(id, side, val);
 }
 
 function setWinner(id, side) {
@@ -4212,6 +4396,9 @@ function syncBracketWinner(rm) {
 
 function deleteResultMatch(id) {
   resultMatches = resultMatches.filter(m => m.id !== id);
+  // 추가 대진 번호 재정렬
+  let extraIdx = 1;
+  resultMatches.forEach(r => { if (r.isExtra) r.label = `추가 대진 ${extraIdx++}`; });
   renderResultMatches();
 }
 
@@ -4276,6 +4463,24 @@ function onMatchCodePaste(e, id) {
 }
 
 
+
+// ─── 대진 개별 저장 / 수정 ───
+function saveResultMatch(id) {
+  const rm = resultMatches.find(m => m.id === id);
+  if (!rm) return;
+  if (!rm.winner) { toast('승자를 먼저 선택하세요', 'err'); return; }
+  rm.saved = true;
+  saveCurrentMatch();
+  renderResultMatches();
+  toast(`${rm.label} 저장 완료`, 'ok');
+}
+
+function editResultMatch(id) {
+  const rm = resultMatches.find(m => m.id === id);
+  if (!rm) return;
+  rm.saved = false;
+  renderResultMatches();
+}
 // ─── 최근 커스텀 게임 자동 검색 ───
 let _matchPickerTargetId = null; // 선택 모달에서 사용할 대진 ID
 
@@ -4541,20 +4746,17 @@ function parseRiotMatchData(data, rm) {
 
   // ── 참가자 → 플레이어 객체 ──
   const toPlayer = (p, overrideName, overrideIcon) => ({
-    name:      overrideName  || p.riotIdGameName || '소환사',
-    icon:      overrideIcon  || String(p.profileIcon || 1),
-    champion:  p.championName || '?',
-    champIcon: champIcon(p.championName),
-    kills:     p.kills    || 0,
-    deaths:    p.deaths   || 0,
-    assists:   p.assists  || 0,
-    damage:    p.totalDamageDealtToChampions || 0,
-    gold:      p.goldEarned || 0,
-    cs:        (p.totalMinionsKilled || 0) + (p.neutralMinionsKilled || 0),
-    win:       p.win || false,
-    position:  p.teamPosition || p.individualPosition || '',
-    puuid:     p.puuid,
-    teamId:    p.teamId,
+    // ── 저장 필드 최소화 (스코어보드 렌더에 필요한 것만) ──
+    name:     overrideName || p.riotIdGameName || '소환사',
+    champion: p.championName || '?',
+    k:        p.kills    || 0,
+    d:        p.deaths   || 0,
+    a:        p.assists  || 0,
+    dmg:      p.totalDamageDealtToChampions || 0,
+    gold:     p.goldEarned || 0,
+    cs:       (p.totalMinionsKilled || 0) + (p.neutralMinionsKilled || 0),
+    win:      p.win || false,
+    items:    [p.item0, p.item1, p.item2, p.item3, p.item4, p.item5, p.item6].map(id => id || 0),
   });
 
   // ── 멤버 ↔ 참가자 매핑 ──
@@ -4598,9 +4800,9 @@ function parseRiotMatchData(data, rm) {
         }
         // 최종 폴백: 빈 플레이어
         return {
-          name: m.name, icon: m.icon || '1', champion: '?', champIcon: '',
-          kills: 0, deaths: 0, assists: 0, damage: 0, gold: 0, cs: 0,
-          win: false, position: '', puuid: '', teamId: tid,
+          name: m.name, champion: '?',
+          k: 0, d: 0, a: 0, dmg: 0, gold: 0, cs: 0,
+          win: false, items: [0,0,0,0,0,0,0],
         };
       });
       return result;
@@ -4630,13 +4832,13 @@ function generateMockGameData(rm) {
     const champ = champPool[Math.floor(Math.random()*champPool.length)];
     return {
       name: member ? member.name : '소환사',
-      icon: member ? member.icon : '1',
       champion: champ,
-      kills: k, deaths: d, assists: a,
-      damage: Math.floor(15000 + Math.random()*30000),
-      gold:   Math.floor(8000  + Math.random()*8000),
-      cs:     Math.floor(100   + Math.random()*200),
+      k, d, a,
+      dmg:  Math.floor(15000 + Math.random()*30000),
+      gold: Math.floor(8000  + Math.random()*8000),
+      cs:   Math.floor(100   + Math.random()*200),
       win,
+      items: [0,0,0,0,0,0,0],
     };
   };
 
@@ -4665,19 +4867,18 @@ function renderScoreboard(rm) {
   const renderTeam = (players, win, teamName) => {
     if (!players || !players.length) return '';
 
-    // 팀 전체 최대 피해량 (바 비율용)
-    const maxDmg = Math.max(...players.map(p => p.damage || 0), 1);
-
-    // MVP: 킬+어시스트 최고인 플레이어
+    const maxDmg = Math.max(...players.map(p => p.dmg || p.damage || 0), 1);
     let mvpIdx = 0;
     players.forEach((p, i) => {
-      if ((p.kills + p.assists) > (players[mvpIdx].kills + players[mvpIdx].assists)) mvpIdx = i;
+      const ka  = (p.k||p.kills||0) + (p.a||p.assists||0);
+      const mka = (players[mvpIdx].k||players[mvpIdx].kills||0) + (players[mvpIdx].a||players[mvpIdx].assists||0);
+      if (ka > mka) mvpIdx = i;
     });
 
     const header = `
-      <div class="scoreboard-team-header ${win ? 'win' : 'lose'}">
-        <span class="sb-team-label ${win ? 'win' : 'lose'}">${teamName}</span>
-        <span class="sb-outcome ${win ? 'win' : 'lose'}">${win ? 'VICTORY' : 'DEFEAT'}</span>
+      <div class="scoreboard-team-header ${win?'win':'lose'}">
+        <span class="sb-team-label ${win?'win':'lose'}">${teamName}</span>
+        <span class="sb-outcome ${win?'win':'lose'}">${win?'VICTORY':'DEFEAT'}</span>
         <span class="sb-duration">${gd.duration}</span>
       </div>`;
 
@@ -4688,42 +4889,48 @@ function renderScoreboard(rm) {
         <span style="text-align:center">피해량</span>
         <span style="text-align:center">골드</span>
         <span style="text-align:center">CS</span>
-        <span></span>
+        <span>아이템</span>
       </div>`;
 
     const rows = players.map((p, i) => {
-      const champUrl = p.champIcon
-        || `https://ddragon.leagueoflegends.com/cdn/${ddVer}/img/champion/${(p.champion||'?').replace(/[' ]/g,'')}.png`;
-      const dmgPct = maxDmg > 0 ? Math.round((p.damage / maxDmg) * 100) : 0;
+      const champ   = p.champion || '?';
+      const kills   = p.k   != null ? p.k   : (p.kills   || 0);
+      const deaths  = p.d   != null ? p.d   : (p.deaths  || 0);
+      const assists = p.a   != null ? p.a   : (p.assists  || 0);
+      const damage  = p.dmg != null ? p.dmg : (p.damage  || 0);
+      const champClean = champ.replace(/[' ]/g, '');
+      const champUrl   = 'https://ddragon.leagueoflegends.com/cdn/' + ddVer + '/img/champion/' + champClean + '.png';
+      const dmgPct   = maxDmg > 0 ? Math.round((damage / maxDmg) * 100) : 0;
       const dmgColor = win ? 'rgba(91,188,228,0.6)' : 'rgba(228,91,91,0.5)';
-      const isMvp = i === mvpIdx;
+      const isMvp    = i === mvpIdx;
+
+      const itemsHtml = (p.items || []).slice(0, 7).map(id => {
+        if (!id) return '<div class="sb-item-icon empty"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><rect x="1" y="1" width="8" height="8" rx="1" stroke="#2A3F55" stroke-width="1"/></svg></div>';
+        const src = 'https://ddragon.leagueoflegends.com/cdn/' + ddVer + '/img/item/' + id + '.png';
+        return '<div class="sb-item-icon"><img src="' + src + '" style="width:100%;height:100%;object-fit:cover;"></div>';
+      }).join('');
 
       return `
         <div class="scoreboard-row">
           <div class="sb-player">
             <div class="sb-champ-icon">
-              <img src="${champUrl}"
-                   alt="${p.champion}"
-                   onerror="this.style.display='none';this.parentNode.style.background='#1E2D40';this.parentNode.style.lineHeight='32px';this.parentNode.style.textAlign='center';this.parentNode.style.fontSize='10px';this.parentNode.style.color='#5B6474';this.parentNode.setAttribute('data-text','${(p.champion||'?')[0]}')">
+              <img src="${champUrl}" alt="${champ}" onerror="this.style.display='none'">
             </div>
             <div style="min-width:0;">
-              <div class="sb-player-name">
-                ${p.name}
-                ${isMvp ? '<span class="sb-mvp-badge">MVP</span>' : ''}
-              </div>
-              <div style="font-size:10px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;">${p.champion || '?'}</div>
+              <div class="sb-player-name">${p.name}${isMvp?'<span class="sb-mvp-badge">MVP</span>':''}</div>
+              <div style="font-size:10px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;">${champ}</div>
             </div>
           </div>
-          <div class="sb-kda">${p.kills}<span>/</span>${p.deaths}<span>/</span>${p.assists}</div>
+          <div class="sb-kda">${kills}<span>/</span>${deaths}<span>/</span>${assists}</div>
           <div class="sb-damage">
-            <div style="font-size:11px;color:var(--text-muted);margin-bottom:2px;">${(p.damage||0).toLocaleString()}</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-bottom:2px;">${damage.toLocaleString()}</div>
             <div style="height:3px;background:#1E2D40;border-radius:2px;">
-              <div style="height:3px;width:${dmgPct}%;background:${dmgColor};border-radius:2px;transition:width .3s;"></div>
+              <div style="height:3px;width:${dmgPct}%;background:${dmgColor};border-radius:2px;"></div>
             </div>
           </div>
           <div class="sb-gold">${((p.gold||0)/1000).toFixed(1)}k</div>
           <div class="sb-cs">${p.cs||0}</div>
-          <div></div>
+          <div class="sb-items">${itemsHtml}</div>
         </div>`;
     }).join('');
 
@@ -4740,12 +4947,37 @@ function checkAllResultsDone() {
   if (!banner) return;
   const allDone = resultMatches.length > 0 && resultMatches.every(m => m.winner !== null);
   banner.style.display = allDone ? 'block' : 'none';
-  if (allDone && match) {
+  if (allDone && match && match.status !== '내전 종료') {
     match.status = '내전 종료';
     document.getElementById('bar-status').textContent = '내전 종료';
-    saveCurrentMatch();
-    renderMatchList();
   }
+}
+
+async function finishMatch() {
+  if (!match) return;
+  const unsaved = resultMatches.filter(rm => !rm.saved);
+  if (unsaved.length > 0) {
+    const names = unsaved.map(r => r.label).join(', ');
+    if (!confirm(`저장되지 않은 대진이 있습니다: ${names}\n그래도 완료하시겠습니까?`)) return;
+  }
+
+  // 상태 먼저 변경
+  match.status = '내전 종료';
+  const statusEl = document.getElementById('bar-status');
+  if (statusEl) statusEl.textContent = '내전 종료';
+  resultMatches.forEach(rm => { rm.fetching = false; });
+
+  // Firebase에 저장 완료 대기
+  try {
+    await saveCurrentMatch();
+    toast('내전이 종료되었습니다 ✓', 'ok');
+  } catch(e) {
+    console.error('[finishMatch] 저장 실패', e);
+    toast('저장 중 오류가 발생했습니다', 'err');
+    return;
+  }
+
+  goToList();
 }
 
 
@@ -5822,13 +6054,8 @@ function dbLoad() {
 async function dbUpsert(matchObj) {
   if (_fbReady) {
     try {
-      const result = await window._fb.fbSet(matchObj.id, matchObj);
-      if (!result.committed) {
-        // 트랜잭션 중단 = 다른 클라이언트가 더 최신 버전 보유
-        // 충돌 처리는 onValue 구독이 자동으로 처리
-        console.warn('[DB] 트랜잭션 중단 — 원격이 더 최신');
-      }
-    } catch(e) { console.error('[DB] Firebase 저장 실패', e); }
+      await window._fb.fbSet(matchObj.id, matchObj);
+    } catch(e) { console.error('[DB] Firebase 저장 실패', e); throw e; }
   } else {
     // localStorage 폴백
     const list = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
@@ -5854,8 +6081,41 @@ function dbSave(list) {
 }
 
 // ─── 현재 진행 중인 내전 스냅샷 저장 ───
-function saveCurrentMatch() {
+// 팀 객체 저장용 직렬화 (순환 참조 제거, 필요 필드만)
+function serializeTeam(team) {
+  if (!team) return null;
+  return {
+    id:        team.id,
+    captainId: team.captainId || null,
+    color:     team.color     || null,
+    name:      team.name      || null,
+    members:   (team.members || []).map(m => ({
+      id:       m.id,
+      name:     m.name,
+      puuid:    m.puuid    || '',
+      tier:     m.tier     || '',
+      mainLane: m.mainLane || '',
+      icon:     m.icon     || '1',
+    })),
+  };
+}
+
+async function saveCurrentMatch() {
   if (!match || !match.id) return;
+  // gameData는 크기가 크므로 결과 핵심 정보만 저장
+  const resultMatchesClean = resultMatches.map(rm => ({
+    id:         rm.id,
+    label:      rm.label,
+    teamA:      rm.teamA  ? serializeTeam(rm.teamA)  : null,
+    teamB:      rm.teamB  ? serializeTeam(rm.teamB)  : null,
+    winner:     rm.winner     || null,
+    customCode: rm.customCode || '',
+    gameData:   rm.gameData   || null,  // 스코어보드 데이터 포함
+    fetching:   false,
+    isExtra:    rm.isExtra    || false,
+    extraId:    rm.extraId    || null,
+    saved:      rm.saved      || false,
+  }));
   const snapshot = {
     ...match,
     _members:       members,
@@ -5867,13 +6127,13 @@ function saveCurrentMatch() {
     _onSaleMember:  onSaleMember,
     _bracketRounds: bracketRounds,
     _extraMatches:  extraMatches,
-    _resultMatches: resultMatches,
+    _resultMatches: resultMatchesClean,
     _currentScreen: currentScreen,
     _savedAt:       Date.now(),
     _version:       _localVersion,
   };
   _localVersion++;
-  dbUpsert(snapshot);
+  await dbUpsert(snapshot);
 }
 
 // ─── 스냅샷에서 복원 ───
@@ -5891,7 +6151,9 @@ function restoreMatch(snapshot) {
   resultMatches = snapshot._resultMatches || [];
 
   // 풀이 비어있고 3단계 화면인데 teams에 배정 안 된 멤버가 있다면 풀 재구성
-  const screen = snapshot._currentScreen || 'screen-1';
+  const screen = snapshot.status === '내전 종료'
+    ? 'screen-5'
+    : (snapshot._currentScreen || 'screen-1');
   if ((screen === 'screen-3-normal' || screen === 'screen-3-auction') &&
       normalPool.length === 0 && auctionPool.length === 0) {
     const assignedIds = new Set(teams.flatMap(t => t.members.map(m => m.id)));
@@ -5959,20 +6221,40 @@ function enterMatchMode(screenId) {
 
 function goToList() {
   // 진행 화면 → 목록 복귀
-  saveCurrentMatch();
-  // 상태 초기화 (메모리만, DB는 유지)
+  if (match && match.id) saveCurrentMatch();
+
+  // 메모리 초기화 (DB는 유지)
   match = null; members = []; matchType = null; teams = [];
   bracketRounds = []; extraMatches = []; resultMatches = [];
-  // 헤더 UI 원복
-  // 커뮤니티 내전 구독 해제
-  if (_fbReady && window._fb.fbUnsubscribeAll) window._fb.fbUnsubscribeAll();
-  _listCache = [];
+  filterState['uv'] = { lanes: new Set(), search: '', sort: '' };
 
+  // 헤더 UI 원복
   document.getElementById('stage-indicator').classList.add('hidden');
   document.getElementById('btn-back').classList.remove('visible');
   document.querySelectorAll('.stage-pip').forEach(p => p.classList.remove('active','done'));
   document.getElementById('pip-1').classList.add('active');
+
+  // 커뮤니티가 있으면 재구독 후 목록 표시
+  if (currentCommunity && _fbReady && window._fb.fbSubscribeAll) {
+    _listCache = [];
+    window._fb.fbSubscribeAll(list => {
+      _listCache = list;
+      if (currentScreen === 'screen-0') renderMatchList();
+      if (match && match.id) {
+        const remote = list.find(m => m.id === match.id);
+        if (remote && remote._version > (_localVersion || 0)) _applyRemoteUpdate(remote);
+      }
+    });
+  } else {
+    if (_fbReady && window._fb.fbUnsubscribeAll) window._fb.fbUnsubscribeAll();
+    _listCache = [];
+  }
+
   showScreenRaw('screen-0');
+  // 커뮤니티 인디케이터 유지
+  if (currentCommunity) {
+    document.getElementById('community-indicator').classList.add('visible');
+  }
   renderMatchList();
 }
 
@@ -6090,6 +6372,11 @@ function openMatch(id) {
   }
   if (snapshot.status === '내전 종료') {
     restoreMatch({ ...snapshot, _currentScreen: 'screen-5' });
+    return;
+  }
+  // '내전 진행' + 현재화면이 screen-5이면 5단계로 복원
+  if (snapshot._currentScreen === 'screen-5') {
+    restoreMatch(snapshot);
     return;
   }
   restoreMatch(snapshot);
