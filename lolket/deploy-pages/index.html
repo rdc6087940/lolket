@@ -1064,6 +1064,9 @@ body {
 .sb-outcome.lose { color: #E45B5B; }
 .sb-duration { font-family: 'Rajdhani', sans-serif; font-size: 11px; color: var(--text-muted); margin-left: auto; }
 
+/* damage bar row */
+.sb-damage { font-size:11px; color:var(--text-muted); min-width:80px; }
+
 .scoreboard-cols {
   display: grid;
   grid-template-columns: 1fr 60px 90px 80px 80px 60px;
@@ -1501,13 +1504,21 @@ body {
     return matchId ? `communities/${cid}/matches/${matchId}` : `communities/${cid}/matches`;
   }
 
+  let _currentMatchUnsub = null; // 현재 구독 해제 함수
+
   function fbSubscribeAll(callback) {
+    // 기존 구독 해제
+    if (_currentMatchUnsub) { _currentMatchUnsub(); _currentMatchUnsub = null; }
     const path = getMatchPath(null);
-    onValue(ref(db, path), snap => {
+    _currentMatchUnsub = onValue(ref(db, path), snap => {
       const raw = snap.val() || {};
       const list = Object.values(raw).sort((a, b) => (b._updatedAt || 0) - (a._updatedAt || 0));
       callback(list);
     });
+  }
+
+  function fbUnsubscribeAll() {
+    if (_currentMatchUnsub) { _currentMatchUnsub(); _currentMatchUnsub = null; }
   }
 
   function fbSubscribeOne(matchId, callback) {
@@ -1577,7 +1588,7 @@ body {
     fbSet, fbDelete, fbSubscribeAll, fbSubscribeOne, fbGet,
     fbGetCommunities, fbSaveCommunity, fbDeleteCommunity,
     fbCreateInviteCode, fbGetInviteCode, fbUseInviteCode, fbGetInviteCodes,
-    fbSaveAdmin, fbGetSuperAdmin,
+    fbSaveAdmin, fbGetSuperAdmin, fbUnsubscribeAll,
     ready: false
   };
   window._fb.ready = true;
@@ -2605,16 +2616,23 @@ function updateMatchBar() {
 function startStatusTimer() {
   setInterval(() => {
     if (!match) return;
-    const now = new Date();
+    // 이미 단계 진행 중이거나 종료된 경우 타이머로 상태 변경하지 않음
+    const lockedStatuses = ['종류 선택','팀 짜기','대진표','결과 입력','내전 종료'];
+    if (lockedStatuses.some(s => match.status?.includes(s))) return;
+
+    const now   = new Date();
     const start = new Date(match.time);
-    const diff = start - now;
-    if (diff <= 0) match.status = '내전 종료';
-    else if (diff <= 3600000) match.status = '내전 대기';
-    else match.status = '내전 모집';
-    document.getElementById('bar-status').textContent = match.status;
-    saveCurrentMatch();
-    const lGrid = document.getElementById('list-grid');
-    if (lGrid) renderMatchList();
+    const diff  = start - now;
+    // 시간 기반은 '내전 모집' ↔ '내전 대기' 전환만 담당
+    // '내전 종료'는 5단계 결과 입력 완료 시에만 처리
+    const newStatus = diff <= 3600000 ? '내전 대기' : '내전 모집';
+    if (match.status !== newStatus) {
+      match.status = newStatus;
+      document.getElementById('bar-status').textContent = match.status;
+      saveCurrentMatch();
+      const lGrid = document.getElementById('list-grid');
+      if (lGrid) renderMatchList();
+    }
   }, 10000);
 }
 
@@ -4485,86 +4503,119 @@ async function fetchGameResult(id) {
 
 // Riot Match v5 데이터를 내부 포맷으로 변환
 function parseRiotMatchData(data, rm) {
-  if (!data.info) return generateMockGameData(rm);
-
+  if (!data || !data.info) return generateMockGameData(rm);
   const info = data.info;
-  const durationSec = info.gameDuration || 0;
-  const mins = Math.floor(durationSec / 60);
-  const secs = durationSec % 60;
-  const duration = `${mins}:${String(secs).padStart(2,'0')}`;
+  const participants = info.participants || [];
+  if (!participants.length) return generateMockGameData(rm);
 
-  const teamAMembers = rm.teamA ? rm.teamA.members : [];
-  const teamBMembers = rm.teamB ? rm.teamB.members : [];
+  // 게임 시간
+  const dur = info.gameDuration || 0;
+  const duration = `${Math.floor(dur/60)}:${String(dur%60).padStart(2,'0')}`;
 
-  // puuid 또는 닉네임으로 매칭
-  const matchParticipant = (member, participants) => {
-    if (!member) return null;
-    // puuid로 먼저 매칭
-    if (member.puuid) {
-      const found = participants.find(p => p.puuid === member.puuid);
-      if (found) return found;
-    }
-    // 닉네임으로 매칭
-    return participants.find(p =>
-      p.riotIdGameName?.toLowerCase() === member.name.toLowerCase() ||
-      p.summonerName?.toLowerCase() === member.name.toLowerCase()
-    ) || null;
+  // 버전 추출 (예: "16.8.764.3737" → "16.8")
+  const verMatch = (info.gameVersion || '').match(/^(\d+\.\d+)/);
+  const ddVer = verMatch ? verMatch[1] + '.1' : '15.1.1';
+
+  // 챔피언 이름 → 아이콘 URL 변환 (특수문자 처리)
+  const champIcon = (name) => {
+    if (!name || name === 'Unknown' || name === '?') return '';
+    // Riot API 챔피언명은 이미 camelCase (예: KaiSa, Khazix)
+    // 단, 일부 예외 처리
+    const fix = { 'Fiddlesticks': 'Fiddlesticks', 'Nunu&Willump': 'Nunu', 'Renata': 'Renata' };
+    const clean = fix[name] || name;
+    return `https://ddragon.leagueoflegends.com/cdn/${ddVer}/img/champion/${clean}.png`;
   };
 
-  const makePlayerFromParticipant = (member, participants, teamId) => {
-    const p = matchParticipant(member, participants.filter(x => x.teamId === teamId));
-    if (!p) {
-      // 매칭 실패 시 해당 팀 첫 번째 미매칭 참가자 사용
-      const used = new Set();
-      const fallback = participants.find(x => x.teamId === teamId && !used.has(x.puuid));
-      if (fallback) used.add(fallback.puuid);
-      return fallback ? buildPlayerObj(member, fallback) : buildPlayerMock(member, teamId === 100);
-    }
-    return buildPlayerObj(member, p);
-  };
+  // 내전 팀 멤버
+  const teamAMembers = rm.teamA?.members || [];
+  const teamBMembers = rm.teamB?.members || [];
 
-  const buildPlayerObj = (member, p) => ({
-    name:      member ? member.name : (p.riotIdGameName || p.summonerName || '소환사'),
-    icon:      member ? member.icon : '1',
-    champion:  p.championName || 'Unknown',
-    kills:     p.kills || 0,
-    deaths:    p.deaths || 0,
-    assists:   p.assists || 0,
+  // ── 팀 ID 자동 감지 ──
+  // 내전 멤버 puuid가 실제로 어느 팀(100/200)에 속하는지 확인
+  let teamAId = 100, teamBId = 200;
+  for (const m of teamAMembers) {
+    if (!m.puuid) continue;
+    const p = participants.find(p => p.puuid === m.puuid);
+    if (p) { teamAId = p.teamId; teamBId = p.teamId === 100 ? 200 : 100; break; }
+  }
+
+  // ── 참가자 → 플레이어 객체 ──
+  const toPlayer = (p, overrideName, overrideIcon) => ({
+    name:      overrideName  || p.riotIdGameName || '소환사',
+    icon:      overrideIcon  || String(p.profileIcon || 1),
+    champion:  p.championName || '?',
+    champIcon: champIcon(p.championName),
+    kills:     p.kills    || 0,
+    deaths:    p.deaths   || 0,
+    assists:   p.assists  || 0,
     damage:    p.totalDamageDealtToChampions || 0,
     gold:      p.goldEarned || 0,
     cs:        (p.totalMinionsKilled || 0) + (p.neutralMinionsKilled || 0),
     win:       p.win || false,
+    position:  p.teamPosition || p.individualPosition || '',
+    puuid:     p.puuid,
+    teamId:    p.teamId,
   });
 
-  const buildPlayerMock = (member, win) => ({
-    name:     member ? member.name : '소환사',
-    icon:     member ? member.icon : '1',
-    champion: 'Unknown',
-    kills: 0, deaths: 0, assists: 0,
-    damage: 0, gold: 0, cs: 0, win,
-  });
+  // ── 멤버 ↔ 참가자 매핑 ──
+  const usedPuuids = new Set();
 
-  const participants = info.participants || [];
-  // 블루팀(100) = teamA, 레드팀(200) = teamB
-  const winTeamId = (info.teams?.find(t => t.win))?.teamId || 100;
-
-  const buildTeam = (mems, teamId) => {
-    if (mems.length > 0) {
-      return mems.map(m => makePlayerFromParticipant(m, participants, teamId));
+  const matchMember = (member, tid) => {
+    // 1. puuid 정확 매칭
+    if (member.puuid) {
+      const p = participants.find(p => p.puuid === member.puuid && p.teamId === tid);
+      if (p && !usedPuuids.has(p.puuid)) {
+        usedPuuids.add(p.puuid);
+        return toPlayer(p, member.name, member.icon);
+      }
     }
-    // 팀 멤버 없으면 참가자 직접 사용
-    return participants
-      .filter(p => p.teamId === teamId)
-      .map(p => buildPlayerObj(null, p));
+    // 2. 닉네임 매칭
+    const byName = participants.find(p =>
+      p.teamId === tid && !usedPuuids.has(p.puuid) && (
+        p.riotIdGameName?.trim().toLowerCase() === member.name.trim().toLowerCase()
+      )
+    );
+    if (byName) {
+      usedPuuids.add(byName.puuid);
+      return toPlayer(byName, member.name, member.icon);
+    }
+    return null;
+  };
+
+  const buildTeam = (members, tid) => {
+    // 해당 팀 참가자 목록
+    const teamParticipants = participants.filter(p => p.teamId === tid);
+
+    if (members.length > 0) {
+      const result = members.map(m => {
+        const matched = matchMember(m, tid);
+        if (matched) return matched;
+        // 매칭 실패 → 해당 팀 미사용 참가자 중 첫번째
+        const fallback = teamParticipants.find(p => !usedPuuids.has(p.puuid));
+        if (fallback) {
+          usedPuuids.add(fallback.puuid);
+          return toPlayer(fallback, m.name, m.icon);
+        }
+        // 최종 폴백: 빈 플레이어
+        return {
+          name: m.name, icon: m.icon || '1', champion: '?', champIcon: '',
+          kills: 0, deaths: 0, assists: 0, damage: 0, gold: 0, cs: 0,
+          win: false, position: '', puuid: '', teamId: tid,
+        };
+      });
+      return result;
+    }
+    // 팀 멤버 정보 없으면 참가자 그대로
+    return teamParticipants.map(p => toPlayer(p));
   };
 
   return {
     duration,
-    teamA: buildTeam(teamAMembers, 100),
-    teamB: buildTeam(teamBMembers, 200),
+    ddVer,
+    teamA: buildTeam(teamAMembers, teamAId),
+    teamB: buildTeam(teamBMembers, teamBId),
   };
 }
-
 function generateMockGameData(rm) {
   const champPool = ['Jinx','Ahri','Zed','Thresh','Vi','Orianna','Caitlyn','Lulu','Jayce','Garen',
     'Yasuo','Yone','Lee Sin','Blitzcrank','Ezreal','Vex','Kai\'Sa','Nautilus','Akali','Renekton'];
@@ -4604,42 +4655,78 @@ function generateMockGameData(rm) {
 
 function renderScoreboard(rm) {
   if (!rm.gameData) return '';
-  const gd = rm.gameData;
+  const gd   = rm.gameData;
   const winA = rm.winner === 'a';
   const winB = rm.winner === 'b';
   const nameA = rm.teamA ? getTeamName(rm.teamA) : 'A팀';
   const nameB = rm.teamB ? getTeamName(rm.teamB) : 'B팀';
+  const ddVer = gd.ddVer || '15.1.1';
 
   const renderTeam = (players, win, teamName) => {
+    if (!players || !players.length) return '';
+
+    // 팀 전체 최대 피해량 (바 비율용)
+    const maxDmg = Math.max(...players.map(p => p.damage || 0), 1);
+
+    // MVP: 킬+어시스트 최고인 플레이어
+    let mvpIdx = 0;
+    players.forEach((p, i) => {
+      if ((p.kills + p.assists) > (players[mvpIdx].kills + players[mvpIdx].assists)) mvpIdx = i;
+    });
+
     const header = `
-      <div class="scoreboard-team-header ${win?'win':'lose'}">
-        <span class="sb-team-label ${win?'win':'lose'}">${teamName}</span>
-        <span class="sb-outcome ${win?'win':'lose'}">${win?'VICTORY':'DEFEAT'}</span>
+      <div class="scoreboard-team-header ${win ? 'win' : 'lose'}">
+        <span class="sb-team-label ${win ? 'win' : 'lose'}">${teamName}</span>
+        <span class="sb-outcome ${win ? 'win' : 'lose'}">${win ? 'VICTORY' : 'DEFEAT'}</span>
         <span class="sb-duration">${gd.duration}</span>
       </div>`;
-    const cols = `<div class="scoreboard-cols"><span>소환사</span><span style="text-align:center">KDA</span><span style="text-align:center">피해량</span><span style="text-align:center">골드</span><span style="text-align:center">CS</span><span></span></div>`;
 
-    // MVP: 킬+어시스트 최고
-    let mvpIdx = 0;
-    players.forEach((p,i) => { if ((p.kills+p.assists) > (players[mvpIdx].kills+players[mvpIdx].assists)) mvpIdx = i; });
+    const cols = `
+      <div class="scoreboard-cols">
+        <span>소환사</span>
+        <span style="text-align:center">KDA</span>
+        <span style="text-align:center">피해량</span>
+        <span style="text-align:center">골드</span>
+        <span style="text-align:center">CS</span>
+        <span></span>
+      </div>`;
 
     const rows = players.map((p, i) => {
-      const champUrl = `https://ddragon.leagueoflegends.com/cdn/14.24.1/img/champion/${p.champion.replace(/[' ]/g,'')}.png`;
+      const champUrl = p.champIcon
+        || `https://ddragon.leagueoflegends.com/cdn/${ddVer}/img/champion/${(p.champion||'?').replace(/[' ]/g,'')}.png`;
+      const dmgPct = maxDmg > 0 ? Math.round((p.damage / maxDmg) * 100) : 0;
+      const dmgColor = win ? 'rgba(91,188,228,0.6)' : 'rgba(228,91,91,0.5)';
+      const isMvp = i === mvpIdx;
+
       return `
         <div class="scoreboard-row">
           <div class="sb-player">
             <div class="sb-champ-icon">
-              <img src="${champUrl}" onerror="this.parentNode.innerHTML='${p.champion[0]}'">
+              <img src="${champUrl}"
+                   alt="${p.champion}"
+                   onerror="this.style.display='none';this.parentNode.style.background='#1E2D40';this.parentNode.style.lineHeight='32px';this.parentNode.style.textAlign='center';this.parentNode.style.fontSize='10px';this.parentNode.style.color='#5B6474';this.parentNode.setAttribute('data-text','${(p.champion||'?')[0]}')">
             </div>
-            <span class="sb-player-name">${p.name}${i===mvpIdx?'<span class="sb-mvp-badge">MVP</span>':''}</span>
+            <div style="min-width:0;">
+              <div class="sb-player-name">
+                ${p.name}
+                ${isMvp ? '<span class="sb-mvp-badge">MVP</span>' : ''}
+              </div>
+              <div style="font-size:10px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;">${p.champion || '?'}</div>
+            </div>
           </div>
           <div class="sb-kda">${p.kills}<span>/</span>${p.deaths}<span>/</span>${p.assists}</div>
-          <div class="sb-damage">${p.damage.toLocaleString()}</div>
-          <div class="sb-gold">${(p.gold/1000).toFixed(1)}k</div>
-          <div class="sb-cs">${p.cs}</div>
+          <div class="sb-damage">
+            <div style="font-size:11px;color:var(--text-muted);margin-bottom:2px;">${(p.damage||0).toLocaleString()}</div>
+            <div style="height:3px;background:#1E2D40;border-radius:2px;">
+              <div style="height:3px;width:${dmgPct}%;background:${dmgColor};border-radius:2px;transition:width .3s;"></div>
+            </div>
+          </div>
+          <div class="sb-gold">${((p.gold||0)/1000).toFixed(1)}k</div>
+          <div class="sb-cs">${p.cs||0}</div>
           <div></div>
         </div>`;
     }).join('');
+
     return header + cols + rows;
   };
 
@@ -4648,7 +4735,6 @@ function renderScoreboard(rm) {
     ${renderTeam(gd.teamB, winB, nameB)}
   </div>`;
 }
-
 function checkAllResultsDone() {
   const banner = document.getElementById('finish-banner');
   if (!banner) return;
@@ -5091,6 +5177,18 @@ function enterCommunity(community) {
   document.querySelectorAll('.admin-only').forEach(el => {
     el.style.display = canCreateMatch ? '' : 'none';
   });
+
+  // 해당 커뮤니티 내전 목록 재구독 (커뮤니티별 경로 갱신)
+  if (_fbReady && window._fb.fbSubscribeAll) {
+    window._fb.fbSubscribeAll(list => {
+      _listCache = list;
+      if (currentScreen === 'screen-0') renderMatchList();
+      if (match && match.id) {
+        const remote = list.find(m => m.id === match.id);
+        if (remote && remote._version > (_localVersion || 0)) _applyRemoteUpdate(remote);
+      }
+    });
+  }
 
   showScreenRaw('screen-0');
   renderMatchList();
@@ -5866,6 +5964,10 @@ function goToList() {
   match = null; members = []; matchType = null; teams = [];
   bracketRounds = []; extraMatches = []; resultMatches = [];
   // 헤더 UI 원복
+  // 커뮤니티 내전 구독 해제
+  if (_fbReady && window._fb.fbUnsubscribeAll) window._fb.fbUnsubscribeAll();
+  _listCache = [];
+
   document.getElementById('stage-indicator').classList.add('hidden');
   document.getElementById('btn-back').classList.remove('visible');
   document.querySelectorAll('.stage-pip').forEach(p => p.classList.remove('active','done'));
