@@ -1387,6 +1387,69 @@ body {
 .match-pick-winner { font-size:10px; font-family:'Rajdhani',sans-serif; font-weight:700; letter-spacing:.5px; }
 .match-pick-winner.blue { color:#5BBCE4; }
 .match-pick-winner.red  { color:#E45B5B; }
+
+/* ══════════════════════════════════════
+   MASTER ADMIN & COMMUNITY
+══════════════════════════════════════ */
+/* 커뮤니티 선택 화면 (screen-community) */
+.community-wrap { max-width: 900px; margin: 0 auto; padding: 2rem; }
+.community-topbar { display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem; }
+.community-heading { font-family:'Bebas Neue',sans-serif; font-size:26px; letter-spacing:4px; color:var(--gold); }
+
+.community-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:1rem; }
+.community-card {
+  background:var(--bg-panel); border:1px solid var(--border-subtle);
+  border-radius:4px; overflow:hidden; cursor:pointer; transition:all .18s;
+  position:relative;
+}
+.community-card:hover { border-color:var(--border-gold); transform:translateY(-1px); }
+.community-card::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--gold); }
+.community-card-body { padding:1rem 1.25rem; }
+.community-card-name { font-size:15px; font-weight:600; color:var(--text-white); margin-bottom:4px; }
+.community-card-desc { font-size:12px; color:var(--text-muted); }
+.community-card-footer {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:.6rem 1.25rem; background:rgba(200,170,110,.03);
+  border-top:1px solid var(--border-subtle);
+}
+.community-card-meta { font-size:11px; color:var(--text-muted); font-family:'Rajdhani',sans-serif; }
+.community-card-actions { display:flex; gap:6px; }
+.btn-xs {
+  padding:3px 9px; border-radius:2px; font-family:'Rajdhani',sans-serif;
+  font-size:10px; font-weight:700; letter-spacing:1px; cursor:pointer; transition:all .15s;
+}
+.btn-xs.edit  { background:transparent; border:1px solid var(--border-subtle); color:var(--text-muted); }
+.btn-xs.edit:hover  { border-color:var(--gold); color:var(--gold); }
+.btn-xs.del   { background:transparent; border:1px solid transparent; color:var(--text-muted); }
+.btn-xs.del:hover   { border-color:rgba(192,48,48,.5); color:#E05050; }
+.btn-xs.enter { background:rgba(10,200,185,.1); border:1px solid rgba(10,200,185,.35); color:var(--blue-bright); }
+.btn-xs.enter:hover { background:rgba(10,200,185,.2); }
+
+/* 마스터 관리자 배지 */
+.role-badge.master {
+  background:rgba(157,72,224,.12); color:#B97EEA;
+  border:1px solid rgba(157,72,224,.35);
+}
+
+/* 커뮤니티 헤더 표시 */
+.community-indicator {
+  display:none; align-items:center; gap:8px;
+  font-family:'Rajdhani',sans-serif; font-size:11px;
+  color:var(--text-muted); letter-spacing:.5px;
+}
+.community-indicator.visible { display:flex; }
+.community-indicator-dot { width:5px; height:5px; border-radius:50%; background:var(--gold); }
+
+/* 초대 코드 카드 */
+.invite-card {
+  background:var(--bg-dark); border:1px solid var(--border-subtle);
+  border-radius:3px; padding:.75rem 1rem; margin-top:.5rem;
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+}
+.invite-code-val { font-family:'Rajdhani',sans-serif; font-size:13px; font-weight:700; color:var(--blue-bright); letter-spacing:1px; flex:1; word-break:break-all; }
+.invite-status { font-size:10px; font-family:'Rajdhani',sans-serif; letter-spacing:1px; }
+.invite-status.active { color:var(--blue-bright); }
+.invite-status.used   { color:var(--text-muted); text-decoration:line-through; }
 </style>
 <!-- Firebase SDK -->
 <script type="module">
@@ -1418,7 +1481,7 @@ body {
   // ─── 동시성 제어용 락 (optimistic locking) ──────────────
   // 각 내전 문서에 _version 필드를 두고 runTransaction으로 CAS 처리
   async function fbSet(matchId, data) {
-    const r = ref(db, 'matches/' + matchId);
+    const r = ref(db, getMatchPath(matchId));
     return runTransaction(r, current => {
       // 현재 서버 version이 클라이언트 version보다 높으면 중단 (다른 클라이언트가 먼저 썼음)
       if (current && data._version !== undefined && current._version > data._version) {
@@ -1429,22 +1492,73 @@ body {
   }
 
   async function fbDelete(matchId) {
-    return remove(ref(db, 'matches/' + matchId));
+    return remove(ref(db, getMatchPath(matchId)));
+  }
+
+  // currentCommunityId는 모듈 밖 JS에서 설정
+  function getMatchPath(matchId) {
+    const cid = window._currentCommunityId || 'default';
+    return matchId ? `communities/${cid}/matches/${matchId}` : `communities/${cid}/matches`;
   }
 
   function fbSubscribeAll(callback) {
-    onValue(ref(db, 'matches'), snap => {
+    const path = getMatchPath(null);
+    onValue(ref(db, path), snap => {
       const raw = snap.val() || {};
-      // 최신순 정렬
       const list = Object.values(raw).sort((a, b) => (b._updatedAt || 0) - (a._updatedAt || 0));
       callback(list);
     });
   }
 
   function fbSubscribeOne(matchId, callback) {
-    return onValue(ref(db, 'matches/' + matchId), snap => {
+    return onValue(ref(db, getMatchPath(matchId)), snap => {
       callback(snap.val());
     });
+  }
+
+  // 커뮤니티 CRUD
+  async function fbGetCommunities() {
+    const snap = await get(ref(db, 'communities_info'));
+    const raw = snap.val() || {};
+    return Object.values(raw).filter(c => c && c.id);
+  }
+  async function fbSaveCommunity(cObj) {
+    // 커뮤니티 정보는 별도 경로에 저장 (matches 데이터와 충돌 방지)
+    await set(ref(db, `communities_info/${cObj.id}`), cObj);
+  }
+  async function fbDeleteCommunity(cid) {
+    // 커뮤니티 정보 + 내전 데이터 모두 삭제
+    await Promise.all([
+      remove(ref(db, `communities_info/${cid}`)),
+      remove(ref(db, `communities/${cid}`)),
+    ]);
+  }
+
+  // 초대 코드 CRUD
+  async function fbCreateInviteCode(code, data) {
+    await set(ref(db, `invite_codes/${code}`), data);
+  }
+  async function fbGetInviteCode(code) {
+    const snap = await get(ref(db, `invite_codes/${code}`));
+    return snap.val();
+  }
+  async function fbUseInviteCode(code) {
+    await set(ref(db, `invite_codes/${code}/used`), true);
+  }
+  async function fbGetInviteCodes() {
+    const snap = await get(ref(db, 'invite_codes'));
+    return snap.val() || {};
+  }
+
+  // 관리자 저장
+  async function fbSaveAdmin(adminObj) {
+    await set(ref(db, `admin/${adminObj.id}`), adminObj);
+  }
+
+  // 마스터 관리자 확인
+  async function fbGetSuperAdmin() {
+    const snap = await get(ref(db, 'superadmin'));
+    return snap.val();
   }
 
   // ─── 전역에 노출 (모듈 밖 JS에서 호출) ──────────────────
@@ -1459,7 +1573,13 @@ body {
     }
   }
 
-  window._fb = { fbSet, fbDelete, fbSubscribeAll, fbSubscribeOne, fbGet, ready: false };
+  window._fb = {
+    fbSet, fbDelete, fbSubscribeAll, fbSubscribeOne, fbGet,
+    fbGetCommunities, fbSaveCommunity, fbDeleteCommunity,
+    fbCreateInviteCode, fbGetInviteCode, fbUseInviteCode, fbGetInviteCodes,
+    fbSaveAdmin, fbGetSuperAdmin,
+    ready: false
+  };
   window._fb.ready = true;
   window.dispatchEvent(new Event('fb-ready'));
 </script>
@@ -1471,11 +1591,15 @@ body {
 <header class="header">
   <div class="header-inner">
     <div style="display:flex;align-items:center;gap:14px;">
-      <div class="logo" style="cursor:pointer;" onclick="goToList()">
+      <div class="logo" style="cursor:pointer;" onclick="goToCommunity()">
         <div class="logo-diamond"></div>
         롤켓배송
       </div>
-      <button class="btn-back" id="btn-back" onclick="goToList()">← 목록</button>
+      <button class="btn-back" id="btn-back" onclick="goToList()" style="display:none;">← 목록</button>
+      <div class="community-indicator" id="community-indicator">
+        <div class="community-indicator-dot"></div>
+        <span id="community-indicator-name"></span>
+      </div>
     </div>
     <div class="stage-indicator hidden" id="stage-indicator">
       <div class="stage-pip" id="pip-1"><div class="stage-pip-dot"></div>1. 내전 대기</div>
@@ -1486,14 +1610,130 @@ body {
     </div>
     <div class="header-actions">
       <div class="role-badge user" id="role-badge"><div class="role-dot"></div><span id="role-label">일반 유저</span></div>
-      <button class="btn-auth" id="btn-auth" onclick="openLoginModal()">관리자 로그인</button>
+      <button class="btn-auth" id="btn-auth" onclick="openLoginModal()" style="display:none;">로그아웃</button>
+      <button class="btn-auth" id="btn-master-login" onclick="openMasterLoginModal()" style="font-size:10px;padding:5px 10px;border-color:rgba(157,72,224,.4);color:#B97EEA;background:rgba(157,72,224,.07);">마스터</button>
+      <button class="btn-auth" id="btn-admin-login" onclick="openLoginModal()">관리자 로그인</button>
       <button class="btn-secondary admin-only" id="btn-new-match" onclick="openNewMatchFlow()" style="display:none;">+ 새 내전 생성</button>
     </div>
   </div>
 </header>
 
 <!-- SCREEN 0: 내전 목록 (메인) -->
-<div id="screen-0" class="screen active">
+<!-- SCREEN-COMMUNITY: 커뮤니티 선택 -->
+<div id="screen-community" class="screen active">
+  <div class="community-wrap">
+    <div class="community-topbar">
+      <div class="community-heading">커뮤니티</div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <div style="position:relative;">
+          <input id="community-search" type="text" placeholder="커뮤니티 검색..."
+            oninput="filterCommunityList()"
+            style="background:var(--bg-dark);border:1px solid var(--border-subtle);border-radius:3px;
+                   padding:6px 30px 6px 12px;font-family:'Noto Sans KR',sans-serif;font-size:12px;
+                   color:var(--text-white);outline:none;width:200px;transition:border .15s;"
+            onfocus="this.style.borderColor='var(--blue-bright)'"
+            onblur="this.style.borderColor='var(--border-subtle)'">
+          <span onclick="clearCommunitySearch()" id="community-search-clear"
+            style="position:absolute;right:8px;top:50%;transform:translateY(-50%);
+                   color:var(--text-muted);cursor:pointer;font-size:12px;display:none;">✕</span>
+        </div>
+        <div style="display:flex;gap:8px;" id="master-actions">
+          <button class="btn-secondary" onclick="openInviteManageModal()" id="btn-invite-manage" style="display:none;">초대 링크 관리</button>
+          <button class="btn-primary" onclick="openCommunityCreateModal()" id="btn-community-create" style="display:none;">+ 커뮤니티 생성</button>
+        </div>
+      </div>
+    </div>
+    <div class="community-grid" id="community-grid"></div>
+    <div id="community-empty" class="list-empty" style="display:none;">
+      <div class="list-empty-hex">◇</div>
+      <div style="font-size:14px;">등록된 커뮤니티가 없습니다</div>
+    </div>
+  </div>
+</div><!-- /screen-community -->
+
+<!-- SCREEN-INVITE: 초대 링크로 관리자 계정 생성 -->
+<div id="screen-invite" class="screen">
+  <div style="max-width:400px;margin:4rem auto;padding:2rem;">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:3px;color:var(--gold);margin-bottom:.5rem;">관리자 계정 등록</div>
+    <div style="font-size:12px;color:var(--text-muted);margin-bottom:1.5rem;line-height:1.6;" id="invite-community-label">
+      커뮤니티: <span style="color:var(--text-white);" id="invite-community-name">—</span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:1rem;margin-bottom:1rem;">
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;text-transform:uppercase;">아이디</label>
+        <input class="form-input" type="text" id="invite-id" placeholder="사용할 아이디 입력" style="font-size:14px;">
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;text-transform:uppercase;">비밀번호</label>
+        <input class="form-input" type="password" id="invite-pw" placeholder="비밀번호 입력" style="font-size:14px;">
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;text-transform:uppercase;">비밀번호 확인</label>
+        <input class="form-input" type="password" id="invite-pw2" placeholder="비밀번호 재입력" style="font-size:14px;" onkeydown="if(event.key==='Enter')registerInviteAdmin()">
+      </div>
+    </div>
+    <div id="invite-err" style="font-size:12px;color:#E05050;min-height:18px;margin-bottom:.75rem;"></div>
+    <button class="btn-primary" style="width:100%;padding:11px;font-size:14px;letter-spacing:2px;" onclick="registerInviteAdmin()">계정 생성</button>
+  </div>
+</div><!-- /screen-invite -->
+
+<!-- COMMUNITY CREATE/EDIT MODAL -->
+<div class="modal-overlay" id="community-modal" style="display:none;">
+  <div class="modal" style="max-width:400px;">
+    <div class="modal-title" id="community-modal-title">커뮤니티 생성</div>
+    <div style="display:flex;flex-direction:column;gap:1rem;margin-bottom:1rem;">
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;text-transform:uppercase;">커뮤니티 이름</label>
+        <input class="form-input" type="text" id="cm-name" placeholder="예) 롤켓 내전">
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;text-transform:uppercase;">설명 (선택)</label>
+        <input class="form-input" type="text" id="cm-desc" placeholder="커뮤니티 간단 설명">
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeCommunityModal()">취소</button>
+      <button class="btn-primary" onclick="saveCommunity()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- INVITE MANAGE MODAL (마스터 전용) -->
+<div class="modal-overlay" id="invite-manage-modal" style="display:none;">
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-title">초대 링크 관리</div>
+    <div style="font-size:12px;color:var(--text-muted);margin-bottom:1rem;line-height:1.6;">
+      커뮤니티를 선택하고 초대 링크를 생성하세요.<br>
+      링크는 1회용이며 계정 생성 후 자동 폐기됩니다.
+    </div>
+    <div style="display:flex;flex-direction:column;gap:1rem;margin-bottom:1rem;">
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;text-transform:uppercase;">연결할 커뮤니티</label>
+        <select class="form-input" id="invite-community-select" style="cursor:pointer;">
+          <option value="">커뮤니티 선택</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn-primary" style="width:100%;margin-bottom:1rem;" onclick="generateInviteLink()">초대 링크 생성</button>
+    <div id="invite-link-result" style="display:none;">
+      <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;font-family:'Rajdhani',sans-serif;letter-spacing:1px;">생성된 링크 (클릭해서 복사)</div>
+      <div class="invite-card">
+        <div class="invite-code-val" id="invite-link-val" onclick="copyInviteLink()" style="cursor:pointer;" title="클릭해서 복사"></div>
+        <button class="btn-xs enter" onclick="copyInviteLink()">복사</button>
+      </div>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:6px;">⚠ 이 링크는 1회만 사용 가능합니다.</div>
+    </div>
+    <div style="margin-top:1rem;">
+      <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;font-family:'Rajdhani',sans-serif;letter-spacing:1px;">기존 초대 링크</div>
+      <div id="invite-list" style="display:flex;flex-direction:column;gap:4px;max-height:160px;overflow-y:auto;"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="document.getElementById('invite-manage-modal').style.display='none'">닫기</button>
+    </div>
+  </div>
+</div>
+
+<div id="screen-0" class="screen">
   <div class="list-wrap">
     <div class="list-topbar">
       <div class="list-heading">내전 목록</div>
@@ -2082,6 +2322,34 @@ body {
 
 
 
+
+<!-- MASTER LOGIN MODAL -->
+<div class="modal-overlay" id="master-login-modal" style="display:none;">
+  <div class="modal" style="max-width:360px;">
+    <div class="modal-title" style="display:flex;align-items:center;gap:10px;">
+      <span style="width:8px;height:8px;border-radius:50%;background:#B97EEA;flex-shrink:0;display:inline-block;"></span>
+      마스터 관리자 로그인
+    </div>
+    <p style="font-size:12px;color:var(--text-muted);margin-bottom:1.25rem;line-height:1.6;">
+      모든 커뮤니티를 관리할 수 있는 최고 권한 계정입니다.
+    </p>
+    <div style="display:flex;flex-direction:column;gap:1rem;margin-bottom:1rem;">
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;text-transform:uppercase;">아이디</label>
+        <input class="form-input" type="text" id="master-login-id" placeholder="마스터 아이디 입력" style="font-size:14px;" onkeydown="if(event.key==='Enter')document.getElementById('master-login-pw').focus()">
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;text-transform:uppercase;">비밀번호</label>
+        <input class="form-input" type="password" id="master-login-pw" placeholder="비밀번호 입력" style="font-size:14px;" onkeydown="if(event.key==='Enter')doMasterLogin()">
+      </div>
+    </div>
+    <div id="master-login-err" style="font-size:12px;color:#E05050;min-height:18px;margin-bottom:.5rem;"></div>
+    <div class="modal-actions" style="margin-top:.75rem;">
+      <button class="btn-secondary" onclick="document.getElementById('master-login-modal').style.display='none'">취소</button>
+      <button class="btn-primary" id="btn-do-master-login" onclick="doMasterLogin()" style="padding:9px 24px;font-size:13px;letter-spacing:2px;border-color:rgba(157,72,224,.5);color:#B97EEA;background:rgba(157,72,224,.1);">로그인</button>
+    </div>
+  </div>
+</div>
 
 <!-- LOGIN MODAL -->
 <div class="modal-overlay" id="login-modal" style="display:none;">
@@ -4499,23 +4767,21 @@ let isAdmin = false;
 // ─── 역할 적용 ───
 function applyRole(admin) {
   isAdmin = admin;
-  const badge = document.getElementById('role-badge');
-  const label = document.getElementById('role-label');
-  if (badge) badge.className = 'role-badge ' + (admin ? 'admin' : 'user');
-  if (label) label.textContent = admin ? '관리자' : '일반 유저';
-
+  updateRoleUI();
   const btnAuth = document.getElementById('btn-auth');
   if (btnAuth) {
-    btnAuth.textContent = admin ? '로그아웃' : '관리자 로그인';
-    btnAuth.className   = admin ? 'btn-auth logout' : 'btn-auth';
-    btnAuth.onclick     = admin ? doLogout : openLoginModal;
+    btnAuth.className = (isAdmin || isMaster) ? 'btn-auth logout' : 'btn-auth';
+    btnAuth.onclick   = doLogout;
   }
-  // admin-only 요소 토글
-  document.querySelectorAll('.admin-only').forEach(el => {
-    el.style.display = admin ? '' : 'none';
-  });
-  // 목록 카드 삭제 버튼: 렌더 재호출로 반영
-  renderMatchList();
+
+  // 로그인 후 커뮤니티 화면으로
+  if (admin) {
+    renderCommunityList();
+    // 일반 관리자는 소속 커뮤니티 1개면 바로 입장
+    // 일반 관리자도 커뮤니티 목록에서 선택 (자동 입장 제거)
+  } else {
+    renderMatchList();
+  }
 }
 
 function doLogout() {
@@ -4553,9 +4819,13 @@ async function doLogin() {
     const ok = await checkAdminCredentials(id, pw);
     if (ok) {
       sessionStorage.setItem('injeong_admin', id);
+      if (currentAdminData?.communityId) {
+        sessionStorage.setItem('injeong_community', currentAdminData.communityId);
+        window._currentCommunityId = currentAdminData.communityId;
+      }
       closeLoginModal();
       applyRole(true);
-      toast(`${id}님, 관리자로 로그인되었습니다`, 'ok');
+      toast(`${id}님, ${isMaster ? '마스터 ' : ''}관리자로 로그인되었습니다`, 'ok');
     } else {
       errEl.innerHTML = '<span style="font-size:13px;">⚠</span> 아이디 또는 비밀번호가 올바르지 않습니다';
       document.getElementById('login-pw').value = '';
@@ -4767,6 +5037,492 @@ function renderUvResult(snapshot) {
       ${renderScoreboard(rm)}`;
     boards.appendChild(wrap);
   });
+}
+
+
+// ═══════════════════════════════════════════
+// COMMUNITY & MASTER ADMIN
+// ═══════════════════════════════════════════
+let isMaster         = false;
+let currentCommunity = null;  // { id, name, description }
+window._currentCommunityId = null;
+
+// ─── 커뮤니티 화면으로 이동 ───
+function goToCommunity() {
+  // 진행 중이면 저장
+  if (match && match.id) saveCurrentMatch();
+  // 상태 초기화
+  match = null; members = []; matchType = null; teams = [];
+  normalPool = []; auctionPool = []; failedMembers = []; onSaleMember = null;
+  bracketRounds = []; extraMatches = []; resultMatches = [];
+  currentCommunity = null;
+  window._currentCommunityId = null;
+
+  document.getElementById('stage-indicator').classList.add('hidden');
+  document.getElementById('btn-back').style.display = 'none';
+  document.getElementById('community-indicator').classList.remove('visible');
+  document.querySelectorAll('.stage-pip').forEach(p => p.classList.remove('active','done'));
+  document.getElementById('pip-1').classList.add('active');
+
+  showScreenRaw('screen-community');
+  renderCommunityList();
+}
+
+// ─── 커뮤니티 선택 → 내전 목록 ───
+function enterCommunity(community) {
+  currentCommunity = community;
+  window._currentCommunityId = community.id;
+
+  // 헤더 인디케이터
+  document.getElementById('community-indicator-name').textContent = community.name;
+  document.getElementById('community-indicator').classList.add('visible');
+
+  // 이 커뮤니티에서 내전 생성 권한 여부
+  // 마스터: 모든 커뮤니티 가능
+  // 일반 관리자: 자신의 커뮤니티만 가능
+  const canCreateMatch = isMaster || (isAdmin && currentAdminData?.communityId === community.id);
+
+  // 내전 생성 버튼 표시 제어
+  ['btn-list-new', 'btn-new-match'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = canCreateMatch ? '' : 'none';
+  });
+  // empty 상태 생성 버튼
+  document.querySelectorAll('.admin-only').forEach(el => {
+    el.style.display = canCreateMatch ? '' : 'none';
+  });
+
+  showScreenRaw('screen-0');
+  renderMatchList();
+}
+
+// ─── 커뮤니티 목록 렌더링 ───
+let _allCommunities = []; // 전체 커뮤니티 캐시
+
+async function renderCommunityList() {
+  const grid  = document.getElementById('community-grid');
+  const empty = document.getElementById('community-empty');
+  grid.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:1rem;">커뮤니티 목록 불러오는 중...</div>';
+
+  let communities = [];
+  if (_fbReady && window._fb.fbGetCommunities) {
+    communities = await window._fb.fbGetCommunities();
+  }
+
+  // 모든 역할이 전체 커뮤니티 조회 가능
+  // (자기 커뮤니티 여부는 카드 렌더링 시 구분)
+
+  _allCommunities = communities;
+  renderCommunityGrid(communities);
+}
+
+function filterCommunityList() {
+  const q = (document.getElementById('community-search')?.value || '').trim().toLowerCase();
+  const clearBtn = document.getElementById('community-search-clear');
+  if (clearBtn) clearBtn.style.display = q ? 'block' : 'none';
+  const filtered = q
+    ? _allCommunities.filter(c =>
+        c.name?.toLowerCase().includes(q) ||
+        c.description?.toLowerCase().includes(q))
+    : _allCommunities;
+  renderCommunityGrid(filtered);
+}
+
+function clearCommunitySearch() {
+  const input = document.getElementById('community-search');
+  if (input) input.value = '';
+  document.getElementById('community-search-clear').style.display = 'none';
+  renderCommunityGrid(_allCommunities);
+}
+
+function renderCommunityGrid(communities) {
+  const grid  = document.getElementById('community-grid');
+  const empty = document.getElementById('community-empty');
+
+  grid.innerHTML = '';
+  if (communities.length === 0) {
+    empty.style.display = 'flex'; return;
+  }
+  empty.style.display = 'none';
+
+  communities.forEach(c => {
+    // 이 커뮤니티에서 관리 권한 여부
+    const isMyCommunity = isAdmin && !isMaster && currentAdminData?.communityId === c.id;
+    const canManage     = isMaster || isMyCommunity;
+
+    const card = document.createElement('div');
+    card.className = 'community-card';
+    // 내 커뮤니티면 좌측 바 강조
+    if (isMyCommunity) card.style.setProperty('--card-accent', 'var(--blue-bright)');
+    card.innerHTML = `
+      <div class="community-card-body">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="community-card-name">${c.name}</div>
+          ${isMyCommunity ? '<span style="font-size:9px;font-family:Rajdhani,sans-serif;font-weight:700;letter-spacing:1px;padding:1px 6px;border-radius:2px;background:rgba(10,200,185,.15);color:var(--blue-bright);border:1px solid rgba(10,200,185,.35);">내 커뮤니티</span>' : ''}
+        </div>
+        <div class="community-card-desc">${c.description || '설명 없음'}</div>
+      </div>
+      <div class="community-card-footer">
+        <div class="community-card-meta">내전 커뮤니티</div>
+        <div class="community-card-actions">
+          ${isMaster ? `
+            <button class="btn-xs edit" onclick="event.stopPropagation();openCommunityEditModal('${c.id}')">수정</button>
+            <button class="btn-xs del"  onclick="event.stopPropagation();deleteCommunity('${c.id}')">삭제</button>
+          ` : ''}
+          <button class="btn-xs enter" onclick="enterCommunity(${JSON.stringify(c).replace(/"/g,'&quot;')})">입장 →</button>
+        </div>
+      </div>`;
+    grid.appendChild(card);
+  });
+
+  // 마스터 버튼 표시
+  document.getElementById('btn-community-create').style.display = isMaster ? '' : 'none';
+  document.getElementById('btn-invite-manage').style.display    = isMaster ? '' : 'none';
+}
+
+// ─── 커뮤니티 생성/수정 모달 ───
+let _editingCommunityId = null;
+function openCommunityCreateModal() {
+  _editingCommunityId = null;
+  document.getElementById('community-modal-title').textContent = '커뮤니티 생성';
+  document.getElementById('cm-name').value = '';
+  document.getElementById('cm-desc').value = '';
+  document.getElementById('community-modal').style.display = 'flex';
+}
+function openCommunityEditModal(cid) {
+  if (!_fbReady) return;
+  window._fb.fbGetCommunities().then(list => {
+    const c = list.find(x => x.id === cid);
+    if (!c) return;
+    _editingCommunityId = cid;
+    document.getElementById('community-modal-title').textContent = '커뮤니티 수정';
+    document.getElementById('cm-name').value = c.name;
+    document.getElementById('cm-desc').value = c.description || '';
+    document.getElementById('community-modal').style.display = 'flex';
+  });
+}
+function closeCommunityModal() {
+  document.getElementById('community-modal').style.display = 'none';
+}
+async function saveCommunity() {
+  const name = document.getElementById('cm-name').value.trim();
+  const desc = document.getElementById('cm-desc').value.trim();
+  if (!name) return toast('커뮤니티 이름을 입력하세요', 'err');
+  const cObj = {
+    id: _editingCommunityId || 'c_' + Date.now(),
+    name, description: desc,
+    createdAt: _editingCommunityId ? undefined : Date.now(),
+  };
+  if (_fbReady && window._fb.fbSaveCommunity) {
+    await window._fb.fbSaveCommunity(cObj);
+  }
+  closeCommunityModal();
+  renderCommunityList();
+  toast(`커뮤니티 "${name}" ${_editingCommunityId ? '수정' : '생성'}됨`, 'ok');
+}
+async function deleteCommunity(cid) {
+  if (!confirm('커뮤니티를 삭제하면 모든 내전 데이터도 삭제됩니다. 계속할까요?')) return;
+  if (_fbReady && window._fb.fbDeleteCommunity) {
+    await window._fb.fbDeleteCommunity(cid);
+  }
+  renderCommunityList();
+  toast('커뮤니티가 삭제되었습니다', 'ok');
+}
+
+// ─── 초대 링크 관리 ───
+let _currentInviteLink = '';
+async function openInviteManageModal() {
+  document.getElementById('invite-link-result').style.display = 'none';
+  document.getElementById('invite-link-val').textContent = '';
+
+  // 커뮤니티 셀렉트 채우기
+  const sel = document.getElementById('invite-community-select');
+  sel.innerHTML = '<option value="">커뮤니티 선택</option>';
+  if (_fbReady && window._fb.fbGetCommunities) {
+    const list = await window._fb.fbGetCommunities();
+    list.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.id; opt.textContent = c.name;
+      sel.appendChild(opt);
+    });
+  }
+
+  await renderInviteList();
+  document.getElementById('invite-manage-modal').style.display = 'flex';
+}
+
+async function generateInviteLink() {
+  const cid = document.getElementById('invite-community-select').value;
+  if (!cid) return toast('커뮤니티를 선택하세요', 'err');
+
+  const communities = _fbReady ? await window._fb.fbGetCommunities() : [];
+  const community   = communities.find(c => c.id === cid);
+  if (!community) return;
+
+  const code = 'inv_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+  const baseUrl = window.location.origin + window.location.pathname;
+  const link = `${baseUrl}?invite=${code}`;
+
+  const data = {
+    code, communityId: cid, communityName: community.name,
+    createdAt: Date.now(), used: false,
+  };
+
+  if (_fbReady && window._fb.fbCreateInviteCode) {
+    await window._fb.fbCreateInviteCode(code, data);
+  }
+
+  _currentInviteLink = link;
+  document.getElementById('invite-link-val').textContent = link;
+  document.getElementById('invite-link-result').style.display = 'block';
+  await renderInviteList();
+  toast('초대 링크가 생성되었습니다', 'ok');
+}
+
+function copyInviteLink() {
+  navigator.clipboard.writeText(_currentInviteLink || document.getElementById('invite-link-val').textContent)
+    .then(() => toast('링크가 복사되었습니다', 'ok'))
+    .catch(() => toast('복사 실패 — 수동으로 복사하세요', 'err'));
+}
+
+async function renderInviteList() {
+  const listEl = document.getElementById('invite-list');
+  if (!listEl) return;
+  if (!_fbReady || !window._fb.fbGetInviteCodes) {
+    listEl.innerHTML = '<div style="font-size:11px;color:var(--text-muted);">Firebase 미연결</div>';
+    return;
+  }
+  const codes = await window._fb.fbGetInviteCodes();
+  const entries = Object.values(codes).sort((a,b) => b.createdAt - a.createdAt).slice(0, 10);
+  listEl.innerHTML = '';
+  if (entries.length === 0) {
+    listEl.innerHTML = '<div style="font-size:11px;color:var(--text-muted);">생성된 링크가 없습니다</div>';
+    return;
+  }
+  entries.forEach(e => {
+    const div = document.createElement('div');
+    div.className = 'invite-card';
+    div.style.opacity = e.used ? '.5' : '1';
+    const baseUrl = window.location.origin + window.location.pathname;
+    div.innerHTML = `
+      <div style="min-width:0;flex:1;">
+        <div style="font-size:11px;color:var(--gold);font-family:'Rajdhani',sans-serif;margin-bottom:2px;">${e.communityName}</div>
+        <div style="font-size:10px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${baseUrl}?invite=${e.code}</div>
+      </div>
+      <span class="invite-status ${e.used ? 'used' : 'active'}" style="flex-shrink:0;">${e.used ? '사용됨' : '사용 가능'}</span>`;
+    listEl.appendChild(div);
+  });
+}
+
+// ─── 초대 링크 진입 처리 ───
+async function handleInviteParam() {
+  const params = new URLSearchParams(window.location.search);
+  const code   = params.get('invite');
+  if (!code) return false;
+
+  // 초대 화면 표시
+  showScreenRaw('screen-invite');
+
+  if (!_fbReady || !window._fb.fbGetInviteCode) {
+    document.getElementById('invite-err').textContent = 'Firebase가 연결되지 않았습니다';
+    return true;
+  }
+
+  const inviteData = await window._fb.fbGetInviteCode(code);
+  if (!inviteData) {
+    document.getElementById('invite-err').textContent = '유효하지 않은 초대 링크입니다';
+    return true;
+  }
+  if (inviteData.used) {
+    document.getElementById('invite-err').textContent = '이미 사용된 초대 링크입니다';
+    return true;
+  }
+
+  document.getElementById('invite-community-name').textContent = inviteData.communityName;
+  // 코드를 hidden으로 저장
+  document.getElementById('screen-invite').setAttribute('data-code', code);
+  document.getElementById('screen-invite').setAttribute('data-cid', inviteData.communityId);
+  document.getElementById('screen-invite').setAttribute('data-cname', inviteData.communityName);
+  return true;
+}
+
+async function registerInviteAdmin() {
+  const id   = document.getElementById('invite-id').value.trim();
+  const pw   = document.getElementById('invite-pw').value;
+  const pw2  = document.getElementById('invite-pw2').value;
+  const errEl = document.getElementById('invite-err');
+  const screen = document.getElementById('screen-invite');
+  const code  = screen.getAttribute('data-code');
+  const cid   = screen.getAttribute('data-cid');
+  const cname = screen.getAttribute('data-cname');
+
+  if (!id) return (errEl.textContent = '아이디를 입력하세요');
+  if (!pw || pw.length < 4) return (errEl.textContent = '비밀번호는 4자 이상이어야 합니다');
+  if (pw !== pw2) return (errEl.textContent = '비밀번호가 일치하지 않습니다');
+  if (!code || !cid) return (errEl.textContent = '유효하지 않은 초대 링크입니다');
+
+  errEl.textContent = '';
+
+  try {
+    // 중복 아이디 확인
+    if (_fbReady && window._fb.fbGet) {
+      const existing = await window._fb.fbGet('admin/' + id);
+      if (existing) return (errEl.textContent = '이미 사용 중인 아이디입니다');
+    }
+
+    // 계정 생성
+    const adminObj = { id, password: pw, communityId: cid, communityName: cname, createdAt: Date.now() };
+    if (_fbReady && window._fb.fbSaveAdmin) {
+      await window._fb.fbSaveAdmin(adminObj);
+    }
+
+    // 초대 코드 폐기
+    if (_fbReady && window._fb.fbUseInviteCode) {
+      await window._fb.fbUseInviteCode(code);
+    }
+
+    // URL에서 invite 파라미터 제거
+    window.history.replaceState({}, '', window.location.pathname);
+
+    toast(`관리자 계정 "${id}" 생성 완료! 로그인하세요`, 'ok');
+    showScreenRaw('screen-community');
+    renderCommunityList();
+  } catch(e) {
+    errEl.textContent = '오류가 발생했습니다: ' + (e.message || e);
+  }
+}
+
+
+// ─── 마스터 로그인 ───
+function openMasterLoginModal() {
+  document.getElementById('master-login-id').value = '';
+  document.getElementById('master-login-pw').value = '';
+  document.getElementById('master-login-err').textContent = '';
+  document.getElementById('master-login-modal').style.display = 'flex';
+  setTimeout(() => document.getElementById('master-login-id').focus(), 100);
+}
+
+async function doMasterLogin() {
+  const id    = document.getElementById('master-login-id').value.trim();
+  const pw    = document.getElementById('master-login-pw').value;
+  const errEl = document.getElementById('master-login-err');
+  const btn   = document.getElementById('btn-do-master-login');
+  if (!id || !pw) { errEl.innerHTML = '<span>⚠</span> 아이디와 비밀번호를 입력하세요'; return; }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span style="opacity:.6">확인 중...</span>';
+  errEl.textContent = '';
+
+  try {
+    let ok = false;
+    if (_fbReady && window._fb.fbGetSuperAdmin) {
+      const sa = await window._fb.fbGetSuperAdmin();
+      if (sa && sa.id === id && sa.password === pw) {
+        ok = true; isMaster = true; currentAdminData = null;
+      }
+    } else {
+      // 폴백: superadmin 없으면 거부
+      ok = false;
+    }
+
+    if (ok) {
+      isAdmin = true;
+      sessionStorage.setItem('injeong_admin', '__master__');
+      sessionStorage.setItem('injeong_is_master', '1');
+      document.getElementById('master-login-modal').style.display = 'none';
+      updateRoleUI();
+      renderCommunityList();
+      toast('마스터 관리자로 로그인되었습니다', 'ok');
+    } else {
+      errEl.innerHTML = '<span>⚠</span> 아이디 또는 비밀번호가 올바르지 않습니다';
+    }
+  } catch(e) {
+    errEl.innerHTML = '<span>⚠</span> 오류: ' + (e.message || e);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '로그인';
+  }
+}
+
+// ─── 역할 UI만 업데이트 (렌더 없이) ───
+function updateRoleUI() {
+  const badge = document.getElementById('role-badge');
+  const label = document.getElementById('role-label');
+  const btnLogout      = document.getElementById('btn-auth');
+  const btnMasterLogin = document.getElementById('btn-master-login');
+  const btnAdminLogin  = document.getElementById('btn-admin-login');
+
+  if (isMaster) {
+    if (badge) badge.className = 'role-badge master';
+    if (label) label.textContent = '마스터 관리자';
+  } else if (isAdmin) {
+    if (badge) badge.className = 'role-badge admin';
+    if (label) label.textContent = '관리자';
+  } else {
+    if (badge) badge.className = 'role-badge user';
+    if (label) label.textContent = '일반 유저';
+  }
+
+  // 버튼 표시 제어
+  const loggedIn = isAdmin || isMaster;
+  if (btnLogout)      { btnLogout.style.display      = loggedIn ? '' : 'none'; }
+  if (btnMasterLogin) { btnMasterLogin.style.display = loggedIn ? 'none' : ''; }
+  if (btnAdminLogin)  { btnAdminLogin.style.display  = loggedIn ? 'none' : ''; }
+
+  // admin-only 요소
+  document.querySelectorAll('.admin-only').forEach(el => {
+    el.style.display = (isAdmin || isMaster) ? '' : 'none';
+  });
+  // master-only 요소
+  document.querySelectorAll('.master-only').forEach(el => {
+    el.style.display = isMaster ? '' : 'none';
+  });
+
+  // 커뮤니티 화면 마스터 전용 버튼
+  const btnCreate = document.getElementById('btn-community-create');
+  const btnInvite = document.getElementById('btn-invite-manage');
+  if (btnCreate) btnCreate.style.display = isMaster ? '' : 'none';
+  if (btnInvite) btnInvite.style.display = isMaster ? '' : 'none';
+
+  // 내전 목록 새 내전 생성 버튼 (관리자 이상)
+  const btnListNew = document.getElementById('btn-list-new');
+  const btnNewMatch = document.getElementById('btn-new-match');
+  if (btnListNew)  btnListNew.style.display  = (isAdmin || isMaster) ? '' : 'none';
+  if (btnNewMatch) btnNewMatch.style.display = (isAdmin || isMaster) ? '' : 'none';
+}
+
+// ─── 마스터 인증 (doLogin 확장) ───
+let currentAdminData = null; // { id, password, communityId, communityName }
+
+// checkAdminCredentials 를 마스터도 확인하도록 확장
+const _origCheckAdmin = checkAdminCredentials;
+async function checkAdminCredentials(id, pw) {
+  // 먼저 superadmin 확인
+  if (_fbReady && window._fb.fbGetSuperAdmin) {
+    try {
+      const sa = await window._fb.fbGetSuperAdmin();
+      if (sa && sa.id === id && sa.password === pw) {
+        isMaster = true;
+        currentAdminData = null;
+        return true;
+      }
+    } catch(e) {}
+  }
+  // 일반 관리자 확인
+  isMaster = false;
+  if (_fbReady && window._fb.fbGet) {
+    try {
+      const data = await window._fb.fbGet('admin/' + id);
+      if (data && data.password === pw) {
+        currentAdminData = data;
+        window._currentCommunityId = data.communityId;
+        return true;
+      }
+      return false;
+    } catch(e) { return false; }
+  }
+  // 폴백
+  return id === 'lolketadmin' && pw === 'admin1234';
 }
 
 // ─────────────────────────────────────────
@@ -5275,12 +6031,22 @@ function proceedToStage1(snapshot) {
 // ─────────────────────────────────────────
 // INIT
 // ─────────────────────────────────────────
-window.addEventListener('load', () => {
+window.addEventListener('load', async () => {
   updateConditions();
+
+  // 초대 링크 파라미터 처리
+  const isInvite = await handleInviteParam().catch(() => false);
+  if (isInvite) return; // 초대 화면이면 일반 초기화 건너뜀
+
   applyRole(false);
-  // 세션 복원 (새로고침 후에도 로그인 유지)
-  if (sessionStorage.getItem('injeong_admin')) applyRole(true);
-  renderMatchList();
+  if (sessionStorage.getItem('injeong_admin')) {
+    const savedCid = sessionStorage.getItem('injeong_community');
+    if (savedCid) window._currentCommunityId = savedCid;
+    if (sessionStorage.getItem('injeong_is_master') === '1') isMaster = true;
+    isAdmin = true;
+    updateRoleUI();
+  }
+  renderCommunityList();
   // Firebase 미설정 안내
   setTimeout(() => {
     if (!_fbReady) {
