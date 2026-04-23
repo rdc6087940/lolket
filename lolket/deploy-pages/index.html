@@ -1353,6 +1353,40 @@ body {
 .uv-member-row { display: flex; align-items: center; gap: 8px; padding: 5px .75rem; font-size: 12px; color: var(--text-muted); border-bottom: 1px solid rgba(30,45,64,.4); }
 .uv-member-row:last-child { border-bottom: none; }
 .readonly-banner { display: flex; align-items: center; gap: 8px; background: rgba(91,100,116,.1); border: 1px solid var(--border-subtle); border-radius: 3px; padding: 8px 14px; margin-bottom: 1.25rem; font-family: 'Rajdhani', sans-serif; font-size: 11px; color: var(--text-muted); letter-spacing: 1px; }
+
+/* ─── 매치 선택 모달 ─── */
+.match-pick-list {
+  display: flex; flex-direction: column; gap: 6px;
+  max-height: 400px; overflow-y: auto; padding-right: 2px;
+}
+.match-pick-list::-webkit-scrollbar { width: 4px; }
+.match-pick-list::-webkit-scrollbar-thumb { background: var(--border-subtle); border-radius: 2px; }
+.match-pick-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px;
+  background: var(--bg-dark);
+  border: 1px solid var(--border-subtle);
+  border-radius: 3px; cursor: pointer; transition: all .15s;
+  position: relative;
+}
+.match-pick-item:hover { border-color: var(--gold); background: rgba(200,170,110,0.05); }
+.match-pick-item.common { border-color: rgba(10,200,185,0.4); background: rgba(10,200,185,0.04); }
+.match-pick-item.common::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+  width: 3px; background: var(--blue-bright); border-radius: 3px 0 0 3px;
+}
+.match-pick-meta { flex: 1; min-width: 0; }
+.match-pick-id { font-family:'Rajdhani',sans-serif; font-size:13px; font-weight:700; color:var(--text-white); margin-bottom:3px; }
+.match-pick-time { font-family:'Rajdhani',sans-serif; font-size:12px; color:var(--gold); font-weight:600; margin-bottom:2px; }
+.match-pick-info { font-size:11px; color:var(--text-muted); font-family:'Rajdhani',sans-serif; display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+.match-pick-sep { color: var(--border-subtle); }
+.match-pick-right { display:flex; flex-direction:column; align-items:flex-end; gap:4px; flex-shrink:0; }
+.match-pick-badge { font-size:10px; font-weight:700; letter-spacing:1px; padding:2px 8px; border-radius:2px; font-family:'Rajdhani',sans-serif; white-space:nowrap; }
+.match-pick-badge.common { background:rgba(10,200,185,0.15); color:var(--blue-bright); border:1px solid rgba(10,200,185,0.35); }
+.match-pick-badge.solo   { background:rgba(91,100,116,0.15); color:var(--text-muted);  border:1px solid var(--border-subtle); }
+.match-pick-winner { font-size:10px; font-family:'Rajdhani',sans-serif; font-weight:700; letter-spacing:.5px; }
+.match-pick-winner.blue { color:#5BBCE4; }
+.match-pick-winner.red  { color:#E45B5B; }
 </style>
 <!-- Firebase SDK -->
 <script type="module">
@@ -2492,6 +2526,7 @@ function addMember() {
     mainLane: selectedMainLane,
     subLane: selectedSubLane,
     level: searchResult.level,
+    puuid: searchResult.puuid || null,
     present: false,
   };
   members.push(member);
@@ -3977,7 +4012,7 @@ async function autoFindMatch(id) {
   renderResultMatches();
 
   try {
-    const url = `${RIOT_PROXY_URL}/recent-custom?puuids=${puuids.join(',')}&region=KR`;
+    const url = `${RIOT_PROXY_URL}/recent-custom?puuids=${puuids.join(',')}&region=KR&minPlayers=10`;
     const resp = await fetch(url);
     const data = await resp.json();
 
@@ -4016,55 +4051,115 @@ async function autoFindMatch(id) {
 // 매치 선택 모달 표시
 async function showMatchPickerModal(matchIds, counts, totalMembers) {
   const list = document.getElementById('match-pick-list');
-  list.innerHTML = '<div style="text-align:center;padding:1rem;color:var(--text-muted);font-size:12px;">게임 정보 조회 중...</div>';
+  list.style.cssText = 'display:flex;flex-direction:column;gap:6px;max-height:400px;overflow-y:auto;';
+  list.innerHTML = '<div style="text-align:center;padding:1rem;color:#5B6474;font-size:12px;font-family:Rajdhani,sans-serif;">게임 정보 조회 중...</div>';
   document.getElementById('match-picker-modal').style.display = 'flex';
 
-  // 각 matchId의 상세 정보 병렬 조회
   const details = await Promise.all(matchIds.map(async mid => {
     try {
       const resp = await fetch(`${RIOT_PROXY_URL}/match?code=${encodeURIComponent(mid)}&region=KR`);
       if (!resp.ok) return { matchId: mid, error: true };
-      const data = await resp.json();
-      return { matchId: mid, data };
-    } catch(e) {
-      return { matchId: mid, error: true };
-    }
+      return { matchId: mid, data: await resp.json() };
+    } catch(e) { return { matchId: mid, error: true }; }
   }));
 
   list.innerHTML = '';
   details.forEach(({ matchId, data, error }) => {
+    // 공통 감지: 2명 이상 겹치면 공통
     const commonCount = counts[matchId] || 0;
-    const isCommon    = commonCount >= Math.min(3, totalMembers * 0.3); // 30% 이상 공통
-    const item        = document.createElement('div');
-    item.className    = `match-pick-item${isCommon ? ' common' : ''}`;
+    const isCommon    = commonCount >= 2;
 
-    let infoText = matchId;
-    let timeText = '';
-    let durationText = '';
+    let timeText = '', durText = '', winnerText = '', winnerColor = '#E8E0D0';
 
     if (!error && data && data.info) {
       const info = data.info;
-      const ts   = info.gameCreation;
-      if (ts) {
-        const d = new Date(ts);
-        const pad = n => String(n).padStart(2,'0');
-        timeText = `${d.getMonth()+1}/${d.getDate()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+      if (info.gameCreation) {
+        const d = new Date(info.gameCreation);
+        const p = n => String(n).padStart(2,'0');
+        timeText = `${d.getFullYear()}.${p(d.getMonth()+1)}.${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
       }
       const dur = info.gameDuration || 0;
-      durationText = `${Math.floor(dur/60)}분 ${dur%60}초`;
-      const participants = info.participants || [];
-      const winner = participants.find(p => p.win)?.teamId === 100 ? '블루팀 승' : '레드팀 승';
-      infoText = `${timeText}  ·  ${durationText}  ·  ${winner}`;
+      durText = `${Math.floor(dur/60)}분 ${String(dur%60).padStart(2,'0')}초`;
+
+      if (info.teams) {
+        const wt = info.teams.find(t => t.win === true);
+        if (wt) {
+          const blue = wt.teamId === 100;
+          winnerText  = blue ? '블루팀 승' : '레드팀 승';
+          winnerColor = blue ? '#5BBCE4' : '#E45B5B';
+        }
+      }
     }
 
-    item.innerHTML = `
-      <div class="match-pick-meta">
-        <div class="match-pick-id">${matchId}</div>
-        <div class="match-pick-info">${infoText}</div>
-      </div>
-      <div class="match-pick-badge ${isCommon ? 'common' : 'solo'}">
-        ${isCommon ? `공통 ${commonCount}명` : '개인'}
-      </div>`;
+    const item = document.createElement('div');
+    item.style.cssText = `
+      display:flex; align-items:center; gap:12px;
+      padding:11px 14px;
+      background:#0A1628;
+      border:1px solid ${isCommon ? 'rgba(10,200,185,0.5)' : '#1E2D40'};
+      border-left:${isCommon ? '3px solid #0AC8B9' : '1px solid #1E2D40'};
+      border-radius:3px; cursor:pointer; transition:border-color .15s;
+      ${isCommon ? 'background:rgba(10,200,185,0.04);' : ''}
+    `;
+    item.onmouseover = () => { item.style.borderColor = '#C8AA6E'; };
+    item.onmouseout  = () => { item.style.borderColor = isCommon ? 'rgba(10,200,185,0.5)' : '#1E2D40'; };
+
+    // 메타 영역
+    const meta = document.createElement('div');
+    meta.style.cssText = 'flex:1;min-width:0;';
+
+    // Match ID
+    const idEl = document.createElement('div');
+    idEl.style.cssText = "font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;color:#E8E0D0;margin-bottom:4px;";
+    idEl.textContent = matchId;
+    meta.appendChild(idEl);
+
+    if (timeText) {
+      const timeEl = document.createElement('div');
+      timeEl.style.cssText = "font-family:'Rajdhani',sans-serif;font-size:12px;color:#C8AA6E;font-weight:600;margin-bottom:3px;";
+      timeEl.textContent = timeText;
+      meta.appendChild(timeEl);
+    }
+
+    const infoRow = document.createElement('div');
+    infoRow.style.cssText = "display:flex;gap:8px;align-items:center;flex-wrap:wrap;";
+
+    if (durText) {
+      const d = document.createElement('span');
+      d.style.cssText = "font-family:'Rajdhani',sans-serif;font-size:11px;color:#5B6474;";
+      d.textContent = durText;
+      infoRow.appendChild(d);
+    }
+    if (winnerText) {
+      const sep = document.createElement('span');
+      sep.style.cssText = 'color:#1E2D40;font-size:11px;';
+      sep.textContent = '·';
+      infoRow.appendChild(sep);
+      const w = document.createElement('span');
+      w.style.cssText = `font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;color:${winnerColor};`;
+      w.textContent = winnerText;
+      infoRow.appendChild(w);
+    }
+    if (error) {
+      const e = document.createElement('span');
+      e.style.cssText = 'font-size:11px;color:#E05050;font-family:Rajdhani,sans-serif;';
+      e.textContent = '조회 실패';
+      infoRow.appendChild(e);
+    }
+    meta.appendChild(infoRow);
+
+    // 뱃지 영역
+    const badge = document.createElement('div');
+    if (isCommon) {
+      badge.style.cssText = "flex-shrink:0;font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;padding:3px 9px;border-radius:2px;background:rgba(10,200,185,0.15);color:#0AC8B9;border:1px solid rgba(10,200,185,0.35);white-space:nowrap;";
+      badge.textContent = `공통 ${commonCount}명`;
+    } else {
+      badge.style.cssText = "flex-shrink:0;font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;padding:3px 9px;border-radius:2px;background:rgba(91,100,116,0.15);color:#5B6474;border:1px solid #1E2D40;white-space:nowrap;";
+      badge.textContent = '개인';
+    }
+
+    item.appendChild(meta);
+    item.appendChild(badge);
 
     item.onclick = () => {
       const rm = resultMatches.find(m => m.id === _matchPickerTargetId);
