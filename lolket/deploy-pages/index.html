@@ -116,6 +116,25 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
 .lane-pill.sub{background:rgba(220,160,30,.12);border-color:rgba(220,160,30,.4);color:#D4A82A;}
 .lane-pill.sub img{filter:none;opacity:.85;}
 .lane-pill.none{background:transparent;border-color:var(--border-subtle);color:var(--text-muted);}
+
+.rank-sidebar{display:flex;flex-direction:column;background:var(--bg-panel);border:1px solid var(--border-subtle);border-radius:4px;overflow:hidden;}
+.rank-sidebar-header{padding:.65rem 1rem;border-bottom:1px solid var(--border-subtle);display:flex;align-items:center;justify-content:space-between;background:rgba(200,170,110,.04);}
+.rank-sidebar-title{font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;color:var(--gold);display:flex;align-items:center;gap:6px;}
+.rank-table{width:100%;border-collapse:collapse;font-family:'Rajdhani',sans-serif;}
+.rank-table th{font-size:9px;font-weight:700;letter-spacing:1px;color:var(--text-muted);padding:5px 8px;text-align:center;border-bottom:1px solid var(--border-subtle);white-space:nowrap;}
+.rank-table th:nth-child(2){text-align:left;}
+.rank-table td{font-size:11px;padding:6px 8px;text-align:center;border-bottom:1px solid rgba(30,45,64,.4);color:var(--text-white);white-space:nowrap;}
+.rank-table td:nth-child(2){text-align:left;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.rank-table tr:last-child td{border-bottom:none;}
+.rank-table tr:hover td{background:rgba(200,170,110,.04);}
+.rank-num{font-weight:700;color:var(--text-muted);font-size:11px;}
+.rank-num.top3{color:var(--gold);}
+.rank-wr{font-weight:700;}
+.rank-wr.high{color:var(--blue-bright);}
+.rank-wr.low{color:#E05050;}
+.rank-more-btn{width:100%;padding:7px;border:none;background:transparent;color:var(--text-muted);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;border-top:1px solid var(--border-subtle);transition:all .15s;}
+.rank-more-btn:hover{background:rgba(200,170,110,.05);color:var(--gold);}
+.rank-empty{padding:1.5rem 1rem;text-align:center;font-size:11px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;}
 </style> <script type="module">
  
  
@@ -274,7 +293,7 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
 </script> </head>
 <body> <header class="header"> <div class="header-inner"> <div style="display:flex;align-items:center;gap:14px;"> <div class="logo" style="cursor:pointer;" onclick="goToCommunity()"> <div class="logo-diamond"></div>
  롤켓배송
- </div><span style="font-family:'Rajdhani',sans-serif;font-size:9px;color:var(--text-muted);letter-spacing:1px;opacity:.7;margin-left:2px;" id="app-version">v1.1.003</span> <button class="btn-back" id="btn-back" onclick="goToList()" style="display:none;">← 목록</button> <div class="community-indicator" id="community-indicator"> <div class="community-indicator-dot"></div> <span id="community-indicator-name"></span> </div> </div> <div class="stage-indicator hidden" id="stage-indicator"> <div class="stage-pip" id="pip-1"><div class="stage-pip-dot"></div>1. 내전 대기</div> <div class="stage-pip" id="pip-2"><div class="stage-pip-dot"></div>2. 종류 선택</div> <div class="stage-pip" id="pip-3"><div class="stage-pip-dot"></div>3. 팀 짜기</div> <div class="stage-pip" id="pip-4"><div class="stage-pip-dot"></div>4. 대진표</div> <div class="stage-pip" id="pip-5"><div class="stage-pip-dot"></div>5. 결과</div> </div> <div class="header-actions"> <div class="role-badge user" id="role-badge"><div class="role-dot"></div><span id="role-label">일반 유저</span></div> <button class="btn-auth" id="btn-auth" onclick="openLoginModal()" style="display:none;">로그아웃</button> <button class="btn-auth" id="btn-master-login" onclick="openMasterLoginModal()" style="font-size:10px;padding:5px 10px;border-color:rgba(157,72,224,.4);color:#B97EEA;background:rgba(157,72,224,.07);">마스터</button> <button class="btn-auth" id="btn-admin-login" onclick="openLoginModal()">관리자 로그인</button> <button class="btn-secondary admin-only" id="btn-new-match" onclick="openNewMatchFlow()" style="display:none;">+ 새 내전 생성</button> </div> </div>
+ </div><span style="font-family:'Rajdhani',sans-serif;font-size:9px;color:var(--text-muted);letter-spacing:1px;opacity:.7;margin-left:2px;" id="app-version">v1.1.004</span> <button class="btn-back" id="btn-back" onclick="goToList()" style="display:none;">← 목록</button> <div class="community-indicator" id="community-indicator"> <div class="community-indicator-dot"></div> <span id="community-indicator-name"></span> </div> </div> <div class="stage-indicator hidden" id="stage-indicator"> <div class="stage-pip" id="pip-1"><div class="stage-pip-dot"></div>1. 내전 대기</div> <div class="stage-pip" id="pip-2"><div class="stage-pip-dot"></div>2. 종류 선택</div> <div class="stage-pip" id="pip-3"><div class="stage-pip-dot"></div>3. 팀 짜기</div> <div class="stage-pip" id="pip-4"><div class="stage-pip-dot"></div>4. 대진표</div> <div class="stage-pip" id="pip-5"><div class="stage-pip-dot"></div>5. 결과</div> </div> <div class="header-actions"> <div class="role-badge user" id="role-badge"><div class="role-dot"></div><span id="role-label">일반 유저</span></div> <button class="btn-auth" id="btn-auth" onclick="openLoginModal()" style="display:none;">로그아웃</button> <button class="btn-auth" id="btn-master-login" onclick="openMasterLoginModal()" style="font-size:10px;padding:5px 10px;border-color:rgba(157,72,224,.4);color:#B97EEA;background:rgba(157,72,224,.07);">마스터</button> <button class="btn-auth" id="btn-admin-login" onclick="openLoginModal()">관리자 로그인</button> <button class="btn-secondary admin-only" id="btn-new-match" onclick="openNewMatchFlow()" style="display:none;">+ 새 내전 생성</button> </div> </div>
 </header> <div id="screen-community" class="screen active"> <div style="display:grid;grid-template-columns:220px 1fr;gap:1.25rem;align-items:start;width:100%;max-width:1400px;margin:0 auto;padding:1.5rem 2rem;box-sizing:border-box;"> <div class="notice-sidebar" style="position:sticky;top:72px;width:220px;box-sizing:border-box;"> <div class="notice-sidebar-header"> <span class="notice-sidebar-title"><span style="color:var(--blue-bright);">●</span> 공지사항</span> <button id="btn-notice-write" onclick="openNoticeEditor()" style="display:none;padding:3px 8px;border:1px solid rgba(200,170,110,.4);background:rgba(200,170,110,.08);color:var(--gold);border-radius:2px;font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all .15s;">+ 작성</button> </div> <div class="notice-list" id="notice-list"><div class="notice-empty">공지사항이 없습니다</div></div> </div> <div style="min-width:0;overflow:hidden;"> <div class="community-wrap"> <div class="community-topbar"> <div class="community-heading">커뮤니티</div> <div style="display:flex;gap:8px;align-items:center;"> <div style="position:relative;"> <input id="community-search" type="text" placeholder="커뮤니티 검색..."
  oninput="filterCommunityList()"
  style="background:var(--bg-dark);border:1px solid var(--border-subtle);border-radius:3px;
@@ -291,7 +310,7 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
  커뮤니티를 선택하고 초대 링크를 생성하세요.<br>
  링크는 1회용이며 계정 생성 후 자동 폐기됩니다.
  </div> <div style="display:flex;flex-direction:column;gap:1rem;margin-bottom:1rem;"> <div style="display:flex;flex-direction:column;gap:6px;"> <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;text-transform:uppercase;">연결할 커뮤니티</label> <select class="form-input" id="invite-community-select" style="cursor:pointer;"> <option value="">커뮤니티 선택</option> </select> </div> </div> <button class="btn-primary" style="width:100%;margin-bottom:1rem;" onclick="generateInviteLink()">초대 링크 생성</button> <div id="invite-link-result" style="display:none;"> <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;font-family:'Rajdhani',sans-serif;letter-spacing:1px;">생성된 링크 (클릭해서 복사)</div> <div class="invite-card"> <div class="invite-code-val" id="invite-link-val" onclick="copyInviteLink()" style="cursor:pointer;" title="클릭해서 복사"></div> <button class="btn-xs enter" onclick="copyInviteLink()">복사</button> </div> <div style="font-size:11px;color:var(--text-muted);margin-top:6px;">⚠ 이 링크는 1회만 사용 가능합니다.</div> </div> <div style="margin-top:1rem;"> <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;font-family:'Rajdhani',sans-serif;letter-spacing:1px;">기존 초대 링크</div> <div id="invite-list" style="display:flex;flex-direction:column;gap:4px;max-height:160px;overflow-y:auto;"></div> </div> <div class="modal-actions"> <button class="btn-secondary" onclick="document.getElementById('invite-manage-modal').style.display='none'">닫기</button> </div> </div>
-</div> <div id="screen-0" class="screen"> <div class="list-wrap"> <div class="list-topbar"> <div class="list-heading">내전 목록</div> <button class="btn-primary admin-only" onclick="openNewMatchFlow()" id="btn-list-new" style="display:none;">+ 새 내전 생성</button> </div> <div id="list-grid" class="list-grid"></div> <div id="list-empty" class="list-empty" style="display:none;"> <div class="list-empty-hex">◇</div> <div style="font-size:14px;">생성된 내전이 없습니다</div> <button class="btn-primary admin-only" onclick="openNewMatchFlow()" style="display:none;">첫 내전 생성하기</button> </div> </div>
+</div> <div id="screen-0" class="screen"> <div style="display:flex;gap:1.25rem;align-items:flex-start;max-width:1400px;margin:0 auto;padding:1.5rem 2rem;"> <div class="rank-sidebar" style="width:300px;flex-shrink:0;position:sticky;top:72px;"> <div class="rank-sidebar-header"> <span class="rank-sidebar-title"><span style="color:var(--gold);">🏆</span> 승률 랭킹</span> </div> <div id="rank-table-wrap"><div class="rank-empty">내전 기록이 없습니다</div></div> <button class="rank-more-btn" id="rank-more-btn" onclick="openRankModal()" style="display:none;">더보기 ▶</button> </div> <div style="flex:1;min-width:0;"> <div class="list-topbar" style="margin-bottom:1.25rem;"> <div class="list-heading">내전 목록</div> <button class="btn-primary admin-only" onclick="openNewMatchFlow()" id="btn-list-new" style="display:none;">+ 새 내전 생성</button> </div> <div id="list-grid" class="list-grid"></div> <div id="list-empty" class="list-empty" style="display:none;"> <div class="list-empty-hex">◇</div> <div style="font-size:14px;">생성된 내전이 없습니다</div> <button class="btn-primary admin-only" onclick="openNewMatchFlow()" style="display:none;">첫 내전 생성하기</button> </div> </div> </div>
 </div> <div id="screen-1" class="screen">
 <div class="main"> <div class="match-bar section-full"> <div class="match-bar-field"> <div class="match-bar-label">내전명</div> <div class="match-bar-value" id="bar-name">—</div> </div> <div class="match-bar-divider"></div> <div class="match-bar-field" style="flex-direction:row;align-items:center;gap:10px;"> <div> <div class="match-bar-label">시작 시간</div> <div class="match-bar-value" id="bar-time">—</div> </div> <button id="btn-edit-time" onclick="openEditTimeModal()" style="display:none;padding:3px 9px;background:transparent;border:1px solid var(--border-subtle);border-radius:2px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all .15s;white-space:nowrap;" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'" onmouseout="this.style.borderColor='var(--border-subtle)';this.style.color='var(--text-muted)'">수정</button> </div> <div class="match-bar-divider"></div> <div class="match-bar-field"> <div class="match-bar-label">상태</div> <div class="status-badge" id="bar-status">내전 모집</div> </div> <div class="match-bar-divider"></div> <div class="match-bar-field"> <div class="match-bar-label">진행 관리자</div> <div class="match-bar-value" id="bar-admin">—</div> </div> <div class="match-bar-spacer"></div> <div class="progress-block"> <div class="progress-label"> <span>출석 현황</span> <span id="prog-text">0 / 0</span> </div> <div class="progress-bar-bg"> <div class="progress-bar-fill" id="prog-fill" style="width:0%"></div> </div> </div> </div> <div class="panel" style="display:flex;flex-direction:column;"> <div class="panel-header"> <div class="panel-title"> <div class="panel-title-dot"></div>
  내전 대기 멤버
@@ -488,6 +507,25 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
     </div>
   </div>
 </div>
+
+<div class="modal-overlay" id="rank-modal" style="display:none;" onclick="if(event.target===this)document.getElementById('rank-modal').style.display='none'">
+  <div class="modal" style="max-width:600px;max-height:85vh;display:flex;flex-direction:column;">
+    <div class="modal-title" style="display:flex;align-items:center;justify-content:space-between;">
+      <span>🏆 승률 랭킹 전체</span>
+      <button onclick="document.getElementById('rank-modal').style.display='none'" style="background:transparent;border:none;color:var(--text-muted);cursor:pointer;font-size:18px;">✕</button>
+    </div>
+    <div style="overflow-y:auto;flex:1;">
+      <table class="rank-table" style="width:100%;">
+        <thead>
+          <tr>
+            <th>순위</th><th>닉네임</th><th>승</th><th>패</th><th>승률</th><th>마지막 내전</th>
+          </tr>
+        </thead>
+        <tbody id="rank-modal-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
 <div class="toast-area" id="toast-area"></div> <script>
 let _pwSalt = 'lolket_v1'; // 기본값, Worker에서 덮어씀
 (async function() {
@@ -597,7 +635,7 @@ if (!time) return toast('시작 시간을 설정하세요', 'err');
 if (new Date(time) <= new Date()) return toast('시작 시간은 현재 시간 이후여야 합니다', 'err');
 members=[]; matchType=null; teams=[]; bracketRounds=[]; extraMatches=[]; resultMatches=[];
 nextTeamId=1; _0xB2=1; _0xB1=1;
-match={id: 'match_'+Date.now(), name, time, admin: admin || '—', status: '내전 모집'};
+match={id: 'match_'+Date.now(), name, time, admin: admin || '—', status: '내전 모집', communityId: window._currentCommunityId || 'default', communityName: (window._currentCommunity && window._currentCommunity.name) || ''};
 closeCreateModal();
 saveCurrentMatch();
 renderMatchList();
@@ -3048,7 +3086,9 @@ el.style.display = canCreateMatch ? '' : 'none';
 if (_fbReady && window._fb.fbSubscribeAll) {
 window._fb.fbSubscribeAll(list => {
 _listCache = list;
-if (currentScreen === 'screen-0') renderMatchList();
+if (currentScreen === 'screen-0') {
+  renderMatchList();
+}
 if (match && match.id) {
 const remote = list.find(m => m.id === match.id);
 if (remote && remote._version > (_localVersion || 0)) _applyRemoteUpdate(remote);
@@ -3973,7 +4013,142 @@ function _subLaneText(subLane) {
   }
   return LANE_KO[subLane] || subLane.toUpperCase();
 }
-const APP_VERSION='v1.1.003';
+
+// ═══════════════════════════════════════════
+// RANK — 커뮤니티 승률 랭킹
+// ═══════════════════════════════════════════
+let _rankData = []; // [{name, tag, win, lose, lastDate}]
+
+function _buildRankData(matchList) {
+  const stats = {};
+  const src = matchList || _listCache || [];
+  src.forEach(function(snap) {
+    if (!snap || snap.status !== '내전 종료') return;
+
+    const results = snap._resultMatches || [];
+    const teams   = snap._teams || snap.teams || [];
+    const members  = snap._members || snap.members || [];
+    if (!results.length) return;
+    // 팀이 없으면 results에서 직접 추출
+    const allTeams = teams.length ? teams : (function() {
+      const tmap = {};
+      results.forEach(function(rm) {
+        if (rm.teamA && rm.teamA.id) tmap[rm.teamA.id] = rm.teamA;
+        if (rm.teamB && rm.teamB.id) tmap[rm.teamB.id] = rm.teamB;
+      });
+      return Object.values(tmap);
+    })();
+    if (!allTeams.length) return;
+
+    // 팀별 승패 집계
+    const teamWins = {};
+    const teamLose = {};
+    results.forEach(function(rm) {
+      if (!rm.winner) return;
+      const wid = rm.winner === 'a' ? (rm.teamA && rm.teamA.id) : (rm.teamB && rm.teamB.id);
+      const lid = rm.winner === 'a' ? (rm.teamB && rm.teamB.id) : (rm.teamA && rm.teamA.id);
+      if (wid) teamWins[wid] = (teamWins[wid] || 0) + 1;
+      if (lid) teamLose[lid] = (teamLose[lid] || 0) + 1;
+    });
+
+    // 날짜 파싱 (startTime 또는 time 필드)
+    const _rawTime = snap.startTime || snap.time || null;
+    const dt = _rawTime ? new Date(_rawTime) : null;
+    const dateStr = (dt && !isNaN(dt)) ? (dt.getFullYear() + '.' +
+      String(dt.getMonth()+1).padStart(2,'0') + '.' +
+      String(dt.getDate()).padStart(2,'0')) : '';
+
+    // 팀 멤버를 개인 통계로 변환
+    allTeams.forEach(function(t) {
+      const tid = t.id;
+      const w = teamWins[tid] || 0;
+      const l = teamLose[tid] || 0;
+      if (w === 0 && l === 0) return;
+
+      // 팀 멤버 찾기: _teams.members → resultMatches teamA/teamB.members → _members 전체 fallback
+      let tMembers = t.members || [];
+      if (!tMembers.length) {
+        results.forEach(function(rm) {
+          if (rm.teamA && rm.teamA.id === tid && rm.teamA.members) tMembers = rm.teamA.members;
+          if (rm.teamB && rm.teamB.id === tid && rm.teamB.members) tMembers = rm.teamB.members;
+        });
+      }
+      if (!tMembers.length) {
+        // 모든 멤버를 해당 팀에 매핑 (팀원 정보 없는 경우 fallback)
+        tMembers = members.filter(function(mb) {
+          return teams.some(function(tt) { return tt.id === tid && (tt.captainId === mb.id); });
+        });
+      }
+
+      tMembers.forEach(function(mb) {
+        if (!mb || !mb.name) return;
+        const key = mb.name + '#' + (mb.tag || '');
+        if (!stats[key]) stats[key] = { name: mb.name, tag: mb.tag || '', win: 0, lose: 0, lastDate: '' };
+        stats[key].win  += w;
+        stats[key].lose += l;
+        if (!stats[key].lastDate || dateStr > stats[key].lastDate) {
+          stats[key].lastDate = dateStr;
+        }
+      });
+    });
+  });
+
+  // 정렬: 승률 내림차순 → 승수 내림차순
+  _rankData = Object.values(stats).sort(function(a, b) {
+    const wa = a.win + a.lose > 0 ? a.win / (a.win + a.lose) : 0;
+    const wb = b.win + b.lose > 0 ? b.win / (b.win + b.lose) : 0;
+    if (wb !== wa) return wb - wa;
+    return b.win - a.win;
+  });
+}
+
+function _rankRow(r, idx, showDate) {
+  const total = r.win + r.lose;
+  const wr    = total > 0 ? Math.round(r.win / total * 100) : 0;
+  const wrCls = wr >= 60 ? 'high' : wr < 40 ? 'low' : '';
+  const numCls= idx < 3 ? 'top3' : '';
+  const nick  = _escHtml(r.name) + '<span style="color:var(--text-muted);font-size:9px;">#' + _escHtml(r.tag) + '</span>';
+  let row = '<tr>' +
+    '<td><span class="rank-num ' + numCls + '">' + (idx+1) + '</span></td>' +
+    '<td>' + nick + '</td>' +
+    '<td style="color:var(--blue-bright);">' + r.win + '</td>' +
+    '<td style="color:#E05050;">' + r.lose + '</td>' +
+    '<td><span class="rank-wr ' + wrCls + '">' + wr + '%</span></td>';
+  if (showDate) row += '<td style="color:var(--text-muted);font-size:10px;">' + (r.lastDate || '-') + '</td>';
+  row += '</tr>';
+  return row;
+}
+
+function renderRankSidebar() {
+  _buildRankData();
+  const wrap    = document.getElementById('rank-table-wrap');
+  const moreBtn = document.getElementById('rank-more-btn');
+  if (!wrap) return;
+
+  if (!_rankData.length) {
+    wrap.innerHTML = '<div class="rank-empty">내전 기록이 없습니다</div>';
+    if (moreBtn) moreBtn.style.display = 'none';
+    return;
+  }
+
+  const top10 = _rankData.slice(0, 10);
+  wrap.innerHTML =
+    '<table class="rank-table">' +
+      '<thead><tr><th>순위</th><th>닉네임</th><th>승</th><th>패</th><th>승률</th></tr></thead>' +
+      '<tbody>' + top10.map(function(r, i) { return _rankRow(r, i, false); }).join('') + '</tbody>' +
+    '</table>';
+
+  if (moreBtn) moreBtn.style.display = _rankData.length > 10 ? '' : 'none';
+}
+
+function openRankModal() {
+  const tbody = document.getElementById('rank-modal-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = _rankData.map(function(r, i) { return _rankRow(r, i, true); }).join('');
+  document.getElementById('rank-modal').style.display = 'flex';
+}
+
+const APP_VERSION='v1.1.004';
 const DB_KEY='injeong_matches_v1'; 
 let _fbReady = false;
 let _listCache = []; 
@@ -4289,6 +4464,7 @@ if (status.includes('대기') && !status.includes('내전')) return 'pill-대기
 return 'pill-진행';
 }
 function renderMatchList() {
+renderRankSidebar();
 const list = dbLoad();
 const grid = document.getElementById('list-grid');
 const empty = document.getElementById('list-empty');
