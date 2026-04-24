@@ -15,14 +15,45 @@ export default {
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
     const url  = new URL(request.url);
     const path = url.pathname;
-    const key  = env.RIOT_API_KEY;
-
     if (path === '/riot.txt') {
       return new Response('e8781c6a-562d-45db-903d-d54ad00da76c', {
         status: 200, headers: { 'Content-Type': 'text/plain', ...CORS },
       });
     }
 
+    // 관리자 이메일 반환 (환경변수에서 로드)
+    if (path === '/contact-info') {
+      return new Response(JSON.stringify({ email: env.ADMIN_EMAIL || '' }), {
+        status: 200, headers: { 'Content-Type': 'application/json', ...CORS },
+      });
+    }
+
+    // 비밀번호 솔트 반환 (환경변수에서 로드)
+    if (path === '/auth-salt') {
+      return new Response(JSON.stringify({ salt: env.PW_SALT || '' }), {
+        status: 200, headers: { 'Content-Type': 'application/json', ...CORS },
+      });
+    }
+
+    // Firebase 설정 반환 (환경변수에서 로드)
+    if (path === '/firebase-config') {
+      const config = {
+        apiKey:            env.FB_API_KEY,
+        authDomain:        env.FB_AUTH_DOMAIN,
+        databaseURL:       env.FB_DATABASE_URL,
+        projectId:         env.FB_PROJECT_ID,
+        storageBucket:     env.FB_STORAGE_BUCKET,
+        messagingSenderId: env.FB_MESSAGING_SENDER_ID,
+        appId:             env.FB_APP_ID,
+      };
+      return new Response(JSON.stringify(config), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json', ...CORS },
+      });
+    }
+
+    // Riot API 키 필요한 엔드포인트
+    const key = env.RIOT_API_KEY;
     if (!key) return json({ error: 'RIOT_API_KEY 환경변수가 설정되지 않았습니다' }, 500);
 
     if (path === '/' || path === '')   return handleSummoner(url, key);
