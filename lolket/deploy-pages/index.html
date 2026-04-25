@@ -162,13 +162,14 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
  
  
  async function fbSet(matchId, data) {
- const r = ref(db, getMatchPath(matchId));
- 
- await set(r, { ...data, _updatedAt: Date.now() });
- return { committed: true };
+ const cid = window._currentCommunityId || 'default';
+ const path = matchId ? `communities/${cid}/matches/${matchId}` : null;
+ if (!path) throw new Error('matchId 필요');
+ return _workerWrite(path, { ...data, _updatedAt: Date.now() }, 'admin');
  }
  async function fbDelete(matchId) {
- return remove(ref(db, getMatchPath(matchId)));
+ const cid = window._currentCommunityId || 'default';
+ return _workerDelete(`communities/${cid}/matches/${matchId}`, 'admin');
  }
  
  function getMatchPath(matchId) {
@@ -201,26 +202,24 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
  return Object.values(raw).filter(c => c && c.id);
  }
  async function fbSaveCommunity(cObj) {
- 
- await set(ref(db, `communities_info/${cObj.id}`), cObj);
+ return _workerWrite(`communities_info/${cObj.id}`, cObj, 'master');
  }
  async function fbDeleteCommunity(cid) {
- 
  await Promise.all([
- remove(ref(db, `communities_info/${cid}`)),
- remove(ref(db, `communities/${cid}`)),
+ _workerDelete(`communities_info/${cid}`, 'master'),
+ _workerDelete(`communities/${cid}`, 'master'),
  ]);
  }
  
  async function fbCreateInviteCode(code, data) {
- await set(ref(db, `invite_codes/${code}`), data);
+ return _workerWrite(`invite_codes/${code}`, data, 'master');
  }
  async function fbGetInviteCode(code) {
  const snap = await get(ref(db, `invite_codes/${code}`));
  return snap.val();
  }
  async function fbUseInviteCode(code) {
- await set(ref(db, `invite_codes/${code}/used`), true);
+ return _workerWrite(`invite_codes/${code}/used`, true, 'public');
  }
  async function fbGetInviteCodes() {
  const snap = await get(ref(db, 'invite_codes'));
@@ -228,7 +227,7 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
  }
  
  async function fbSaveAdmin(adminObj) {
- await set(ref(db, `admin/${adminObj.id}`), adminObj);
+ return _workerWrite(`admin/${adminObj.id}`, adminObj, 'master');
  }
  
  async function fbGetSuperAdmin() {
@@ -255,18 +254,18 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
     } catch(e) { return []; }
   }
   async function fbSaveNotice(notice) {
-    return set(ref(db, 'notices/' + notice.id), notice);
+    return _workerWrite('notices/' + notice.id, notice, 'master');
   }
   async function fbDeleteNotice(id) {
-    return remove(ref(db, 'notices/' + id));
+    return _workerDelete('notices/' + id, 'master');
   }
   async function fbUpdateNoticeViews(id, views) {
-    return set(ref(db, 'notices/' + id + '/views'), views);
+    return _workerWrite('notices/' + id + '/views', views, 'public');
   }
 
 
   async function fbSaveApply(apply) {
-    return set(ref(db, 'applies/' + apply.id), apply);
+    return _workerWrite('applies/' + apply.id, apply, 'public');
   }
   async function fbGetApplies() {
     try {
@@ -276,7 +275,7 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
     } catch(e) { return []; }
   }
   async function fbUpdateApplyStatus(id, status) {
-    return set(ref(db, 'applies/' + id + '/status'), status);
+    return _workerWrite('applies/' + id + '/status', status, 'master');
   }
 
  window._fb = {
@@ -293,7 +292,7 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
 </script> </head>
 <body> <header class="header"> <div class="header-inner"> <div style="display:flex;align-items:center;gap:14px;"> <div class="logo" style="cursor:pointer;" onclick="goToCommunity()"> <div class="logo-diamond"></div>
  롤켓배송
- </div><span style="font-family:'Rajdhani',sans-serif;font-size:9px;color:var(--text-muted);letter-spacing:1px;opacity:.7;margin-left:2px;" id="app-version">v1.1.004</span> <button class="btn-back" id="btn-back" onclick="goToList()" style="display:none;">← 목록</button> <div class="community-indicator" id="community-indicator"> <div class="community-indicator-dot"></div> <span id="community-indicator-name"></span> </div> </div> <div class="stage-indicator hidden" id="stage-indicator"> <div class="stage-pip" id="pip-1"><div class="stage-pip-dot"></div>1. 내전 대기</div> <div class="stage-pip" id="pip-2"><div class="stage-pip-dot"></div>2. 종류 선택</div> <div class="stage-pip" id="pip-3"><div class="stage-pip-dot"></div>3. 팀 짜기</div> <div class="stage-pip" id="pip-4"><div class="stage-pip-dot"></div>4. 대진표</div> <div class="stage-pip" id="pip-5"><div class="stage-pip-dot"></div>5. 결과</div> </div> <div class="header-actions"> <div class="role-badge user" id="role-badge"><div class="role-dot"></div><span id="role-label">일반 유저</span></div> <button class="btn-auth" id="btn-auth" onclick="openLoginModal()" style="display:none;">로그아웃</button> <button class="btn-auth" id="btn-master-login" onclick="openMasterLoginModal()" style="font-size:10px;padding:5px 10px;border-color:rgba(157,72,224,.4);color:#B97EEA;background:rgba(157,72,224,.07);">마스터</button> <button class="btn-auth" id="btn-admin-login" onclick="openLoginModal()">관리자 로그인</button> <button class="btn-secondary admin-only" id="btn-new-match" onclick="openNewMatchFlow()" style="display:none;">+ 새 내전 생성</button> </div> </div>
+ </div><span style="font-family:'Rajdhani',sans-serif;font-size:9px;color:var(--text-muted);letter-spacing:1px;opacity:.7;margin-left:2px;" id="app-version">v1.1.005</span> <button class="btn-back" id="btn-back" onclick="goToList()" style="display:none;">← 목록</button> <div class="community-indicator" id="community-indicator"> <div class="community-indicator-dot"></div> <span id="community-indicator-name"></span> </div> </div> <div class="stage-indicator hidden" id="stage-indicator"> <div class="stage-pip" id="pip-1"><div class="stage-pip-dot"></div>1. 내전 대기</div> <div class="stage-pip" id="pip-2"><div class="stage-pip-dot"></div>2. 종류 선택</div> <div class="stage-pip" id="pip-3"><div class="stage-pip-dot"></div>3. 팀 짜기</div> <div class="stage-pip" id="pip-4"><div class="stage-pip-dot"></div>4. 대진표</div> <div class="stage-pip" id="pip-5"><div class="stage-pip-dot"></div>5. 결과</div> </div> <div class="header-actions"> <div class="role-badge user" id="role-badge"><div class="role-dot"></div><span id="role-label">일반 유저</span></div> <button class="btn-auth" id="btn-auth" onclick="openLoginModal()" style="display:none;">로그아웃</button> <button class="btn-auth" id="btn-master-login" onclick="openMasterLoginModal()" style="font-size:10px;padding:5px 10px;border-color:rgba(157,72,224,.4);color:#B97EEA;background:rgba(157,72,224,.07);">마스터</button> <button class="btn-auth" id="btn-admin-login" onclick="openLoginModal()">관리자 로그인</button> <button class="btn-secondary admin-only" id="btn-new-match" onclick="openNewMatchFlow()" style="display:none;">+ 새 내전 생성</button> </div> </div>
 </header> <div id="screen-community" class="screen active"> <div style="display:grid;grid-template-columns:220px 1fr;gap:1.25rem;align-items:start;width:100%;max-width:1400px;margin:0 auto;padding:1.5rem 2rem;box-sizing:border-box;"> <div class="notice-sidebar" style="position:sticky;top:72px;width:220px;box-sizing:border-box;"> <div class="notice-sidebar-header"> <span class="notice-sidebar-title"><span style="color:var(--blue-bright);">●</span> 공지사항</span> <button id="btn-notice-write" onclick="openNoticeEditor()" style="display:none;padding:3px 8px;border:1px solid rgba(200,170,110,.4);background:rgba(200,170,110,.08);color:var(--gold);border-radius:2px;font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all .15s;">+ 작성</button> </div> <div class="notice-list" id="notice-list"><div class="notice-empty">공지사항이 없습니다</div></div> </div> <div style="min-width:0;overflow:hidden;"> <div class="community-wrap"> <div class="community-topbar"> <div class="community-heading">커뮤니티</div> <div style="display:flex;gap:8px;align-items:center;"> <div style="position:relative;"> <input id="community-search" type="text" placeholder="커뮤니티 검색..."
  oninput="filterCommunityList()"
  style="background:var(--bg-dark);border:1px solid var(--border-subtle);border-radius:3px;
@@ -536,6 +535,37 @@ let _pwSalt = 'lolket_v1'; // 기본값, Worker에서 덮어씀
     if (d.salt) _pwSalt = d.salt;
   } catch(e) {}
 })();
+
+// ═══════════════════════════════════════════
+// WORKER DB PROXY — 모든 쓰기는 Worker를 통해
+// ═══════════════════════════════════════════
+let _sessionToken = sessionStorage.getItem('injeong_session_token') || '';
+
+function _getHeaders() {
+  return { 'Content-Type': 'application/json', 'X-Session-Token': _sessionToken };
+}
+
+async function _workerWrite(path, data, requireRole) {
+  const res = await fetch(RIOT_PROXY_URL + '/db-write', {
+    method: 'POST',
+    headers: _getHeaders(),
+    body: JSON.stringify({ path, data, requireRole }),
+  });
+  const result = await res.json();
+  if (!result.ok) throw new Error(result.error || 'DB 쓰기 실패');
+  return result;
+}
+
+async function _workerDelete(path, requireRole) {
+  const res = await fetch(RIOT_PROXY_URL + '/db-delete', {
+    method: 'POST',
+    headers: _getHeaders(),
+    body: JSON.stringify({ path, requireRole }),
+  });
+  const result = await res.json();
+  if (!result.ok) throw new Error(result.error || 'DB 삭제 실패');
+  return result;
+}
 async function _hashPw(pw) {
   try {
     const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw + _pwSalt));
@@ -2834,6 +2864,8 @@ renderCommunityList();
 }
 }
 function doLogout() {
+_sessionToken = '';
+sessionStorage.removeItem('injeong_session_token');
 sessionStorage.removeItem('injeong_admin');
 sessionStorage.removeItem('injeong_is_master');
 sessionStorage.removeItem('injeong_community');
@@ -3377,17 +3409,16 @@ btn.disabled = true;
 btn.innerHTML = '<span style="opacity:.6">확인 중...</span>';
 errEl.textContent = '';
 try {
-let ok = false;
-if (_fbReady && window._fb.fbGetSuperAdmin) {
-const sa = await window._fb.fbGetSuperAdmin();
-if (sa && sa.id === id && await _verifyPw(pw, sa.password)) {
-ok = true; isMaster = true; currentAdminData = null;
-}
-} else {
-ok = false;
-}
-if (ok) {
-isAdmin = true;
+const res = await fetch(RIOT_PROXY_URL + '/login', {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify({ id, pw, type: 'master' }),
+});
+const data = await res.json();
+if (data.ok) {
+isMaster = true; isAdmin = true; currentAdminData = null;
+_sessionToken = data.token || '';
+sessionStorage.setItem('injeong_session_token', _sessionToken);
 sessionStorage.setItem('injeong_admin', '__master__');
 sessionStorage.setItem('injeong_is_master', '1');
 document.getElementById('master-login-modal').style.display = 'none';
@@ -3397,7 +3428,7 @@ renderNoticeList();
 loadApplies();
 toast('마스터 관리자로 로그인되었습니다', 'ok');
 } else {
-errEl.innerHTML = '<span>⚠</span> 아이디 또는 비밀번호가 올바르지 않습니다';
+errEl.innerHTML = '<span>⚠</span> ' + (data.error || '아이디 또는 비밀번호가 올바르지 않습니다');
 }
 } catch(e) {
 errEl.innerHTML = '<span>⚠</span> 오류: ' + (e.message || e);
@@ -3449,31 +3480,24 @@ if (btnListNew) btnListNew.style.display = (isAdmin || isMaster) ? '' : 'none';
 if (btnNewMatch) btnNewMatch.style.display = (isAdmin || isMaster) ? '' : 'none';
 }
 let currentAdminData = null; 
-const _origCheckAdmin = checkAdminCredentials;
 async function checkAdminCredentials(id, pw) {
-if (_fbReady && window._fb.fbGetSuperAdmin) {
 try {
-const sa = await window._fb.fbGetSuperAdmin();
-if (sa && sa.id === id && await _verifyPw(pw, sa.password)) {
-isMaster = true;
-currentAdminData = null;
-return true;
-}
-} catch(e) {}
-}
+const res = await fetch(RIOT_PROXY_URL + '/login', {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify({ id, pw, type: 'admin' }),
+});
+const data = await res.json();
+if (data.ok && data.data) {
 isMaster = false;
-if (_fbReady && window._fb.fbGet) {
-try {
-const data = await window._fb.fbGet('admin/' + id);
-if (data && await _verifyPw(pw, data.password)) {
-currentAdminData = data;
-window._currentCommunityId = data.communityId;
+_sessionToken = data.token || '';
+sessionStorage.setItem('injeong_session_token', _sessionToken);
+currentAdminData = data.data;
+window._currentCommunityId = data.data.communityId;
 return true;
 }
 return false;
 } catch(e) { return false; }
-}
-return false; // fallback 제거
 }
 function openEditTimeModal() {
 if (!match) return;
@@ -4148,7 +4172,7 @@ function openRankModal() {
   document.getElementById('rank-modal').style.display = 'flex';
 }
 
-const APP_VERSION='v1.1.004';
+const APP_VERSION='v1.1.005';
 const DB_KEY='injeong_matches_v1'; 
 let _fbReady = false;
 let _listCache = []; 
