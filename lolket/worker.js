@@ -12,7 +12,8 @@ const CORS = {
 
 // 세션 토큰 → 역할 매핑 (KV 대신 메모리 캐시, Worker 재시작 시 초기화됨)
 // 실운영에서는 Cloudflare KV 사용 권장
-const _sessions = new Map();
+const _sessions = new Map(); // token → session
+const _idToToken = new Map(); // id → token (중복 로그인 감지)
 const SESSION_TTL = 8 * 60 * 60 * 1000; // 8시간
 
 function genToken() {
@@ -25,8 +26,25 @@ function getSession(token) {
   if (!token) return null;
   const s = _sessions.get(token);
   if (!s) return null;
-  if (Date.now() - s.createdAt > SESSION_TTL) { _sessions.delete(token); return null; }
+  if (Date.now() - s.createdAt > SESSION_TTL) {
+    _sessions.delete(token);
+    _idToToken.delete(s.id);
+    return null;
+  }
   return s;
+}
+
+// 기존 세션 무효화 후 새 세션 발급
+function issueSession(id, data) {
+  // 같은 id로 기존 세션이 있으면 무효화 (중복 로그인 방지)
+  const oldToken = _idToToken.get(id);
+  if (oldToken) {
+    _sessions.delete(oldToken);
+  }
+  const token = genToken();
+  _sessions.set(token, { ...data, id, createdAt: Date.now() });
+  _idToToken.set(id, token);
+  return token;
 }
 
 export default {
@@ -114,8 +132,7 @@ async function handleLogin(request, env) {
       const data = await res.json();
       if (!data || data.id !== id) return json({ ok: false, error: '아이디 또는 비밀번호가 틀렸습니다' }, 401);
       if (!await verifyPw(pw, pwHash, data.password)) return json({ ok: false, error: '아이디 또는 비밀번호가 틀렸습니다' }, 401);
-      const token = genToken();
-      _sessions.set(token, { role: 'master', id, createdAt: Date.now() });
+      const token = issueSession(id, { role: 'master' });
       return json({ ok: true, role: 'master', token });
     }
 
@@ -125,8 +142,7 @@ async function handleLogin(request, env) {
       const data = await res.json();
       if (!data) return json({ ok: false, error: '아이디 또는 비밀번호가 틀렸습니다' }, 401);
       if (!await verifyPw(pw, pwHash, data.password)) return json({ ok: false, error: '아이디 또는 비밀번호가 틀렸습니다' }, 401);
-      const token = genToken();
-      _sessions.set(token, { role: 'admin', id, communityId: data.communityId, createdAt: Date.now() });
+      const token = issueSession(id, { role: 'admin', communityId: data.communityId });
       const { password: _pw, ...safe } = data;
       return json({ ok: true, role: 'admin', token, data: safe });
     }
@@ -148,6 +164,10 @@ async function handleDbWrite(request, env) {
   const { path: dbPath, data, requireRole } = body;
   if (!dbPath) return json({ ok: false, error: 'path 누락' }, 400);
 
+  // 세션 만료 체크 (토큰은 있지만 세션이 없으면 → 중복 로그인으로 강제 로그아웃됨)
+  if (token && !session) {
+    return json({ ok: false, error: 'SESSION_EXPIRED', message: '다른 기기에서 로그인하여 세션이 만료되었습니다.' }, 401);
+  }
   // 권한 체크
   if (!checkPermission(session, dbPath, requireRole)) {
     return json({ ok: false, error: '권한이 없습니다' }, 403);
@@ -158,26 +178,6 @@ async function handleDbWrite(request, env) {
   const authQ  = secret ? `?auth=${secret}` : '';
 
   try {
-    // ── 버전 충돌 체크 (matches 경로만 적용) ──
-    // data._version이 있고 matches 경로인 경우 현재 서버 버전과 비교
-    const isMatchPath = /^communities\/[^/]+\/matches\/[^/]+$/.test(dbPath);
-    if (isMatchPath && data && typeof data._version === 'number') {
-      const currentRes = await fetch(`${dbUrl}/${dbPath}/_version.json${authQ}`);
-      if (currentRes.ok) {
-        const serverVersion = await currentRes.json();
-        // 서버 버전이 존재하고 클라이언트 버전보다 높으면 충돌
-        if (serverVersion !== null && typeof serverVersion === 'number' && data._version <= serverVersion) {
-          return json({
-            ok: false,
-            error: 'CONFLICT',
-            message: '다른 관리자가 이미 수정했습니다. 페이지를 새로고침 후 다시 시도하세요.',
-            serverVersion,
-            clientVersion: data._version,
-          }, 409);
-        }
-      }
-    }
-
     const res = await fetch(`${dbUrl}/${dbPath}.json${authQ}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
