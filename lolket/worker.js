@@ -158,6 +158,26 @@ async function handleDbWrite(request, env) {
   const authQ  = secret ? `?auth=${secret}` : '';
 
   try {
+    // ── 버전 충돌 체크 (matches 경로만 적용) ──
+    // data._version이 있고 matches 경로인 경우 현재 서버 버전과 비교
+    const isMatchPath = /^communities\/[^/]+\/matches\/[^/]+$/.test(dbPath);
+    if (isMatchPath && data && typeof data._version === 'number') {
+      const currentRes = await fetch(`${dbUrl}/${dbPath}/_version.json${authQ}`);
+      if (currentRes.ok) {
+        const serverVersion = await currentRes.json();
+        // 서버 버전이 존재하고 클라이언트 버전보다 높으면 충돌
+        if (serverVersion !== null && typeof serverVersion === 'number' && data._version <= serverVersion) {
+          return json({
+            ok: false,
+            error: 'CONFLICT',
+            message: '다른 관리자가 이미 수정했습니다. 페이지를 새로고침 후 다시 시도하세요.',
+            serverVersion,
+            clientVersion: data._version,
+          }, 409);
+        }
+      }
+    }
+
     const res = await fetch(`${dbUrl}/${dbPath}.json${authQ}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -228,6 +248,7 @@ function checkPermission(session, dbPath, requireRole) {
     /^admin\//,
     /^notices\//,
     /^applies\/[^/]+\/status$/,  // 신청 상태 변경
+    /^system\//,                 // 점검 모드 등 시스템 설정
   ];
   if (masterWrite.some(r => r.test(dbPath))) {
     return session.role === 'master';
