@@ -38,13 +38,14 @@ function getSession(token) {
 function issueSession(id, data) {
   // 같은 id로 기존 세션이 있으면 무효화 (중복 로그인 방지)
   const oldToken = _idToToken.get(id);
+  const displaced = !!(oldToken && _sessions.has(oldToken));
   if (oldToken) {
     _sessions.delete(oldToken);
   }
   const token = genToken();
   _sessions.set(token, { ...data, id, createdAt: Date.now() });
   _idToToken.set(id, token);
-  return token;
+  return { token, displaced };
 }
 
 export default {
@@ -132,8 +133,8 @@ async function handleLogin(request, env) {
       const data = await res.json();
       if (!data || data.id !== id) return json({ ok: false, error: '아이디 또는 비밀번호가 틀렸습니다' }, 401);
       if (!await verifyPw(pw, pwHash, data.password)) return json({ ok: false, error: '아이디 또는 비밀번호가 틀렸습니다' }, 401);
-      const token = issueSession(id, { role: 'master' });
-      return json({ ok: true, role: 'master', token });
+      const { token, displaced } = issueSession(id, { role: 'master' });
+      return json({ ok: true, role: 'master', token, displaced });
     }
 
     if (type === 'admin') {
@@ -142,9 +143,9 @@ async function handleLogin(request, env) {
       const data = await res.json();
       if (!data) return json({ ok: false, error: '아이디 또는 비밀번호가 틀렸습니다' }, 401);
       if (!await verifyPw(pw, pwHash, data.password)) return json({ ok: false, error: '아이디 또는 비밀번호가 틀렸습니다' }, 401);
-      const token = issueSession(id, { role: 'admin', communityId: data.communityId });
+      const { token, displaced } = issueSession(id, { role: 'admin', communityId: data.communityId });
       const { password: _pw, ...safe } = data;
-      return json({ ok: true, role: 'admin', token, data: safe });
+      return json({ ok: true, role: 'admin', token, data: safe, displaced });
     }
 
     return json({ ok: false, error: '알 수 없는 type' }, 400);
@@ -164,10 +165,6 @@ async function handleDbWrite(request, env) {
   const { path: dbPath, data, requireRole } = body;
   if (!dbPath) return json({ ok: false, error: 'path 누락' }, 400);
 
-  // 세션 만료 체크 (토큰은 있지만 세션이 없으면 → 중복 로그인으로 강제 로그아웃됨)
-  if (token && !session) {
-    return json({ ok: false, error: 'SESSION_EXPIRED', message: '다른 기기에서 로그인하여 세션이 만료되었습니다.' }, 401);
-  }
   // 권한 체크
   if (!checkPermission(session, dbPath, requireRole)) {
     return json({ ok: false, error: '권한이 없습니다' }, 403);
