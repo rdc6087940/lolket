@@ -218,25 +218,13 @@ function checkPermission(session, dbPath, requireRole) {
     /^applies\/[^/]+$/,             // 커뮤니티 신청 (누구나)
     /^notices\/[^/]+\/views$/,      // 조회수 (누구나)
     /^invite_codes\/[^/]+\/used$/,  // 초대코드 사용 (누구나)
+    /^communities\/[^/]+\/matches/, // 내전 데이터 (Worker 재시작 시 세션 소멸 대응)
+    /^admin\/[^/]+$/,               // 초대 링크로 관리자 계정 생성 (비로그인)
   ];
   if (publicWrite.some(r => r.test(dbPath))) return true;
 
   // 이하 모두 로그인 필요
   if (!session) return false;
-
-  // 관리자 쓰기 허용 경로
-  const adminWrite = [
-    /^communities\/[^/]+\/matches/,  // 내전 데이터 (관리자)
-  ];
-  if (adminWrite.some(r => r.test(dbPath))) {
-    if (session.role === 'master') return true;
-    if (session.role === 'admin') {
-      // 자신의 커뮤니티만 쓰기 가능
-      const cidMatch = dbPath.match(/^communities\/([^/]+)\//);
-      return cidMatch && cidMatch[1] === session.communityId;
-    }
-    return false;
-  }
 
   // 마스터 전용 경로
   const masterWrite = [
