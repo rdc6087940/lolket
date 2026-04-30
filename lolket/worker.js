@@ -220,6 +220,9 @@ function checkPermission(session, dbPath, requireRole) {
     /^invite_codes\/[^/]+\/used$/,  // 초대코드 사용 (누구나)
     /^communities\/[^/]+\/matches/, // 내전 데이터 (Worker 재시작 시 세션 소멸 대응)
     /^admin\/[^/]+$/,               // 초대 링크로 관리자 계정 생성 (비로그인)
+    /^recruits\/[^/]+$/,            // 외전 모집 생성/수정
+    /^recruit_comments\/[^/]+\//,   // 외전 댓글
+    /^recruit_bookmarks\/[^/]+\//,  // 외전 북마크
   ];
   if (publicWrite.some(r => r.test(dbPath))) return true;
 
