@@ -223,6 +223,7 @@ function checkPermission(session, dbPath, requireRole) {
     /^recruits\/[^/]+$/,            // 외전 모집 생성/수정
     /^recruit_comments\/[^/]+\//,   // 외전 댓글
     /^recruit_bookmarks\/[^/]+\//,  // 외전 북마크
+    /^recruit_applies\/[^/]+\//,    // 외전 신청
   ];
   if (publicWrite.some(r => r.test(dbPath))) return true;
 

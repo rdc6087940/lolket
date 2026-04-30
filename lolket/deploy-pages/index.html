@@ -522,11 +522,16 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
 .recruit-countdown.warn{color:#F4C874;}
 /* 외전 상세 */
 .recruit-detail-wrap{max-width:900px;margin:0 auto;padding:1.5rem 2rem;}
-.recruit-vs-header{display:flex;align-items:center;justify-content:center;gap:1.5rem;margin-bottom:2rem;padding:1.5rem;background:var(--bg-panel);border:1px solid var(--border-subtle);border-radius:6px;}
-.recruit-team-box{flex:1;text-align:center;}
-.recruit-team-label{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;color:var(--gold);margin-bottom:1rem;}
+.recruit-vs-header{display:grid;grid-template-columns:1fr 60px 1fr;gap:0;margin-bottom:2rem;background:var(--bg-panel);border:1px solid var(--border-subtle);border-radius:6px;overflow:hidden;align-items:stretch;}
+.recruit-team-box{display:flex;flex-direction:column;}
+.recruit-team-box-home{border-right:1px solid var(--border-subtle);}
+.recruit-team-label-wrap{display:flex;align-items:center;justify-content:center;padding:1rem 1.25rem;position:relative;min-height:110px;flex-direction:column;gap:.5rem;}
+
+.recruit-team-players{padding:.75rem 1rem;flex:1;}
+.recruit-vs-divider{display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--border-subtle);letter-spacing:4px;border-left:1px solid var(--border-subtle);border-right:1px solid var(--border-subtle);}m:1rem;}
 .recruit-vs-divider{font-family:'Bebas Neue',sans-serif;font-size:36px;color:var(--border-subtle);letter-spacing:4px;}
-.recruit-lane-row{display:flex;align-items:center;gap:10px;padding:.5rem .75rem;border-radius:3px;background:rgba(255,255,255,.02);margin-bottom:4px;}
+.recruit-lane-row{display:flex;align-items:center;gap:10px;padding:.5rem .75rem;border-radius:3px;background:transparent;margin-bottom:2px;transition:background .15s;}
+.recruit-lane-row:hover{background:rgba(10,200,185,.06);}
 .recruit-lane-label{font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;color:var(--text-muted);width:28px;flex-shrink:0;}
 .recruit-player-info{display:flex;align-items:center;gap:8px;flex:1;}
 .recruit-player-icon{width:32px;height:32px;border-radius:50%;border:1px solid var(--border-subtle);}
@@ -559,6 +564,13 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
 .recruit-player-filled .name{color:var(--text-white);font-weight:600;}
 .recruit-player-filled .tier{color:var(--text-muted);}
 .recruit-tier-range{display:flex;align-items:center;gap:8px;}
+
+/* ── 외전 신청 탭 ── */
+.recruit-apply-tabs{display:flex;gap:0;flex-wrap:wrap;margin-top:.5rem;}
+.recruit-apply-tab{font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;padding:6px 14px;border:1px solid transparent;border-bottom:none;background:transparent;color:var(--text-muted);cursor:pointer;transition:all .15s;white-space:nowrap;margin-bottom:-1px;}
+.recruit-apply-tab.active{background:var(--bg-panel);color:var(--blue-bright);border-color:rgba(10,200,185,.4) rgba(10,200,185,.4) var(--bg-panel);border-radius:3px 3px 0 0;}
+.recruit-apply-tab-content{min-height:150px;}
+.recruit-apply-empty{display:flex;align-items:center;justify-content:center;min-height:250px;color:var(--text-muted);font-size:13px;}
 </style> <script type="module">
  
  
@@ -705,6 +717,17 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
      return _workerWrite(`recruit_bookmarks/${rid}/${communityId}`, { communityId, communityName, at: Date.now() }, null);
    }
  }
+ async function fbSaveRecruitApply(rid, applyObj) {
+   return _workerWrite(`recruit_applies/${rid}/${applyObj.communityId}`, applyObj, null);
+ }
+ async function fbGetRecruitApplies(rid) {
+   const snap = await get(ref(db, `recruit_applies/${rid}`));
+   const raw = snap.val() || {};
+   return Object.values(raw).filter(a => a && a.communityId).sort((a,b)=>(a.appliedAt||0)-(b.appliedAt||0));
+ }
+ async function fbDeleteRecruitApply(rid, communityId) {
+   return _workerDelete(`recruit_applies/${rid}/${communityId}`, null);
+ }
 
   async function fbGetNotices() {
     try {
@@ -746,6 +769,7 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
  fbCreateInviteCode, fbGetInviteCode, fbUseInviteCode, fbGetInviteCodes,
  fbSaveAdmin, fbGetSuperAdmin, fbUnsubscribeAll, fbSubscribePatch,
  fbSaveRecruit, fbGetRecruits, fbDeleteRecruit, fbSaveRecruitComment, fbGetRecruitComments, fbDeleteRecruitComment, fbToggleRecruitBookmark,
+ fbSaveRecruitApply, fbGetRecruitApplies, fbDeleteRecruitApply,
  ready: false
  };
  window._fb.ready = true;
@@ -795,14 +819,28 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
     <div id="rd-title" style="font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:3px;color:var(--gold);margin-bottom:1.25rem;"></div>
     <!-- VS 섹션 -->
     <div class="recruit-vs-header" id="rd-vs-section">
-      <div class="recruit-team-box">
-        <div class="recruit-team-label">홈팀</div>
-        <div id="rd-home-players"></div>
+      <!-- 홈팀 -->
+      <div class="recruit-team-box recruit-team-box-home">
+        <div class="recruit-team-label-wrap">
+          <span class="recruit-team-label">홈팀</span>
+          <span id="rd-home-community" style="font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;color:var(--gold);"></span>
+        </div>
+        <div class="recruit-team-players" id="rd-home-players"></div>
       </div>
+      <!-- VS -->
       <div class="recruit-vs-divider">VS</div>
+      <!-- 원정팀 -->
       <div class="recruit-team-box">
-        <div class="recruit-team-label">원정팀</div>
-        <div style="color:var(--text-muted);font-size:13px;padding:1rem;">신청 대기 중</div>
+        <div class="recruit-team-label-wrap">
+          <span class="recruit-team-label">원정팀</span>
+          <div class="recruit-apply-tabs" id="rd-apply-tabs" style="width:100%;"></div>
+          <button id="rd-apply-btn" onclick="openRecruitApplyForm()" style="display:none;position:absolute;top:.75rem;right:1rem;padding:4px 12px;background:rgba(10,200,185,.1);border:1px solid rgba(10,200,185,.3);border-radius:3px;color:var(--blue-bright);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;cursor:pointer;">+ 신청</button>
+        </div>
+        <div class="recruit-team-players">
+          <div class="recruit-apply-tab-content" id="rd-apply-content">
+            <div class="recruit-apply-empty">신청 대기 중</div>
+          </div>
+        </div>
       </div>
     </div>
     <!-- 상세 정보 -->
@@ -1384,7 +1422,7 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
             <input type="checkbox" id="rf-tier-any" onchange="toggleTierAny(this.checked)"> 상관없음
           </label>
           <div id="rf-tier-range" class="recruit-tier-range">
-            <select class="form-input" id="rf-tier-min" style="padding:5px 8px;">
+            <select class="form-input" id="rf-tier-min" style="padding:5px 8px;" onchange="validateTierRange()">
               <option value="IRON">아이언</option><option value="BRONZE">브론즈</option>
               <option value="SILVER" selected>실버</option><option value="GOLD">골드</option>
               <option value="PLATINUM">플래티넘</option><option value="EMERALD">에메랄드</option>
@@ -1392,7 +1430,7 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
               <option value="GRANDMASTER">그랜드마스터</option><option value="CHALLENGER">챌린저</option>
             </select>
             <span style="color:var(--text-muted);font-size:12px;">~</span>
-            <select class="form-input" id="rf-tier-max" style="padding:5px 8px;">
+            <select class="form-input" id="rf-tier-max" style="padding:5px 8px;" onchange="validateTierRange()">
               <option value="IRON">아이언</option><option value="BRONZE">브론즈</option>
               <option value="SILVER">실버</option><option value="GOLD" selected>골드</option>
               <option value="PLATINUM">플래티넘</option><option value="EMERALD">에메랄드</option>
@@ -1478,6 +1516,51 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
     <div style="overflow-y:auto;flex:1;margin-top:.5rem;" id="notice-more-body"></div>
     <div class="modal-actions" style="margin-top:.75rem;">
       <button class="btn-primary" onclick="document.getElementById('notice-more-modal').style.display='none'">닫기</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="recruit-apply-modal" style="display:none;z-index:600;" onclick="if(event.target===this)closeRecruitApplyForm()">
+  <div class="modal" style="max-width:560px;max-height:90vh;display:flex;flex-direction:column;">
+    <div class="modal-title">외전 신청 — 원정팀 구성</div>
+    <div style="overflow-y:auto;flex:1;padding-right:4px;margin-top:.75rem;">
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:1rem;" id="ra-target-info"></div>
+      <div class="recruit-form-section">
+        <div class="recruit-form-section-title">원정팀 라인별 유저 *</div>
+        <div id="ra-lane-search-area">
+          <div class="recruit-lane-search-row"><span class="recruit-lane-tag">TOP</span>
+            <input class="form-input" id="ra-search-top" placeholder="닉네임#태그" style="padding:5px 8px;" onkeydown="if(event.key==='Enter')searchApplyLane('top')">
+            <button onclick="searchApplyLane('top')" style="padding:5px 10px;background:rgba(10,200,185,.1);border:1px solid rgba(10,200,185,.3);border-radius:3px;color:var(--blue-bright);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;">검색</button>
+          </div>
+          <div id="ra-player-top" style="margin-bottom:6px;display:none;"></div>
+          <div class="recruit-lane-search-row"><span class="recruit-lane-tag">JG</span>
+            <input class="form-input" id="ra-search-jg" placeholder="닉네임#태그" style="padding:5px 8px;" onkeydown="if(event.key==='Enter')searchApplyLane('jg')">
+            <button onclick="searchApplyLane('jg')" style="padding:5px 10px;background:rgba(10,200,185,.1);border:1px solid rgba(10,200,185,.3);border-radius:3px;color:var(--blue-bright);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;">검색</button>
+          </div>
+          <div id="ra-player-jg" style="margin-bottom:6px;display:none;"></div>
+          <div class="recruit-lane-search-row"><span class="recruit-lane-tag">MID</span>
+            <input class="form-input" id="ra-search-mid" placeholder="닉네임#태그" style="padding:5px 8px;" onkeydown="if(event.key==='Enter')searchApplyLane('mid')">
+            <button onclick="searchApplyLane('mid')" style="padding:5px 10px;background:rgba(10,200,185,.1);border:1px solid rgba(10,200,185,.3);border-radius:3px;color:var(--blue-bright);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;">검색</button>
+          </div>
+          <div id="ra-player-mid" style="margin-bottom:6px;display:none;"></div>
+          <div class="recruit-lane-search-row"><span class="recruit-lane-tag">BOT</span>
+            <input class="form-input" id="ra-search-bot" placeholder="닉네임#태그" style="padding:5px 8px;" onkeydown="if(event.key==='Enter')searchApplyLane('bot')">
+            <button onclick="searchApplyLane('bot')" style="padding:5px 10px;background:rgba(10,200,185,.1);border:1px solid rgba(10,200,185,.3);border-radius:3px;color:var(--blue-bright);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;">검색</button>
+          </div>
+          <div id="ra-player-bot" style="margin-bottom:6px;display:none;"></div>
+          <div class="recruit-lane-search-row"><span class="recruit-lane-tag">SUP</span>
+            <input class="form-input" id="ra-search-sup" placeholder="닉네임#태그" style="padding:5px 8px;" onkeydown="if(event.key==='Enter')searchApplyLane('sup')">
+            <button onclick="searchApplyLane('sup')" style="padding:5px 10px;background:rgba(10,200,185,.1);border:1px solid rgba(10,200,185,.3);border-radius:3px;color:var(--blue-bright);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;">검색</button>
+          </div>
+          <div id="ra-player-sup" style="margin-bottom:6px;display:none;"></div>
+        </div>
+        <div id="ra-lane-err" style="font-size:11px;color:#E05050;margin-top:4px;"></div>
+      </div>
+      <div id="ra-err" style="font-size:11px;color:#E05050;"></div>
+    </div>
+    <div class="modal-actions" style="margin-top:.75rem;">
+      <button class="btn-secondary" onclick="closeRecruitApplyForm()">취소</button>
+      <button class="btn-primary" id="ra-submit-btn" onclick="submitRecruitApply()">신청</button>
     </div>
   </div>
 </div>
@@ -4004,13 +4087,8 @@ return false;
 }
 return false; // fallback 로그인 제거됨
 }
-window.addEventListener('fb-ready', () => {
-loadNotices();
-if (isMaster) loadApplies();
-initGuide();
-subscribePatchMode();
-loadAppVersion();
-});
+// fb-ready 핸들러 통합됨 (아래 _fbReady=true 핸들러에서 처리)
+
 let _uvMembers = [];
 let _uvFilter = { lanes: new Set(), search: '', sort: '' };
 function openUserView(snapshot) {
@@ -5868,6 +5946,12 @@ _applyRemoteUpdate(remote);
 }
 }
 });
+loadRecruits();
+loadNotices();
+if (isMaster) loadApplies();
+initGuide();
+subscribePatchMode();
+loadAppVersion();
 });
 function _applyRemoteUpdate(remote) {
 if (_editLock) {
@@ -6331,11 +6415,17 @@ const TIER_KO_MAP = {IRON:'아이언',BRONZE:'브론즈',SILVER:'실버',GOLD:'�
 
 // ── 목록 로드 ──
 async function loadRecruits() {
-  if (!window._fb || !window._fb.fbGetRecruits) return;
+  if (!_fbReady || !window._fb || !window._fb.fbGetRecruits) {
+    // Firebase 준비 안됐으면 준비 후 재시도
+    if (!_fbReady) {
+      window.addEventListener('fb-ready', () => loadRecruits(), { once: true });
+    }
+    return;
+  }
   try {
     _recruits = await window._fb.fbGetRecruits();
     _recruits.sort((a, b) => (a.deadline || 0) - (b.deadline || 0));
-  } catch(e) { _recruits = []; }
+  } catch(e) { console.error('loadRecruits 에러:', e); _recruits = []; }
   renderRecruitList();
   // 작성 버튼 표시
   const btn = document.getElementById('btn-recruit-write');
@@ -6347,23 +6437,29 @@ function renderRecruitList() {
   const container = document.getElementById('recruit-list');
   if (!container) return;
   const now = Date.now();
-  const active = _recruits.filter(r => !r.deadline || r.deadline > now);
-  if (!active.length) {
+  // 관리자/마스터는 마감된 것 포함 전체, 일반은 마감 전만
+  const list = (isAdmin || isMaster)
+    ? _recruits
+    : _recruits.filter(r => !r.deadline || r.deadline > now);
+  if (!list.length) {
     container.innerHTML = '<div class="notice-empty">외전 모집이 없습니다</div>';
     return;
   }
   container.innerHTML = '';
-  active.slice(0, 8).forEach(r => {
+  list.slice(0, 8).forEach(r => {
     const item = document.createElement('div');
     item.className = 'recruit-item';
     const remain = _formatCountdown(r.deadline);
-    const remainCls = r.deadline - now < 3600000 ? 'recruit-countdown' : r.deadline - now < 86400000 ? 'recruit-countdown warn' : 'recruit-countdown safe';
+    const diff = r.deadline - now;
+    const remainCls = diff <= 0 ? 'recruit-countdown' : diff < 3600000 ? 'recruit-countdown' : diff < 86400000 ? 'recruit-countdown warn' : 'recruit-countdown safe';
     const tierStr = r.tierAny ? '티어 무관' : `${TIER_KO_MAP[r.tierMin]||r.tierMin} ~ ${TIER_KO_MAP[r.tierMax]||r.tierMax}`;
     const startStr = r.startTime ? new Date(r.startTime).toLocaleString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—';
     item.innerHTML = `
-      <div class="recruit-item-title">${_escHtml(r.title)}</div>
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;">
+        <div class="recruit-item-title" style="flex:1;min-width:0;">${_escHtml(r.title)}</div>
+        <span class="${remainCls}" data-recruit-deadline="${r.deadline}" style="flex-shrink:0;font-size:10px;">${remain}</span>
+      </div>
       <div class="recruit-item-meta" style="margin-top:3px;">
-        <span class="${remainCls}">${remain}</span>
         <span class="recruit-item-tag tier">${tierStr}</span>
       </div>
       <div class="recruit-item-meta" style="margin-top:2px;">
@@ -6373,6 +6469,7 @@ function renderRecruitList() {
     item.onclick = () => openRecruitDetail(r.id);
     container.appendChild(item);
   });
+  _startRecruitTimer();
 }
 
 function _formatCountdown(deadline) {
@@ -6382,9 +6479,43 @@ function _formatCountdown(deadline) {
   const d = Math.floor(diff / 86400000);
   const h = Math.floor((diff % 86400000) / 3600000);
   const m = Math.floor((diff % 3600000) / 60000);
-  if (d > 0) return `D-${d} ${h}h`;
-  if (h > 0) return `${h}h ${m}m`;
-  return `${m}분`;
+  const s = Math.floor((diff % 60000) / 1000);
+  const pad = n => String(n).padStart(2, '0');
+  if (d > 0) return `D-${d} ${pad(h)}:${pad(m)}:${pad(s)}`;
+  if (h > 0) return `${pad(h)}:${pad(m)}:${pad(s)}`;
+  return `${pad(m)}:${pad(s)}`;
+}
+
+// ── 실시간 카운트다운 타이머 ──
+let _recruitTimer = null;
+
+function _startRecruitTimer() {
+  if (_recruitTimer) clearInterval(_recruitTimer);
+  _recruitTimer = setInterval(() => {
+    // 목록 카운트다운 업데이트
+    document.querySelectorAll('[data-recruit-deadline]').forEach(el => {
+      const deadline = parseInt(el.dataset.recruitDeadline);
+      const text = _formatCountdown(deadline);
+      if (el.textContent !== text) el.textContent = text;
+      const diff = deadline - Date.now();
+      el.className = diff <= 0 ? 'recruit-countdown'
+        : diff < 3600000 ? 'recruit-countdown'
+        : diff < 86400000 ? 'recruit-countdown warn'
+        : 'recruit-countdown safe';
+    });
+    // 상세 페이지 카운트다운 업데이트
+    const detailEl = document.getElementById('rd-deadline-countdown');
+    if (detailEl && detailEl.dataset.deadline) {
+      const deadline = parseInt(detailEl.dataset.deadline);
+      const text = _formatCountdown(deadline);
+      if (detailEl.textContent !== text) detailEl.textContent = text;
+      const diff = deadline - Date.now();
+      detailEl.className = diff <= 0 ? 'recruit-countdown'
+        : diff < 3600000 ? 'recruit-countdown'
+        : diff < 86400000 ? 'recruit-countdown warn'
+        : 'recruit-countdown safe';
+    }
+  }, 1000);
 }
 
 // ── 생성 폼 열기 ──
@@ -6410,6 +6541,20 @@ async function openRecruitForm(editId) {
   const tierAny = document.getElementById('rf-tier-any'); if (tierAny) { tierAny.checked=false; toggleTierAny(false); }
   const errEl = document.getElementById('rf-err'); if (errEl) errEl.textContent = '';
   const laneErrEl = document.getElementById('rf-lane-err'); if (laneErrEl) laneErrEl.textContent = '';
+
+  // datetime input min = 현재 시간
+  const nowIso = new Date(Date.now() - new Date().getTimezoneOffset()*60000).toISOString().slice(0,16);
+  const dlEl = document.getElementById('rf-deadline');
+  const stEl = document.getElementById('rf-starttime');
+  if (dlEl) dlEl.min = nowIso;
+  if (stEl) stEl.min = nowIso;
+  // deadline이 바뀌면 starttime의 min도 업데이트
+  if (dlEl) dlEl.oninput = function() {
+    if (stEl && this.value) {
+      const dlTs = new Date(this.value).getTime() + 60000;
+      stEl.min = new Date(dlTs - new Date().getTimezoneOffset()*60000).toISOString().slice(0,16);
+    }
+  };
 
   // 마스터: 커뮤니티 선택 표시
   const cmSection = document.getElementById('rf-community-section');
@@ -6459,6 +6604,29 @@ function closeRecruitForm() {
 function toggleTierAny(checked) {
   const range = document.getElementById('rf-tier-range');
   if (range) range.style.display = checked ? 'none' : 'flex';
+}
+
+function validateTierRange() {
+  const TIER_ORDER = ['IRON','BRONZE','SILVER','GOLD','PLATINUM','EMERALD','DIAMOND','MASTER','GRANDMASTER','CHALLENGER'];
+  const minSel = document.getElementById('rf-tier-min');
+  const maxSel = document.getElementById('rf-tier-max');
+  if (!minSel || !maxSel) return;
+  const minIdx = TIER_ORDER.indexOf(minSel.value);
+  const maxIdx = TIER_ORDER.indexOf(maxSel.value);
+  // 최소가 최대보다 높으면 최대를 최소에 맞춤
+  if (minIdx > maxIdx) {
+    maxSel.value = minSel.value;
+  }
+  // 최대 select에서 최소보다 낮은 옵션 비활성화
+  Array.from(maxSel.options).forEach(opt => {
+    const idx = TIER_ORDER.indexOf(opt.value);
+    opt.disabled = idx < minIdx;
+  });
+  // 최소 select에서 최대보다 높은 옵션 비활성화
+  Array.from(minSel.options).forEach(opt => {
+    const idx = TIER_ORDER.indexOf(opt.value);
+    opt.disabled = idx > TIER_ORDER.indexOf(maxSel.value);
+  });
 }
 
 // ── 라인 소환사 검색 ──
@@ -6527,9 +6695,25 @@ async function submitRecruitForm() {
     return;
   }
 
+  // 날짜 검증
+  const now = Date.now();
+  const deadlineTs = new Date(deadlineVal).getTime();
+  const startTs    = new Date(startVal).getTime();
+  if (deadlineTs <= now)   { errEl.textContent='모집 마감 시간은 현재 시간 이후여야 합니다'; return; }
+  if (startTs <= now)      { errEl.textContent='외전 시작 시간은 현재 시간 이후여야 합니다'; return; }
+  if (deadlineTs >= startTs){ errEl.textContent='모집 마감 시간은 외전 시작 시간 이전이어야 합니다'; return; }
+
   const tierAny = document.getElementById('rf-tier-any').checked;
   const tierMin = tierAny ? null : document.getElementById('rf-tier-min').value;
   const tierMax = tierAny ? null : document.getElementById('rf-tier-max').value;
+
+  // 티어 순서 검증 (낮은 ~ 높은)
+  if (!tierAny && tierMin && tierMax) {
+    const TIER_ORDER = ['IRON','BRONZE','SILVER','GOLD','PLATINUM','EMERALD','DIAMOND','MASTER','GRANDMASTER','CHALLENGER'];
+    const minIdx = TIER_ORDER.indexOf(tierMin);
+    const maxIdx = TIER_ORDER.indexOf(tierMax);
+    if (minIdx > maxIdx) { errEl.textContent='최소 티어는 최대 티어보다 낮아야 합니다 (예: 실버 ~ 골드)'; return; }
+  }
 
   // 커뮤니티 정보
   let communityId = '', communityName = '';
@@ -6605,9 +6789,12 @@ async function openRecruitDetail(id) {
   // 제목
   document.getElementById('rd-title').textContent = r.title || '';
 
-  // 커뮤니티 뱃지
+  // 커뮤니티 뱃지 + 홈팀 커뮤니티명
   const badge = document.getElementById('rd-community-badge');
   if (badge) badge.textContent = r.communityName || '';
+  const homeCom = document.getElementById('rd-home-community');
+  if (homeCom) homeCom.textContent = r.communityName || '';
+
 
   // 관리자 액션
   const actions = document.getElementById('rd-admin-actions');
@@ -6626,7 +6813,8 @@ async function openRecruitDetail(id) {
       if (!p) return `<div class="recruit-lane-row"><span class="recruit-lane-label">${LANE_LABEL[lane]}</span><span style="color:var(--text-muted);font-size:12px;">—</span></div>`;
       const iconUrl = `https://ddragon.leagueoflegends.com/cdn/15.1.1/img/profileicon/${p.icon}.png`;
       const tierColor = _getTierColor(p.solo);
-      return `<div class="recruit-lane-row">
+      const deeplolUrl = `https://www.deeplol.gg/summoner/kr/${encodeURIComponent(p.name)}-${encodeURIComponent(p.tag)}`;
+      return `<div class="recruit-lane-row" style="cursor:pointer;" onclick="window.open('${deeplolUrl}','_blank')" title="딥롤에서 보기">
         <span class="recruit-lane-label">${LANE_LABEL[lane]}</span>
         <div class="recruit-player-info">
           <img class="recruit-player-icon" src="${iconUrl}" onerror="this.style.display='none'">
@@ -6649,7 +6837,7 @@ async function openRecruitDetail(id) {
       <div class="recruit-info-card">
         <div class="recruit-info-label">모집 마감</div>
         <div class="recruit-info-val">${deadlineStr}</div>
-        <div style="font-size:11px;margin-top:2px;" class="${r.deadline - Date.now() < 3600000 ? 'recruit-countdown' : 'recruit-countdown safe'}">${_formatCountdown(r.deadline)}</div>
+        <div id="rd-deadline-countdown" data-deadline="${r.deadline}" style="font-size:13px;font-weight:700;margin-top:4px;font-family:'Rajdhani',sans-serif;letter-spacing:1px;" class="${r.deadline - Date.now() < 3600000 ? 'recruit-countdown' : 'recruit-countdown safe'}">${_formatCountdown(r.deadline)}</div>
       </div>
       <div class="recruit-info-card">
         <div class="recruit-info-label">외전 시작</div>
@@ -6677,6 +6865,14 @@ async function openRecruitDetail(id) {
   if (r.note) { noteWrap.style.display=''; noteEl.textContent = r.note; }
   else noteWrap.style.display = 'none';
 
+  // 타이머 시작
+  _startRecruitTimer();
+
+  // 신청 목록 로드
+  _applyList = [];
+  _currentApplyTab = null;
+  await loadRecruitApplies(r.id);
+
   // 북마크
   await loadRecruitBookmarks(r.id);
 
@@ -6684,6 +6880,232 @@ async function openRecruitDetail(id) {
   const commentSection = document.getElementById('rd-comment-section');
   if (commentSection) commentSection.style.display = (isAdmin || isMaster) ? '' : 'none';
   if (isAdmin || isMaster) await loadRecruitComments(r.id);
+}
+
+// ═══════════════════════════════════════════
+// 외전 신청 (Apply)
+// ═══════════════════════════════════════════
+let _raPlayers = { top:null, jg:null, mid:null, bot:null, sup:null };
+let _currentApplyTab = null;  // 현재 선택된 탭 communityId
+let _applyList = [];          // 신청 목록
+
+// ── 신청 버튼 표시 제어 ──
+function _updateApplyBtn() {
+  const btn = document.getElementById('rd-apply-btn');
+  if (!btn || !_currentRecruit) return;
+  const myCid = currentAdminData?.communityId || '';
+  const creatorId = _currentRecruit.creatorId || '';
+  const myId = currentAdminData?.id || '';
+  // 일반 관리자이고, 생성자가 아니고, 아직 신청 안 한 경우
+  const isAdmin_ = isAdmin && !isMaster;
+  const isCreator = myId === creatorId || myCid === _currentRecruit.communityId;
+  const alreadyApplied = _applyList.some(a => a.communityId === myCid);
+  btn.style.display = (isAdmin_ && !isCreator && !alreadyApplied) ? '' : 'none';
+}
+
+// ── 신청 목록 로드 + 탭 렌더 ──
+async function loadRecruitApplies(rid) {
+  if (!window._fb?.fbGetRecruitApplies) return;
+  try {
+    _applyList = await window._fb.fbGetRecruitApplies(rid);
+  } catch(e) { _applyList = []; }
+  _renderApplyTabs();
+  _updateApplyBtn();
+}
+
+function _renderApplyTabs() {
+  const tabsEl   = document.getElementById('rd-apply-tabs');
+  const contentEl= document.getElementById('rd-apply-content');
+  if (!tabsEl || !contentEl) return;
+
+  if (!_applyList.length) {
+    tabsEl.innerHTML = '';
+    contentEl.innerHTML = '<div class="recruit-apply-empty">신청 대기 중</div>';
+    _currentApplyTab = null;
+    return;
+  }
+
+  // 탭 생성
+  tabsEl.innerHTML = _applyList.map((a, i) => {
+    const isActive = _currentApplyTab
+      ? a.communityId === _currentApplyTab
+      : i === 0;
+    return `<div class="recruit-apply-tab${isActive ? ' active' : ''}"
+      onclick="selectApplyTab('${a.communityId}')">${i+1}. ${_escHtml(a.communityName||a.communityId)}</div>`;
+  }).join('');
+
+  // 첫 탭 기본 선택
+  if (!_currentApplyTab || !_applyList.find(a => a.communityId === _currentApplyTab)) {
+    _currentApplyTab = _applyList[0].communityId;
+  }
+  _renderApplyContent(_currentApplyTab);
+}
+
+function selectApplyTab(cid) {
+  _currentApplyTab = cid;
+  // 탭 active 갱신
+  document.querySelectorAll('.recruit-apply-tab').forEach(el => {
+    el.classList.toggle('active', el.textContent.includes(
+      _applyList.find(a=>a.communityId===cid)?.communityName || cid
+    ));
+  });
+  _renderApplyTabs();
+}
+
+function _renderApplyContent(cid) {
+  const contentEl = document.getElementById('rd-apply-content');
+  if (!contentEl) return;
+  const apply = _applyList.find(a => a.communityId === cid);
+  if (!apply) return;
+
+  const ddVer = '15.1.1';
+  const canDelete = isMaster || (isAdmin && currentAdminData?.communityId === cid);
+
+  contentEl.innerHTML = `
+    ${LANES.map(lane => {
+      const p = apply.players?.[lane];
+      if (!p) return `<div class="recruit-lane-row"><span class="recruit-lane-label">${LANE_LABEL[lane]}</span><span style="color:var(--text-muted);font-size:12px;">—</span></div>`;
+      const iconUrl = `https://ddragon.leagueoflegends.com/cdn/${ddVer}/img/profileicon/${p.icon}.png`;
+      const tierColor = _getTierColor(p.solo);
+      const deeplolUrl = `https://www.deeplol.gg/summoner/kr/${encodeURIComponent(p.name)}-${encodeURIComponent(p.tag)}`;
+      return `<div class="recruit-lane-row" style="cursor:pointer;" onclick="window.open('${deeplolUrl}','_blank')" title="딥롤에서 보기">
+        <span class="recruit-lane-label">${LANE_LABEL[lane]}</span>
+        <div class="recruit-player-info">
+          <img class="recruit-player-icon" src="${iconUrl}" onerror="this.style.display='none'">
+          <div>
+            <div class="recruit-player-name">${_escHtml(p.name)}#${_escHtml(p.tag)}</div>
+            <div class="recruit-player-tier" style="color:${tierColor};">${p.solo||'언랭'}</div>
+          </div>
+        </div>
+      </div>`;
+    }).join('')}
+    ${canDelete ? `<div style="padding:.75rem 0 0;">
+      <button onclick="cancelRecruitApply('${apply.rid}','${cid}')"
+        style="width:100%;padding:8px;background:transparent;border:1px solid rgba(224,80,80,.3);border-radius:3px;color:#E05050;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;cursor:pointer;">신청 취소</button>
+    </div>` : ''}
+  `;
+}
+
+// ── 신청 폼 열기 ──
+function openRecruitApplyForm() {
+  if (!_currentRecruit) return;
+  if (!isAdmin && !isMaster) return toast('관리자만 신청 가능합니다', 'err');
+  const myCid  = currentAdminData?.communityId || '';
+  const myName = currentAdminData?.communityName || '';
+
+  _raPlayers = { top:null, jg:null, mid:null, bot:null, sup:null };
+  LANES.forEach(lane => {
+    const inp = document.getElementById(`ra-search-${lane}`);
+    const wrap= document.getElementById(`ra-player-${lane}`);
+    if (inp) inp.value = '';
+    if (wrap) { wrap.innerHTML=''; wrap.style.display='none'; }
+  });
+  const errEl = document.getElementById('ra-err');
+  const laneErr = document.getElementById('ra-lane-err');
+  if (errEl) errEl.textContent = '';
+  if (laneErr) laneErr.textContent = '';
+
+  const info = document.getElementById('ra-target-info');
+  if (info) info.innerHTML = `<b style="color:var(--text-white);">${_escHtml(_currentRecruit.title)}</b>에 <span style="color:var(--blue-bright);">${_escHtml(myName)}</span>으로 신청합니다.`;
+
+  document.getElementById('recruit-apply-modal').style.display = 'flex';
+}
+
+function closeRecruitApplyForm() {
+  document.getElementById('recruit-apply-modal').style.display = 'none';
+}
+
+// ── 라인 소환사 검색 (신청폼용) ──
+async function searchApplyLane(lane) {
+  const input = document.getElementById(`ra-search-${lane}`);
+  if (!input) return;
+  const q = input.value.trim();
+  if (!q) return toast('닉네임#태그 형식으로 입력하세요', 'err');
+  let gameName, tagLine;
+  if (q.includes('#')) { [gameName, tagLine] = q.split('#'); }
+  else { gameName = q; tagLine = 'KR1'; }
+  const btn = input.nextElementSibling;
+  if (btn) { btn.disabled=true; btn.textContent='...'; }
+  try {
+    const res = await fetch(`${RIOT_PROXY_URL}?gameName=${encodeURIComponent(gameName)}&tagLine=${encodeURIComponent(tagLine)}`);
+    const data = await res.json();
+    if (data.error) { toast(data.error, 'err'); return; }
+    _raPlayers[lane] = { name:data.name, tag:data.tag, icon:data.icon, solo:data.solo, puuid:data.puuid };
+    _renderRaPlayer(lane, _raPlayers[lane]);
+    toast(`${data.name}#${data.tag} 추가됨`, 'ok');
+  } catch(e) { toast('검색 실패: '+e.message, 'err'); }
+  finally { if (btn) { btn.disabled=false; btn.textContent='검색'; } }
+}
+
+function _renderRaPlayer(lane, p) {
+  const wrap = document.getElementById(`ra-player-${lane}`);
+  if (!wrap) return;
+  const iconUrl = `https://ddragon.leagueoflegends.com/cdn/15.1.1/img/profileicon/${p.icon}.png`;
+  wrap.style.display = '';
+  wrap.innerHTML = `<div class="recruit-player-filled">
+    <img src="${iconUrl}" style="width:22px;height:22px;border-radius:50%;border:1px solid var(--border-subtle);" onerror="this.style.display='none'">
+    <span class="name">${_escHtml(p.name)}#${_escHtml(p.tag)}</span>
+    <span class="tier" style="color:var(--text-muted);font-size:10px;">${p.solo||'언랭'}</span>
+    <button onclick="_clearRaPlayer('${lane}')" style="margin-left:auto;background:transparent;border:none;color:var(--text-muted);cursor:pointer;font-size:12px;">✕</button>
+  </div>`;
+}
+
+function _clearRaPlayer(lane) {
+  _raPlayers[lane] = null;
+  const wrap = document.getElementById(`ra-player-${lane}`);
+  if (wrap) { wrap.innerHTML=''; wrap.style.display='none'; }
+  const inp = document.getElementById(`ra-search-${lane}`);
+  if (inp) inp.value = '';
+}
+
+// ── 신청 제출 ──
+async function submitRecruitApply() {
+  const errEl   = document.getElementById('ra-err');
+  const laneErr = document.getElementById('ra-lane-err');
+  errEl.textContent = '';
+  laneErr.textContent = '';
+
+  const missing = LANES.filter(l => !_raPlayers[l]);
+  if (missing.length) {
+    laneErr.textContent = `${missing.map(l=>LANE_LABEL[l]).join(', ')} 유저를 등록하세요`;
+    return;
+  }
+
+  const myCid  = currentAdminData?.communityId || '';
+  const myName = currentAdminData?.communityName || '';
+  if (!myCid) { errEl.textContent='커뮤니티 정보가 없습니다'; return; }
+
+  const applyObj = {
+    rid: _currentRecruit.id,
+    communityId: myCid,
+    communityName: myName,
+    players: { ..._raPlayers },
+    appliedAt: Date.now(),
+  };
+
+  const btn = document.getElementById('ra-submit-btn');
+  if (btn) { btn.disabled=true; btn.textContent='신청 중...'; }
+  try {
+    await window._fb.fbSaveRecruitApply(_currentRecruit.id, applyObj);
+    closeRecruitApplyForm();
+    toast(`${myName}의 외전 신청이 완료됐습니다!`, 'ok');
+    await loadRecruitApplies(_currentRecruit.id);
+  } catch(e) {
+    errEl.textContent = '신청 실패: ' + e.message;
+  } finally {
+    if (btn) { btn.disabled=false; btn.textContent='신청'; }
+  }
+}
+
+// ── 신청 취소 ──
+async function cancelRecruitApply(rid, cid) {
+  if (!confirm('신청을 취소할까요?')) return;
+  try {
+    await window._fb.fbDeleteRecruitApply(rid, cid);
+    if (_currentApplyTab === cid) _currentApplyTab = null;
+    toast('신청이 취소됐습니다', 'ok');
+    await loadRecruitApplies(rid);
+  } catch(e) { toast('취소 실패: '+e.message, 'err'); }
 }
 
 function closeRecruitDetail() {
@@ -6805,9 +7227,17 @@ async function _initAfterFb() {
   window.submitRecruitForm = submitRecruitForm;
   window.searchRecruitLane = searchRecruitLane;
   window.toggleTierAny     = toggleTierAny;
+  window.validateTierRange = validateTierRange;
   window.deleteRecruit     = deleteRecruit;
   window.openRecruitDetail = openRecruitDetail;
   window.closeRecruitDetail= closeRecruitDetail;
+  window.openRecruitApplyForm  = openRecruitApplyForm;
+  window.closeRecruitApplyForm = closeRecruitApplyForm;
+  window.searchApplyLane       = searchApplyLane;
+  window.submitRecruitApply    = submitRecruitApply;
+  window.cancelRecruitApply    = cancelRecruitApply;
+  window.selectApplyTab        = selectApplyTab;
+  window._clearRaPlayer        = _clearRaPlayer;
   window.toggleRecruitBookmark = toggleRecruitBookmark;
   window.submitRecruitComment  = submitRecruitComment;
   window.deleteRecruitComment  = deleteRecruitComment;
