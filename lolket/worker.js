@@ -92,6 +92,11 @@ export default {
       return handleLogin(request, env);
     }
 
+    // DB 읽기 프록시 (마스터 전용 경로)
+    if (path === '/db-read' && request.method === 'POST') {
+      return handleDbRead(request, env);
+    }
+
     // DB 쓰기 프록시 — 세션 토큰 검증 후 Firebase REST API로 전달
     if (path === '/db-write' && request.method === 'POST') {
       return handleDbWrite(request, env);
@@ -152,6 +157,42 @@ async function handleLogin(request, env) {
   } catch (e) {
     return json({ ok: false, error: '서버 오류', detail: e.message }, 500);
   }
+}
+
+// ══ DB 읽기 프록시 (마스터 세션 필요) ══
+async function handleDbRead(request, env) {
+  const token = request.headers.get('X-Session-Token');
+  const session = getSession(token);
+
+  let body;
+  try { body = await request.json(); } catch { return json({ ok: false, error: '잘못된 요청' }, 400); }
+
+  const { path: dbPath } = body;
+  if (!dbPath) return json({ ok: false, error: 'path 누락' }, 400);
+
+  // 마스터만 읽기 가능한 경로
+  const masterRead = [
+    /^applies/,
+    /^superadmin/,
+    /^admin\//,
+  ];
+  if (!masterRead.some(r => r.test(dbPath))) {
+    return json({ ok: false, error: '읽기 권한이 없습니다' }, 403);
+  }
+  if (!session || session.role !== 'master') {
+    return json({ ok: false, error: '마스터 권한이 필요합니다' }, 403);
+  }
+
+  const dbUrl  = env.FB_DATABASE_URL;
+  const secret = env.FB_DB_SECRET;
+  const authQ  = secret ? `?auth=${secret}` : '';
+
+  try {
+    const res = await fetch(`${dbUrl}/${dbPath}.json${authQ}`);
+    if (!res.ok) return json({ ok: false, error: 'DB 읽기 실패: ' + res.status }, 500);
+    const data = await res.json();
+    return json({ ok: true, data });
+  } catch(e) { return json({ ok: false, error: e.message }, 500); }
 }
 
 // ══ DB 쓰기 프록시 ══
