@@ -92,6 +92,11 @@ export default {
       return handleLogin(request, env);
     }
 
+    // DB 공개 읽기 프록시 (인증 불필요)
+    if (path === '/db-public-read' && request.method === 'POST') {
+      return handleDbPublicRead(request, env);
+    }
+
     // DB 읽기 프록시 (마스터 전용 경로)
     if (path === '/db-read' && request.method === 'POST') {
       return handleDbRead(request, env);
@@ -157,6 +162,37 @@ async function handleLogin(request, env) {
   } catch (e) {
     return json({ ok: false, error: '서버 오류', detail: e.message }, 500);
   }
+}
+
+// ══ DB 공개 읽기 프록시 ══
+async function handleDbPublicRead(request, env) {
+  let body;
+  try { body = await request.json(); } catch { return json({ ok: false, error: '잘못된 요청' }, 400); }
+  const { path: dbPath } = body;
+  if (!dbPath) return json({ ok: false, error: 'path 누락' }, 400);
+
+  // 공개 읽기 허용 경로만
+  const publicRead = [
+    /^recruits($|\/)/,
+    /^recruit_comments\//,
+    /^recruit_bookmarks\//,
+    /^recruit_applies\//,
+    /^notices($|\/)/,
+    /^communities_info($|\/)/,
+  ];
+  if (!publicRead.some(r => r.test(dbPath))) {
+    return json({ ok: false, error: '허용되지 않는 경로입니다' }, 403);
+  }
+
+  const dbUrl  = env.FB_DATABASE_URL;
+  const secret = env.FB_DB_SECRET;
+  const authQ  = secret ? `?auth=${secret}` : '';
+  try {
+    const res = await fetch(`${dbUrl}/${dbPath}.json${authQ}`);
+    if (!res.ok) return json({ ok: false, error: 'DB 읽기 실패: ' + res.status }, 500);
+    const data = await res.json();
+    return json({ ok: true, data });
+  } catch(e) { return json({ ok: false, error: e.message }, 500); }
 }
 
 // ══ DB 읽기 프록시 (마스터 세션 필요) ══

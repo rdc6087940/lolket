@@ -714,9 +714,11 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
    return _workerWrite(`recruits/${obj.id}`, obj, null);
  }
  async function fbGetRecruits() {
-   const snap = await get(ref(db, 'recruits'));
-   const raw = snap.val() || {};
-   return Object.values(raw).filter(r => r && r.id);
+   try {
+     const data = await _workerPublicRead('recruits');
+     if (!data) return [];
+     return Object.values(data).filter(r => r && r.id);
+   } catch(e) { return []; }
  }
  async function fbDeleteRecruit(id) {
    return _workerDelete(`recruits/${id}`, null);
@@ -725,9 +727,11 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
    return _workerWrite(`recruit_comments/${rid}/${comment.id}`, comment, null);
  }
  async function fbGetRecruitComments(rid) {
-   const snap = await get(ref(db, `recruit_comments/${rid}`));
-   const raw = snap.val() || {};
-   return Object.values(raw).filter(c => c && c.id).sort((a,b)=>a.createdAt-b.createdAt);
+   try {
+     const data = await _workerPublicRead(`recruit_comments/${rid}`);
+     if (!data) return [];
+     return Object.values(data).filter(c => c && c.id).sort((a,b)=>a.createdAt-b.createdAt);
+   } catch(e) { return []; }
  }
  async function fbDeleteRecruitComment(rid, cid) {
    return _workerDelete(`recruit_comments/${rid}/${cid}`, null);
@@ -744,9 +748,11 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
    return _workerWrite(`recruit_applies/${rid}/${applyObj.communityId}`, applyObj, null);
  }
  async function fbGetRecruitApplies(rid) {
-   const snap = await get(ref(db, `recruit_applies/${rid}`));
-   const raw = snap.val() || {};
-   return Object.values(raw).filter(a => a && a.communityId).sort((a,b)=>(a.appliedAt||0)-(b.appliedAt||0));
+   try {
+     const data = await _workerPublicRead(`recruit_applies/${rid}`);
+     if (!data) return [];
+     return Object.values(data).filter(a => a && a.communityId).sort((a,b)=>(a.appliedAt||0)-(b.appliedAt||0));
+   } catch(e) { return []; }
  }
  async function fbDeleteRecruitApply(rid, communityId) {
    return _workerDelete(`recruit_applies/${rid}/${communityId}`, null);
@@ -1643,6 +1649,17 @@ let _sessionToken = sessionStorage.getItem('injeong_session_token') || '';
 
 function _getHeaders() {
   return { 'Content-Type': 'application/json', 'X-Session-Token': _sessionToken };
+}
+
+async function _workerPublicRead(path) {
+  const res = await fetch(RIOT_PROXY_URL + '/db-public-read', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ path }),
+  });
+  const result = await res.json();
+  if (!result.ok) throw new Error(result.error || 'DB 읽기 실패');
+  return result.data;
 }
 
 async function _workerRead(path) {
@@ -6115,8 +6132,10 @@ _applyRemoteUpdate(remote);
 }
 }
 });
+// 항상 로드 (비로그인 포함)
 loadRecruits();
 loadNotices();
+// 마스터는 항상 로드 (세션 복원 포함)
 if (isMaster) loadApplies();
 initGuide();
 subscribePatchMode();
@@ -6584,13 +6603,7 @@ const TIER_KO_MAP = {IRON:'아이언',BRONZE:'브론즈',SILVER:'실버',GOLD:'�
 
 // ── 목록 로드 ──
 async function loadRecruits() {
-  if (!_fbReady || !window._fb || !window._fb.fbGetRecruits) {
-    // Firebase 준비 안됐으면 준비 후 재시도
-    if (!_fbReady) {
-      window.addEventListener('fb-ready', () => loadRecruits(), { once: true });
-    }
-    return;
-  }
+  if (!_fbReady || !window._fb || !window._fb.fbGetRecruits) return;
   try {
     _recruits = await window._fb.fbGetRecruits();
     _recruits.sort((a, b) => (a.deadline || 0) - (b.deadline || 0));
