@@ -92,6 +92,15 @@ export default {
       return handleLogin(request, env);
     }
 
+    // 커뮤니티 신청 이메일 발송
+    if (path === '/send-apply-email' && request.method === 'POST') {
+      try {
+        const data = await request.json();
+        await sendApplyEmail(env, data);
+        return json({ ok: true });
+      } catch(e) { return json({ ok: false, error: e.message }, 500); }
+    }
+
     // DB 공개 읽기 프록시 (인증 불필요)
     if (path === '/db-public-read' && request.method === 'POST') {
       return handleDbPublicRead(request, env);

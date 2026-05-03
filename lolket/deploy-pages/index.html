@@ -5406,27 +5406,14 @@ async function submitApply() {
       await window._fb.fbSaveApply(applyData);
     }
 
-    // 이메일 발송 (EmailJS 또는 mailto fallback)
-    const subject = encodeURIComponent('[롤켓배송] ' + name + ' 으로부터 커뮤니티 개설 신청 요청이 도착했습니다.');
-    const _nl = '%0A';
-    const body = [
-      '커뮤니티 개설 신청이 접수되었습니다.',
-      '',
-      '■ 신청자: ' + name,
-      '■ 커뮤니티명: ' + community,
-      '■ 설명: ' + desc,
-      email   ? '■ 이메일: ' + email     : null,
-      discord ? '■ 디스코드: ' + discord : null,
-      '',
-      '신청일: ' + new Date(applyData.createdAt).toLocaleString('ko-KR'),
-    ].filter(function(x){ return x !== null; }).map(encodeURIComponent).join(_nl);
-    // mailto 링크로 메일 클라이언트 열기
-    const mailLink = document.createElement('a');
-    mailLink.href = 'mailto:' + APPLY_EMAIL_TO + '?subject=' + subject + '&body=' + body;
-    mailLink.style.display = 'none';
-    document.body.appendChild(mailLink);
-    mailLink.click();
-    document.body.removeChild(mailLink);
+    // Worker를 통해 이메일 발송
+    try {
+      await fetch(RIOT_PROXY_URL + '/send-apply-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(applyData),
+      });
+    } catch(e) { /* 이메일 실패해도 신청은 완료 */ }
 
     toast(_escHtml(name) + '님의 커뮤니티 신청이 접수되었습니다', 'ok');
     closeApplyModal();
