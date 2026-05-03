@@ -258,8 +258,85 @@ async function handleDbWrite(request, env) {
       body: JSON.stringify(data),
     });
     if (!res.ok) return json({ ok: false, error: 'DB 쓰기 실패: ' + res.status }, 500);
+
+    // 커뮤니티 신청 저장 시 이메일 발송
+    if (/^applies\/[^/]+$/.test(dbPath) && data) {
+      sendApplyEmail(env, data).catch(() => {});
+    }
+
     return json({ ok: true });
   } catch(e) { return json({ ok: false, error: e.message }, 500); }
+}
+
+async function sendApplyEmail(env, data) {
+  const apiKey = env.RESEND_API_KEY || 're_V4Gw7Ze6_87FRvA2qh4auXQ3yQp28173k';
+  const to     = 'rdc6087@naver.com';
+  const from   = 'noreply@roonging.com';
+
+  const community = data.community || data.communityName || '(미입력)';
+  const name      = data.name      || '(미입력)';
+  const type      = data.type      === 'official' ? '공식 커뮤니티' : '일반 커뮤니티';
+  const desc      = data.desc      || data.description || '(없음)';
+  const email     = data.email     || '(미입력)';
+  const discord   = data.discord   || '(미입력)';
+  const createdAt = data.createdAt ? new Date(data.createdAt).toLocaleString('ko-KR') : '—';
+
+  const html = `
+<div style="font-family:'Apple SD Gothic Neo',sans-serif;max-width:560px;margin:0 auto;background:#0d1117;color:#c9d1d9;border-radius:8px;overflow:hidden;">
+  <div style="background:#1a2332;padding:24px 32px;border-bottom:2px solid #C8AA6E;">
+    <h2 style="margin:0;font-size:20px;color:#C8AA6E;letter-spacing:2px;">⚔ 롤켓배송</h2>
+    <p style="margin:6px 0 0;font-size:13px;color:#8b949e;">신규 커뮤니티 신청이 접수됐습니다</p>
+  </div>
+  <div style="padding:24px 32px;">
+    <table style="width:100%;border-collapse:collapse;font-size:14px;">
+      <tr style="border-bottom:1px solid #21262d;">
+        <td style="padding:10px 0;color:#8b949e;width:120px;">커뮤니티명</td>
+        <td style="padding:10px 0;font-weight:700;color:#e6edf3;">${community}</td>
+      </tr>
+      <tr style="border-bottom:1px solid #21262d;">
+        <td style="padding:10px 0;color:#8b949e;">신청자</td>
+        <td style="padding:10px 0;color:#e6edf3;">${name}</td>
+      </tr>
+      <tr style="border-bottom:1px solid #21262d;">
+        <td style="padding:10px 0;color:#8b949e;">유형</td>
+        <td style="padding:10px 0;color:#e6edf3;">${type}</td>
+      </tr>
+      <tr style="border-bottom:1px solid #21262d;">
+        <td style="padding:10px 0;color:#8b949e;">소개</td>
+        <td style="padding:10px 0;color:#e6edf3;">${desc}</td>
+      </tr>
+      <tr style="border-bottom:1px solid #21262d;">
+        <td style="padding:10px 0;color:#8b949e;">이메일</td>
+        <td style="padding:10px 0;color:#e6edf3;">${email}</td>
+      </tr>
+      <tr style="border-bottom:1px solid #21262d;">
+        <td style="padding:10px 0;color:#8b949e;">디스코드</td>
+        <td style="padding:10px 0;color:#e6edf3;">${discord}</td>
+      </tr>
+      <tr>
+        <td style="padding:10px 0;color:#8b949e;">신청 일시</td>
+        <td style="padding:10px 0;color:#e6edf3;">${createdAt}</td>
+      </tr>
+    </table>
+  </div>
+  <div style="padding:16px 32px;background:#1a2332;font-size:12px;color:#8b949e;text-align:center;">
+    롤켓배송 관리 시스템 · roonging.com
+  </div>
+</div>`;
+
+  await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      from,
+      to,
+      subject: `[롤켓배송] 신규 커뮤니티 신청 - ${community}`,
+      html,
+    }),
+  });
 }
 
 // ══ DB 삭제 프록시 ══

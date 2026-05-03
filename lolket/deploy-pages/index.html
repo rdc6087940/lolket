@@ -715,10 +715,12 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
  }
  async function fbGetRecruits() {
    try {
-     const data = await _workerPublicRead('recruits');
-     if (!data) return [];
-     return Object.values(data).filter(r => r && r.id);
-   } catch(e) { return []; }
+     const url = _workerBase + '/db-public-read';
+     const res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ path: 'recruits' }) });
+     const result = await res.json();
+     if (!result.ok || !result.data) return [];
+     return Object.values(result.data).filter(r => r && r.id);
+   } catch(e) { console.error('[fbGetRecruits] 에러:', e); return []; }
  }
  async function fbDeleteRecruit(id) {
    return _workerDelete(`recruits/${id}`, null);
@@ -728,9 +730,11 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
  }
  async function fbGetRecruitComments(rid) {
    try {
-     const data = await _workerPublicRead(`recruit_comments/${rid}`);
-     if (!data) return [];
-     return Object.values(data).filter(c => c && c.id).sort((a,b)=>a.createdAt-b.createdAt);
+     const url = _workerBase + '/db-public-read';
+     const res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ path: `recruit_comments/${rid}` }) });
+     const result = await res.json();
+     if (!result.ok || !result.data) return [];
+     return Object.values(result.data).filter(c => c && c.id).sort((a,b)=>a.createdAt-b.createdAt);
    } catch(e) { return []; }
  }
  async function fbDeleteRecruitComment(rid, cid) {
@@ -749,9 +753,11 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
  }
  async function fbGetRecruitApplies(rid) {
    try {
-     const data = await _workerPublicRead(`recruit_applies/${rid}`);
-     if (!data) return [];
-     return Object.values(data).filter(a => a && a.communityId).sort((a,b)=>(a.appliedAt||0)-(b.appliedAt||0));
+     const url = _workerBase + '/db-public-read';
+     const res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ path: `recruit_applies/${rid}` }) });
+     const result = await res.json();
+     if (!result.ok || !result.data) return [];
+     return Object.values(result.data).filter(a => a && a.communityId).sort((a,b)=>(a.appliedAt||0)-(b.appliedAt||0));
    } catch(e) { return []; }
  }
  async function fbDeleteRecruitApply(rid, communityId) {
@@ -1651,16 +1657,6 @@ function _getHeaders() {
   return { 'Content-Type': 'application/json', 'X-Session-Token': _sessionToken };
 }
 
-async function _workerPublicRead(path) {
-  const res = await fetch(RIOT_PROXY_URL + '/db-public-read', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ path }),
-  });
-  const result = await res.json();
-  if (!result.ok) throw new Error(result.error || 'DB 읽기 실패');
-  return result.data;
-}
 
 async function _workerRead(path) {
   const res = await fetch(RIOT_PROXY_URL + '/db-read', {
@@ -1840,6 +1836,17 @@ if (lGrid) renderMatchList();
 }
 function onSearchKey(e){if (e.key === 'Enter') searchSummoner();}
 const RIOT_PROXY_URL='https://delicate-dew-c1bd.rdc6087.workers.dev';
+async function _workerPublicRead(path) {
+  const res = await fetch(RIOT_PROXY_URL + '/db-public-read', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ path }),
+  });
+  const result = await res.json();
+  if (!result.ok) throw new Error(result.error || 'DB 읽기 실패');
+  return result.data;
+}
+window._workerPublicRead = _workerPublicRead;
 async function searchSummoner(){
 const q=document.getElementById('search-input').value.trim();
 if (!q) return toast('닉네임을 입력하세요', 'err');
@@ -6620,10 +6627,8 @@ function renderRecruitList() {
   const container = document.getElementById('recruit-list');
   if (!container) return;
   const now = Date.now();
-  // 관리자/마스터는 마감된 것 포함 전체, 일반은 마감 전만
-  const list = (isAdmin || isMaster)
-    ? _recruits
-    : _recruits.filter(r => !r.deadline || r.deadline > now);
+  // 모두에게 전체 목록 표시 (마감된 것은 카운트다운에서 "마감"으로 표시)
+  const list = _recruits;
   if (!list.length) {
     container.innerHTML = '<div class="notice-empty">외전 모집이 없습니다</div>';
     return;
