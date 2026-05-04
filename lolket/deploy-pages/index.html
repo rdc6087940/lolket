@@ -594,6 +594,12 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
 @media (max-width: 768px) {
   .mobile-menu-btn{display:flex;align-items:center;justify-content:center;}
 }
+.apply-filter-btn{font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;padding:4px 12px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--text-muted);cursor:pointer;transition:all .15s;}
+.apply-filter-btn:hover{border-color:var(--gold);color:var(--gold);}
+.apply-filter-btn.active{border-color:var(--gold);color:var(--gold);background:rgba(200,170,110,.1);}
+.apply-filter-btn[data-filter="approved"].active{border-color:#2DB87A;color:#2DB87A;background:rgba(45,184,122,.1);}
+.apply-filter-btn[data-filter="rejected"].active{border-color:#E05050;color:#E05050;background:rgba(224,80,80,.1);}
+.apply-filter-btn[data-filter="pending"].active{border-color:var(--blue-bright);color:var(--blue-bright);background:rgba(10,200,185,.1);}
 </style> <script type="module">
  
  
@@ -837,7 +843,20 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
  onfocus="this.style.borderColor='var(--blue-bright)'"
  onblur="this.style.borderColor='var(--border-subtle)'"> <span onclick="clearCommunitySearch()" id="community-search-clear"
  style="position:absolute;right:8px;top:50%;transform:translateY(-50%);
- color:var(--text-muted);cursor:pointer;font-size:12px;display:none;">✕</span> </div> <div style="display:flex;gap:8px;" id="master-actions"> <button class="btn-secondary" onclick="openInviteManageModal()" id="btn-invite-manage" style="display:none;">초대 링크 관리</button> <button class="btn-primary" onclick="openCommunityCreateModal()" id="btn-community-create" style="display:none;">+ 커뮤니티 생성</button> </div> <button class="btn-secondary" onclick="openApplyModal()" style="font-size:12px;">📋 커뮤니티 신청</button> </div> </div> <div class="community-grid" id="community-grid"></div> <div id="community-empty" class="list-empty" style="display:none;"> <div class="list-empty-hex">◇</div> <div style="font-size:14px;">등록된 커뮤니티가 없습니다</div> </div> <div id="apply-req-section" style="display:none;margin-top:2rem;"> <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;"> <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:3px;color:var(--gold);">커뮤니티 신청 목록</div> <span id="apply-req-count" style="font-family:'Rajdhani',sans-serif;font-size:11px;color:var(--text-muted);"></span> </div> <div class="apply-grid" id="apply-req-grid"></div> <div id="apply-req-empty" style="display:none;padding:2rem;text-align:center;font-size:13px;color:var(--text-muted);">신청 내역이 없습니다</div> </div> </div> </div> </div> </div>
+ color:var(--text-muted);cursor:pointer;font-size:12px;display:none;">✕</span> </div> <div style="display:flex;gap:8px;" id="master-actions"> <button class="btn-secondary" onclick="openInviteManageModal()" id="btn-invite-manage" style="display:none;">초대 링크 관리</button> <button class="btn-primary" onclick="openCommunityCreateModal()" id="btn-community-create" style="display:none;">+ 커뮤니티 생성</button> </div> <button class="btn-secondary" onclick="openApplyModal()" style="font-size:12px;">📋 커뮤니티 신청</button> </div> </div> <div class="community-grid" id="community-grid"></div> <div id="community-empty" class="list-empty" style="display:none;"> <div class="list-empty-hex">◇</div> <div style="font-size:14px;">등록된 커뮤니티가 없습니다</div> </div> <div id="apply-req-section" style="display:none;margin-top:2rem;">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:3px;color:var(--gold);">커뮤니티 신청 목록</div>
+    <span id="apply-req-count" style="font-family:'Rajdhani',sans-serif;font-size:11px;color:var(--text-muted);"></span>
+  </div>
+  <div style="display:flex;gap:6px;margin-bottom:.75rem;flex-wrap:wrap;">
+    <button class="apply-filter-btn active" data-filter="all"    onclick="setApplyFilter('all')">전체</button>
+    <button class="apply-filter-btn"        data-filter="pending" onclick="setApplyFilter('pending')">대기중</button>
+    <button class="apply-filter-btn"        data-filter="approved" onclick="setApplyFilter('approved')">승인</button>
+    <button class="apply-filter-btn"        data-filter="rejected" onclick="setApplyFilter('rejected')">거절</button>
+  </div>
+  <div class="apply-grid" id="apply-req-grid"></div>
+  <div id="apply-req-empty" style="display:none;padding:2rem;text-align:center;font-size:13px;color:var(--text-muted);">신청 내역이 없습니다</div>
+</div> </div> </div> </div> </div>
 <div id="screen-invite" class="screen"> <div style="max-width:400px;margin:4rem auto;padding:2rem;"> <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:3px;color:var(--gold);margin-bottom:.5rem;">관리자 계정 등록</div> <div style="font-size:12px;color:var(--text-muted);margin-bottom:1.5rem;line-height:1.6;" id="invite-community-label">
  커뮤니티: <span style="color:var(--text-white);" id="invite-community-name">—</span> </div> <div style="display:flex;flex-direction:column;gap:1rem;margin-bottom:1rem;"> <div style="display:flex;flex-direction:column;gap:6px;"> <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;text-transform:uppercase;">아이디</label> <input class="form-input" type="text" id="invite-id" placeholder="사용할 아이디 입력" style="font-size:14px;"> </div> <div style="display:flex;flex-direction:column;gap:6px;"> <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;text-transform:uppercase;">비밀번호</label> <input class="form-input" type="password" id="invite-pw" placeholder="비밀번호 입력" style="font-size:14px;"> </div> <div style="display:flex;flex-direction:column;gap:6px;"> <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;text-transform:uppercase;">비밀번호 확인</label> <input class="form-input" type="password" id="invite-pw2" placeholder="비밀번호 재입력" style="font-size:14px;" onkeydown="if(event.key==='Enter')registerInviteAdmin()"> </div> </div> <div id="invite-err" style="font-size:12px;color:#E05050;min-height:18px;margin-bottom:.75rem;"></div> <button class="btn-primary" style="width:100%;padding:11px;font-size:14px;letter-spacing:2px;" onclick="registerInviteAdmin()">계정 생성</button> </div>
 </div> <div class="modal-overlay" id="community-modal" style="display:none;"> <div class="modal" style="max-width:400px;"> <div class="modal-title" id="community-modal-title">커뮤니티 생성</div> <div style="display:flex;flex-direction:column;gap:1rem;margin-bottom:1rem;"> <div style="display:flex;flex-direction:column;gap:6px;"> <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;text-transform:uppercase;">커뮤니티 이름</label> <input class="form-input" type="text" id="cm-name" placeholder="예) 롤켓 내전"> </div> <div style="display:flex;flex-direction:column;gap:6px;"> <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;text-transform:uppercase;">설명 (선택)</label> <input class="form-input" type="text" id="cm-desc" placeholder="커뮤니티 간단 설명"> </div>
@@ -5436,6 +5455,16 @@ async function loadApplies() {
   renderApplyList();
 }
 
+let _applyFilter = 'all';
+
+function setApplyFilter(filter) {
+  _applyFilter = filter;
+  document.querySelectorAll('.apply-filter-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.filter === filter);
+  });
+  renderApplyList();
+}
+
 function renderApplyList() {
   const section = document.getElementById('apply-req-section');
   const grid    = document.getElementById('apply-req-grid');
@@ -5443,7 +5472,6 @@ function renderApplyList() {
   const count   = document.getElementById('apply-req-count');
   if (!section) return;
 
-  // 마스터만 신청 목록 열람 가능
   if (!isMaster) { section.style.display = 'none'; return; }
   section.style.display = '';
 
@@ -5454,20 +5482,45 @@ function renderApplyList() {
     return;
   }
 
-  if (empty) empty.style.display = 'none';
-  const pending = _applies.filter(a => a.status === 'pending' || a.status === '신청요청').length;
-  if (count) count.textContent = '총 ' + _applies.length + '건' + (pending ? '  |  대기 ' + pending + '건' : '');
+  // 필터 적용
+  const STATUS_MAP = { pending: ['pending','신청요청'], approved: ['approved','승인'], rejected: ['rejected','거절'] };
+  const filtered = _applyFilter === 'all'
+    ? _applies
+    : _applies.filter(a => (STATUS_MAP[_applyFilter] || []).includes(a.status || 'pending'));
 
-  _applies.forEach(function(a) {
+  const pending = _applies.filter(a => ['pending','신청요청'].includes(a.status || 'pending')).length;
+  if (count) count.textContent = '총 ' + _applies.length + '건' + (pending ? '  ·  대기 ' + pending + '건' : '');
+
+  grid.innerHTML = '';
+  if (!filtered.length) {
+    if (empty) empty.style.display = '';
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+
+  const STATUS_LABEL = { pending:'대기중', approved:'승인', rejected:'거절', '신청요청':'대기중', '승인':'승인', '거절':'거절' };
+
+  // 삭제 버튼 이벤트 위임
+  grid.onclick = function(e) {
+    const btn = e.target.closest('.apply-del-btn');
+    if (btn) { e.stopPropagation(); deleteApply(btn.dataset.aid); }
+  };
+
+  filtered.forEach(function(a) {
     const card = document.createElement('div');
-    card.className = 'apply-req-card status-' + (a.status || 'pending');
+    const st = a.status || 'pending';
+    card.className = 'apply-req-card status-' + st;
     const dt = new Date(a.createdAt);
     const dateStr = (dt.getMonth()+1) + '/' + dt.getDate() + ' ' + dt.getHours() + ':' + String(dt.getMinutes()).padStart(2,'0');
-    const statusLabel = {pending:'대기중', approved:'승인', rejected:'거절', '신청요청':'대기중'}[a.status] || (a.status || '대기중');
+    const statusLabel = STATUS_LABEL[st] || st;
     card.innerHTML =
-      '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:4px;">' +
-        '<div class="apply-req-name">' + _escHtml(a.name) + '</div>' +
-        '<span class="apply-status-pill ' + (a.status||'pending') + '">' + statusLabel + '</span>' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px;">' +
+        '<div class="apply-req-name" style="flex:1;min-width:0;">' + _escHtml(a.name) + '</div>' +
+        '<div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">' +
+          '<span class="apply-status-pill ' + st + '">' + statusLabel + '</span>' +
+          '<button data-aid="' + a.id + '" class="apply-del-btn" ' +
+            'style="background:transparent;border:1px solid rgba(224,80,80,.3);border-radius:2px;color:#E05050;padding:2px 7px;font-family:\'Rajdhani\',sans-serif;font-size:9px;font-weight:700;cursor:pointer;letter-spacing:.5px;">삭제</button>' +
+        '</div>' +
       '</div>' +
       '<div style="font-size:13px;color:var(--gold);font-weight:600;margin-bottom:4px;">' + _escHtml(a.community) + '</div>' +
       '<div class="apply-req-meta">' +
@@ -5480,6 +5533,15 @@ function renderApplyList() {
     })(a.id);
     grid.appendChild(card);
   });
+}
+
+async function deleteApply(id) {
+  if (!confirm('이 신청을 삭제할까요? 복구할 수 없습니다.')) return;
+  try {
+    await _workerDelete('applies/' + id, 'master');
+    toast('삭제됐습니다', 'ok');
+    await loadApplies();
+  } catch(e) { toast('삭제 실패: ' + e.message, 'err'); }
 }
 
 // ── 신청 상세 팝업 ──
@@ -7397,6 +7459,8 @@ async function deleteRecruitComment(rid, cid) {
 
 async function _initAfterFb() {
   // ── 전역 함수 명시적 등록 (onclick에서 접근 보장) ──
+  window.setApplyFilter    = setApplyFilter;
+  window.deleteApply       = deleteApply;
   window.openMobileDrawer  = openMobileDrawer;
   window.closeMobileDrawer = closeMobileDrawer;
   window.showMobileSection = showMobileSection;
