@@ -600,6 +600,18 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
 .apply-filter-btn[data-filter="approved"].active{border-color:#2DB87A;color:#2DB87A;background:rgba(45,184,122,.1);}
 .apply-filter-btn[data-filter="rejected"].active{border-color:#E05050;color:#E05050;background:rgba(224,80,80,.1);}
 .apply-filter-btn[data-filter="pending"].active{border-color:var(--blue-bright);color:var(--blue-bright);background:rgba(10,200,185,.1);}
+
+/* ── 제보 폼 ── */
+.report-category-btns{display:flex;gap:6px;margin-bottom:.75rem;}
+.report-cat-btn{flex:1;padding:8px 4px;border-radius:3px;border:1px solid var(--border-subtle);background:transparent;color:var(--text-muted);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all .15s;text-align:center;}
+.report-cat-btn:hover{border-color:var(--blue-bright);color:var(--blue-bright);}
+.report-cat-btn.active.bug{border-color:#E05050;color:#E05050;background:rgba(224,80,80,.08);}
+.report-cat-btn.active.feedback{border-color:#2DB87A;color:#2DB87A;background:rgba(45,184,122,.08);}
+.report-cat-btn.active.inquiry{border-color:var(--gold);color:var(--gold);background:rgba(200,170,110,.08);}
+.report-privacy-toggle{display:flex;align-items:center;gap:8px;margin-bottom:.75rem;}
+.report-privacy-btn{display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:3px;border:1px solid var(--border-subtle);background:transparent;color:var(--text-muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all .15s;}
+.report-privacy-btn.active.public{border-color:var(--blue-bright);color:var(--blue-bright);background:rgba(10,200,185,.08);}
+.report-privacy-btn.active.private{border-color:var(--gold);color:var(--gold);background:rgba(200,170,110,.08);}
 </style> <script type="module">
  
  
@@ -818,7 +830,7 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
 </script> </head>
 <body> <header class="header"> <div class="header-inner"> <div style="display:flex;align-items:center;gap:14px;"> <div class="logo" style="cursor:pointer;" onclick="goHome()"> <div class="logo-diamond"></div>
  롤켓배송
- </div><span id="app-version" onclick="isMaster && openVersionModal()" style="font-family:'Rajdhani',sans-serif;font-size:9px;color:var(--text-muted);letter-spacing:1px;opacity:.7;margin-left:2px;transition:all .15s;">v1.1.005</span> <button class="btn-back" id="btn-back" onclick="goToList()" style="display:none;">← 목록</button> <div class="community-indicator" id="community-indicator" onclick="goToList()" title="커뮤니티 홈" style="cursor:pointer;"> <div class="community-indicator-dot"></div> <span id="community-indicator-name"></span> </div> </div> <div class="stage-indicator hidden" id="stage-indicator"> <div class="stage-pip" id="pip-1"><div class="stage-pip-dot"></div>1. 내전 대기</div> <div class="stage-pip" id="pip-2"><div class="stage-pip-dot"></div>2. 종류 선택</div> <div class="stage-pip" id="pip-3"><div class="stage-pip-dot"></div>3. 팀 짜기</div> <div class="stage-pip" id="pip-4"><div class="stage-pip-dot"></div>4. 대진표</div> <div class="stage-pip" id="pip-5"><div class="stage-pip-dot"></div>5. 결과</div> </div> <div class="header-actions"> <div class="role-badge user" id="role-badge"><div class="role-dot"></div><span id="role-label">일반 유저</span></div> <button class="btn-auth" id="btn-auth" onclick="openLoginModal()" style="display:none;">로그아웃</button> <button class="btn-auth" id="btn-master-login" onclick="openMasterLoginModal()" style="font-size:10px;padding:5px 10px;border-color:rgba(157,72,224,.4);color:#B97EEA;background:rgba(157,72,224,.07);">마스터</button> <button class="btn-auth" id="btn-admin-login" onclick="openLoginModal()">관리자 로그인</button> <div class="patch-toggle-wrap master-only" id="patch-toggle-wrap" style="display:none;"><span class="patch-toggle-label" id="patch-toggle-label">패치중</span><label class="patch-toggle"><input type="checkbox" id="patch-toggle-input" onchange="onPatchToggle(this.checked)"><span class="patch-toggle-slider"></span></label></div><button onclick="openGuide()" title="이용 가이드" style="width:28px;height:28px;border-radius:50%;border:1px solid var(--border-subtle);background:rgba(200,170,110,.08);color:var(--gold);font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0;">?</button><button class="btn-secondary admin-only" id="btn-new-match" onclick="openNewMatchFlow()" style="display:none;">+ 새 내전 생성</button> </div>
+ </div><span id="app-version" onclick="isMaster && openVersionModal()" style="font-family:'Rajdhani',sans-serif;font-size:9px;color:var(--text-muted);letter-spacing:1px;opacity:.7;margin-left:2px;transition:all .15s;">v1.1.005</span> <button class="btn-back" id="btn-back" onclick="goToList()" style="display:none;">← 목록</button> <div class="community-indicator" id="community-indicator" onclick="goToList()" title="커뮤니티 홈" style="cursor:pointer;"> <div class="community-indicator-dot"></div> <span id="community-indicator-name"></span> </div> </div> <div class="stage-indicator hidden" id="stage-indicator"> <div class="stage-pip" id="pip-1"><div class="stage-pip-dot"></div>1. 내전 대기</div> <div class="stage-pip" id="pip-2"><div class="stage-pip-dot"></div>2. 종류 선택</div> <div class="stage-pip" id="pip-3"><div class="stage-pip-dot"></div>3. 팀 짜기</div> <div class="stage-pip" id="pip-4"><div class="stage-pip-dot"></div>4. 대진표</div> <div class="stage-pip" id="pip-5"><div class="stage-pip-dot"></div>5. 결과</div> </div> <div class="header-actions"> <div class="role-badge user" id="role-badge"><div class="role-dot"></div><span id="role-label">일반 유저</span></div> <button class="btn-auth" id="btn-auth" onclick="openLoginModal()" style="display:none;">로그아웃</button> <button class="btn-auth" id="btn-master-login" onclick="openMasterLoginModal()" style="font-size:10px;padding:5px 10px;border-color:rgba(157,72,224,.4);color:#B97EEA;background:rgba(157,72,224,.07);">마스터</button> <button class="btn-auth" id="btn-admin-login" onclick="openLoginModal()">관리자 로그인</button> <div class="patch-toggle-wrap master-only" id="patch-toggle-wrap" style="display:none;"><span class="patch-toggle-label" id="patch-toggle-label">패치중</span><label class="patch-toggle"><input type="checkbox" id="patch-toggle-input" onchange="onPatchToggle(this.checked)"><span class="patch-toggle-slider"></span></label></div><button onclick="openGuide()" title="이용 가이드" style="width:28px;height:28px;border-radius:50%;border:1px solid var(--border-subtle);background:rgba(200,170,110,.08);color:var(--gold);font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0;">?</button><button onclick="openReportModal()" style="padding:5px 10px;background:transparent;border:1px solid var(--border-subtle);border-radius:3px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;flex-shrink:0;transition:all .15s;" title="버그/피드백 제보">📢</button><button class="btn-secondary admin-only" id="btn-new-match" onclick="openNewMatchFlow()" style="display:none;">+ 새 내전 생성</button> </div>
   <button class="mobile-menu-btn" id="mobile-menu-btn" onclick="openMobileDrawer()" aria-label="메뉴">
     <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
       <rect x="2" y="4" width="16" height="2" rx="1" fill="currentColor"/>
@@ -1652,6 +1664,61 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
       <div class="mobile-drawer-section-title">외전 모집</div>
       <button id="mdrawer-recruit-write-btn" onclick="closeMobileDrawer();openRecruitForm();" style="display:none;width:100%;margin-bottom:.75rem;padding:6px;background:rgba(200,170,110,.1);border:1px solid rgba(200,170,110,.3);border-radius:3px;color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;">+ 외전 모집 작성</button>
       <div id="mdrawer-recruit-list"></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="report-modal" style="display:none;z-index:700;" onclick="if(event.target===this)closeReportModal()">
+  <div class="modal" style="max-width:520px;max-height:90vh;display:flex;flex-direction:column;">
+    <div class="modal-title" style="display:flex;align-items:center;justify-content:space-between;">
+      <span>📢 버그 · 피드백 · 문의</span>
+    </div>
+    <div style="overflow-y:auto;flex:1;margin-top:.75rem;">
+
+      <!-- 카테고리 -->
+      <div class="form-row">
+        <div class="form-label">카테고리 *</div>
+        <div class="report-category-btns">
+          <button class="report-cat-btn active bug" data-cat="bug"      onclick="setReportCat('bug')">🐛 버그</button>
+          <button class="report-cat-btn feedback"   data-cat="feedback"  onclick="setReportCat('feedback')">💡 피드백</button>
+          <button class="report-cat-btn inquiry"    data-cat="inquiry"   onclick="setReportCat('inquiry')">❓ 문의</button>
+        </div>
+      </div>
+
+      <!-- 공개 여부 -->
+      <div class="form-row">
+        <div class="form-label">공개 여부 *</div>
+        <div class="report-privacy-toggle">
+          <button class="report-privacy-btn active public" data-priv="public"  onclick="setReportPrivacy(false)">🔓 공개</button>
+          <button class="report-privacy-btn private"       data-priv="private" onclick="setReportPrivacy(true)">🔒 비공개</button>
+          <span id="report-privacy-desc" style="font-size:10px;color:var(--text-muted);">공개 포럼 채널에 게시됩니다</span>
+        </div>
+      </div>
+
+      <!-- 제목 -->
+      <div class="form-row">
+        <div class="form-label">제목 *</div>
+        <input class="form-input" id="report-title" placeholder="간략한 제목을 입력하세요" maxlength="100">
+      </div>
+
+      <!-- 내용 -->
+      <div class="form-row">
+        <div class="form-label">내용 *</div>
+        <textarea class="form-input" id="report-content" rows="5" placeholder="자세한 내용을 입력하세요" style="resize:vertical;"></textarea>
+      </div>
+
+      <!-- 연락수단 -->
+      <div class="form-row">
+        <div class="form-label">연락수단 <span style="color:var(--text-muted);font-size:10px;">(선택)</span></div>
+        <input class="form-input" id="report-contact" placeholder="디스코드 아이디 또는 이메일">
+      </div>
+
+      <div id="report-err" style="font-size:11px;color:#E05050;margin-top:4px;"></div>
+    </div>
+
+    <div class="modal-actions" style="margin-top:.75rem;">
+      <button class="btn-secondary" onclick="closeReportModal()">취소</button>
+      <button class="btn-primary" id="report-submit-btn" onclick="submitReport()">제출</button>
     </div>
   </div>
 </div>
@@ -7458,7 +7525,102 @@ async function deleteRecruitComment(rid, cid) {
 }
 
 async function _initAfterFb() {
-  // ── 전역 함수 명시적 등록 (onclick에서 접근 보장) ──
+  
+// ═══════════════════════════════════════════
+// 버그/피드백/문의 제보
+// ═══════════════════════════════════════════
+let _reportCat     = 'bug';
+let _reportPrivate = false;
+
+function openReportModal() {
+  // 초기화
+  _reportCat     = 'bug';
+  _reportPrivate = false;
+  const titleEl = document.getElementById('report-title');
+  const contentEl = document.getElementById('report-content');
+  const contactEl = document.getElementById('report-contact');
+  const errEl = document.getElementById('report-err');
+  if (titleEl)   titleEl.value   = '';
+  if (contentEl) contentEl.value = '';
+  if (contactEl) contactEl.value = '';
+  if (errEl)     errEl.textContent = '';
+  setReportCat('bug');
+  setReportPrivacy(false);
+  document.getElementById('report-modal').style.display = 'flex';
+}
+
+function closeReportModal() {
+  document.getElementById('report-modal').style.display = 'none';
+}
+
+function setReportCat(cat) {
+  _reportCat = cat;
+  document.querySelectorAll('.report-cat-btn').forEach(btn => {
+    const isActive = btn.dataset.cat === cat;
+    btn.classList.toggle('active', isActive);
+    if (isActive) btn.classList.add(cat);
+    else ['bug','feedback','inquiry'].forEach(c => btn.classList.remove(c));
+    if (isActive) btn.classList.add(cat);
+  });
+}
+
+function setReportPrivacy(isPrivate) {
+  _reportPrivate = isPrivate;
+  document.querySelectorAll('.report-privacy-btn').forEach(btn => {
+    const match = (btn.dataset.priv === 'private') === isPrivate;
+    btn.classList.toggle('active', match);
+  });
+  const desc = document.getElementById('report-privacy-desc');
+  if (desc) {
+    desc.textContent = isPrivate
+      ? '비공개 채널에 게시됩니다 (관리자만 확인)'
+      : '공개 포럼 채널에 게시됩니다';
+  }
+}
+
+async function submitReport() {
+  const title   = document.getElementById('report-title')?.value.trim();
+  const content = document.getElementById('report-content')?.value.trim();
+  const contact = document.getElementById('report-contact')?.value.trim();
+  const errEl   = document.getElementById('report-err');
+  if (errEl) errEl.textContent = '';
+
+  if (!title)   { if (errEl) errEl.textContent = '제목을 입력하세요'; return; }
+  if (!content) { if (errEl) errEl.textContent = '내용을 입력하세요'; return; }
+
+  const btn = document.getElementById('report-submit-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '제출 중...'; }
+
+  try {
+    const res = await fetch(RIOT_PROXY_URL + '/report', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        category:  _reportCat,
+        title,
+        content,
+        contact:   contact || null,
+        isPrivate: _reportPrivate,
+      }),
+    });
+    const result = await res.json();
+    if (!result.ok) throw new Error(result.error || '제출 실패');
+    closeReportModal();
+    const catLabel = { bug:'버그 제보', feedback:'피드백', inquiry:'문의' }[_reportCat] || '제보';
+    toast(catLabel + '가 접수됐습니다 감사합니다!', 'ok');
+  } catch(e) {
+    if (errEl) errEl.textContent = '제출 실패: ' + e.message;
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '제출'; }
+  }
+}
+
+// ── 전역 함수 명시적 등록 (onclick에서 접근 보장) ──
+  window.openReportModal   = openReportModal;
+  window.closeReportModal  = closeReportModal;
+  window.setReportCat      = setReportCat;
+  window.setReportPrivacy  = setReportPrivacy;
+  window.submitReport      = submitReport;
   window.setApplyFilter    = setApplyFilter;
   window.deleteApply       = deleteApply;
   window.openMobileDrawer  = openMobileDrawer;

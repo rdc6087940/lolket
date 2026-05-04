@@ -92,6 +92,15 @@ export default {
       return handleLogin(request, env);
     }
 
+    // 버그/피드백/문의 Discord 포럼 포스트
+    if (path === '/report' && request.method === 'POST') {
+      try {
+        const data = await request.json();
+        const result = await sendDiscordReport(env, data);
+        return json(result);
+      } catch(e) { return json({ ok: false, error: e.message }, 500); }
+    }
+
     // 커뮤니티 신청 이메일 발송
     if (path === '/send-apply-email' && request.method === 'POST') {
       try {
@@ -202,6 +211,62 @@ async function handleDbPublicRead(request, env) {
     const data = await res.json();
     return json({ ok: true, data });
   } catch(e) { return json({ ok: false, error: e.message }, 500); }
+}
+
+
+// ══ Discord 포럼 포스트 ══
+async function sendDiscordReport(env, data) {
+  const token = env.DISCORD_BOT_TOKEN || 'MTUwMDcxNzA4ODk4NDAxMDg4Mw.GXhPmz.RodROaPnNMMtDViQM_NE_gpdwTLznEfjD8gXpw';
+
+  const CHANNELS = {
+    bug:      '1500699477768536225',
+    feedback: '1500699548975108238',
+    inquiry:  '1500699402363338812',
+    private:  '1500716226828308622',
+  };
+
+  const { category, title, content, contact, isPrivate } = data;
+
+  // 비공개면 항상 비공개 채널, 공개면 카테고리별 채널
+  const channelId = isPrivate ? CHANNELS.private : (CHANNELS[category] || CHANNELS.inquiry);
+
+  const CATEGORY_LABEL = { bug: '🐛 버그', feedback: '💡 피드백', inquiry: '❓ 문의' };
+  const catLabel = CATEGORY_LABEL[category] || category;
+  const privLabel = isPrivate ? '🔒 비공개' : '🔓 공개';
+
+  // 포럼 포스트 본문
+  const msgContent = [
+    `**카테고리:** ${catLabel}  |  **공개 여부:** ${privLabel}`,
+    `**제목:** ${title}`,
+    '',
+    content,
+    contact ? `
+**연락수단:** ${contact}` : '',
+    `
+*제출 시각: ${new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}*`,
+  ].filter(Boolean).join('
+');
+
+  const postTitle = `[${catLabel}] ${title}`.slice(0, 100);
+
+  const res = await fetch(`https://discord.com/api/v10/channels/${channelId}/threads`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bot ${token}`,
+    },
+    body: JSON.stringify({
+      name: postTitle,
+      message: { content: msgContent },
+    }),
+  });
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error('Discord 오류: ' + res.status + ' ' + err);
+  }
+
+  return { ok: true };
 }
 
 // ══ DB 읽기 프록시 (마스터 세션 필요) ══
