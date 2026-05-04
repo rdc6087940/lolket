@@ -216,56 +216,33 @@ async function handleDbPublicRead(request, env) {
 
 // ══ Discord 포럼 포스트 ══
 async function sendDiscordReport(env, data) {
-  const token = env.DISCORD_BOT_TOKEN || 'MTUwMDcxNzA4ODk4NDAxMDg4Mw.GXhPmz.RodROaPnNMMtDViQM_NE_gpdwTLznEfjD8gXpw';
-
+  const token = env.DISCORD_BOT_TOKEN;
+  if (!token) throw new Error('DISCORD_BOT_TOKEN 환경변수가 설정되지 않았습니다');
   const CHANNELS = {
     bug:      '1500699477768536225',
     feedback: '1500699548975108238',
     inquiry:  '1500699402363338812',
     private:  '1500716226828308622',
   };
-
   const { category, title, content, contact, isPrivate } = data;
-
-  // 비공개면 항상 비공개 채널, 공개면 카테고리별 채널
   const channelId = isPrivate ? CHANNELS.private : (CHANNELS[category] || CHANNELS.inquiry);
-
-  const CATEGORY_LABEL = { bug: '🐛 버그', feedback: '💡 피드백', inquiry: '❓ 문의' };
-  const catLabel = CATEGORY_LABEL[category] || category;
+  const LABEL = { bug: '🐛 버그', feedback: '💡 피드백', inquiry: '❓ 문의' };
+  const catLabel  = LABEL[category] || category;
   const privLabel = isPrivate ? '🔒 비공개' : '🔓 공개';
-
-  // 포럼 포스트 본문
-  const msgContent = [
-    `**카테고리:** ${catLabel}  |  **공개 여부:** ${privLabel}`,
-    `**제목:** ${title}`,
-    '',
-    content,
-    contact ? `
-**연락수단:** ${contact}` : '',
-    `
-*제출 시각: ${new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}*`,
-  ].filter(Boolean).join('
-');
-
-  const postTitle = `[${catLabel}] ${title}`.slice(0, 100);
-
-  const res = await fetch(`https://discord.com/api/v10/channels/${channelId}/threads`, {
+  const postTitle = ('[' + catLabel + '] ' + title).slice(0, 100);
+  const lines = ['**카테고리:** ' + catLabel + '  |  **공개 여부:** ' + privLabel, '', content];
+  if (contact) lines.push('', '**연락수단:** ' + contact);
+  lines.push('', '*제출: ' + new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' }) + '*');
+  const msgContent = lines.join('\n').slice(0, 2000);
+  const res = await fetch('https://discord.com/api/v10/channels/' + channelId + '/threads', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bot ${token}`,
-    },
-    body: JSON.stringify({
-      name: postTitle,
-      message: { content: msgContent },
-    }),
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bot ' + token },
+    body: JSON.stringify({ name: postTitle, auto_archive_duration: 10080, message: { content: msgContent } }),
   });
-
   if (!res.ok) {
     const err = await res.text();
-    throw new Error(`Discord API ${res.status}: ${err}`);
+    throw new Error('Discord API ' + res.status + ': ' + err);
   }
-
   return { ok: true };
 }
 
@@ -343,7 +320,7 @@ async function handleDbWrite(request, env) {
 }
 
 async function sendApplyEmail(env, data) {
-  const apiKey = env.RESEND_API_KEY || 're_V4Gw7Ze6_87FRvA2qh4auXQ3yQp28173k';
+  const apiKey = env.RESEND_API_KEY;
   const to     = 'rdc6087@naver.com';
   const from   = 'noreply@roonging.com';
 
