@@ -101,6 +101,15 @@ export default {
       } catch(e) { return json({ ok: false, error: e.message }, 500); }
     }
 
+    // Discord 채널 이미지/메시지 전송
+    if (path === '/discord-send' && request.method === 'POST') {
+      try {
+        const data = await request.json();
+        const result = await sendDiscordToChannel(env, data);
+        return json(result);
+      } catch(e) { return json({ ok: false, error: e.message }, 500); }
+    }
+
     // 커뮤니티 신청 이메일 발송
     if (path === '/send-apply-email' && request.method === 'POST') {
       try {
@@ -242,6 +251,50 @@ async function sendDiscordReport(env, data) {
   if (!res.ok) {
     const err = await res.text();
     throw new Error('Discord API ' + res.status + ': ' + err);
+  }
+  return { ok: true };
+}
+
+
+// ══ Discord 채널로 이미지/메시지 전송 ══
+async function sendDiscordToChannel(env, data) {
+  const token = env.DISCORD_BOT_TOKEN;
+  if (!token) throw new Error('DISCORD_BOT_TOKEN 환경변수가 없습니다');
+
+  const { channelId, imageBase64, message, filename } = data;
+  if (!channelId) throw new Error('채널 ID가 없습니다');
+
+  const fname = filename || 'match-result.png';
+
+  if (imageBase64) {
+    // base64 → binary
+    const binary = atob(imageBase64.replace(/^data:image\/\w+;base64,/, ''));
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+
+    const form = new FormData();
+    form.append('file', new Blob([bytes], { type: 'image/png' }), fname);
+    if (message) form.append('content', message);
+
+    const res = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bot ${token}` },
+      body: form,
+    });
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(`Discord API ${res.status}: ${err}`);
+    }
+  } else if (message) {
+    const res = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bot ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content: message }),
+    });
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(`Discord API ${res.status}: ${err}`);
+    }
   }
   return { ok: true };
 }
@@ -434,6 +487,11 @@ function checkPermission(session, dbPath, requireRole) {
 
   // 이하 모두 로그인 필요
   if (!session) return false;
+
+  // 일반 관리자도 자신의 커뮤니티 정보 수정 가능 (discordChannelId 등)
+  if (/^communities_info\/[^/]+$/.test(dbPath) && session.role === 'admin') {
+    return true;
+  }
 
   // 마스터 전용 경로
   const masterWrite = [
