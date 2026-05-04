@@ -263,7 +263,7 @@ async function sendDiscordReport(env, data) {
 
   if (!res.ok) {
     const err = await res.text();
-    throw new Error('Discord 오류: ' + res.status + ' ' + err);
+    throw new Error(`Discord API ${res.status}: ${err}`);
   }
 
   return { ok: true };
