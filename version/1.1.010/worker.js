@@ -110,34 +110,6 @@ export default {
       } catch(e) { return json({ ok: false, error: e.message }, 500); }
     }
 
-    // 커뮤니티 배너 이미지 저장 (128KB 제한 우회용 - 이미지만 별도 처리)
-    if (path === '/community-image' && request.method === 'POST') {
-      try {
-        const token = request.headers.get('X-Session-Token');
-        const session = getSession(token);
-        if (!session) return json({ ok: false, error: '로그인이 필요합니다' }, 403);
-
-        const { communityId, imageData } = await request.json();
-        if (!communityId) return json({ ok: false, error: 'communityId 누락' }, 400);
-
-        // 본인 커뮤니티이거나 마스터만 가능 (session에 communityId 없으면 마스터만)
-        if (session.role !== 'master' && session.communityId !== communityId) {
-          return json({ ok: false, error: '권한이 없습니다' }, 403);
-        }
-
-        const dbUrl  = env.FB_DATABASE_URL;
-        const secret = env.FB_DB_SECRET;
-        const authQ  = secret ? `?auth=${secret}` : '';
-        const res = await fetch(`${dbUrl}/communities_info/${communityId}/bannerImage.json${authQ}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(imageData || null),
-        });
-        if (!res.ok) return json({ ok: false, error: 'DB 저장 실패: ' + res.status }, 500);
-        return json({ ok: true });
-      } catch(e) { return json({ ok: false, error: e.message }, 500); }
-    }
-
     // 커뮤니티 신청 이메일 발송
     if (path === '/send-apply-email' && request.method === 'POST') {
       try {

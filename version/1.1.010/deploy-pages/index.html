@@ -647,14 +647,6 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
 .notice-pin-toggle label{font-size:12px;color:var(--text-muted);cursor:pointer;user-select:none;}
 .notice-pin-toggle label b{color:var(--gold);}
 .notice-item.pinned{border-left:2px solid var(--gold)!important;padding-left:6px;}
-
-.community-card{position:relative;overflow:hidden;}
-.community-card-bg{position:absolute;inset:0;background-size:cover;background-position:center;background-repeat:no-repeat;opacity:0.3;z-index:0;transition:opacity .3s;}
-.community-card>*{position:relative;z-index:1;}
-.cm-img-upload-row{display:flex;flex-direction:column;gap:6px;margin-top:.5rem;}
-.cm-img-preview{width:100%;height:80px;object-fit:cover;border-radius:4px;border:1px solid var(--border-subtle);display:none;}
-.cm-img-preview.show{display:block;}
-.cm-img-remove{font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;color:#E05050;background:transparent;border:1px solid rgba(224,80,80,.3);border-radius:3px;padding:3px 8px;cursor:pointer;}
 </style> <script type="module">
  
  
@@ -722,28 +714,7 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
  return Object.values(raw).filter(c => c && c.id);
  }
  async function fbSaveCommunity(cObj) {
-   const bannerImage = cObj.bannerImage;
-   const cObjSmall = Object.assign({}, cObj);
-   delete cObjSmall.bannerImage;
-
-   // 1단계: 이미지 제외 정보를 Worker 통해 저장
-   const p1 = _workerWrite(`communities_info/${cObj.id}`, cObjSmall, null);
-
-   // 2단계: bannerImage만 전용 엔드포인트로 저장 (Worker 128KB 제한 우회)
-   const p2 = (async () => {
-     if (bannerImage === undefined) return;
-     try {
-       const res = await fetch(_workerBase + '/community-image', {
-         method: 'POST',
-         headers: { 'Content-Type': 'application/json', 'X-Session-Token': _sessionToken || '' },
-         body: JSON.stringify({ communityId: cObj.id, imageData: bannerImage }),
-       });
-       const r = await res.json();
-       if (!r.ok) console.error('[bannerImage 저장 실패]', r.error);
-     } catch(e) { console.error('[bannerImage 저장 실패]', e); }
-   })();
-
-   return Promise.all([p1, p2]);
+ return _workerWrite(`communities_info/${cObj.id}`, cObj, 'master');
  }
  async function fbDeleteCommunity(cid) {
  await Promise.all([
@@ -939,18 +910,6 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
 <div style="display:flex;flex-direction:column;gap:6px;">
   <label style="font-size:10px;letter-spacing:1.5px;color:#7289DA;font-family:'Rajdhani',sans-serif;text-transform:uppercase;">🎮 디스코드 내전 기록 채널 ID <span style="color:var(--text-muted);font-size:9px;">(내전 결과 자동 공유)</span> <button type="button" onclick="openDiscordGuideModal()" style="width:16px;height:16px;border-radius:50%;border:1px solid #7289DA;background:rgba(88,101,242,.15);color:#7289DA;font-size:9px;font-weight:700;cursor:pointer;line-height:1;padding:0;vertical-align:middle;flex-shrink:0;">?</button></label>
   <input class="form-input" type="text" id="cm-discord-channel" placeholder="예) 1234567890123456789" style="border-color:rgba(88,101,242,.3);">
-</div>
-<div style="display:flex;flex-direction:column;gap:6px;">
-  <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;text-transform:uppercase;">🖼 커뮤니티 배너 이미지 <span style="color:var(--text-muted);font-size:9px;">(배너형 권장 · 자동 크롭)</span></label>
-  <div style="display:flex;align-items:center;gap:8px;">
-    <button type="button" onclick="document.getElementById('cm-banner-file').click()" style="padding:5px 12px;background:rgba(255,255,255,.06);border:1px solid var(--border-subtle);border-radius:3px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;white-space:nowrap;flex-shrink:0;">파일 선택</button>
-    <span id="cm-banner-filename" style="font-size:11px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">선택된 파일 없음</span>
-    <input type="file" id="cm-banner-file" accept="image/*" onchange="onCmBannerChange(event)" style="display:none;">
-    <div id="cm-banner-remove-row" style="display:none;margin-left:auto;flex-shrink:0;">
-      <button class="cm-img-remove" onclick="removeCmBanner()">✕ 제거</button>
-    </div>
-  </div>
-  <img id="cm-banner-preview" class="cm-img-preview" alt="미리보기">
 </div>
 <div class="cm-official-row" id="cm-official-row">
   <label class="cm-official-toggle"><input type="checkbox" id="cm-official" onchange="_updateOfficialPreview(this.checked)"><span class="cm-official-toggle-slider"></span></label>
@@ -2229,7 +2188,6 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
 </div>
 <div class="toast-area" id="toast-area"></div>
 <div id="mobile-move-toast">이동할 위치를 선택하세요</div> <script>
-let _cmBannerData = null;
 let _pwSalt = 'lolket_v1'; // 기본값, Worker에서 덮어씀
 (async function() {
   try {
@@ -5054,7 +5012,6 @@ if (c.official) card.classList.add('official');
 if (isMyCommunity) card.style.borderColor = 'rgba(10,200,185,0.5)';
 card.style.cssText += ';display:flex;flex-direction:column;';
 card.innerHTML =
-  (c.bannerImage ? '<div class="community-card-bg" style="background-image:url(' + c.bannerImage + ');"></div>' : '') +
   (c.official ? '<span class="official-badge" style="position:absolute;top:10px;right:10px;z-index:1;">공식</span>' : '') +
   '<div class="community-card-body" style="flex:1;">' +
     '<div class="community-card-name">' + c.name + '</div>' +
@@ -5095,7 +5052,6 @@ document.getElementById('cm-name').value = '';
 document.getElementById('cm-desc').value = '';
 const dcInput2 = document.getElementById('cm-discord-channel');
 if (dcInput2) dcInput2.value = '';
-window._resetCmBannerUI('');
 // 마스터만 공식 커뮤니티 지정 가능
 const officialRow2 = document.getElementById('cm-official-row');
 if (officialRow2) officialRow2.style.display = isMaster ? '' : 'none';
@@ -5114,7 +5070,6 @@ document.getElementById('cm-name').value = c.name;
 document.getElementById('cm-desc').value = c.description || '';
 const dcInput = document.getElementById('cm-discord-channel');
 if (dcInput) dcInput.value = c.discordChannelId || '';
-window._resetCmBannerUI(c.bannerImage || '');
 const officialChk = document.getElementById('cm-official');
 if (officialChk) { officialChk.checked = !!c.official; _updateOfficialPreview(!!c.official); }
 // 마스터만 공식 커뮤니티 지정 가능
@@ -5137,62 +5092,31 @@ const desc = document.getElementById('cm-desc').value.trim();
 const discordChannelId = (document.getElementById('cm-discord-channel')?.value || '').trim();
 if (!name) return toast('커뮤니티 이름을 입력하세요', 'err');
 
-// 저장 버튼 로딩
-const saveBtn = document.querySelector('#community-modal .btn-primary');
-if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = '저장 중...'; }
-
-(async () => {
-try {
-  // 기존 데이터 한 번만 조회
-  let existingCreatedAt = Date.now();
-  let existingBanner = null;
-  if (_editingCommunityId && _fbReady && window._fb.fbGetCommunities) {
-    try {
-      const list = await window._fb.fbGetCommunities();
-      const existing = list.find(c => c.id === _editingCommunityId);
-      if (existing) {
-        if (existing.createdAt) existingCreatedAt = existing.createdAt;
-        existingBanner = existing.bannerImage || null;
-      }
-    } catch(e) {}
-  }
-
-  const official = !!(document.getElementById('cm-official')?.checked);
-
-  // _cmBannerData: null=변경없음, ''=제거, 'data:...'=새이미지
-  let finalBanner;
-  if (_cmBannerData === '') {
-    finalBanner = null;
-  } else if (_cmBannerData) {
-    finalBanner = _cmBannerData;
-  } else {
-    finalBanner = existingBanner;
-  }
-
-  const cObj = {
-    id: _editingCommunityId || 'c_' + Date.now(),
-    name,
-    description: desc || '',
-    createdAt: existingCreatedAt,
-    official,
-    discordChannelId: discordChannelId || null,
-    bannerImage: finalBanner || null,
-  };
-
-  if (_fbReady && window._fb.fbSaveCommunity) {
-    await window._fb.fbSaveCommunity(cObj);
-  }
-
-  closeCommunityModal();
-  // 최신 목록 다시 불러와서 렌더링
-  await renderCommunityList();
-  toast(`커뮤니티 "${cObj.name}" ${_editingCommunityId ? '수정' : '생성'}됨`, 'ok');
-} catch(e) {
-  toast('저장 실패: ' + e.message, 'err');
-} finally {
-  if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '저장'; }
+// 수정 시 기존 createdAt 보존
+let existingCreatedAt = Date.now();
+if (_editingCommunityId && _fbReady && window._fb.fbGetCommunities) {
+  try {
+    const list = await window._fb.fbGetCommunities();
+    const existing = list.find(c => c.id === _editingCommunityId);
+    if (existing && existing.createdAt) existingCreatedAt = existing.createdAt;
+  } catch(e) {}
 }
-})();
+
+const official = !!(document.getElementById('cm-official')?.checked);
+const cObj = {
+id: _editingCommunityId || 'c_' + Date.now(),
+name,
+description: desc || '',
+createdAt: existingCreatedAt,
+official,
+discordChannelId: discordChannelId || null,
+};
+if (_fbReady && window._fb.fbSaveCommunity) {
+await window._fb.fbSaveCommunity(cObj);
+}
+closeCommunityModal();
+renderCommunityList();
+toast(`커뮤니티 "${cObj.name}" ${_editingCommunityId ? '수정' : '생성'}됨`, 'ok');
 }
 async function deleteCommunity(cid) {
 if (!confirm('커뮤니티를 삭제하면 모든 내전 데이터도 삭제됩니다. 계속할까요?')) return;
@@ -8455,78 +8379,7 @@ function closeDiscordGuideModal() {
   document.getElementById('discord-guide-modal').style.display = 'none';
 }
 
-
-// ═══════════════════════════════════════════
-// 커뮤니티 배너 이미지
-// ═══════════════════════════════════════════
-
-function onCmBannerChange(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  if (file.size > 5 * 1024 * 1024) {
-    toast('이미지는 5MB 이하로 올려주세요', 'err');
-    e.target.value = '';
-    return;
-  }
-  const reader = new FileReader();
-  reader.onload = function(ev) {
-    // 이미지 리사이즈 (배너 최대 1200x400, 용량 절약)
-    const img = new Image();
-    img.onload = function() {
-      const MAX_W = 1200, MAX_H = 400;
-      let w = img.width, h = img.height;
-      if (w > MAX_W) { h = Math.round(h * MAX_W / w); w = MAX_W; }
-      if (h > MAX_H) { w = Math.round(w * MAX_H / h); h = MAX_H; }
-      const canvas = document.createElement('canvas');
-      canvas.width = w; canvas.height = h;
-      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-      _cmBannerData = canvas.toDataURL('image/jpeg', 0.85);
-      const preview = document.getElementById('cm-banner-preview');
-      const removeRow = document.getElementById('cm-banner-remove-row');
-      const fname = document.getElementById('cm-banner-filename');
-      if (preview) { preview.src = _cmBannerData; preview.classList.add('show'); }
-      if (removeRow) removeRow.style.display = '';
-      if (fname) fname.textContent = file.name;
-    };
-    img.src = ev.target.result;
-  };
-  reader.readAsDataURL(file);
-}
-
-function removeCmBanner() {
-  _cmBannerData = '';  // 빈 문자열 = 이미지 제거
-  const preview = document.getElementById('cm-banner-preview');
-  const removeRow = document.getElementById('cm-banner-remove-row');
-  const fileInput = document.getElementById('cm-banner-file');
-  if (preview) { preview.src = ''; preview.classList.remove('show'); }
-  if (removeRow) removeRow.style.display = 'none';
-  if (fileInput) fileInput.value = '';
-  const fname2 = document.getElementById('cm-banner-filename');
-  if (fname2) fname2.textContent = '선택된 파일 없음';
-}
-
-function _resetCmBannerUI(existingUrl) {
-  _cmBannerData = null; // null = 변경 없음
-  const preview = document.getElementById('cm-banner-preview');
-  const removeRow = document.getElementById('cm-banner-remove-row');
-  const fileInput = document.getElementById('cm-banner-file');
-  if (fileInput) fileInput.value = '';
-  const fname3 = document.getElementById('cm-banner-filename');
-  if (existingUrl) {
-    if (preview) { preview.src = existingUrl; preview.classList.add('show'); }
-    if (removeRow) removeRow.style.display = '';
-    if (fname3) fname3.textContent = '기존 이미지';
-  } else {
-    if (preview) { preview.src = ''; preview.classList.remove('show'); }
-    if (removeRow) removeRow.style.display = 'none';
-    if (fname3) fname3.textContent = '선택된 파일 없음';
-  }
-}
-
 // ── 전역 함수 명시적 등록 (onclick에서 접근 보장) ──
-  window.onCmBannerChange      = onCmBannerChange;
-  window.removeCmBanner        = removeCmBanner;
-  window._resetCmBannerUI      = _resetCmBannerUI;
   window.openDiscordGuideModal  = openDiscordGuideModal;
   window.closeDiscordGuideModal = closeDiscordGuideModal;
   window.shareResultToDiscord   = shareResultToDiscord;
