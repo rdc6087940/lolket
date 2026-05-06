@@ -962,6 +962,65 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
   <button class="community-show-more-btn" id="community-show-more-btn" onclick="toggleCommunityExpand()">▼ 더보기</button>
 </div>
 <div id="community-empty" class="list-empty" style="display:none;"> <div class="list-empty-hex">◇</div> <div style="font-size:14px;">등록된 커뮤니티가 없습니다</div> </div> 
+<div class="rtube-section" id="rtube-section">
+  <div class="rtube-header">
+    <div class="rtube-title"><span>▶</span> RoongTube</div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button id="rtube-add-btn" class="btn-primary admin-only master-only" onclick="openRtubeAddModal()" style="display:none;font-size:11px;padding:6px 12px;">+ 영상 추가</button>
+      <button id="rtube-cat-manage-btn" class="btn-secondary admin-only master-only" onclick="openRtubeCatModal()" style="display:none;font-size:11px;padding:6px 12px;">카테고리 관리</button>
+    </div>
+  </div>
+  <div class="rtube-cats" id="rtube-cats">
+    <button class="rtube-cat-btn active" data-cat="all" onclick="setRtubeFilter('all')">전체</button>
+  </div>
+  <div class="rtube-grid" id="rtube-grid"></div>
+  <div class="rtube-empty" id="rtube-empty" style="display:none;">등록된 영상이 없습니다</div>
+</div>
+
+<!-- RoongTube 영상 추가 모달 -->
+<div class="modal-overlay" id="rtube-add-modal" style="display:none;z-index:9200;" onclick="if(event.target===this)closeRtubeAddModal()">
+  <div class="modal" style="max-width:460px;">
+    <div class="modal-title">▶ 영상 추가</div>
+    <div style="display:flex;flex-direction:column;gap:.75rem;margin-top:.75rem;">
+      <div><label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;">YouTube URL</label>
+        <input class="form-input" id="rtube-url-input" placeholder="https://www.youtube.com/watch?v=..." style="margin-top:4px;"></div>
+      <div><label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;">제목 (선택 - 비우면 YouTube 제목)</label>
+        <input class="form-input" id="rtube-title-input" placeholder="영상 제목" style="margin-top:4px;"></div>
+      <div>
+        <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;">카테고리 (중복 선택 가능)</label>
+        <div id="rtube-cat-select" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;"></div>
+      </div>
+      <div id="rtube-add-err" style="font-size:11px;color:#E05050;"></div>
+    </div>
+    <div class="modal-actions" style="margin-top:.75rem;">
+      <button class="btn-secondary" onclick="closeRtubeAddModal()">취소</button>
+      <button class="btn-primary" onclick="saveRtubeVideo()">추가</button>
+    </div>
+  </div>
+</div>
+
+<!-- RoongTube 카테고리 관리 모달 -->
+<div class="modal-overlay" id="rtube-cat-modal" style="display:none;z-index:9200;" onclick="if(event.target===this)closeRtubeCatModal()">
+  <div class="modal" style="max-width:400px;">
+    <div class="modal-title">카테고리 관리</div>
+    <div style="display:flex;gap:6px;margin-top:.75rem;margin-bottom:.75rem;">
+      <input class="form-input" id="rtube-new-cat-input" placeholder="새 카테고리명" style="flex:1;" onkeydown="if(event.key==='Enter')addRtubeCat()">
+      <button class="btn-primary" onclick="addRtubeCat()" style="padding:6px 14px;font-size:12px;">추가</button>
+    </div>
+    <div id="rtube-cat-list" style="display:flex;flex-direction:column;gap:6px;max-height:300px;overflow-y:auto;"></div>
+    <div class="modal-actions" style="margin-top:.75rem;">
+      <button class="btn-primary" onclick="closeRtubeCatModal()">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- RoongTube 영상 플레이어 모달 -->
+<div class="rtube-modal-overlay" id="rtube-player-modal" onclick="if(event.target===this)closeRtubePlayer()">
+  <div class="rtube-modal-inner">
+    <button class="rtube-modal-close" onclick="closeRtubePlayer()">✕</button>
+    <iframe id="rtube-iframe" src="" allowfullscreen allow="autoplay; encrypted-media"></iframe>
+  </div>
+</div>
 <div id="apply-req-section" style="display:none;margin-top:2rem;">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;">
     <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:3px;color:var(--gold);">커뮤니티 신청 목록</div>
@@ -975,24 +1034,6 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
   </div>
   <div class="apply-grid" id="apply-req-grid"></div>
   <div id="apply-req-empty" style="display:none;padding:2rem;text-align:center;font-size:13px;color:var(--text-muted);">신청 내역이 없습니다</div>
-</div>
-<div class="rtube-section" id="rtube-section">
-  <div class="rtube-header">
-    <div class="rtube-title"><span>▶</span> RoongTube</div>
-    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-      <input id="rtube-search-input" type="text" placeholder="영상 제목 검색..." oninput="onRtubeSearch()" style="padding:5px 10px;background:var(--bg-dark);border:1px solid var(--border-subtle);border-radius:3px;color:var(--text-white);font-family:'Rajdhani',sans-serif;font-size:11px;outline:none;width:160px;">
-      <button id="rtube-add-btn" class="btn-primary admin-only master-only" onclick="openRtubeAddModal()" style="display:none;font-size:11px;padding:6px 12px;">+ 영상 추가</button>
-      <button id="rtube-cat-manage-btn" class="btn-secondary admin-only master-only" onclick="openRtubeCatModal()" style="display:none;font-size:11px;padding:6px 12px;">카테고리 관리</button>
-    </div>
-  </div>
-  <div class="rtube-cats" id="rtube-cats">
-    <button class="rtube-cat-btn active" data-cat="all" onclick="setRtubeFilter('all')">전체</button>
-  </div>
-  <div class="rtube-grid" id="rtube-grid"></div>
-  <div class="rtube-empty" id="rtube-empty" style="display:none;">등록된 영상이 없습니다</div>
-  <div id="rtube-show-more" class="community-show-more" style="display:none;">
-    <button class="community-show-more-btn" id="rtube-show-more-btn" onclick="rtubeLoadMore()">▼ 더보기</button>
-  </div>
 </div> </div> </div> </div> </div>
 <div id="screen-invite" class="screen"> <div style="max-width:400px;margin:4rem auto;padding:2rem;"> <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:3px;color:var(--gold);margin-bottom:.5rem;">관리자 계정 등록</div> <div style="font-size:12px;color:var(--text-muted);margin-bottom:1.5rem;line-height:1.6;" id="invite-community-label">
  커뮤니티: <span style="color:var(--text-white);" id="invite-community-name">—</span> </div> <div style="display:flex;flex-direction:column;gap:1rem;margin-bottom:1rem;"> <div style="display:flex;flex-direction:column;gap:6px;"> <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;text-transform:uppercase;">아이디</label> <input class="form-input" type="text" id="invite-id" placeholder="사용할 아이디 입력" style="font-size:14px;"> </div> <div style="display:flex;flex-direction:column;gap:6px;"> <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;text-transform:uppercase;">비밀번호</label> <input class="form-input" type="password" id="invite-pw" placeholder="비밀번호 입력" style="font-size:14px;"> </div> <div style="display:flex;flex-direction:column;gap:6px;"> <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;text-transform:uppercase;">비밀번호 확인</label> <input class="form-input" type="password" id="invite-pw2" placeholder="비밀번호 재입력" style="font-size:14px;" onkeydown="if(event.key==='Enter')registerInviteAdmin()"> </div> </div> <div id="invite-err" style="font-size:12px;color:#E05050;min-height:18px;margin-bottom:.75rem;"></div> <button class="btn-primary" style="width:100%;padding:11px;font-size:14px;letter-spacing:2px;" onclick="registerInviteAdmin()">계정 생성</button> </div>
@@ -2288,74 +2329,6 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
     </div>
   </div>
 </div>
-
-<!-- RoongTube 영상 수정 모달 -->
-<div class="modal-overlay" id="rtube-edit-modal" style="display:none;z-index:9200;" onclick="if(event.target===this)closeRtubeEditModal()">
-  <div class="modal" style="max-width:460px;">
-    <div class="modal-title">▶ 영상 수정</div>
-    <div style="display:flex;flex-direction:column;gap:.75rem;margin-top:.75rem;">
-      <div><label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;">YouTube URL</label>
-        <input class="form-input" id="rtube-edit-url-input" placeholder="https://www.youtube.com/watch?v=..." style="margin-top:4px;"></div>
-      <div><label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;">제목</label>
-        <input class="form-input" id="rtube-edit-title-input" placeholder="영상 제목" style="margin-top:4px;"></div>
-      <div>
-        <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;">카테고리 (중복 선택 가능)</label>
-        <div id="rtube-edit-cat-select" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;"></div>
-      </div>
-      <div id="rtube-edit-err" style="font-size:11px;color:#E05050;"></div>
-    </div>
-    <div class="modal-actions" style="margin-top:.75rem;">
-      <button class="btn-secondary" onclick="closeRtubeEditModal()">취소</button>
-      <button class="btn-primary" onclick="saveRtubeEdit()">저장</button>
-    </div>
-  </div>
-</div>
-
-<!-- RoongTube 영상 추가 모달 -->
-<div class="modal-overlay" id="rtube-add-modal" style="display:none;z-index:9200;" onclick="if(event.target===this)closeRtubeAddModal()">
-  <div class="modal" style="max-width:460px;">
-    <div class="modal-title">▶ 영상 추가</div>
-    <div style="display:flex;flex-direction:column;gap:.75rem;margin-top:.75rem;">
-      <div><label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;">YouTube URL</label>
-        <input class="form-input" id="rtube-url-input" placeholder="https://www.youtube.com/watch?v=..." style="margin-top:4px;"></div>
-      <div><label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;">제목 (선택 - 비우면 URL로 표시)</label>
-        <input class="form-input" id="rtube-title-input" placeholder="영상 제목" style="margin-top:4px;"></div>
-      <div>
-        <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;">카테고리 (중복 선택 가능)</label>
-        <div id="rtube-cat-select" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;"></div>
-      </div>
-      <div id="rtube-add-err" style="font-size:11px;color:#E05050;"></div>
-    </div>
-    <div class="modal-actions" style="margin-top:.75rem;">
-      <button class="btn-secondary" onclick="closeRtubeAddModal()">취소</button>
-      <button class="btn-primary" onclick="saveRtubeVideo()">추가</button>
-    </div>
-  </div>
-</div>
-
-<!-- RoongTube 카테고리 관리 모달 -->
-<div class="modal-overlay" id="rtube-cat-modal" style="display:none;z-index:9200;" onclick="if(event.target===this)closeRtubeCatModal()">
-  <div class="modal" style="max-width:400px;">
-    <div class="modal-title">카테고리 관리</div>
-    <div style="display:flex;gap:6px;margin-top:.75rem;margin-bottom:.75rem;">
-      <input class="form-input" id="rtube-new-cat-input" placeholder="새 카테고리명" style="flex:1;" onkeydown="if(event.key==='Enter')addRtubeCat()">
-      <button class="btn-primary" onclick="addRtubeCat()" style="padding:6px 14px;font-size:12px;">추가</button>
-    </div>
-    <div id="rtube-cat-list" style="display:flex;flex-direction:column;gap:6px;max-height:300px;overflow-y:auto;"></div>
-    <div class="modal-actions" style="margin-top:.75rem;">
-      <button class="btn-primary" onclick="closeRtubeCatModal()">닫기</button>
-    </div>
-  </div>
-</div>
-
-<!-- RoongTube 영상 플레이어 모달 -->
-<div class="rtube-modal-overlay" id="rtube-player-modal" onclick="if(event.target===this)closeRtubePlayer()">
-  <div class="rtube-modal-inner">
-    <button class="rtube-modal-close" onclick="closeRtubePlayer()">✕</button>
-    <iframe id="rtube-iframe" src="" allowfullscreen allow="autoplay; encrypted-media"></iframe>
-  </div>
-</div>
-
 <div class="toast-area" id="toast-area"></div>
 <div id="mobile-move-toast">이동할 위치를 선택하세요</div> <script>
 let _cmBannerData = null;
@@ -5851,60 +5824,24 @@ function renderRtubeCats() {
 
 function setRtubeFilter(cat) {
   _rtubeFilter = cat;
-  _rtubePage = 1;
   document.querySelectorAll('.rtube-cat-btn').forEach(b => b.classList.toggle('active', b.dataset.cat === cat));
   renderRtubeGrid();
 }
 
-const RTUBE_PAGE_SIZE = 6;
-let _rtubePage = 1;
-let _rtubeSearch = '';
-
-function onRtubeSearch() {
-  _rtubeSearch = (document.getElementById('rtube-search-input')?.value || '').trim().toLowerCase();
-  _rtubePage = 1;
-  renderRtubeGrid();
-}
-
-function rtubeLoadMore() {
-  _rtubePage++;
-  renderRtubeGrid(true);
-}
-
-function _getRtubeFiltered() {
-  let list = _rtubeFilter === 'all'
-    ? _rtubeVideos
-    : _rtubeVideos.filter(v => v.categories && v.categories.includes(_rtubeFilter));
-  if (_rtubeSearch) {
-    list = list.filter(v => (v.title || '').toLowerCase().includes(_rtubeSearch));
-  }
-  return list;
-}
-
-function renderRtubeGrid(append = false) {
+function renderRtubeGrid() {
   const grid  = document.getElementById('rtube-grid');
   const empty = document.getElementById('rtube-empty');
-  const moreWrap = document.getElementById('rtube-show-more');
-  const moreBtn  = document.getElementById('rtube-show-more-btn');
   if (!grid) return;
-  if (!append) { grid.innerHTML = ''; _rtubePage = _rtubePage || 1; }
+  grid.innerHTML = '';
 
-  const filtered = _getRtubeFiltered();
-  const total = filtered.length;
-  const visible = filtered.slice(0, _rtubePage * RTUBE_PAGE_SIZE);
+  const filtered = _rtubeFilter === 'all'
+    ? _rtubeVideos
+    : _rtubeVideos.filter(v => v.categories && v.categories.includes(_rtubeFilter));
 
-  if (!total) {
-    empty.style.display = '';
-    if (moreWrap) moreWrap.style.display = 'none';
-    return;
-  }
+  if (!filtered.length) { empty.style.display = ''; return; }
   empty.style.display = 'none';
 
-  // append 모드면 기존에 없는 것만 추가
-  const startIdx = append ? (_rtubePage - 1) * RTUBE_PAGE_SIZE : 0;
-  const newItems = filtered.slice(startIdx, _rtubePage * RTUBE_PAGE_SIZE);
-
-  newItems.forEach(v => {
+  filtered.forEach(v => {
     const vid = _extractYoutubeId(v.url);
     const thumb = vid ? 'https://img.youtube.com/vi/' + vid + '/mqdefault.jpg' : '';
     const card = document.createElement('div');
@@ -5917,22 +5854,11 @@ function renderRtubeGrid(append = false) {
       '<div class="rtube-info">' +
         '<div class="rtube-video-title">' + _escHtml(v.title || '제목 없음') + '</div>' +
         '<div class="rtube-tags">' + (v.categories || []).map(c => '<span class="rtube-tag">' + _escHtml(c) + '</span>').join('') + '</div>' +
-        (isMaster ? '<div style="margin-top:6px;display:flex;gap:5px;"><button onclick="event.stopPropagation();openRtubeEditModal(\'' + v.id + '\')" style="font-size:9px;font-family:\'Rajdhani\',sans-serif;font-weight:700;color:var(--blue-bright);background:transparent;border:1px solid rgba(10,200,185,.3);border-radius:2px;padding:2px 6px;cursor:pointer;">수정</button><button onclick="event.stopPropagation();deleteRtubeVideo(\'' + v.id + '\')" style="font-size:9px;font-family:\'Rajdhani\',sans-serif;font-weight:700;color:#E05050;background:transparent;border:1px solid rgba(224,80,80,.3);border-radius:2px;padding:2px 6px;cursor:pointer;">삭제</button></div>' : '') +
+        (isMaster ? '<div style="margin-top:6px;"><button onclick="event.stopPropagation();deleteRtubeVideo(\'' + v.id + '\')" style="font-size:9px;font-family:\'Rajdhani\',sans-serif;font-weight:700;color:#E05050;background:transparent;border:1px solid rgba(224,80,80,.3);border-radius:2px;padding:2px 6px;cursor:pointer;">삭제</button></div>' : '') +
       '</div>';
     card.addEventListener('click', () => openRtubePlayer(v.url));
     grid.appendChild(card);
   });
-
-  // 더보기 버튼
-  if (moreWrap) {
-    const remaining = total - (_rtubePage * RTUBE_PAGE_SIZE);
-    if (remaining > 0) {
-      moreWrap.style.display = '';
-      if (moreBtn) moreBtn.textContent = '▼ 더보기 (' + remaining + ')';
-    } else {
-      moreWrap.style.display = 'none';
-    }
-  }
 }
 
 function _extractYoutubeId(url) {
@@ -5955,64 +5881,6 @@ function closeRtubePlayer() {
   if (iframe) iframe.src = '';
   document.getElementById('rtube-player-modal').classList.remove('open');
   document.body.style.overflow = '';
-}
-
-// ── RoongTube 영상 수정 ──
-let _editingRtubeId = null;
-
-function openRtubeEditModal(id) {
-  const video = _rtubeVideos.find(v => v.id === id);
-  if (!video) return;
-  _editingRtubeId = id;
-  document.getElementById('rtube-edit-url-input').value = video.url || '';
-  document.getElementById('rtube-edit-title-input').value = video.title || '';
-  document.getElementById('rtube-edit-err').textContent = '';
-
-  const sel = document.getElementById('rtube-edit-cat-select');
-  sel.innerHTML = '';
-  _rtubeCategories.forEach(cat => {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'rtube-cat-btn' + ((video.categories || []).includes(cat) ? ' active' : '');
-    btn.textContent = cat;
-    btn.dataset.cat = cat;
-    btn.dataset.selected = (video.categories || []).includes(cat) ? '1' : '0';
-    btn.onclick = () => {
-      btn.dataset.selected = btn.dataset.selected === '1' ? '0' : '1';
-      btn.classList.toggle('active', btn.dataset.selected === '1');
-    };
-    sel.appendChild(btn);
-  });
-  document.getElementById('rtube-edit-modal').style.display = 'flex';
-}
-
-function closeRtubeEditModal() {
-  document.getElementById('rtube-edit-modal').style.display = 'none';
-  _editingRtubeId = null;
-}
-
-async function saveRtubeEdit() {
-  const url   = document.getElementById('rtube-edit-url-input').value.trim();
-  const title = document.getElementById('rtube-edit-title-input').value.trim();
-  const errEl = document.getElementById('rtube-edit-err');
-  if (!url) { errEl.textContent = 'URL을 입력하세요'; return; }
-  if (!_extractYoutubeId(url)) { errEl.textContent = '올바른 YouTube URL이 아닙니다'; return; }
-
-  const cats = [...document.querySelectorAll('#rtube-edit-cat-select .rtube-cat-btn[data-selected="1"]')].map(b => b.dataset.cat);
-  const idx = _rtubeVideos.findIndex(v => v.id === _editingRtubeId);
-  if (idx < 0) { errEl.textContent = '영상을 찾을 수 없습니다'; return; }
-
-  const updated = { ..._rtubeVideos[idx], url, title: title || url, categories: cats };
-  try {
-    await fbSaveRtubeVideo(updated);
-    _rtubeVideos[idx] = updated;
-    renderRtubeGrid();
-    closeRtubeEditModal();
-    toast('영상이 수정됐습니다', 'ok');
-  } catch(e) {
-    console.error('[saveRtubeEdit]', e);
-    errEl.textContent = '저장 실패: ' + (e.message || '');
-  }
 }
 
 // ── RoongTube 영상 추가 모달 ──
@@ -9081,11 +8949,6 @@ async function _initAfterFb() {
 window.onCmBannerChange      = onCmBannerChange;
   window.removeCmBanner        = removeCmBanner;
   window._resetCmBannerUI      = _resetCmBannerUI;
-  window.openRtubeEditModal    = openRtubeEditModal;
-  window.closeRtubeEditModal   = closeRtubeEditModal;
-  window.saveRtubeEdit         = saveRtubeEdit;
-  window.onRtubeSearch        = onRtubeSearch;
-  window.rtubeLoadMore        = rtubeLoadMore;
   window.openRtubeAddModal     = openRtubeAddModal;
   window.closeRtubeAddModal    = closeRtubeAddModal;
   window.saveRtubeVideo        = saveRtubeVideo;
