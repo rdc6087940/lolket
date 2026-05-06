@@ -649,7 +649,7 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
 .notice-item.pinned{border-left:2px solid var(--gold)!important;padding-left:6px;}
 
 .community-card{position:relative;overflow:hidden;}
-.community-card-bg{position:absolute;top:0;left:0;right:0;bottom:0;background-size:cover;background-position:center;background-repeat:no-repeat;opacity:0.18;z-index:0;transition:opacity .3s;pointer-events:none;}
+.community-card-bg{position:absolute;top:0;left:0;right:0;bottom:0;background-size:cover;background-position:center;background-repeat:no-repeat;opacity:0.35;z-index:0;transition:opacity .3s;pointer-events:none;}
 .community-card-name{font-size:16px;font-weight:700;color:var(--text-white);margin-bottom:4px;text-shadow:0 1px 4px rgba(0,0,0,.8),0 0 12px rgba(0,0,0,.6);}
 .community-card-desc{font-size:12px;color:var(--text-light);line-height:1.5;text-shadow:0 1px 4px rgba(0,0,0,1),0 0 8px rgba(0,0,0,.9);}
 .community-card>*{position:relative;z-index:1;}
@@ -657,6 +657,38 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
 .cm-img-preview{width:100%;height:80px;object-fit:cover;border-radius:4px;border:1px solid var(--border-subtle);display:none;}
 .cm-img-preview.show{display:block;}
 .cm-img-remove{font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;color:#E05050;background:transparent;border:1px solid rgba(224,80,80,.3);border-radius:3px;padding:3px 8px;cursor:pointer;}
+
+/* ── RoongTube ── */
+.rtube-section{margin-top:2.5rem;padding-top:2rem;border-top:1px solid var(--border-subtle);}
+.rtube-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:.75rem;}
+.rtube-title{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:3px;color:var(--text-white);display:flex;align-items:center;gap:10px;}
+.rtube-title span{color:#FF0000;font-size:22px;}
+.rtube-cats{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1.25rem;}
+.rtube-cat-btn{font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;padding:4px 12px;border-radius:12px;border:1px solid var(--border-subtle);background:transparent;color:var(--text-muted);cursor:pointer;transition:all .15s;}
+.rtube-cat-btn:hover,.rtube-cat-btn.active{background:rgba(255,0,0,.12);border-color:rgba(255,0,0,.4);color:#ff4444;}
+.rtube-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem;}
+.rtube-card{background:var(--bg-panel);border:1px solid var(--border-subtle);border-radius:6px;overflow:hidden;transition:all .18s;cursor:pointer;}
+.rtube-card:hover{border-color:rgba(255,0,0,.4);transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,0,0,.4);}
+.rtube-thumb{position:relative;padding-bottom:56.25%;background:#000;}
+.rtube-thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+.rtube-thumb-play{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.3);opacity:0;transition:opacity .15s;}
+.rtube-card:hover .rtube-thumb-play{opacity:1;}
+.rtube-thumb-play svg{filter:drop-shadow(0 2px 6px rgba(0,0,0,.8));}
+.rtube-info{padding:.75rem;}
+.rtube-video-title{font-size:13px;font-weight:600;color:var(--text-white);margin-bottom:.5rem;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.rtube-tags{display:flex;flex-wrap:wrap;gap:4px;}
+.rtube-tag{font-family:'Rajdhani',sans-serif;font-size:9px;font-weight:700;letter-spacing:.5px;padding:2px 7px;border-radius:10px;background:rgba(255,0,0,.1);border:1px solid rgba(255,0,0,.25);color:#ff6666;}
+.rtube-empty{padding:2rem;text-align:center;color:var(--text-muted);font-size:13px;}
+.rtube-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9500;align-items:center;justify-content:center;}
+.rtube-modal-overlay.open{display:flex;}
+.rtube-modal-inner{background:#000;border-radius:8px;width:min(900px,95vw);aspect-ratio:16/9;position:relative;}
+.rtube-modal-close{position:absolute;top:-36px;right:0;background:transparent;border:none;color:#fff;font-size:24px;cursor:pointer;line-height:1;}
+.rtube-modal-inner iframe{width:100%;height:100%;border:none;border-radius:8px;}
+/* 커뮤니티 접기/펼치기 */
+.community-show-more{margin-top:1rem;text-align:center;}
+.community-show-more-btn{font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;padding:8px 24px;border-radius:3px;border:1px solid var(--border-subtle);background:transparent;color:var(--text-muted);cursor:pointer;transition:all .15s;}
+.community-show-more-btn:hover{border-color:var(--gold);color:var(--gold);}
+@media(max-width:768px){.rtube-grid{grid-template-columns:1fr;}}
 </style> <script type="module">
  
  
@@ -925,7 +957,71 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
  onfocus="this.style.borderColor='var(--blue-bright)'"
  onblur="this.style.borderColor='var(--border-subtle)'"> <span onclick="clearCommunitySearch()" id="community-search-clear"
  style="position:absolute;right:8px;top:50%;transform:translateY(-50%);
- color:var(--text-muted);cursor:pointer;font-size:12px;display:none;">✕</span> </div> <div style="display:flex;gap:8px;" id="master-actions"> <button class="btn-secondary" onclick="openInviteManageModal()" id="btn-invite-manage" style="display:none;">초대 링크 관리</button> <button class="btn-primary" onclick="openCommunityCreateModal()" id="btn-community-create" style="display:none;">+ 커뮤니티 생성</button> </div> <button class="btn-secondary" onclick="openApplyModal()" style="font-size:12px;">📋 커뮤니티 신청</button> </div> </div> <div class="community-grid" id="community-grid"></div> <div id="community-empty" class="list-empty" style="display:none;"> <div class="list-empty-hex">◇</div> <div style="font-size:14px;">등록된 커뮤니티가 없습니다</div> </div> <div id="apply-req-section" style="display:none;margin-top:2rem;">
+ color:var(--text-muted);cursor:pointer;font-size:12px;display:none;">✕</span> </div> <div style="display:flex;gap:8px;" id="master-actions"> <button class="btn-secondary" onclick="openInviteManageModal()" id="btn-invite-manage" style="display:none;">초대 링크 관리</button> <button class="btn-primary" onclick="openCommunityCreateModal()" id="btn-community-create" style="display:none;">+ 커뮤니티 생성</button> </div> <button class="btn-secondary" onclick="openApplyModal()" style="font-size:12px;">📋 커뮤니티 신청</button> </div> </div> <div class="community-grid" id="community-grid"></div>
+<div id="community-show-more" class="community-show-more" style="display:none;">
+  <button class="community-show-more-btn" id="community-show-more-btn" onclick="toggleCommunityExpand()">▼ 더보기</button>
+</div>
+<div id="community-empty" class="list-empty" style="display:none;"> <div class="list-empty-hex">◇</div> <div style="font-size:14px;">등록된 커뮤니티가 없습니다</div> </div> 
+<div class="rtube-section" id="rtube-section">
+  <div class="rtube-header">
+    <div class="rtube-title"><span>▶</span> RoongTube</div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button id="rtube-add-btn" class="btn-primary admin-only master-only" onclick="openRtubeAddModal()" style="display:none;font-size:11px;padding:6px 12px;">+ 영상 추가</button>
+      <button id="rtube-cat-manage-btn" class="btn-secondary admin-only master-only" onclick="openRtubeCatModal()" style="display:none;font-size:11px;padding:6px 12px;">카테고리 관리</button>
+    </div>
+  </div>
+  <div class="rtube-cats" id="rtube-cats">
+    <button class="rtube-cat-btn active" data-cat="all" onclick="setRtubeFilter('all')">전체</button>
+  </div>
+  <div class="rtube-grid" id="rtube-grid"></div>
+  <div class="rtube-empty" id="rtube-empty" style="display:none;">등록된 영상이 없습니다</div>
+</div>
+
+<!-- RoongTube 영상 추가 모달 -->
+<div class="modal-overlay" id="rtube-add-modal" style="display:none;z-index:9200;" onclick="if(event.target===this)closeRtubeAddModal()">
+  <div class="modal" style="max-width:460px;">
+    <div class="modal-title">▶ 영상 추가</div>
+    <div style="display:flex;flex-direction:column;gap:.75rem;margin-top:.75rem;">
+      <div><label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;">YouTube URL</label>
+        <input class="form-input" id="rtube-url-input" placeholder="https://www.youtube.com/watch?v=..." style="margin-top:4px;"></div>
+      <div><label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;">제목 (선택 - 비우면 YouTube 제목)</label>
+        <input class="form-input" id="rtube-title-input" placeholder="영상 제목" style="margin-top:4px;"></div>
+      <div>
+        <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;">카테고리 (중복 선택 가능)</label>
+        <div id="rtube-cat-select" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;"></div>
+      </div>
+      <div id="rtube-add-err" style="font-size:11px;color:#E05050;"></div>
+    </div>
+    <div class="modal-actions" style="margin-top:.75rem;">
+      <button class="btn-secondary" onclick="closeRtubeAddModal()">취소</button>
+      <button class="btn-primary" onclick="saveRtubeVideo()">추가</button>
+    </div>
+  </div>
+</div>
+
+<!-- RoongTube 카테고리 관리 모달 -->
+<div class="modal-overlay" id="rtube-cat-modal" style="display:none;z-index:9200;" onclick="if(event.target===this)closeRtubeCatModal()">
+  <div class="modal" style="max-width:400px;">
+    <div class="modal-title">카테고리 관리</div>
+    <div style="display:flex;gap:6px;margin-top:.75rem;margin-bottom:.75rem;">
+      <input class="form-input" id="rtube-new-cat-input" placeholder="새 카테고리명" style="flex:1;" onkeydown="if(event.key==='Enter')addRtubeCat()">
+      <button class="btn-primary" onclick="addRtubeCat()" style="padding:6px 14px;font-size:12px;">추가</button>
+    </div>
+    <div id="rtube-cat-list" style="display:flex;flex-direction:column;gap:6px;max-height:300px;overflow-y:auto;"></div>
+    <div class="modal-actions" style="margin-top:.75rem;">
+      <button class="btn-primary" onclick="closeRtubeCatModal()">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- RoongTube 영상 플레이어 모달 -->
+<div class="rtube-modal-overlay" id="rtube-player-modal" onclick="if(event.target===this)closeRtubePlayer()">
+  <div class="rtube-modal-inner">
+    <button class="rtube-modal-close" onclick="closeRtubePlayer()">✕</button>
+    <iframe id="rtube-iframe" src="" allowfullscreen allow="autoplay; encrypted-media"></iframe>
+  </div>
+</div>
+<div id="apply-req-section" style="display:none;margin-top:2rem;">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;">
     <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:3px;color:var(--gold);">커뮤니티 신청 목록</div>
     <span id="apply-req-count" style="font-family:'Rajdhani',sans-serif;font-size:11px;color:var(--text-muted);"></span>
@@ -2268,18 +2364,54 @@ async function _workerRead(path) {
 }
 
 async function _workerWrite(path, data, requireRole) {
-  const res = await fetch(RIOT_PROXY_URL + '/db-write', {
-    method: 'POST',
-    headers: _getHeaders(),
-    body: JSON.stringify({ path, data, requireRole }),
-  });
-  const result = await res.json();
+  const doWrite = async () => {
+    const res = await fetch(RIOT_PROXY_URL + '/db-write', {
+      method: 'POST',
+      headers: _getHeaders(),
+      body: JSON.stringify({ path, data, requireRole }),
+    });
+    return await res.json();
+  };
+
+  let result = await doWrite();
+
+  // 세션 만료 시 자동 재로그인 후 재시도
+  if (!result.ok && (result.error === '권한이 없습니다' || result.error === '로그인이 필요합니다')) {
+    const relogOk = await _tryRelogin();
+    if (relogOk) {
+      result = await doWrite();
+    }
+  }
+
   if (!result.ok) {
-    // 권한 없음은 조용히 무시 (세션 만료·미로그인 상태에서도 앱 동작 유지)
-    if (result.error === '권한이 없습니다') return result;
     throw new Error(result.error || 'DB 쓰기 실패');
   }
   return result;
+}
+
+// 세션 만료 시 저장된 자격증명으로 자동 재로그인
+async function _tryRelogin() {
+  try {
+    const savedPw   = sessionStorage.getItem('injeong_pw_hash');
+    const savedId   = sessionStorage.getItem('injeong_login_id');
+    const isMasterSaved = sessionStorage.getItem('injeong_is_master') === '1';
+    console.log('[relogin] savedId:', savedId, 'isMaster:', isMasterSaved, 'hasPw:', !!savedPw);
+    if (!savedPw || !savedId) return false;
+
+    const res = await fetch(RIOT_PROXY_URL + '/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: savedId, pw: savedPw, type: isMasterSaved ? 'master' : 'admin' }),
+    });
+    const data = await res.json();
+    console.log('[relogin] result:', data);
+    if (data.ok && data.token) {
+      _sessionToken = data.token;
+      sessionStorage.setItem('injeong_session_token', _sessionToken);
+      return true;
+    }
+  } catch(e) { console.error('[relogin] error:', e); }
+  return false;
 }
 
 async function _workerDelete(path, requireRole) {
@@ -5042,57 +5174,7 @@ if (input) input.value = '';
 document.getElementById('community-search-clear').style.display = 'none';
 renderCommunityGrid(_allCommunities);
 }
-function renderCommunityGrid(communities) {
-const grid = document.getElementById('community-grid');
-const empty = document.getElementById('community-empty');
-grid.innerHTML = '';
-if (communities.length === 0) {
-empty.style.display = 'flex'; return;
-}
-empty.style.display = 'none';
-communities.forEach(c => {
-const isMyCommunity = isAdmin && !isMaster && currentAdminData?.communityId === c.id;
-const canManage = isMaster || isMyCommunity;
-const card = document.createElement('div');
-card.className = 'community-card';
-card.dataset.cid = c.id;
-if (c.official) card.classList.add('official');
-if (isMyCommunity) card.style.borderColor = 'rgba(10,200,185,0.5)';
-card.style.cssText += ';display:flex;flex-direction:column;position:relative;overflow:hidden;';
-card.innerHTML =
-  (c.bannerImage ? '<div class="community-card-bg" style="position:absolute;top:0;left:0;right:0;bottom:0;background-image:url(' + c.bannerImage + ');background-size:cover;background-position:center;opacity:0.3;z-index:0;pointer-events:none;"></div>' : '') +
-  (c.official ? '<span class="official-badge" style="position:absolute;top:10px;right:10px;z-index:1;">공식</span>' : '') +
-  '<div class="community-card-body" style="flex:1;">' +
-    '<div class="community-card-name">' + c.name + '</div>' +
-    (c.description ? '<div class="community-card-desc">' + c.description + '</div>' : '') +
-  '</div>' +
-  '<div class="community-card-footer">' +
-    '<span class="community-card-meta">' + c.id + '</span>' +
-    '<div class="community-card-actions">' +
-      (canManage
-        ? '<button class="btn-xs edit" data-cid="' + c.id + '">수정</button>' +
-          (isMaster ? '<button class="btn-xs del" data-cid="' + c.id + '">삭제</button>' : '')
-        : '') +
-      '<button class="btn-xs enter" data-cid="' + c.id + '">입장</button>' +
-    '</div>' +
-  '</div>';
-card.querySelector('.btn-xs.enter').addEventListener('click', function(e) {
-  e.stopPropagation(); enterCommunity(c);
-});
-const editBtn = card.querySelector('.btn-xs.edit');
-if (editBtn) editBtn.addEventListener('click', function(e) {
-  e.stopPropagation(); openCommunityEditModal(c.id);
-});
-const delBtn = card.querySelector('.btn-xs.del');
-if (delBtn) delBtn.addEventListener('click', function(e) {
-  e.stopPropagation(); deleteCommunity(c.id);
-});
-card.addEventListener('click', () => enterCommunity(c));
-grid.appendChild(card);
-});
-document.getElementById('btn-community-create').style.display = isMaster ? '' : 'none';
-document.getElementById('btn-invite-manage').style.display = isMaster ? '' : 'none';
-}
+
 let _editingCommunityId = null;
 function openCommunityCreateModal() {
 _editingCommunityId = null;
@@ -5361,11 +5443,17 @@ _sessionToken = data.token || '';
 sessionStorage.setItem('injeong_session_token', _sessionToken);
 sessionStorage.setItem('injeong_admin', '__master__');
 sessionStorage.setItem('injeong_is_master', '1');
+sessionStorage.setItem('injeong_pw_hash', pw);
+sessionStorage.setItem('injeong_login_id', id);
 document.getElementById('master-login-modal').style.display = 'none';
 updateRoleUI();
 renderCommunityList();
 renderNoticeList();
 loadApplies();
+const _rtubeAddBtn = document.getElementById('rtube-add-btn');
+const _rtubeCatBtn = document.getElementById('rtube-cat-manage-btn');
+if (_rtubeAddBtn) _rtubeAddBtn.style.display = '';
+if (_rtubeCatBtn) _rtubeCatBtn.style.display = '';
 if (data.displaced) toast('⚠ 기존 세션을 종료하고 로그인했습니다', 'warn');
 else toast('마스터 관리자로 로그인되었습니다', 'ok');
 _applyPatchMode(_patchMode); // 마스터는 오버레이 제거
@@ -5445,6 +5533,8 @@ if (data.ok && data.data) {
 isMaster = false;
 _sessionToken = data.token || '';
 sessionStorage.setItem('injeong_session_token', _sessionToken);
+sessionStorage.setItem('injeong_pw_hash', pw);
+sessionStorage.setItem('injeong_login_id', id);
 currentAdminData = data.data;
 window._currentCommunityId = data.data.communityId;
 return true;
@@ -5578,6 +5668,316 @@ function _renderMobileRecruits() {
   }).join('');
 }
 
+
+// ═══════════════════════════════════════════
+// RoongTube
+// ═══════════════════════════════════════════
+let _rtubeVideos = [];
+let _rtubeCategories = [];
+let _rtubeFilter = 'all';
+let _communityExpanded = false;
+
+// ── 커뮤니티 목록 접기/펼치기 ──
+const COMMUNITY_DEFAULT_COUNT = 8;
+
+function _sortCommunities(list) {
+  if (!list) return [];
+  return [...list].sort((a, b) => {
+    // 일반 관리자 본인 커뮤니티 맨 앞
+    if (isAdmin && !isMaster && currentAdminData?.communityId) {
+      if (a.id === currentAdminData.communityId) return -1;
+      if (b.id === currentAdminData.communityId) return 1;
+    }
+    return (b.createdAt || 0) - (a.createdAt || 0);
+  });
+}
+
+function renderCommunityGrid(communities) {
+  const grid   = document.getElementById('community-grid');
+  const empty  = document.getElementById('community-empty');
+  const moreWrap = document.getElementById('community-show-more');
+  const moreBtn  = document.getElementById('community-show-more-btn');
+  if (!grid) return;
+  grid.innerHTML = '';
+
+  const sorted = _sortCommunities(communities);
+  const showAll = _communityExpanded;
+  const visible = showAll ? sorted : sorted.slice(0, COMMUNITY_DEFAULT_COUNT);
+
+  if (sorted.length === 0) {
+    empty.style.display = 'flex';
+    if (moreWrap) moreWrap.style.display = 'none';
+    return;
+  }
+  empty.style.display = 'none';
+
+  if (sorted.length > COMMUNITY_DEFAULT_COUNT) {
+    if (moreWrap) moreWrap.style.display = '';
+    if (moreBtn) moreBtn.textContent = showAll ? '▲ 접기' : '▼ 더보기 (' + (sorted.length - COMMUNITY_DEFAULT_COUNT) + ')';
+  } else {
+    if (moreWrap) moreWrap.style.display = 'none';
+  }
+
+  visible.forEach(c => {
+    const isMyCommunity = isAdmin && !isMaster && currentAdminData?.communityId === c.id;
+    const canManage = isMaster || isMyCommunity;
+    const card = document.createElement('div');
+    card.className = 'community-card';
+    card.dataset.cid = c.id;
+    if (c.official) card.classList.add('official');
+    if (isMyCommunity) card.style.borderColor = 'rgba(10,200,185,0.5)';
+    card.style.cssText += ';display:flex;flex-direction:column;position:relative;overflow:hidden;';
+    card.innerHTML =
+      (c.bannerImage ? '<div class="community-card-bg" style="position:absolute;top:0;left:0;right:0;bottom:0;background-image:url(' + c.bannerImage + ');background-size:cover;background-position:center;opacity:0.35;z-index:0;pointer-events:none;"></div>' : '') +
+      (c.official ? '<span class="official-badge" style="position:absolute;top:10px;right:10px;z-index:1;">공식</span>' : '') +
+      '<div class="community-card-body" style="flex:1;background:linear-gradient(to bottom, rgba(10,14,20,0.65) 0%, rgba(10,14,20,0.5) 100%);">' +
+        '<div class="community-card-name">' + c.name + '</div>' +
+        (c.description ? '<div class="community-card-desc">' + c.description + '</div>' : '') +
+      '</div>' +
+      '<div class="community-card-footer">' +
+        '<span class="community-card-meta">' + c.id + '</span>' +
+        '<div class="community-card-actions">' +
+          (canManage
+            ? '<button class="btn-xs edit" data-cid="' + c.id + '">수정</button>' +
+              (isMaster ? '<button class="btn-xs del" data-cid="' + c.id + '">삭제</button>' : '')
+            : '') +
+          '<button class="btn-xs enter" data-cid="' + c.id + '">입장</button>' +
+        '</div>' +
+      '</div>';
+    grid.appendChild(card);
+  });
+
+  // 이벤트 위임
+  grid.onclick = function(e) {
+    const edit  = e.target.closest('.btn-xs.edit');
+    const del   = e.target.closest('.btn-xs.del');
+    const enter = e.target.closest('.btn-xs.enter');
+    const card  = e.target.closest('.community-card');
+    if (edit)  { e.stopPropagation(); openCommunityEditModal(edit.dataset.cid); return; }
+    if (del)   { e.stopPropagation(); deleteCommunity(del.dataset.cid); return; }
+    if (enter) { e.stopPropagation(); enterCommunity(enter.dataset.cid); return; }
+    if (card)  { enterCommunity(card.dataset.cid); }
+  };
+}
+
+function toggleCommunityExpand() {
+  _communityExpanded = !_communityExpanded;
+  renderCommunityGrid(_allCommunities);
+}
+
+// ── RoongTube Firebase 함수 ──
+async function fbGetRtubeData() {
+  try {
+    const url = _workerBase + '/db-public-read';
+    const res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ path: 'rtube' }) });
+    const r = await res.json();
+    return r.ok ? (r.data || {}) : {};
+  } catch(e) { return {}; }
+}
+
+async function fbSaveRtubeVideo(video) {
+  return _workerWrite('rtube/videos/' + video.id, video, 'master');
+}
+async function fbDeleteRtubeVideo(id) {
+  return _workerDelete('rtube/videos/' + id, 'master');
+}
+async function fbSaveRtubeCategories(cats) {
+  return _workerWrite('rtube/categories', cats, 'master');
+}
+
+// ── RoongTube 로드 ──
+async function loadRtubeData() {
+  const data = await fbGetRtubeData();
+  _rtubeCategories = data.categories ? Object.values(data.categories) : [];
+  _rtubeVideos = data.videos ? Object.values(data.videos).sort((a,b) => b.createdAt - a.createdAt) : [];
+  renderRtubeCats();
+  renderRtubeGrid();
+}
+
+function renderRtubeCats() {
+  const container = document.getElementById('rtube-cats');
+  if (!container) return;
+  container.innerHTML = '<button class="rtube-cat-btn' + (_rtubeFilter === 'all' ? ' active' : '') + '" data-cat="all" onclick="setRtubeFilter(\'all\')">전체</button>';
+  _rtubeCategories.forEach(cat => {
+    const btn = document.createElement('button');
+    btn.className = 'rtube-cat-btn' + (_rtubeFilter === cat ? ' active' : '');
+    btn.dataset.cat = cat;
+    btn.textContent = cat;
+    btn.onclick = () => setRtubeFilter(cat);
+    container.appendChild(btn);
+  });
+}
+
+function setRtubeFilter(cat) {
+  _rtubeFilter = cat;
+  document.querySelectorAll('.rtube-cat-btn').forEach(b => b.classList.toggle('active', b.dataset.cat === cat));
+  renderRtubeGrid();
+}
+
+function renderRtubeGrid() {
+  const grid  = document.getElementById('rtube-grid');
+  const empty = document.getElementById('rtube-empty');
+  if (!grid) return;
+  grid.innerHTML = '';
+
+  const filtered = _rtubeFilter === 'all'
+    ? _rtubeVideos
+    : _rtubeVideos.filter(v => v.categories && v.categories.includes(_rtubeFilter));
+
+  if (!filtered.length) { empty.style.display = ''; return; }
+  empty.style.display = 'none';
+
+  filtered.forEach(v => {
+    const vid = _extractYoutubeId(v.url);
+    const thumb = vid ? 'https://img.youtube.com/vi/' + vid + '/mqdefault.jpg' : '';
+    const card = document.createElement('div');
+    card.className = 'rtube-card';
+    card.innerHTML =
+      '<div class="rtube-thumb">' +
+        (thumb ? '<img src="' + thumb + '" alt="thumbnail" loading="lazy">' : '<div style="position:absolute;inset:0;background:#111;display:flex;align-items:center;justify-content:center;color:#444;font-size:20px;">▶</div>') +
+        '<div class="rtube-thumb-play"><svg width="48" height="48" viewBox="0 0 48 48"><circle cx="24" cy="24" r="24" fill="rgba(255,0,0,.9)"/><polygon points="19,14 38,24 19,34" fill="#fff"/></svg></div>' +
+      '</div>' +
+      '<div class="rtube-info">' +
+        '<div class="rtube-video-title">' + _escHtml(v.title || '제목 없음') + '</div>' +
+        '<div class="rtube-tags">' + (v.categories || []).map(c => '<span class="rtube-tag">' + _escHtml(c) + '</span>').join('') + '</div>' +
+        (isMaster ? '<div style="margin-top:6px;"><button onclick="event.stopPropagation();deleteRtubeVideo(\'' + v.id + '\')" style="font-size:9px;font-family:\'Rajdhani\',sans-serif;font-weight:700;color:#E05050;background:transparent;border:1px solid rgba(224,80,80,.3);border-radius:2px;padding:2px 6px;cursor:pointer;">삭제</button></div>' : '') +
+      '</div>';
+    card.addEventListener('click', () => openRtubePlayer(v.url));
+    grid.appendChild(card);
+  });
+}
+
+function _extractYoutubeId(url) {
+  if (!url) return null;
+  const m = url.match(/(?:v=|youtu\.be\/|embed\/)([a-zA-Z0-9_-]{11})/);
+  return m ? m[1] : null;
+}
+
+// ── RoongTube 플레이어 ──
+function openRtubePlayer(url) {
+  const vid = _extractYoutubeId(url);
+  if (!vid) return toast('올바른 YouTube 링크가 아닙니다', 'err');
+  const iframe = document.getElementById('rtube-iframe');
+  if (iframe) iframe.src = 'https://www.youtube.com/embed/' + vid + '?autoplay=1';
+  document.getElementById('rtube-player-modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeRtubePlayer() {
+  const iframe = document.getElementById('rtube-iframe');
+  if (iframe) iframe.src = '';
+  document.getElementById('rtube-player-modal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// ── RoongTube 영상 추가 모달 ──
+function openRtubeAddModal() {
+  document.getElementById('rtube-url-input').value = '';
+  document.getElementById('rtube-title-input').value = '';
+  document.getElementById('rtube-add-err').textContent = '';
+  const sel = document.getElementById('rtube-cat-select');
+  sel.innerHTML = '';
+  _rtubeCategories.forEach(cat => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'rtube-cat-btn';
+    btn.textContent = cat;
+    btn.dataset.cat = cat;
+    btn.dataset.selected = '0';
+    btn.onclick = () => {
+      btn.dataset.selected = btn.dataset.selected === '1' ? '0' : '1';
+      btn.classList.toggle('active', btn.dataset.selected === '1');
+    };
+    sel.appendChild(btn);
+  });
+  document.getElementById('rtube-add-modal').style.display = 'flex';
+}
+function closeRtubeAddModal() { document.getElementById('rtube-add-modal').style.display = 'none'; }
+
+async function saveRtubeVideo() {
+  const url   = document.getElementById('rtube-url-input').value.trim();
+  const title = document.getElementById('rtube-title-input').value.trim();
+  const errEl = document.getElementById('rtube-add-err');
+  if (!url) { errEl.textContent = 'URL을 입력하세요'; return; }
+  if (!_extractYoutubeId(url)) { errEl.textContent = '올바른 YouTube URL이 아닙니다'; return; }
+  const cats = [...document.querySelectorAll('#rtube-cat-select .rtube-cat-btn[data-selected="1"]')].map(b => b.dataset.cat);
+  const video = { id: 'rv_' + Date.now(), url, title: title || url, categories: cats, createdAt: Date.now() };
+  try {
+    await fbSaveRtubeVideo(video);
+    _rtubeVideos.unshift(video);
+    renderRtubeGrid();
+    closeRtubeAddModal();
+    toast('영상이 추가됐습니다', 'ok');
+  } catch(e) {
+    console.error('[saveRtubeVideo] error:', e);
+    const msg = e.message || '';
+    if (msg.includes('권한') || msg.includes('로그인')) {
+      errEl.textContent = '세션이 만료됐습니다. 다시 로그인해주세요.';
+    } else {
+      errEl.textContent = '저장 실패: ' + msg;
+    }
+  }
+}
+
+async function deleteRtubeVideo(id) {
+  if (!confirm('이 영상을 삭제할까요?')) return;
+  await fbDeleteRtubeVideo(id);
+  _rtubeVideos = _rtubeVideos.filter(v => v.id !== id);
+  renderRtubeGrid();
+  toast('삭제됐습니다', 'ok');
+}
+
+// ── 카테고리 관리 ──
+function openRtubeCatModal() {
+  renderRtubeCatList();
+  document.getElementById('rtube-new-cat-input').value = '';
+  document.getElementById('rtube-cat-modal').style.display = 'flex';
+}
+function closeRtubeCatModal() { document.getElementById('rtube-cat-modal').style.display = 'none'; }
+
+function renderRtubeCatList() {
+  const container = document.getElementById('rtube-cat-list');
+  if (!container) return;
+  container.innerHTML = '';
+  if (!_rtubeCategories.length) {
+    container.innerHTML = '<div style="color:var(--text-muted);font-size:12px;padding:.5rem 0;">카테고리가 없습니다</div>';
+    return;
+  }
+  _rtubeCategories.forEach((cat, i) => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:6px 8px;background:var(--bg-dark);border-radius:3px;';
+    row.innerHTML = '<span style="font-size:12px;color:var(--text-white);">' + _escHtml(cat) + '</span>' +
+      '<button onclick="deleteRtubeCat(' + i + ')" style="background:transparent;border:1px solid rgba(224,80,80,.3);border-radius:2px;color:#E05050;font-size:10px;font-family:\'Rajdhani\',sans-serif;font-weight:700;padding:2px 7px;cursor:pointer;">삭제</button>';
+    container.appendChild(row);
+  });
+}
+
+async function addRtubeCat() {
+  const input = document.getElementById('rtube-new-cat-input');
+  const name = input.value.trim();
+  if (!name) return;
+  if (_rtubeCategories.includes(name)) { toast('이미 있는 카테고리입니다', 'err'); return; }
+  _rtubeCategories.push(name);
+  try {
+    await fbSaveRtubeCategories(_rtubeCategories);
+    input.value = '';
+    renderRtubeCatList();
+    renderRtubeCats();
+    toast('카테고리 추가됐습니다', 'ok');
+  } catch(e) {
+    console.error('[addRtubeCat] error:', e);
+    _rtubeCategories.pop(); // 롤백
+    toast('저장 실패: ' + (e.message || ''), 'err');
+  }
+}
+
+async function deleteRtubeCat(idx) {
+  if (!confirm('카테고리를 삭제할까요?')) return;
+  _rtubeCategories.splice(idx, 1);
+  await fbSaveRtubeCategories(_rtubeCategories);
+  renderRtubeCatList();
+  renderRtubeCats();
+  toast('삭제됐습니다', 'ok');
+}
 
 async function loadNotices() {
   if (!window._fb || !window._fb.fbGetNotices) return;
@@ -6849,6 +7249,7 @@ _applyRemoteUpdate(remote);
 // 항상 로드 (비로그인 포함)
 loadRecruits();
 loadNotices();
+loadRtubeData();
 // 마스터는 항상 로드 (세션 복원 포함)
 if (isMaster) loadApplies();
 initGuide();
@@ -8129,8 +8530,6 @@ async function deleteRecruitComment(rid, cid) {
   } catch(e) { toast('삭제 실패', 'err'); }
 }
 
-async function _initAfterFb() {
-  
 // ═══════════════════════════════════════════
 // 버그/피드백/문의 제보
 // ═══════════════════════════════════════════
@@ -8529,10 +8928,25 @@ function _resetCmBannerUI(existingUrl) {
   }
 }
 
+
 // ── 전역 함수 명시적 등록 (onclick에서 접근 보장) ──
-  window.onCmBannerChange      = onCmBannerChange;
+
+async function _initAfterFb() {
+window.onCmBannerChange      = onCmBannerChange;
   window.removeCmBanner        = removeCmBanner;
   window._resetCmBannerUI      = _resetCmBannerUI;
+  window.openRtubeAddModal     = openRtubeAddModal;
+  window.closeRtubeAddModal    = closeRtubeAddModal;
+  window.saveRtubeVideo        = saveRtubeVideo;
+  window.deleteRtubeVideo      = deleteRtubeVideo;
+  window.openRtubeCatModal     = openRtubeCatModal;
+  window.closeRtubeCatModal    = closeRtubeCatModal;
+  window.addRtubeCat           = addRtubeCat;
+  window.deleteRtubeCat        = deleteRtubeCat;
+  window.setRtubeFilter        = setRtubeFilter;
+  window.openRtubePlayer       = openRtubePlayer;
+  window.closeRtubePlayer      = closeRtubePlayer;
+  window.toggleCommunityExpand = toggleCommunityExpand;
   window.openDiscordGuideModal  = openDiscordGuideModal;
   window.closeDiscordGuideModal = closeDiscordGuideModal;
   window.shareResultToDiscord   = shareResultToDiscord;
@@ -8583,10 +8997,19 @@ function _resetCmBannerUI(existingUrl) {
     updateRoleUI();
     renderNoticeList();
     _applyPatchMode(_patchMode); // 세션 복원 후 마스터 여부 반영
+    if (isMaster) {
+      loadApplies();
+      const _rtubeAddBtn = document.getElementById('rtube-add-btn');
+      const _rtubeCatBtn = document.getElementById('rtube-cat-manage-btn');
+      if (_rtubeAddBtn) _rtubeAddBtn.style.display = '';
+      if (_rtubeCatBtn) _rtubeCatBtn.style.display = '';
+    }
   }
   renderCommunityList();
   await loadRecruits();
+
 }
+
 
 if (_fbReady) {
   _initAfterFb();
