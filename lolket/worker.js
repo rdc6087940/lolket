@@ -110,6 +110,21 @@ export default {
       } catch(e) { return json({ ok: false, error: e.message }, 500); }
     }
 
+    // 알람 체크 수동 트리거 (마스터 전용, 테스트용)
+    if (path === '/trigger-alarm-check' && request.method === 'POST') {
+      const token = request.headers.get('X-Session-Token');
+      const session = getSession(token);
+      if (!session || session.role !== 'master') {
+        return json({ ok: false, error: '마스터 권한 필요' }, 403);
+      }
+      try {
+        await runAlarmCheck(env);
+        return json({ ok: true, message: '알람 체크 완료', serverTime: new Date().toISOString() });
+      } catch(e) {
+        return json({ ok: false, error: e.message }, 500);
+      }
+    }
+
     // 커뮤니티 배너 이미지 저장 (128KB 제한 우회용 - 이미지만 별도 처리)
     if (path === '/community-image' && request.method === 'POST') {
       try {
@@ -174,8 +189,87 @@ export default {
     if (path === '/match')             return handleMatch(url, key);
     if (path === '/recent-custom')     return handleRecentCustom(url, key);
     return json({ error: '알 수 없는 경로' }, 404);
-  }
+  },
+
+  // ── Cron (15분마다) ──
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(runAlarmCheck(env));
+  },
 };
+
+// ── Cron 알람 체크 ──
+async function runAlarmCheck(env) {
+  const dbUrl  = env.FB_DATABASE_URL;
+  const secret = env.FB_DB_SECRET;
+  const authQ  = secret ? '?auth=' + secret : '';
+
+  // match_alarms에서 notified=false 전체 조회
+  const res = await fetch(dbUrl + '/match_alarms.json' + authQ);
+  if (!res.ok) return;
+  const data = await res.json();
+  if (!data) return;
+
+  const now = Date.now();
+  const oneHour = 60 * 60 * 1000;
+
+  const targets = Object.values(data).filter(a => {
+    if (!a || !a.matchId || a.notified) return false;
+    const st = Number(a.startTime);
+    if (isNaN(st)) return false;
+    const diff = st - now;
+    // 시작까지 0~60분 남은 것
+    return diff >= 0 && diff <= oneHour;
+  });
+
+  console.log('[alarm-cron] now=' + new Date(now).toISOString() + ' targets=' + targets.length);
+
+  const TOKEN = env.DISCORD_BOT_TOKEN;
+
+  for (const alarm of targets) {
+    try {
+      // matchId로 커뮤니티 ID 조회 (match_index 경로)
+      const idxRes = await fetch(dbUrl + '/match_index/' + alarm.matchId + '.json' + authQ);
+      if (!idxRes.ok) continue;
+      const communityId = await idxRes.json();
+      if (!communityId) continue;
+
+      // 매치 데이터 조회
+      const matchRes = await fetch(dbUrl + '/communities/' + communityId + '/matches/' + alarm.matchId + '.json' + authQ);
+      if (!matchRes.ok) continue;
+      const matchData = await matchRes.json();
+      if (!matchData) continue;
+
+      // 커뮤니티 정보 조회
+      const commRes = await fetch(dbUrl + '/communities_info/' + communityId + '.json' + authQ);
+      if (!commRes.ok) continue;
+      const commData = await commRes.json();
+      if (!commData || !commData.alarmChannelId) continue;
+
+      // Discord 메시지 전송
+      const pad = n => String(n).padStart(2, '0');
+      const d = new Date(alarm.startTime);
+      const timeStr = (d.getMonth()+1) + '/' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+      const msg = '⏰ **' + (matchData.name || '내전') + '** 시작 1시간 전입니다!\n📅 ' + timeStr + '\n[진행자 : ' + (matchData.admin || '—') + ']';
+
+      const discordRes = await fetch('https://discord.com/api/v10/channels/' + commData.alarmChannelId + '/messages', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bot ' + TOKEN, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: msg }),
+      });
+
+      if (discordRes.ok) {
+        // notified = true 업데이트
+        await fetch(dbUrl + '/match_alarms/' + alarm.matchId + '.json' + authQ, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ notified: true, notifiedAt: now }),
+        });
+      }
+    } catch(e) {
+      console.error('[alarm]', alarm.matchId, e.message);
+    }
+  }
+}
 
 // ══ 로그인 — 세션 토큰 발급 ══
 async function handleLogin(request, env) {
@@ -511,6 +605,8 @@ function checkPermission(session, dbPath, requireRole) {
     /^recruit_comments\/[^/]+\//,   // 외전 댓글
     /^recruit_bookmarks\/[^/]+\//,  // 외전 북마크
     /^recruit_applies\/[^/]+\//,    // 외전 신청
+    /^match_alarms\/[^/]+$/,        // 내전 알람 예약 (로그인 관리자)
+    /^match_index\/[^/]+$/,         // 내전-커뮤니티 인덱스 (Cron 조회용)
   ];
   if (publicWrite.some(r => r.test(dbPath))) return true;
 
@@ -531,6 +627,7 @@ function checkPermission(session, dbPath, requireRole) {
     /^applies\/[^/]+\/status$/,  // 신청 상태 변경
     /^system\//,                 // 점검 모드 등 시스템 설정
     /^rtube\//,                  // RoongTube 영상/카테고리
+    /^match_alarms\//,           // 내전 알람 예약
   ];
   if (masterWrite.some(r => r.test(dbPath))) {
     return session.role === 'master';

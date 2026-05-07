@@ -884,7 +884,29 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
    return _workerDelete(`recruit_applies/${rid}/${communityId}`, null);
  }
 
-  async function fbGetNotices() {
+ 
+ // ── match_alarms ──
+ async function fbSaveMatchAlarm(matchId, startTime) {
+   return _workerWrite('match_alarms/' + matchId, {
+     matchId,
+     startTime,
+     notified: false,
+     notifiedAt: null,
+   }, null);
+ }
+ async function fbUpdateMatchAlarmTime(matchId, startTime) {
+   return _workerWrite('match_alarms/' + matchId, {
+     matchId,
+     startTime,
+     notified: false,
+     notifiedAt: null,
+   }, null);
+ }
+ async function fbDeleteMatchAlarm(matchId) {
+   return _workerDelete('match_alarms/' + matchId, null);
+ }
+
+ async function fbGetNotices() {
     try {
       const snap = await get(ref(db, 'notices'));
       if (!snap.exists()) return [];
@@ -925,6 +947,7 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
  fbSaveAdmin, fbGetSuperAdmin, fbUnsubscribeAll, fbSubscribePatch,
  fbSaveRecruit, fbGetRecruits, fbDeleteRecruit, fbSaveRecruitComment, fbGetRecruitComments, fbDeleteRecruitComment, fbToggleRecruitBookmark,
  fbSaveRecruitApply, fbGetRecruitApplies, fbDeleteRecruitApply,
+ fbSaveMatchAlarm, fbUpdateMatchAlarmTime, fbDeleteMatchAlarm,
  ready: false
  };
  window._fb.ready = true;
@@ -1000,6 +1023,10 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
 <div style="display:flex;flex-direction:column;gap:6px;">
   <label style="font-size:10px;letter-spacing:1.5px;color:#7289DA;font-family:'Rajdhani',sans-serif;text-transform:uppercase;">🎮 디스코드 내전 기록 채널 ID <span style="color:var(--text-muted);font-size:9px;">(내전 결과 자동 공유)</span> <button type="button" onclick="openDiscordGuideModal()" style="width:16px;height:16px;border-radius:50%;border:1px solid #7289DA;background:rgba(88,101,242,.15);color:#7289DA;font-size:9px;font-weight:700;cursor:pointer;line-height:1;padding:0;vertical-align:middle;flex-shrink:0;">?</button></label>
   <input class="form-input" type="text" id="cm-discord-channel" placeholder="예) 1234567890123456789" style="border-color:rgba(88,101,242,.3);">
+</div>
+<div style="display:flex;flex-direction:column;gap:6px;">
+  <label style="font-size:10px;letter-spacing:1.5px;color:#7289DA;font-family:'Rajdhani',sans-serif;text-transform:uppercase;">🔔 디스코드 내전 알림 채널 ID <span style="color:var(--text-muted);font-size:9px;">(시작 1시간 전 자동 알림)</span></label>
+  <input class="form-input" type="text" id="cm-discord-alarm-channel" placeholder="예) 1234567890123456789" style="border-color:rgba(88,101,242,.3);">
 </div>
 <div style="display:flex;flex-direction:column;gap:6px;">
   <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;text-transform:uppercase;">🖼 커뮤니티 배너 이미지 <span style="color:var(--text-muted);font-size:9px;">(배너형 권장 · 자동 크롭)</span></label>
@@ -2553,6 +2580,17 @@ nextTeamId=1; _0xB2=1; _0xB1=1;
 match={id: 'match_'+Date.now(), name, time, admin: admin || '—', status: '내전 모집', createdAt: Date.now(), communityId: window._currentCommunityId || 'default', communityName: (window._currentCommunity && window._currentCommunity.name) || ''};
 closeCreateModal();
 await saveCurrentMatch();
+// 알람 예약 생성
+if (_fbReady && window._fb.fbSaveMatchAlarm && match.time) {
+  // datetime-local("2026-05-03T21:00")을 로컬 타임 기준 ms로 변환
+  const startMs = new Date(match.time).getTime();
+  if (!isNaN(startMs) && startMs > Date.now()) {
+    window._fb.fbSaveMatchAlarm(match.id, startMs).catch(()=>{});
+    if (window._fb.fbSet) {
+      window._fb.fbSet('match_index/' + match.id, match.communityId || window._currentCommunityId || '').catch(()=>{});
+    }
+  }
+}
 renderMatchList();
 document.querySelectorAll('.stage-pip').forEach(p => p.classList.remove('active','done'));
 document.getElementById('pip-1').classList.add('active');
@@ -5229,6 +5267,8 @@ document.getElementById('cm-name').value = c.name;
 document.getElementById('cm-desc').value = c.description || '';
 const dcInput = document.getElementById('cm-discord-channel');
 if (dcInput) dcInput.value = c.discordChannelId || '';
+const alarmInput = document.getElementById('cm-discord-alarm-channel');
+if (alarmInput) alarmInput.value = c.alarmChannelId || '';
 window._resetCmBannerUI(c.bannerImage || '');
 const officialChk = document.getElementById('cm-official');
 if (officialChk) { officialChk.checked = !!c.official; _updateOfficialPreview(!!c.official); }
@@ -5250,6 +5290,7 @@ async function saveCommunity() {
 const name = document.getElementById('cm-name').value.trim();
 const desc = document.getElementById('cm-desc').value.trim();
 const discordChannelId = (document.getElementById('cm-discord-channel')?.value || '').trim();
+const alarmChannelId = (document.getElementById('cm-discord-alarm-channel')?.value || '').trim();
 if (!name) return toast('커뮤니티 이름을 입력하세요', 'err');
 
 // 저장 버튼 로딩
@@ -5291,6 +5332,7 @@ try {
     createdAt: existingCreatedAt,
     official,
     discordChannelId: discordChannelId || null,
+    alarmChannelId: alarmChannelId || null,
     bannerImage: finalBanner || null,
   };
 
@@ -5587,6 +5629,13 @@ match.time = newTime;
 updateMatchBar();
 closeEditTimeModal();
 toast('시작 시간이 수정되었습니다', 'ok');
+// 알람 예약 업데이트 (notified 리셋 포함)
+if (_fbReady && window._fb.fbUpdateMatchAlarmTime && match.id) {
+  const startMs = new Date(newTime).getTime();
+  if (!isNaN(startMs) && startMs > Date.now()) {
+    window._fb.fbUpdateMatchAlarmTime(match.id, startMs).catch(()=>{});
+  }
+}
 }
 function toast(msg, type = 'ok') {
 const area = document.getElementById('toast-area');
@@ -7799,6 +7848,10 @@ grid.appendChild(card);
 function deleteMatch(id) {
 if (!confirm('내전을 삭제하시겠습니까?')) return;
 dbDelete(id);
+// 알람 예약도 함께 삭제
+if (_fbReady && window._fb.fbDeleteMatchAlarm) {
+  window._fb.fbDeleteMatchAlarm(id).catch(()=>{});
+}
 renderMatchList();
 toast('내전이 삭제되었습니다', 'ok');
 }
