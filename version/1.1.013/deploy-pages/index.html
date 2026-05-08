@@ -1027,6 +1027,10 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
 <div style="display:flex;flex-direction:column;gap:6px;">
   <label style="font-size:10px;letter-spacing:1.5px;color:#7289DA;font-family:'Rajdhani',sans-serif;text-transform:uppercase;">🔔 디스코드 내전 알림 채널 ID <span style="color:var(--text-muted);font-size:9px;">(시작 1시간 전 자동 알림)</span></label>
   <input class="form-input" type="text" id="cm-discord-alarm-channel" placeholder="예) 1234567890123456789" style="border-color:rgba(88,101,242,.3);">
+  <div style="display:flex;align-items:center;gap:8px;margin-top:2px;">
+    <input type="checkbox" id="cm-alarm-everyone" style="width:14px;height:14px;accent-color:#7289DA;cursor:pointer;">
+    <label for="cm-alarm-everyone" style="font-size:11px;color:var(--text-muted);cursor:pointer;">@everyone 태그 사용 <span style="color:var(--text-muted);font-size:9px;">(알림 전송 시 전체 멘션)</span></label>
+  </div>
 </div>
 <div style="display:flex;flex-direction:column;gap:6px;">
   <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;text-transform:uppercase;">🖼 커뮤니티 배너 이미지 <span style="color:var(--text-muted);font-size:9px;">(배너형 권장 · 자동 크롭)</span></label>
@@ -5268,6 +5272,8 @@ const dcInput = document.getElementById('cm-discord-channel');
 if (dcInput) dcInput.value = c.discordChannelId || '';
 const alarmInput = document.getElementById('cm-discord-alarm-channel');
 if (alarmInput) alarmInput.value = c.alarmChannelId || '';
+const everyoneChk = document.getElementById('cm-alarm-everyone');
+if (everyoneChk) everyoneChk.checked = !!(c.alarmEveryone);
 window._resetCmBannerUI(c.bannerImage || '');
 const officialChk = document.getElementById('cm-official');
 if (officialChk) { officialChk.checked = !!c.official; _updateOfficialPreview(!!c.official); }
@@ -5290,6 +5296,7 @@ const name = document.getElementById('cm-name').value.trim();
 const desc = document.getElementById('cm-desc').value.trim();
 const discordChannelId = (document.getElementById('cm-discord-channel')?.value || '').trim();
 const alarmChannelId = (document.getElementById('cm-discord-alarm-channel')?.value || '').trim();
+const alarmEveryone = !!(document.getElementById('cm-alarm-everyone')?.checked);
 if (!name) return toast('커뮤니티 이름을 입력하세요', 'err');
 
 // 저장 버튼 로딩
@@ -5332,6 +5339,7 @@ try {
     official,
     discordChannelId: discordChannelId || null,
     alarmChannelId: alarmChannelId || null,
+    alarmEveryone: alarmEveryone || false,
     bannerImage: finalBanner || null,
   };
 

@@ -276,8 +276,19 @@ async function runAlarmCheck(env) {
       const pad = n => String(n).padStart(2, '0');
       // KST = UTC+9
       const d = new Date(alarm.startTime + 9 * 60 * 60 * 1000);
-      const timeStr = (d.getUTCMonth()+1) + '/' + pad(d.getUTCDate()) + ' ' + pad(d.getUTCHours()) + ':' + pad(d.getUTCMinutes());
-      const msg = '⏰ **' + (matchData.name || '내전') + '** 시작 1시간 전입니다!\n📅 ' + timeStr + '\n[진행자 : ' + (matchData.admin || '—') + ']';
+      const year  = d.getUTCFullYear();
+      const month = pad(d.getUTCMonth() + 1);
+      const date  = pad(d.getUTCDate());
+      const days  = ['일', '월', '화', '수', '목', '금', '토'];
+      const day   = days[d.getUTCDay()];
+      const hours = d.getUTCHours();
+      const mins  = d.getUTCMinutes();
+      const ampm  = hours < 12 ? '오전' : '오후';
+      const h12   = hours % 12 === 0 ? 12 : hours % 12;
+      const timeStr = year + '년' + month + '월' + date + '일(' + day + ') ' + ampm + ' ' + h12 + '시' + (mins > 0 ? ' ' + pad(mins) + '분' : '');
+
+      const everyone = commData.alarmEveryone ? '@everyone\n' : '';
+      const msg = everyone + '⏰ **[' + (matchData.name || '내전') + ']** 시작 1시간 전입니다!\n📅 ' + timeStr + '\n[진행자 : ' + (matchData.admin || '—') + ']';
 
       const discordRes = await fetch('https://discord.com/api/v10/channels/' + commData.alarmChannelId + '/messages', {
         method: 'POST',
