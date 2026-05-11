@@ -2526,7 +2526,7 @@ let _pwSalt = 'lolket_v1'; // 기본값, Worker에서 덮어씀
 // ═══════════════════════════════════════════
 // WORKER DB PROXY — 모든 쓰기는 Worker를 통해
 // ═══════════════════════════════════════════
-let _sessionToken = sessionStorage.getItem('injeong_session_token') || '';
+let _sessionToken = localStorage.getItem('injeong_session_token') || '';
 
 function _getHeaders() {
   return { 'Content-Type': 'application/json', 'X-Session-Token': _sessionToken };
@@ -2573,9 +2573,9 @@ async function _workerWrite(path, data, requireRole) {
 // 세션 만료 시 저장된 자격증명으로 자동 재로그인
 async function _tryRelogin() {
   try {
-    const savedPw   = sessionStorage.getItem('injeong_pw_hash');
-    const savedId   = sessionStorage.getItem('injeong_login_id');
-    const isMasterSaved = sessionStorage.getItem('injeong_is_master') === '1';
+    const savedPw   = localStorage.getItem('injeong_pw_hash');
+    const savedId   = localStorage.getItem('injeong_login_id');
+    const isMasterSaved = localStorage.getItem('injeong_is_master') === '1';
     console.log('[relogin] savedId:', savedId, 'isMaster:', isMasterSaved, 'hasPw:', !!savedPw);
     if (!savedPw || !savedId) return false;
 
@@ -2588,7 +2588,7 @@ async function _tryRelogin() {
     console.log('[relogin] result:', data);
     if (data.ok && data.token) {
       _sessionToken = data.token;
-      sessionStorage.setItem('injeong_session_token', _sessionToken);
+      localStorage.setItem('injeong_session_token', _sessionToken);
       return true;
     }
   } catch(e) { console.error('[relogin] error:', e); }
@@ -5083,10 +5083,10 @@ renderCommunityList();
 }
 function doLogout() {
 _sessionToken = '';
-sessionStorage.removeItem('injeong_session_token');
-sessionStorage.removeItem('injeong_admin');
-sessionStorage.removeItem('injeong_is_master');
-sessionStorage.removeItem('injeong_community');
+localStorage.removeItem('injeong_session_token');
+localStorage.removeItem('injeong_admin');
+localStorage.removeItem('injeong_is_master');
+localStorage.removeItem('injeong_community');
 location.reload();
 }
 function openLoginModal() {
@@ -5111,9 +5111,9 @@ errEl.textContent = '';
 try {
 const ok = await checkAdminCredentials(id, pw);
 if (ok) {
-sessionStorage.setItem('injeong_admin', id);
+localStorage.setItem('injeong_admin', id);
 if (currentAdminData?.communityId) {
-sessionStorage.setItem('injeong_community', currentAdminData.communityId);
+localStorage.setItem('injeong_community', currentAdminData.communityId);
 window._currentCommunityId = currentAdminData.communityId;
 }
 closeLoginModal();
@@ -5464,23 +5464,26 @@ async function saveDevApisToFirebase() {
 
 // 내전 데이터 → 변수 치환
 function buildDevVars(matchData) {
-  const m = matchData || currentMatch || {};
-  const teams = m.teams || [];
-  const matches = m.matches || [];
-  const winner = matches.find(r => r.winner)?.winner || '';
+  const m = matchData || match || {};
+  console.log('[DevAPI] buildDevVars match keys:', Object.keys(m));
+  console.log('[DevAPI] buildDevVars sample:', { _members: m._members?.length, _teams: m._teams?.length, _resultMatches: m._resultMatches?.length, members: m.members?.length, teams: m.teams?.length });
+  const teams = m._teams || m.teams || [];
+  const members = m._members || m.members || [];
+  const resultMatches = m._resultMatches || m.matches || [];
+  const winner = resultMatches.find(r => r.winner)?.winner || '';
   return {
     '{내전이름}': m.name || '',
     '{내전ID}': m.id || '',
     '{시작시간}': m.time ? new Date(m.time).toLocaleString('ko-KR') : '',
     '{관리자}': m.admin || '',
-    '{커뮤니티명}': (window._currentCommunity && window._currentCommunity.name) || '',
+    '{커뮤니티명}': (currentCommunity && currentCommunity.name) || '',
     '{커뮤니티ID}': window._currentCommunityId || '',
-    '{참가인원}': String((m.members || []).length),
+    '{참가인원}': String(members.length),
     '{팀수}': String(teams.length),
     '{우승팀}': winner,
     '{팀목록_JSON}': JSON.stringify(teams),
-    '{매치결과_JSON}': JSON.stringify(matches),
-    '{멤버목록_JSON}': JSON.stringify(m.members || []),
+    '{매치결과_JSON}': JSON.stringify(resultMatches),
+    '{멤버목록_JSON}': JSON.stringify(members),
     '{완료시간}': new Date().toLocaleString('ko-KR'),
   };
 }
@@ -5514,7 +5517,7 @@ async function callDevApi(api, matchData) {
   console.log('[DevAPI] _sessionToken:', _sessionToken ? '있음('+_sessionToken.substring(0,8)+'...)' : '❌ 없음');
   console.log('[DevAPI] body:', body);
   // worker.js 프록시를 통해 전송
-  const resp = await fetch(`${_workerBase}/external-api-call`, {
+  const resp = await fetch(`${RIOT_PROXY_URL}/external-api-call`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-Session-Token': _sessionToken || '' },
     body: JSON.stringify({ url, method: api.method || 'POST', headers, body }),
@@ -5537,7 +5540,7 @@ async function devTestApi() {
   };
   toast('테스트 전송 중...', 'ok');
   try {
-    const result = await callDevApi(tempApi, currentMatch);
+    const result = await callDevApi(tempApi, match);
     toast(result.ok ? `✅ 성공 (${result.status || 200})` : `❌ 실패: ${result.error || result.status}`, result.ok ? 'ok' : 'err');
   } catch(e) {
     toast('❌ 전송 오류: ' + e.message, 'err');
@@ -5599,7 +5602,7 @@ async function openDevApiSendModal() {
 async function sendDevApiNow(api) {
   toast(`📡 ${api.name} 전송 중...`, 'ok');
   try {
-    const result = await callDevApi(api, currentMatch);
+    const result = await callDevApi(api, match);
     toast(result.ok ? `✅ ${api.name} 전송 성공` : `❌ ${api.name} 실패: ${result.error || result.status}`, result.ok ? 'ok' : 'err');
   } catch(e) {
     toast(`❌ 전송 오류: ${e.message}`, 'err');
@@ -5615,7 +5618,7 @@ async function triggerAutoDevApis() {
     const apis = data ? Object.values(data).filter(a => a && (a.trigger === 'auto' || a.trigger === 'both')) : [];
     for (const api of apis) {
       try {
-        const result = await callDevApi(api, currentMatch);
+        const result = await callDevApi(api, match);
         console.log('[DevAPI] 자동 전송:', api.name, result);
       } catch(e) {
         console.error('[DevAPI] 자동 전송 실패:', api.name, e);
@@ -6007,11 +6010,11 @@ const data = await res.json();
 if (data.ok) {
 isMaster = true; isAdmin = true; currentAdminData = null;
 _sessionToken = data.token || '';
-sessionStorage.setItem('injeong_session_token', _sessionToken);
-sessionStorage.setItem('injeong_admin', '__master__');
-sessionStorage.setItem('injeong_is_master', '1');
-sessionStorage.setItem('injeong_pw_hash', pw);
-sessionStorage.setItem('injeong_login_id', id);
+localStorage.setItem('injeong_session_token', _sessionToken);
+localStorage.setItem('injeong_admin', '__master__');
+localStorage.setItem('injeong_is_master', '1');
+localStorage.setItem('injeong_pw_hash', pw);
+localStorage.setItem('injeong_login_id', id);
 document.getElementById('master-login-modal').style.display = 'none';
 updateRoleUI();
 renderCommunityList();
@@ -6099,9 +6102,9 @@ const data = await res.json();
 if (data.ok && data.data) {
 isMaster = false;
 _sessionToken = data.token || '';
-sessionStorage.setItem('injeong_session_token', _sessionToken);
-sessionStorage.setItem('injeong_pw_hash', pw);
-sessionStorage.setItem('injeong_login_id', id);
+localStorage.setItem('injeong_session_token', _sessionToken);
+localStorage.setItem('injeong_pw_hash', pw);
+localStorage.setItem('injeong_login_id', id);
 currentAdminData = data.data;
 window._currentCommunityId = data.data.communityId;
 return true;
@@ -9804,14 +9807,19 @@ window.onCmBannerChange      = onCmBannerChange;
   const isInvite = await handleInviteParam().catch(() => false);
   if (isInvite) return;
   applyRole(false);
-  if (sessionStorage.getItem('injeong_admin')) {
-    const savedCid = sessionStorage.getItem('injeong_community');
-    if (savedCid) window._currentCommunityId = savedCid;
-    if (sessionStorage.getItem('injeong_is_master') === '1') isMaster = true;
+  if (localStorage.getItem('injeong_admin')) {
+    const savedCid = localStorage.getItem('injeong_community');
+    const savedId  = localStorage.getItem('injeong_login_id');
+    if (savedCid) {
+      window._currentCommunityId = savedCid;
+      // currentAdminData 복원 — canManage 체크에 필요
+      if (!isMaster) currentAdminData = { communityId: savedCid, id: savedId || '' };
+    }
+    if (localStorage.getItem('injeong_is_master') === '1') isMaster = true;
     isAdmin = true;
     updateRoleUI();
     renderNoticeList();
-    _applyPatchMode(_patchMode); // 세션 복원 후 마스터 여부 반영
+    _applyPatchMode(_patchMode);
     if (isMaster) {
       loadApplies();
       const _rtubeAddBtn = document.getElementById('rtube-add-btn');
@@ -9853,6 +9861,31 @@ style="color:var(--blue-bright);margin-left:6px;text-decoration:underline;">
 document.body.appendChild(bar);
 }
 }, 4000);
+
+// 페이지 로드 시 Worker 세션 자동 복구
+// module 스크립트보다 나중에 실행되므로 RIOT_PROXY_URL, _tryRelogin 모두 사용 가능
+window.addEventListener('fb-ready', function() {
+  if (!localStorage.getItem('injeong_admin')) return;
+  const savedToken = localStorage.getItem('injeong_session_token');
+  if (!savedToken) {
+    console.log('[세션] 토큰 없음 — 자동 재로그인 시도');
+    _tryRelogin().catch(() => {});
+    return;
+  }
+  fetch(RIOT_PROXY_URL + '/session-ping', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Session-Token': savedToken },
+  }).then(r => r.json()).then(result => {
+    if (!result.ok) {
+      console.log('[세션] 토큰 만료 — 자동 재로그인 시도');
+      _tryRelogin().catch(() => {});
+    } else {
+      console.log('[세션] 토큰 유효 ✓', result.role);
+    }
+  }).catch(() => {
+    _tryRelogin().catch(() => {});
+  });
+});
 </script>
 </body>
 </html>

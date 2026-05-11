@@ -110,6 +110,14 @@ export default {
       } catch(e) { return json({ ok: false, error: e.message }, 500); }
     }
 
+    // 세션 유효성 확인용 ping
+    if (path === '/session-ping' && request.method === 'POST') {
+      const token = request.headers.get('X-Session-Token');
+      const session = getSession(token);
+      if (!session) return json({ ok: false, error: '로그인이 필요합니다' }, 401);
+      return json({ ok: true, role: session.role, communityId: session.communityId || null });
+    }
+
     // 외부 API 프록시 — 커뮤니티 개발자 설정에서 등록한 API 호출
     if (path === '/external-api-call' && request.method === 'POST') {
       const token = request.headers.get('X-Session-Token');
@@ -499,18 +507,21 @@ async function handleDbRead(request, env) {
     /^communities_info\/[^/]+(\/.*)?$/.test(dbPath) &&
     session.communityId && session.communityId === dbPath.split('/')[1];
 
-  // 마스터만 읽기 가능한 경로 (단, 관리자 본인 커뮤니티는 예외)
-  const masterRead = [
-    /^applies/,
-    /^superadmin/,
-    /^admin\//,
-    /^communities_info\//,
-  ];
-  const needsMaster = masterRead.some(r => r.test(dbPath));
-
-  if (needsMaster && !isOwnCommunityInfo) {
+  if (isOwnCommunityInfo) {
+    // 통과 — 자신의 커뮤니티 정보는 읽기 허용
+  } else {
+    // 마스터만 읽기 가능한 경로
+    const masterRead = [
+      /^applies/,
+      /^superadmin/,
+      /^admin\//,
+      /^communities_info\//,
+    ];
+    if (!masterRead.some(r => r.test(dbPath))) {
+      return json({ ok: false, error: '읽기 권한이 없습니다' }, 403);
+    }
     if (!session || session.role !== 'master') {
-      return json({ ok: false, error: '권한이 없습니다' }, 403);
+      return json({ ok: false, error: '마스터 권한이 필요합니다' }, 403);
     }
   }
 
