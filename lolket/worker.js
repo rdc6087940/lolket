@@ -713,8 +713,14 @@ async function handleSummoner(url, key) {
     }
     const solo = entries.find(e => e.queueType === 'RANKED_SOLO_5x5');
     const flex = entries.find(e => e.queueType === 'RANKED_FLEX_SR');
+    // 언랭크인 경우에도 entries 안에 highestTierAchieved가 있을 수 있으므로 전체 탐색
+    const prevSeasonHighest = solo?.highestTierAchieved
+      || flex?.highestTierAchieved
+      || entries.find(e => e.highestTierAchieved)?.highestTierAchieved
+      || null;
     return json({ name: account.gameName, tag: account.tagLine, level: summoner.summonerLevel,
-      icon: summoner.profileIconId, puuid, solo: formatRank(solo), flex: formatRank(flex) });
+      icon: summoner.profileIconId, puuid, solo: formatRank(solo), flex: formatRank(flex),
+      prevSeasonHighest, _debug_entries: entries });
   } catch(e) { return json({ error: '서버 오류', detail: e.message }, 500); }
 }
 
