@@ -110,6 +110,28 @@ export default {
       } catch(e) { return json({ ok: false, error: e.message }, 500); }
     }
 
+    // 외부 API 프록시 — 커뮤니티 개발자 설정에서 등록한 API 호출
+    if (path === '/external-api-call' && request.method === 'POST') {
+      const token = request.headers.get('X-Session-Token');
+      const session = getSession(token);
+      if (!session) return json({ ok: false, error: '로그인이 필요합니다' }, 403);
+      let body;
+      try { body = await request.json(); } catch { return json({ ok: false, error: '잘못된 요청' }, 400); }
+      const { url, method = 'POST', headers = {}, body: reqBody } = body;
+      if (!url) return json({ ok: false, error: 'url 누락' }, 400);
+      // 기본 보안: http(s) 스킴만 허용
+      if (!/^https?:\/\//i.test(url)) return json({ ok: false, error: '허용되지 않는 URL 형식' }, 400);
+      try {
+        const fetchOpts = { method, headers: { 'Content-Type': 'application/json', ...headers } };
+        if (reqBody && !['GET','HEAD'].includes(method.toUpperCase())) fetchOpts.body = reqBody;
+        const res = await fetch(url, fetchOpts);
+        let resBody;
+        const ct = res.headers.get('content-type') || '';
+        try { resBody = ct.includes('application/json') ? await res.json() : await res.text(); } catch { resBody = null; }
+        return json({ ok: res.ok, status: res.status, body: resBody });
+      } catch(e) { return json({ ok: false, error: e.message }, 500); }
+    }
+
     // 잘못 생성된 match_index 데이터 정리 (마스터 전용, 1회용)
     if (path === '/cleanup-match-index' && request.method === 'POST') {
       const token = request.headers.get('X-Session-Token');
@@ -472,17 +494,24 @@ async function handleDbRead(request, env) {
   const { path: dbPath } = body;
   if (!dbPath) return json({ ok: false, error: 'path 누락' }, 400);
 
-  // 마스터만 읽기 가능한 경로
+  // 관리자가 자신의 커뮤니티 정보 읽기 허용
+  const isOwnCommunityInfo = session && session.role === 'admin' &&
+    /^communities_info\/[^/]+(\/.*)?$/.test(dbPath) &&
+    session.communityId && session.communityId === dbPath.split('/')[1];
+
+  // 마스터만 읽기 가능한 경로 (단, 관리자 본인 커뮤니티는 예외)
   const masterRead = [
     /^applies/,
     /^superadmin/,
     /^admin\//,
+    /^communities_info\//,
   ];
-  if (!masterRead.some(r => r.test(dbPath))) {
-    return json({ ok: false, error: '읽기 권한이 없습니다' }, 403);
-  }
-  if (!session || session.role !== 'master') {
-    return json({ ok: false, error: '마스터 권한이 필요합니다' }, 403);
+  const needsMaster = masterRead.some(r => r.test(dbPath));
+
+  if (needsMaster && !isOwnCommunityInfo) {
+    if (!session || session.role !== 'master') {
+      return json({ ok: false, error: '권한이 없습니다' }, 403);
+    }
   }
 
   const dbUrl  = env.FB_DATABASE_URL;
@@ -652,9 +681,11 @@ function checkPermission(session, dbPath, requireRole) {
   // 이하 모두 로그인 필요
   if (!session) return false;
 
-  // 일반 관리자도 자신의 커뮤니티 정보 수정 가능 (discordChannelId 등)
-  if (/^communities_info\/[^/]+$/.test(dbPath) && session.role === 'admin') {
-    return true;
+  // 일반 관리자도 자신의 커뮤니티 정보 및 하위 경로 수정 가능 (discordChannelId, devApis 등)
+  if (/^communities_info\/[^/]+(\/.*)?$/.test(dbPath) && session.role === 'admin') {
+    // 자신의 커뮤니티인지 확인
+    const cidFromPath = dbPath.split('/')[1];
+    if (session.communityId && session.communityId === cidFromPath) return true;
   }
 
   // 마스터 전용 경로
