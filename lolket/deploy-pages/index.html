@@ -1019,7 +1019,7 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
 </div> </div> </div> </div> </div>
 <div id="screen-invite" class="screen"> <div style="max-width:400px;margin:4rem auto;padding:2rem;"> <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:3px;color:var(--gold);margin-bottom:.5rem;">관리자 계정 등록</div> <div style="font-size:12px;color:var(--text-muted);margin-bottom:1.5rem;line-height:1.6;" id="invite-community-label">
  커뮤니티: <span style="color:var(--text-white);" id="invite-community-name">—</span> </div> <div style="display:flex;flex-direction:column;gap:1rem;margin-bottom:1rem;"> <div style="display:flex;flex-direction:column;gap:6px;"> <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;text-transform:uppercase;">아이디</label> <input class="form-input" type="text" id="invite-id" placeholder="사용할 아이디 입력" style="font-size:14px;"> </div> <div style="display:flex;flex-direction:column;gap:6px;"> <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;text-transform:uppercase;">비밀번호</label> <input class="form-input" type="password" id="invite-pw" placeholder="비밀번호 입력" style="font-size:14px;"> </div> <div style="display:flex;flex-direction:column;gap:6px;"> <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;text-transform:uppercase;">비밀번호 확인</label> <input class="form-input" type="password" id="invite-pw2" placeholder="비밀번호 재입력" style="font-size:14px;" onkeydown="if(event.key==='Enter')registerInviteAdmin()"> </div> </div> <div id="invite-err" style="font-size:12px;color:#E05050;min-height:18px;margin-bottom:.75rem;"></div> <button class="btn-primary" style="width:100%;padding:11px;font-size:14px;letter-spacing:2px;" onclick="registerInviteAdmin()">계정 생성</button> </div>
-</div> <div class="modal-overlay" id="community-modal" style="display:none;"> <div class="modal" style="max-width:400px;"> <div class="modal-title" id="community-modal-title">커뮤니티 생성</div> <div style="display:flex;flex-direction:column;gap:1rem;margin-bottom:1rem;"> <div style="display:flex;flex-direction:column;gap:6px;"> <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;text-transform:uppercase;">커뮤니티 이름</label> <input class="form-input" type="text" id="cm-name" placeholder="예) 롤켓 내전"> </div> <div style="display:flex;flex-direction:column;gap:6px;"> <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;text-transform:uppercase;">설명 (선택)</label> <input class="form-input" type="text" id="cm-desc" placeholder="커뮤니티 간단 설명"> </div>
+</div> <div class="modal-overlay" id="community-modal" style="display:none;"> <div class="modal" style="max-width:400px;display:flex;flex-direction:column;max-height:90vh;padding:0;overflow:hidden;"> <div class="modal-title" id="community-modal-title" style="padding:1.25rem 1.5rem 1rem;margin-bottom:0;flex-shrink:0;">커뮤니티 생성</div> <div style="display:flex;flex-direction:column;gap:1rem;overflow-y:auto;padding:0 1.5rem 1rem;flex:1;"> <div style="display:flex;flex-direction:column;gap:6px;"> <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;text-transform:uppercase;">커뮤니티 이름</label> <input class="form-input" type="text" id="cm-name" placeholder="예) 롤켓 내전"> </div> <div style="display:flex;flex-direction:column;gap:6px;"> <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;text-transform:uppercase;">설명 (선택)</label> <input class="form-input" type="text" id="cm-desc" placeholder="커뮤니티 간단 설명"> </div>
 <div style="display:flex;flex-direction:column;gap:6px;">
   <label style="font-size:10px;letter-spacing:1.5px;color:#7289DA;font-family:'Rajdhani',sans-serif;text-transform:uppercase;">🎮 디스코드 내전 기록 채널 ID <span style="color:var(--text-muted);font-size:9px;">(내전 결과 자동 공유)</span> <button type="button" onclick="openDiscordGuideModal()" style="width:16px;height:16px;border-radius:50%;border:1px solid #7289DA;background:rgba(88,101,242,.15);color:#7289DA;font-size:9px;font-weight:700;cursor:pointer;line-height:1;padding:0;vertical-align:middle;flex-shrink:0;">?</button></label>
   <input class="form-input" type="text" id="cm-discord-channel" placeholder="예) 1234567890123456789" style="border-color:rgba(88,101,242,.3);">
@@ -1027,9 +1027,34 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
 <div style="display:flex;flex-direction:column;gap:6px;">
   <label style="font-size:10px;letter-spacing:1.5px;color:#7289DA;font-family:'Rajdhani',sans-serif;text-transform:uppercase;">🔔 디스코드 내전 알림 채널 ID <span style="color:var(--text-muted);font-size:9px;">(시작 1시간 전 자동 알림)</span></label>
   <input class="form-input" type="text" id="cm-discord-alarm-channel" placeholder="예) 1234567890123456789" style="border-color:rgba(88,101,242,.3);">
-  <div style="display:flex;align-items:center;gap:8px;margin-top:2px;">
-    <input type="checkbox" id="cm-alarm-everyone" style="width:14px;height:14px;accent-color:#7289DA;cursor:pointer;">
-    <label for="cm-alarm-everyone" style="font-size:11px;color:var(--text-muted);cursor:pointer;">@everyone 태그 사용 <span style="color:var(--text-muted);font-size:9px;">(알림 전송 시 전체 멘션)</span></label>
+  <div style="display:flex;flex-direction:column;gap:6px;background:rgba(88,101,242,.04);border:1px solid rgba(88,101,242,.12);border-radius:4px;padding:.6rem .75rem;">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <input type="checkbox" id="cm-alarm-everyone" style="width:14px;height:14px;accent-color:#7289DA;cursor:pointer;">
+      <label for="cm-alarm-everyone" style="font-size:11px;color:var(--text-muted);cursor:pointer;">@everyone 태그 사용 <span style="color:var(--text-muted);font-size:9px;">(알림 전송 시 전체 멘션)</span></label>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <input type="checkbox" id="cm-alarm-auto" style="width:14px;height:14px;accent-color:#7289DA;cursor:pointer;">
+      <label for="cm-alarm-auto" style="font-size:11px;color:var(--text-muted);cursor:pointer;">1시간 전 자동 알림 사용 <span style="color:var(--text-muted);font-size:9px;">(Cron 자동 전송)</span></label>
+    </div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:4px;margin-top:2px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <label style="font-size:10px;letter-spacing:1px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;text-transform:uppercase;">알림 메시지 템플릿</label>
+      <button type="button" onclick="document.getElementById('cm-alarm-template').value='{내전이름} 내전 {남은시간} 전입니다!\n{내전일시}\n[진행자 : {진행자명}]'" style="font-size:9px;font-family:'Rajdhani',sans-serif;font-weight:700;color:var(--text-muted);background:transparent;border:1px solid var(--border-subtle);border-radius:2px;padding:2px 7px;cursor:pointer;letter-spacing:.5px;">기본값</button>
+    </div>
+    <textarea id="cm-alarm-template" rows="3" placeholder="{내전이름} 내전 {남은시간} 전입니다!&#10;{내전일시}&#10;[진행자 : {진행자명}]" style="width:100%;background:var(--bg-dark);border:1px solid var(--border-subtle);border-radius:3px;color:var(--text-white);font-family:'Noto Sans KR',sans-serif;font-size:12px;padding:8px 10px;resize:vertical;outline:none;line-height:1.6;"></textarea>
+    <div style="background:rgba(10,200,185,.04);border:1px solid rgba(10,200,185,.12);border-radius:3px;padding:.5rem .75rem;">
+      <div style="font-size:9px;font-weight:700;letter-spacing:1px;color:var(--blue-bright);font-family:'Rajdhani',sans-serif;margin-bottom:5px;">사용 가능한 변수</div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px;">
+        <span style="font-size:10px;background:rgba(10,200,185,.08);border:1px solid rgba(10,200,185,.2);border-radius:3px;padding:1px 6px;color:var(--blue-bright);font-family:monospace;">{내전이름}</span>
+        <span style="font-size:10px;background:rgba(10,200,185,.08);border:1px solid rgba(10,200,185,.2);border-radius:3px;padding:1px 6px;color:var(--blue-bright);font-family:monospace;">{진행자명}</span>
+        <span style="font-size:10px;background:rgba(10,200,185,.08);border:1px solid rgba(10,200,185,.2);border-radius:3px;padding:1px 6px;color:var(--blue-bright);font-family:monospace;">{내전일시}</span>
+        <span style="font-size:10px;background:rgba(10,200,185,.08);border:1px solid rgba(10,200,185,.2);border-radius:3px;padding:1px 6px;color:var(--blue-bright);font-family:monospace;">{남은시간}</span>
+        <span style="font-size:10px;background:rgba(10,200,185,.08);border:1px solid rgba(10,200,185,.2);border-radius:3px;padding:1px 6px;color:var(--blue-bright);font-family:monospace;">{참가인원}</span>
+        <span style="font-size:10px;background:rgba(10,200,185,.08);border:1px solid rgba(10,200,185,.2);border-radius:3px;padding:1px 6px;color:var(--blue-bright);font-family:monospace;">{출석인원}</span>
+        <span style="font-size:10px;background:rgba(10,200,185,.08);border:1px solid rgba(10,200,185,.2);border-radius:3px;padding:1px 6px;color:var(--blue-bright);font-family:monospace;">{커뮤니티명}</span>
+      </div>
+    </div>
   </div>
 </div>
 <div style="display:flex;flex-direction:column;gap:6px;">
@@ -1049,7 +1074,7 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
   <span style="font-size:12px;color:var(--text-muted);">공식 커뮤니티로 지정</span>
   <span class="official-badge" id="cm-official-preview" style="display:none;">공식</span>
 </div>
-</div> <div class="modal-actions"> <button class="btn-secondary" onclick="closeCommunityModal()">취소</button> <button class="btn-primary" onclick="saveCommunity()">저장</button> </div> </div>
+</div> <div class="modal-actions" style="padding:.75rem 1.5rem 1.25rem;margin-top:0;border-top:1px solid var(--border-subtle);flex-shrink:0;"> <button class="btn-secondary" onclick="closeCommunityModal()">취소</button> <button class="btn-primary" onclick="saveCommunity()">저장</button> </div> </div>
 </div> <div class="modal-overlay" id="invite-manage-modal" style="display:none;"> <div class="modal" style="max-width:520px;"> <div class="modal-title">초대 링크 관리</div> <div style="font-size:12px;color:var(--text-muted);margin-bottom:1rem;line-height:1.6;">
  커뮤니티를 선택하고 초대 링크를 생성하세요.<br>
  링크는 1회용이며 계정 생성 후 자동 폐기됩니다.
@@ -1145,7 +1170,7 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
  소환사 검색
  </div> </div> <div class="panel-body search-section"> <div class="search-box-wrap"> <input type="text" id="search-input" placeholder="닉네임#KR1" onkeydown="onSearchKey(event)" /> <button class="search-btn" id="search-btn" onclick="searchSummoner()"> <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="5" cy="5" r="4" stroke="currentColor" stroke-width="1.5"/><line x1="8.5" y1="8.5" x2="12" y2="12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> </button> </div> <div class="search-hint"> <span>닉네임#태그</span> 형식으로 입력하세요.<br>
  예) 페이커#KR1 · Hide on bush#KR1
- </div> <div id="search-loading" style="display:none;justify-content:center;padding:1.5rem;"> <div class="spinner"></div> </div> <div id="search-result" style="display:none;"> <div class="search-result"> <div class="result-profile"> <div class="result-avatar" id="r-avatar">?</div> <div> <div class="result-name" id="r-name">—</div> <div class="result-tag" id="r-tag">—</div> </div> </div> <div class="result-tiers"> <div class="tier-row"> <span class="tier-row-label">SOLO/DUO</span> <span class="tier-row-val" id="r-solo">—</span> </div> <div class="tier-row"> <span class="tier-row-label">FLEX</span> <span class="tier-row-val" id="r-flex">—</span> </div> <div class="tier-row"> <span class="tier-row-label">LEVEL</span> <span class="tier-row-val" id="r-level">—</span> </div> <div class="tier-row" style="margin-top:4px;border-top:1px solid var(--border-subtle);padding-top:6px;"> <span class="tier-row-label">티어 직접 설정</span> <select id="r-tier-override" onchange="applyTierOverride(this.value)" style="background:var(--bg-panel);border:1px solid var(--border-subtle);border-radius:2px;color:var(--text-white);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;padding:2px 6px;outline:none;cursor:pointer;"> <option value="">— API 값 사용</option> <option value="UNRANKED">UNRANKED</option> <option value="IRON">IRON</option> <option value="BRONZE">BRONZE</option> <option value="SILVER">SILVER</option> <option value="GOLD">GOLD</option> <option value="PLATINUM">PLATINUM</option> <option value="EMERALD">EMERALD</option> <option value="DIAMOND">DIAMOND</option> <option value="MASTER">MASTER</option> <option value="GRANDMASTER">GRANDMASTER</option> <option value="CHALLENGER">CHALLENGER</option> </select> </div> </div> <div class="lane-select"> <div class="lane-select-label">주 포지션</div> <div class="lane-buttons" id="main-lanes"> <button class="lane-btn" data-lane="top" onclick="selectLane('main','top')">TOP</button> <button class="lane-btn" data-lane="jg" onclick="selectLane('main','jg')">JG</button> <button class="lane-btn" data-lane="mid" onclick="selectLane('main','mid')">MID</button> <button class="lane-btn" data-lane="bot" onclick="selectLane('main','bot')">BOT</button> <button class="lane-btn" data-lane="sup" onclick="selectLane('main','sup')">SUP</button> </div> <div class="lane-select-label" style="margin-top:4px;">보조 포지션</div> <div class="lane-buttons" id="sub-lanes"> <button class="lane-btn" data-lane="top" onclick="selectLane('sub','top')">TOP</button> <button class="lane-btn" data-lane="jg" onclick="selectLane('sub','jg')">JG</button> <button class="lane-btn" data-lane="mid" onclick="selectLane('sub','mid')">MID</button> <button class="lane-btn" data-lane="bot" onclick="selectLane('sub','bot')">BOT</button> <button class="lane-btn" data-lane="sup" onclick="selectLane('sub','sup')">SUP</button> </div> </div> <div style="padding:.75rem 1rem;border-top:1px solid var(--border-subtle);"> <button class="btn-add-member" id="btn-add" onclick="addMember()" disabled>멤버 추가</button> </div> </div> </div> </div> </div> <div class="next-wrap"> <div class="next-condition"> <div class="cond-item"> <div class="cond-dot" id="cond-count"></div> <span id="cond-count-text" style="font-size:12px;color:var(--text-muted);">인원 10의 배수</span> </div> <div class="cond-item"> <div class="cond-dot" id="cond-attend"></div> <span id="cond-attend-text" style="font-size:12px;color:var(--text-muted);">전원 출석</span> </div> </div> <button id="btn-attend-all" onclick="toggleAttendAll()" style="padding:7px 16px;border-radius:2px;border:1px solid rgba(10,200,185,0.4);background:rgba(10,200,185,0.08);color:var(--blue-bright);font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;cursor:pointer;transition:all .15s;">전체 출석</button> <button class="btn-next" id="btn-next" disabled onclick="goNextStage()">다음 단계 →</button> </div>
+ </div> <div id="search-loading" style="display:none;justify-content:center;padding:1.5rem;"> <div class="spinner"></div> </div> <div id="search-result" style="display:none;"> <div class="search-result"> <div class="result-profile"> <div class="result-avatar" id="r-avatar">?</div> <div> <div class="result-name" id="r-name">—</div> <div class="result-tag" id="r-tag">—</div> </div> </div> <div class="result-tiers"> <div class="tier-row"> <span class="tier-row-label">SOLO/DUO</span> <span class="tier-row-val" id="r-solo">—</span> </div> <div class="tier-row"> <span class="tier-row-label">FLEX</span> <span class="tier-row-val" id="r-flex">—</span> </div> <div class="tier-row"> <span class="tier-row-label">LEVEL</span> <span class="tier-row-val" id="r-level">—</span> </div> <div class="tier-row" style="margin-top:4px;border-top:1px solid var(--border-subtle);padding-top:6px;"> <span class="tier-row-label">티어 직접 설정</span> <select id="r-tier-override" onchange="applyTierOverride(this.value)" style="background:var(--bg-panel);border:1px solid var(--border-subtle);border-radius:2px;color:var(--text-white);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;padding:2px 6px;outline:none;cursor:pointer;"> <option value="">— API 값 사용</option> <option value="UNRANKED">UNRANKED</option> <option value="IRON">IRON</option> <option value="BRONZE">BRONZE</option> <option value="SILVER">SILVER</option> <option value="GOLD">GOLD</option> <option value="PLATINUM">PLATINUM</option> <option value="EMERALD">EMERALD</option> <option value="DIAMOND">DIAMOND</option> <option value="MASTER">MASTER</option> <option value="GRANDMASTER">GRANDMASTER</option> <option value="CHALLENGER">CHALLENGER</option> </select> </div> </div> <div class="lane-select"> <div class="lane-select-label">주 포지션</div> <div class="lane-buttons" id="main-lanes"> <button class="lane-btn" data-lane="top" onclick="selectLane('main','top')">TOP</button> <button class="lane-btn" data-lane="jg" onclick="selectLane('main','jg')">JG</button> <button class="lane-btn" data-lane="mid" onclick="selectLane('main','mid')">MID</button> <button class="lane-btn" data-lane="bot" onclick="selectLane('main','bot')">BOT</button> <button class="lane-btn" data-lane="sup" onclick="selectLane('main','sup')">SUP</button> </div> <div class="lane-select-label" style="margin-top:4px;">보조 포지션</div> <div class="lane-buttons" id="sub-lanes"> <button class="lane-btn" data-lane="top" onclick="selectLane('sub','top')">TOP</button> <button class="lane-btn" data-lane="jg" onclick="selectLane('sub','jg')">JG</button> <button class="lane-btn" data-lane="mid" onclick="selectLane('sub','mid')">MID</button> <button class="lane-btn" data-lane="bot" onclick="selectLane('sub','bot')">BOT</button> <button class="lane-btn" data-lane="sup" onclick="selectLane('sub','sup')">SUP</button> </div> </div> <div style="padding:.75rem 1rem;border-top:1px solid var(--border-subtle);"> <button class="btn-add-member" id="btn-add" onclick="addMember()" disabled>멤버 추가</button> </div> </div> </div> </div> </div> <div class="next-wrap"> <div class="next-condition"> <div class="cond-item"> <div class="cond-dot" id="cond-count"></div> <span id="cond-count-text" style="font-size:12px;color:var(--text-muted);">인원 10의 배수</span> </div> <div class="cond-item"> <div class="cond-dot" id="cond-attend"></div> <span id="cond-attend-text" style="font-size:12px;color:var(--text-muted);">전원 출석</span> </div> </div> <button id="btn-attend-all" onclick="toggleAttendAll()" style="padding:7px 16px;border-radius:2px;border:1px solid rgba(10,200,185,0.4);background:rgba(10,200,185,0.08);color:var(--blue-bright);font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;cursor:pointer;transition:all .15s;">전체 출석</button> <button id="btn-discord-notify" onclick="sendDiscordNotify()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(114,137,218,0.4);background:rgba(114,137,218,0.08);color:#7289DA;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;cursor:pointer;transition:all .15s;"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;margin-right:4px;"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>알림 전송</button> <button class="btn-next" id="btn-next" disabled onclick="goNextStage()">다음 단계 →</button> </div>
 </div>
 </div> <div class="modal-overlay" id="edit-time-modal" style="display:none;"> <div class="modal" style="max-width:360px;"> <div class="modal-title">시작 시간 수정</div> <div class="form-row"> <div class="form-label">새 시작 시간</div> <input class="form-input" type="datetime-local" id="et-time"> </div> <div class="modal-actions"> <button class="btn-secondary" onclick="closeEditTimeModal()">취소</button> <button class="btn-primary" onclick="saveEditTime()">저장</button> </div> </div>
 </div> <div class="modal-overlay" id="em-modal" style="display:none;" data-id=""> <div class="modal" style="max-width:420px;"> <div class="modal-title">내전 정보 수정</div> <div class="form-row"> <div class="form-label">내전 이름</div> <input class="form-input" type="text" id="em-name"> </div> <div class="form-row"> <div class="form-label">시작 시간</div> <input class="form-input" type="datetime-local" id="em-time"> </div> <div class="form-row"> <div class="form-label">진행 관리자 (선택)</div> <input class="form-input" type="text" id="em-admin" placeholder="공란 가능"> </div> <div class="modal-actions"> <button class="btn-secondary" onclick="closeEditMatchModal()">취소</button> <button class="btn-secondary" onclick="saveEditMatch()">저장</button> <button class="btn-primary" onclick="(function(){saveEditMatch();setTimeout(()=>{const list=dbLoad();const snap=list.find(m=>m.name===document.getElementById('em-name').value.trim());if(snap)proceedToStage1(snap);},100)})()">진행하기 →</button> </div> </div>
@@ -5274,6 +5299,10 @@ const alarmInput = document.getElementById('cm-discord-alarm-channel');
 if (alarmInput) alarmInput.value = c.alarmChannelId || '';
 const everyoneChk = document.getElementById('cm-alarm-everyone');
 if (everyoneChk) everyoneChk.checked = !!(c.alarmEveryone);
+const autoChk = document.getElementById('cm-alarm-auto');
+if (autoChk) autoChk.checked = !!(c.alarmAuto);
+const templateEl = document.getElementById('cm-alarm-template');
+if (templateEl) templateEl.value = c.alarmTemplate || '';
 window._resetCmBannerUI(c.bannerImage || '');
 const officialChk = document.getElementById('cm-official');
 if (officialChk) { officialChk.checked = !!c.official; _updateOfficialPreview(!!c.official); }
@@ -5297,6 +5326,8 @@ const desc = document.getElementById('cm-desc').value.trim();
 const discordChannelId = (document.getElementById('cm-discord-channel')?.value || '').trim();
 const alarmChannelId = (document.getElementById('cm-discord-alarm-channel')?.value || '').trim();
 const alarmEveryone = !!(document.getElementById('cm-alarm-everyone')?.checked);
+const alarmAuto     = !!(document.getElementById('cm-alarm-auto')?.checked);
+const alarmTemplate = (document.getElementById('cm-alarm-template')?.value || '').trim();
 if (!name) return toast('커뮤니티 이름을 입력하세요', 'err');
 
 // 저장 버튼 로딩
@@ -5340,6 +5371,8 @@ try {
     discordChannelId: discordChannelId || null,
     alarmChannelId: alarmChannelId || null,
     alarmEveryone: alarmEveryone || false,
+    alarmAuto: alarmAuto || false,
+    alarmTemplate: alarmTemplate || '',
     bannerImage: finalBanner || null,
   };
 
@@ -9134,6 +9167,97 @@ function _resetCmBannerUI(existingUrl) {
 }
 
 
+// ── Discord 수동 알림 전송 ──
+async function sendDiscordNotify() {
+  if (!match || !match.id) return toast('내전 정보가 없습니다', 'err');
+
+  // 커뮤니티 정보 로드
+  let commData = null;
+  if (_fbReady && window._fb.fbGetCommunities) {
+    try {
+      const list = await window._fb.fbGetCommunities();
+      commData = list.find(c => c.id === (window._currentCommunityId || match.communityId));
+    } catch(e) {}
+  }
+
+  const channelId = commData?.alarmChannelId || commData?.discordChannelId;
+  if (!channelId) return toast('디스코드 알림 채널 ID가 설정되지 않았습니다', 'err');
+
+  // 변수 치환
+  const msg = _buildAlarmMessage(commData?.alarmTemplate, commData);
+
+  const btn = document.getElementById('btn-discord-notify');
+  if (btn) { btn.disabled = true; btn.textContent = '전송 중...'; }
+
+  try {
+    const res = await fetch(RIOT_PROXY_URL + '/discord-send', {
+      method: 'POST',
+      headers: _getHeaders(),
+      body: JSON.stringify({ channelId, message: msg }),
+    });
+    const r = await res.json();
+    if (r.ok) { toast('Discord 알림 전송 완료!', 'ok'); }
+    else { toast('전송 실패: ' + (r.error || ''), 'err'); }
+  } catch(e) {
+    toast('전송 실패: ' + e.message, 'err');
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;margin-right:4px;"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>알림 전송'; }
+  }
+}
+
+// 템플릿 변수 치환
+function _buildAlarmMessage(template, commData) {
+  const defaultTemplate = '{내전이름} 내전 {남은시간} 전입니다!\n{내전일시}\n[진행자 : {진행자명}]';
+  let tpl = (template || defaultTemplate).trim();
+  if (!tpl) tpl = defaultTemplate;
+
+  // 날짜 포맷 (KST)
+  const pad = n => String(n).padStart(2, '0');
+  const startDate = new Date(match.time);
+  const days = ['일', '월', '화', '수', '목', '금', '토'];
+  const year  = startDate.getFullYear();
+  const month = pad(startDate.getMonth() + 1);
+  const date  = pad(startDate.getDate());
+  const day   = days[startDate.getDay()];
+  const h     = startDate.getHours();
+  const m     = startDate.getMinutes();
+  const ampm  = h < 12 ? '오전' : '오후';
+  const h12   = h % 12 === 0 ? 12 : h % 12;
+  const dateStr = year + '년' + month + '월' + date + '일(' + day + ') ' + ampm + ' ' + h12 + '시' + (m > 0 ? ' ' + pad(m) + '분' : '');
+
+  // 남은 시간
+  const diffMs = startDate.getTime() - Date.now();
+  let remainStr = '';
+  if (diffMs <= 0) {
+    remainStr = '곧';
+  } else {
+    const diffMin = Math.floor(diffMs / 60000);
+    const diffH   = Math.floor(diffMin / 60);
+    const diffM   = diffMin % 60;
+    if (diffH > 0 && diffM > 0) remainStr = diffH + '시간 ' + diffM + '분';
+    else if (diffH > 0) remainStr = diffH + '시간';
+    else remainStr = diffM + '분';
+  }
+
+  // 참가/출석 인원
+  const total   = members ? members.length : 0;
+  const attended = members ? members.filter(m => m._attended).length : 0;
+
+  // everyone 처리
+  const everyone = commData?.alarmEveryone ? '@everyone\n' : '';
+
+  return everyone + tpl
+    .replace(/\{내전이름\}/g, match.name || '내전')
+    .replace(/\{진행자명\}/g, match.admin || '—')
+    .replace(/\{내전일시\}/g, dateStr)
+    .replace(/\{남은시간\}/g, remainStr)
+    .replace(/\{참가인원\}/g, total + '명')
+    .replace(/\{출석인원\}/g, attended + '명')
+    .replace(/\{커뮤니티명\}/g, commData?.name || '');
+}
+
+// ── Discord 수동 알림 전송 끝 ──
+
 // ── 전역 함수 명시적 등록 (onclick에서 접근 보장) ──
 
 async function _initAfterFb() {
@@ -9145,6 +9269,7 @@ window.onCmBannerChange      = onCmBannerChange;
   window.saveRtubeEdit         = saveRtubeEdit;
   window.onRtubeSearch        = onRtubeSearch;
   window.rtubeLoadMore        = rtubeLoadMore;
+  window.sendDiscordNotify     = sendDiscordNotify;
   window.openRtubeAddModal     = openRtubeAddModal;
   window.closeRtubeAddModal    = closeRtubeAddModal;
   window.saveRtubeVideo        = saveRtubeVideo;
