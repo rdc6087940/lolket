@@ -509,8 +509,6 @@ async function handleDbRead(request, env) {
 
   if (isOwnCommunityInfo) {
     // 통과 — 자신의 커뮤니티 정보는 읽기 허용
-  } else if (/^blacklist/.test(dbPath) && session) {
-    // 관리자 이상 블랙리스트 읽기 허용
   } else {
     // 마스터만 읽기 가능한 경로
     const masterRead = [
@@ -700,8 +698,6 @@ function checkPermission(session, dbPath, requireRole) {
     const cidFromPath = dbPath.split('/')[1];
     if (session.communityId && session.communityId === cidFromPath) return true;
   }
-  // 관리자 이상 블랙리스트 쓰기 허용
-  if (/^blacklist\//.test(dbPath)) return true;
 
   // 마스터 전용 경로
   const masterWrite = [
