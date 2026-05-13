@@ -702,8 +702,6 @@ function checkPermission(session, dbPath, requireRole) {
   }
   // 관리자 이상 블랙리스트 쓰기 허용
   if (/^blacklist\//.test(dbPath)) return true;
-  // 관리자 이상 커뮤니티 메시지 쓰기 허용
-  if (/^community_messages\//.test(dbPath)) return true;
 
   // 마스터 전용 경로
   const masterWrite = [

@@ -941,52 +941,6 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
     return _workerWrite('applies/' + id + '/status', status, 'master');
   }
 
- // ── 커뮤니티 메시지 ──────────────────────────────
- function _msgRoomId(cidA, cidB) {
-   return [cidA, cidB].sort().join('___');
- }
- function fbMsgSubscribeRoom(cidA, cidB, callback) {
-   const roomId = _msgRoomId(cidA, cidB);
-   const unsub = onValue(ref(db, `community_messages/${roomId}/messages`), snap => {
-     const raw = snap.val() || {};
-     const list = Object.values(raw).sort((a,b) => (a.sentAt||0) - (b.sentAt||0));
-     callback(list);
-   });
-   return unsub;
- }
- async function fbMsgSend(cidA, cidB, senderCid, senderName, text) {
-   const roomId = _msgRoomId(cidA, cidB);
-   const msgId = 'msg_' + Date.now() + '_' + Math.random().toString(36).slice(2,6);
-   await set(ref(db, `community_messages/${roomId}/messages/${msgId}`), {
-     text, senderCid, senderName, sentAt: Date.now()
-   });
-   await set(ref(db, `community_messages/${roomId}/meta`), {
-     participants: [cidA, cidB],
-     lastMessage: text.length > 40 ? text.slice(0,40)+'…' : text,
-     lastAt: Date.now()
-   });
- }
- async function fbMsgSetRead(cidA, cidB, myCid) {
-   const roomId = _msgRoomId(cidA, cidB);
-   await set(ref(db, `community_messages/${roomId}/meta/readAt/${myCid.replace(/[.$\[\]#\/]/g,'_')}`), Date.now());
- }
- async function fbMsgGetRooms(myCid) {
-   const snap = await get(ref(db, 'community_messages'));
-   const raw = snap.val() || {};
-   return Object.entries(raw)
-     .filter(([roomId]) => roomId.includes(myCid))
-     .map(([roomId, data]) => ({ roomId, ...data?.meta, messages: data?.messages || {} }));
- }
- function fbMsgSubscribeRoomList(myCid, callback) {
-   return onValue(ref(db, 'community_messages'), snap => {
-     const raw = snap.val() || {};
-     const rooms = Object.entries(raw)
-       .filter(([roomId]) => roomId.includes(myCid))
-       .map(([roomId, data]) => ({ roomId, ...data?.meta, messages: data?.messages || {} }));
-     callback(rooms);
-   });
- }
-
  window._fb = {
  fbSet, fbDelete, fbSubscribeAll, fbSubscribeOne, fbGet,
     fbGetNotices, fbSaveNotice, fbDeleteNotice, fbUpdateNoticeViews,
@@ -997,7 +951,6 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
  fbSaveRecruit, fbGetRecruits, fbDeleteRecruit, fbSaveRecruitComment, fbGetRecruitComments, fbDeleteRecruitComment, fbToggleRecruitBookmark,
  fbSaveRecruitApply, fbGetRecruitApplies, fbDeleteRecruitApply,
  fbSaveMatchAlarm, fbUpdateMatchAlarmTime, fbDeleteMatchAlarm,
- fbMsgSubscribeRoom, fbMsgSend, fbMsgSetRead, fbMsgGetRooms, fbMsgSubscribeRoomList,
  ready: false
  };
  window._fb.ready = true;
@@ -1005,7 +958,7 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
 </script> </head>
 <body> <header class="header"> <div class="header-inner"> <div style="display:flex;align-items:center;gap:14px;"> <div class="logo" style="cursor:pointer;" onclick="goHome()"> <div class="logo-diamond"></div>
  롤켓배송
- </div><span id="app-version" onclick="isMaster && openVersionModal()" style="font-family:'Rajdhani',sans-serif;font-size:9px;color:var(--text-muted);letter-spacing:1px;opacity:.7;margin-left:2px;transition:all .15s;">v1.1.005</span> <button class="btn-back" id="btn-back" onclick="goToList()" style="display:none;">← 목록</button> <div class="community-indicator" id="community-indicator" onclick="goToList()" title="커뮤니티 홈" style="cursor:pointer;"> <div class="community-indicator-dot"></div> <span id="community-indicator-name"></span> </div> </div> <div class="stage-indicator hidden" id="stage-indicator"> <div class="stage-pip" id="pip-1"><div class="stage-pip-dot"></div>1. 내전 대기</div> <div class="stage-pip" id="pip-2"><div class="stage-pip-dot"></div>2. 종류 선택</div> <div class="stage-pip" id="pip-3"><div class="stage-pip-dot"></div>3. 팀 짜기</div> <div class="stage-pip" id="pip-4"><div class="stage-pip-dot"></div>4. 대진표</div> <div class="stage-pip" id="pip-5"><div class="stage-pip-dot"></div>5. 결과</div> </div> <div class="header-actions"> <div class="role-badge user" id="role-badge"><div class="role-dot"></div><span id="role-label">일반 유저</span></div> <button class="btn-auth" id="btn-auth" onclick="openLoginModal()" style="display:none;">로그아웃</button> <button class="btn-auth" id="btn-master-login" onclick="openMasterLoginModal()" style="font-size:10px;padding:5px 10px;border-color:rgba(157,72,224,.4);color:#B97EEA;background:rgba(157,72,224,.07);">마스터</button> <button class="btn-auth" id="btn-admin-login" onclick="openLoginModal()">관리자 로그인</button> <div class="patch-toggle-wrap master-only" id="patch-toggle-wrap" style="display:none;"><span class="patch-toggle-label" id="patch-toggle-label">패치중</span><label class="patch-toggle"><input type="checkbox" id="patch-toggle-input" onchange="onPatchToggle(this.checked)"><span class="patch-toggle-slider"></span></label></div><button onclick="openGuide()" title="이용 가이드" style="width:28px;height:28px;border-radius:50%;border:1px solid var(--border-subtle);background:rgba(200,170,110,.08);color:var(--gold);font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0;">?</button><button class="btn-secondary admin-only" id="btn-new-match" onclick="openNewMatchFlow()" style="display:none;">+ 새 내전 생성</button> <button class="btn-auth admin-only" id="btn-blacklist" onclick="openBlacklist()" style="display:none;border-color:rgba(192,48,48,.4);color:#E05050;background:rgba(192,48,48,.07);font-size:10px;padding:5px 10px;" title="블랙리스트">🚫 블랙리스트</button> <button class="btn-auth admin-only" id="btn-msg" onclick="toggleMsgPanel()" style="display:none;font-size:10px;padding:5px 10px;position:relative;" title="커뮤니티 메시지">💬 메시지<span id="msg-badge" style="display:none;position:absolute;top:-4px;right:-4px;min-width:16px;height:16px;border-radius:8px;background:#E05050;color:#fff;font-size:9px;font-family:'Rajdhani',sans-serif;font-weight:700;line-height:16px;text-align:center;padding:0 3px;">0</span></button> </div>
+ </div><span id="app-version" onclick="isMaster && openVersionModal()" style="font-family:'Rajdhani',sans-serif;font-size:9px;color:var(--text-muted);letter-spacing:1px;opacity:.7;margin-left:2px;transition:all .15s;">v1.1.005</span> <button class="btn-back" id="btn-back" onclick="goToList()" style="display:none;">← 목록</button> <div class="community-indicator" id="community-indicator" onclick="goToList()" title="커뮤니티 홈" style="cursor:pointer;"> <div class="community-indicator-dot"></div> <span id="community-indicator-name"></span> </div> </div> <div class="stage-indicator hidden" id="stage-indicator"> <div class="stage-pip" id="pip-1"><div class="stage-pip-dot"></div>1. 내전 대기</div> <div class="stage-pip" id="pip-2"><div class="stage-pip-dot"></div>2. 종류 선택</div> <div class="stage-pip" id="pip-3"><div class="stage-pip-dot"></div>3. 팀 짜기</div> <div class="stage-pip" id="pip-4"><div class="stage-pip-dot"></div>4. 대진표</div> <div class="stage-pip" id="pip-5"><div class="stage-pip-dot"></div>5. 결과</div> </div> <div class="header-actions"> <div class="role-badge user" id="role-badge"><div class="role-dot"></div><span id="role-label">일반 유저</span></div> <button class="btn-auth" id="btn-auth" onclick="openLoginModal()" style="display:none;">로그아웃</button> <button class="btn-auth" id="btn-master-login" onclick="openMasterLoginModal()" style="font-size:10px;padding:5px 10px;border-color:rgba(157,72,224,.4);color:#B97EEA;background:rgba(157,72,224,.07);">마스터</button> <button class="btn-auth" id="btn-admin-login" onclick="openLoginModal()">관리자 로그인</button> <div class="patch-toggle-wrap master-only" id="patch-toggle-wrap" style="display:none;"><span class="patch-toggle-label" id="patch-toggle-label">패치중</span><label class="patch-toggle"><input type="checkbox" id="patch-toggle-input" onchange="onPatchToggle(this.checked)"><span class="patch-toggle-slider"></span></label></div><button onclick="openGuide()" title="이용 가이드" style="width:28px;height:28px;border-radius:50%;border:1px solid var(--border-subtle);background:rgba(200,170,110,.08);color:var(--gold);font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0;">?</button><button class="btn-secondary admin-only" id="btn-new-match" onclick="openNewMatchFlow()" style="display:none;">+ 새 내전 생성</button> <button class="btn-auth admin-only" id="btn-blacklist" onclick="openBlacklist()" style="display:none;border-color:rgba(192,48,48,.4);color:#E05050;background:rgba(192,48,48,.07);font-size:10px;padding:5px 10px;" title="블랙리스트">🚫 블랙리스트</button> </div>
   <button class="mobile-menu-btn" id="mobile-menu-btn" onclick="openMobileDrawer()" aria-label="메뉴">
     <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
       <rect x="2" y="4" width="16" height="2" rx="1" fill="currentColor"/>
@@ -6706,8 +6659,6 @@ async function submitBlacklist() {
 function updateBlacklistBtnVisibility() {
   const btn = document.getElementById('btn-blacklist');
   if (btn) btn.style.display = (isAdmin || isMaster) ? '' : 'none';
-  const msgBtn = document.getElementById('btn-msg');
-  if (msgBtn) msgBtn.style.display = (isAdmin || isMaster) ? '' : 'none';
 }
 
 function toggleCommunityExpand() {
@@ -10253,225 +10204,9 @@ document.body.appendChild(bar);
 }
 }, 4000);
 
-// ═══════════════════════════════════════════
-// 커뮤니티 메시지
-// ═══════════════════════════════════════════
-let _msgOpen = false;
-let _msgCurrentRoom = null; // { roomId, otherCid, otherName }
-let _msgRoomUnsub = null;
-let _msgListUnsub = null;
-let _msgAllCommunities = [];
-let _msgMyReadAt = {};
-
-function _msgMyCid() {
-  return isMaster ? 'master' : (window._currentCommunityId || currentAdminData?.communityId || '');
-}
-function _msgMyName() {
-  return isMaster ? '마스터' : (currentCommunity?.name || '');
-}
-
-function toggleMsgPanel() {
-  const panel = document.getElementById('msg-panel');
-  _msgOpen = !_msgOpen;
-  panel.style.display = _msgOpen ? 'flex' : 'none';
-  if (_msgOpen) {
-    _msgInitPanel();
-  } else {
-    if (_msgListUnsub) { _msgListUnsub(); _msgListUnsub = null; }
-    if (_msgRoomUnsub) { _msgRoomUnsub(); _msgRoomUnsub = null; }
-  }
-}
-
-async function _msgInitPanel() {
-  const myCid = _msgMyCid();
-  if (!myCid || !_fbReady) return;
-  // 읽음 타임스탬프 로드
-  const stored = localStorage.getItem('msg_read_' + myCid);
-  _msgMyReadAt = stored ? JSON.parse(stored) : {};
-  // 대화 목록 실시간 구독
-  if (_msgListUnsub) _msgListUnsub();
-  _msgListUnsub = window._fb.fbMsgSubscribeRoomList(myCid, rooms => {
-    _renderMsgRoomList(rooms);
-    _updateMsgBadge(rooms);
-  });
-}
-
-function _renderMsgRoomList(rooms) {
-  const el = document.getElementById('msg-room-list');
-  if (!el) return;
-  const myCid = _msgMyCid();
-  if (!rooms.length) {
-    el.innerHTML = '<div style="padding:1.5rem 1rem;text-align:center;font-size:11px;color:var(--text-muted);font-family:\'Rajdhani\',sans-serif;letter-spacing:.5px;">대화가 없습니다</div>';
-    return;
-  }
-  const sorted = [...rooms].sort((a,b) => (b.lastAt||0) - (a.lastAt||0));
-  el.innerHTML = sorted.map(room => {
-    const [cA, cB] = room.roomId.split('___');
-    const otherCid = cA === myCid ? cB : cA;
-    const otherName = _msgGetCommunityName(otherCid);
-    const lastAt = room.lastAt ? _msgFmtTime(room.lastAt) : '';
-    const readAt = _msgMyReadAt[room.roomId] || 0;
-    const msgList = Object.values(room.messages || {});
-    const unread = msgList.filter(m => m.sentAt > readAt && m.senderCid !== myCid).length;
-    const isActive = _msgCurrentRoom?.roomId === room.roomId;
-    return `<div onclick="openMsgRoom('${room.roomId}','${otherCid}')" style="padding:.65rem 1rem;cursor:pointer;border-bottom:1px solid var(--border-subtle);background:${isActive ? 'rgba(200,170,110,.06)' : 'transparent'};transition:background .12s;display:flex;flex-direction:column;gap:3px;" onmouseover="this.style.background='rgba(200,170,110,.06)'" onmouseout="this.style.background='${isActive ? 'rgba(200,170,110,.06)' : 'transparent'}'">
-      <div style="display:flex;align-items:center;justify-content:space-between;">
-        <span style="font-size:12px;font-weight:600;color:${isActive ? 'var(--gold)' : 'var(--text-white)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px;">${_escHtml(otherName)}</span>
-        <span style="font-size:10px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;flex-shrink:0;">${lastAt}</span>
-      </div>
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:4px;">
-        <span style="font-size:11px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;">${_escHtml(room.lastMessage||'')}</span>
-        ${unread > 0 ? `<span style="min-width:16px;height:16px;border-radius:8px;background:#E05050;color:#fff;font-size:9px;font-family:'Rajdhani',sans-serif;font-weight:700;line-height:16px;text-align:center;padding:0 3px;flex-shrink:0;">${unread}</span>` : ''}
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function _updateMsgBadge(rooms) {
-  const myCid = _msgMyCid();
-  let total = 0;
-  rooms.forEach(room => {
-    const readAt = _msgMyReadAt[room.roomId] || 0;
-    const msgList = Object.values(room.messages || {});
-    total += msgList.filter(m => m.sentAt > readAt && m.senderCid !== myCid).length;
-  });
-  const badge = document.getElementById('msg-badge');
-  if (!badge) return;
-  if (total > 0) { badge.style.display = 'block'; badge.textContent = total > 99 ? '99+' : total; }
-  else badge.style.display = 'none';
-}
-
-function openMsgRoom(roomId, otherCid) {
-  const myCid = _msgMyCid();
-  const otherName = _msgGetCommunityName(otherCid);
-  _msgCurrentRoom = { roomId, otherCid, otherName };
-  document.getElementById('msg-chat-title').textContent = otherName;
-  document.getElementById('msg-chat-sub').textContent = otherCid;
-  document.getElementById('msg-input').disabled = false;
-  // 이전 구독 해제
-  if (_msgRoomUnsub) { _msgRoomUnsub(); _msgRoomUnsub = null; }
-  // 메시지 구독
-  const [cA, cB] = roomId.split('___');
-  _msgRoomUnsub = window._fb.fbMsgSubscribeRoom(cA, cB, msgs => {
-    _renderMsgChat(msgs);
-    // 읽음 처리
-    window._fb.fbMsgSetRead(cA, cB, myCid);
-    _msgMyReadAt[roomId] = Date.now();
-    localStorage.setItem('msg_read_' + myCid, JSON.stringify(_msgMyReadAt));
-  });
-}
-
-function _renderMsgChat(msgs) {
-  const el = document.getElementById('msg-chat-body');
-  if (!el) return;
-  const myCid = _msgMyCid();
-  if (!msgs.length) {
-    el.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted);font-size:12px;font-family:\'Rajdhani\',sans-serif;letter-spacing:1px;">첫 메시지를 보내보세요</div>';
-    return;
-  }
-  let lastDate = '';
-  el.innerHTML = msgs.map(m => {
-    const isMine = m.senderCid === myCid;
-    const dt = new Date(m.sentAt);
-    const dateStr = dt.toLocaleDateString('ko-KR');
-    const timeStr = dt.toLocaleTimeString('ko-KR', {hour:'2-digit', minute:'2-digit'});
-    let dateSep = '';
-    if (dateStr !== lastDate) {
-      lastDate = dateStr;
-      dateSep = `<div style="text-align:center;margin:8px 0;"><span style="font-size:10px;color:var(--text-muted);background:var(--bg-dark);padding:2px 10px;border-radius:10px;font-family:'Rajdhani',sans-serif;">${dateStr}</span></div>`;
-    }
-    const bubble = isMine
-      ? `<div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;">
-          <div style="max-width:75%;background:rgba(200,170,110,.15);border:1px solid rgba(200,170,110,.3);border-radius:12px 12px 2px 12px;padding:7px 11px;font-size:12px;color:var(--text-white);line-height:1.6;word-break:break-word;">${_escHtml(m.text).replace(/\n/g,'<br>')}</div>
-          <span style="font-size:10px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;">${timeStr}</span>
-        </div>`
-      : `<div style="display:flex;flex-direction:column;align-items:flex-start;gap:2px;">
-          <span style="font-size:10px;color:var(--gold);font-family:'Rajdhani',sans-serif;font-weight:700;">${_escHtml(m.senderName)}</span>
-          <div style="max-width:75%;background:var(--bg-dark);border:1px solid var(--border-subtle);border-radius:2px 12px 12px 12px;padding:7px 11px;font-size:12px;color:var(--text-white);line-height:1.6;word-break:break-word;">${_escHtml(m.text).replace(/\n/g,'<br>')}</div>
-          <span style="font-size:10px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;">${timeStr}</span>
-        </div>`;
-    return dateSep + bubble;
-  }).join('');
-  // 스크롤 맨 아래
-  el.scrollTop = el.scrollHeight;
-}
-
-async function sendMsg() {
-  const input = document.getElementById('msg-input');
-  const text = input.value.trim();
-  if (!text || !_msgCurrentRoom) return;
-  const myCid = _msgMyCid();
-  const myName = _msgMyName();
-  if (!myCid) return;
-  const [cA, cB] = _msgCurrentRoom.roomId.split('___');
-  input.value = '';
-  input.style.height = '38px';
-  try {
-    await window._fb.fbMsgSend(cA, cB, myCid, myName, text);
-  } catch(e) { toast('전송 실패: ' + e.message, 'err'); }
-}
-
-function msgInputKeydown(e) {
-  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); }
-}
-
-async function openNewMsgModal() {
-  document.getElementById('new-msg-search').value = '';
-  document.getElementById('new-msg-modal').style.display = 'flex';
-  // 커뮤니티 목록 로드
-  if (!_msgAllCommunities.length) {
-    try {
-      const list = await window._fb.fbGetCommunities();
-      _msgAllCommunities = list || [];
-    } catch(e) {}
-  }
-  renderNewMsgList();
-}
-
-function renderNewMsgList() {
-  const q = (document.getElementById('new-msg-search')?.value || '').toLowerCase();
-  const myCid = _msgMyCid();
-  const el = document.getElementById('new-msg-community-list');
-  if (!el) return;
-  let list = _msgAllCommunities.filter(c => c.id !== myCid);
-  if (q) list = list.filter(c => (c.name||'').toLowerCase().includes(q) || (c.id||'').includes(q));
-  if (!list.length) {
-    el.innerHTML = '<div style="text-align:center;padding:1rem;font-size:11px;color:var(--text-muted);">커뮤니티가 없습니다</div>';
-    return;
-  }
-  el.innerHTML = list.map(c => `
-    <div onclick="startMsgWith('${c.id}','${_escHtml(c.name||c.id)}')" style="padding:10px 12px;border-radius:3px;border:1px solid var(--border-subtle);background:var(--bg-dark);cursor:pointer;transition:all .12s;" onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='var(--border-subtle)'">
-      <div style="font-size:13px;font-weight:600;color:var(--text-white);">${_escHtml(c.name||c.id)}</div>
-      <div style="font-size:10px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;">${c.id}</div>
-    </div>`).join('');
-}
-
-function startMsgWith(otherCid, otherName) {
-  document.getElementById('new-msg-modal').style.display = 'none';
-  const myCid = _msgMyCid();
-  if (!myCid) return;
-  const roomId = [myCid, otherCid].sort().join('___');
-  openMsgRoom(roomId, otherCid);
-}
-
-function _msgGetCommunityName(cid) {
-  if (cid === 'master') return '마스터';
-  const found = _msgAllCommunities.find(c => c.id === cid);
-  return found?.name || cid;
-}
-function _msgFmtTime(ts) {
-  const dt = new Date(ts);
-  const now = new Date();
-  if (dt.toDateString() === now.toDateString()) return dt.toLocaleTimeString('ko-KR', {hour:'2-digit',minute:'2-digit'});
-  return dt.toLocaleDateString('ko-KR', {month:'numeric',day:'numeric'});
-}
-
-// fb-ready 이후 커뮤니티 목록 미리 로드
+// 페이지 로드 시 Worker 세션 자동 복구
+// module 스크립트보다 나중에 실행되므로 RIOT_PROXY_URL, _tryRelogin 모두 사용 가능
 window.addEventListener('fb-ready', function() {
-  if (window._fb?.fbGetCommunities) {
-    window._fb.fbGetCommunities().then(list => { _msgAllCommunities = list || []; }).catch(()=>{});
-  }
-  // 페이지 로드 시 Worker 세션 자동 복구
   if (!localStorage.getItem('injeong_admin')) return;
   const savedToken = localStorage.getItem('injeong_session_token');
   if (!savedToken) {
@@ -10490,48 +10225,5 @@ window.addEventListener('fb-ready', function() {
   });
 });
 </script>
-<!-- 커뮤니티 메시지 패널 -->
-<div id="msg-panel" style="display:none;position:fixed;top:0;right:0;bottom:0;width:680px;max-width:100vw;background:var(--bg-panel);border-left:1px solid var(--border-subtle);z-index:800;display:none;flex-direction:row;box-shadow:-4px 0 24px rgba(0,0,0,.5);">
-  <!-- 좌: 대화 목록 -->
-  <div style="width:220px;flex-shrink:0;border-right:1px solid var(--border-subtle);display:flex;flex-direction:column;">
-    <div style="padding:.85rem 1rem;border-bottom:1px solid var(--border-subtle);display:flex;align-items:center;justify-content:space-between;background:rgba(200,170,110,.04);">
-      <span style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:2px;color:var(--gold);">💬 메시지</span>
-      <button onclick="toggleMsgPanel()" style="background:transparent;border:none;color:var(--text-muted);cursor:pointer;font-size:16px;padding:0 2px;">✕</button>
-    </div>
-    <div style="padding:.5rem;border-bottom:1px solid var(--border-subtle);">
-      <button onclick="openNewMsgModal()" style="width:100%;padding:6px;border-radius:2px;border:1px dashed var(--border-subtle);background:transparent;color:var(--text-muted);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all .15s;" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'" onmouseout="this.style.borderColor='var(--border-subtle)';this.style.color='var(--text-muted)'">+ 새 대화</button>
-    </div>
-    <div id="msg-room-list" style="flex:1;overflow-y:auto;"></div>
-  </div>
-  <!-- 우: 채팅창 -->
-  <div style="flex:1;display:flex;flex-direction:column;min-width:0;">
-    <div id="msg-chat-header" style="padding:.75rem 1.25rem;border-bottom:1px solid var(--border-subtle);background:rgba(200,170,110,.04);display:flex;align-items:center;gap:10px;">
-      <div style="flex:1;">
-        <div id="msg-chat-title" style="font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;color:var(--text-white);">대화를 선택하세요</div>
-        <div id="msg-chat-sub" style="font-size:10px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;"></div>
-      </div>
-    </div>
-    <div id="msg-chat-body" style="flex:1;overflow-y:auto;padding:.75rem 1rem;display:flex;flex-direction:column;gap:6px;">
-      <div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted);font-size:12px;font-family:'Rajdhani',sans-serif;letter-spacing:1px;">대화를 선택하거나 새 대화를 시작하세요</div>
-    </div>
-    <div id="msg-input-area" style="padding:.75rem 1rem;border-top:1px solid var(--border-subtle);display:flex;gap:8px;align-items:flex-end;">
-      <textarea id="msg-input" placeholder="메시지 입력..." style="flex:1;background:var(--bg-dark);border:1px solid var(--border-subtle);border-radius:3px;padding:8px 10px;font-family:'Noto Sans KR',sans-serif;font-size:12px;color:var(--text-white);outline:none;resize:none;height:38px;max-height:120px;line-height:1.5;transition:border .15s;overflow-y:hidden;" onkeydown="msgInputKeydown(event)" oninput="this.style.height='38px';this.style.height=Math.min(this.scrollHeight,120)+'px'"></textarea>
-      <button onclick="sendMsg()" style="padding:8px 16px;border-radius:2px;border:1px solid var(--border-gold);background:rgba(200,170,110,.12);color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all .15s;white-space:nowrap;height:38px;" onmouseover="this.style.background='rgba(200,170,110,.22)'" onmouseout="this.style.background='rgba(200,170,110,.12)'">전송</button>
-    </div>
-  </div>
-</div>
-<!-- 새 대화 모달 -->
-<div class="modal-overlay" id="new-msg-modal" style="display:none;z-index:900;">
-  <div class="modal" style="max-width:400px;display:flex;flex-direction:column;max-height:80vh;padding:0;overflow:hidden;">
-    <div class="modal-title" style="padding:1.25rem 1.5rem 1rem;flex-shrink:0;">💬 새 대화 시작</div>
-    <div style="padding:0 1.5rem .75rem;flex-shrink:0;">
-      <input type="text" id="new-msg-search" placeholder="커뮤니티 검색..." oninput="renderNewMsgList()" class="form-input" style="font-size:12px;padding:7px 10px;">
-    </div>
-    <div id="new-msg-community-list" style="flex:1;overflow-y:auto;padding:0 1rem .75rem;display:flex;flex-direction:column;gap:4px;"></div>
-    <div class="modal-actions" style="padding:.75rem 1.5rem 1.25rem;border-top:1px solid var(--border-subtle);flex-shrink:0;">
-      <button class="btn-secondary" onclick="document.getElementById('new-msg-modal').style.display='none'">취소</button>
-    </div>
-  </div>
-</div>
 </body>
 </html>
