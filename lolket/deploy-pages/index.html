@@ -5212,6 +5212,19 @@ ap: { lanes: new Set(), search: '', sort: '' },
 };
 const TIER_ORDER = ['UNRANKED','IRON','BRONZE','SILVER','GOLD','PLATINUM','EMERALD','DIAMOND','MASTER','GRANDMASTER','CHALLENGER'];
 function tierRank(tier) { return TIER_ORDER.indexOf(tier) ?? 0; }
+function tierDetailRank(m) {
+  const tf = m.tierFull || '';
+  const isHighTier = ['MASTER','GRANDMASTER','CHALLENGER'].includes(m.tier);
+  if (isHighTier) {
+    const lp = tf.match(/(\d+)LP/);
+    return lp ? parseInt(lp[1]) : 0;
+  } else {
+    const div = tf.replace(m.tier, '').trim();
+    const n = parseInt(div);
+    if (!isNaN(n) && n >= 1 && n <= 4) return 5 - n;
+    return 0;
+  }
+}
 function toggleLaneFilter(scope, lane) {
 const st = filterState[scope];
 if (st.lanes.has(lane)) st.lanes.delete(lane);
@@ -5261,21 +5274,6 @@ if (st.lanes.size > 0) {
 result = result.filter(m =>
 st.lanes.has(m.mainLane) || (Array.isArray(m.subLane) ? m.subLane.some(l => st.lanes.has(l)) : st.lanes.has(m.subLane))
 );
-}
-function tierDetailRank(m) {
-  const tf = m.tierFull || '';
-  const isHighTier = ['MASTER','GRANDMASTER','CHALLENGER'].includes(m.tier);
-  if (isHighTier) {
-    // LP 높을수록 높은 순위 → 내림차순이므로 양수 반환
-    const lp = tf.match(/(\d+)LP/);
-    return lp ? parseInt(lp[1]) : 0;
-  } else {
-    // 디비전 숫자 (1이 가장 높음) → 1=4, 2=3, 3=2, 4=1로 역변환
-    const div = tf.replace(m.tier, '').trim();
-    const n = parseInt(div);
-    if (!isNaN(n) && n >= 1 && n <= 4) return 5 - n; // 1→4, 2→3, 3→2, 4→1
-    return 0;
-  }
 }
 if (st.sort === 'tier-asc') result.sort((a,b) => {
   const td = tierRank(a.tier) - tierRank(b.tier);
