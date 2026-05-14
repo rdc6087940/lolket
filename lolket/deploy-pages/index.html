@@ -5262,8 +5262,29 @@ result = result.filter(m =>
 st.lanes.has(m.mainLane) || (Array.isArray(m.subLane) ? m.subLane.some(l => st.lanes.has(l)) : st.lanes.has(m.subLane))
 );
 }
-if (st.sort === 'tier-asc') result.sort((a,b) => tierRank(a.tier) - tierRank(b.tier));
-if (st.sort === 'tier-desc') result.sort((a,b) => tierRank(b.tier) - tierRank(a.tier));
+function tierDetailRank(m) {
+  const tf = m.tierFull || '';
+  const isHighTier = ['MASTER','GRANDMASTER','CHALLENGER'].includes(m.tier);
+  if (isHighTier) {
+    // LP 높을수록 높은 순위 → 내림차순이므로 양수 반환
+    const lp = tf.match(/(\d+)LP/);
+    return lp ? parseInt(lp[1]) : 0;
+  } else {
+    // 디비전 숫자 (1이 가장 높음) → 1=4, 2=3, 3=2, 4=1로 역변환
+    const div = tf.replace(m.tier, '').trim();
+    const n = parseInt(div);
+    if (!isNaN(n) && n >= 1 && n <= 4) return 5 - n; // 1→4, 2→3, 3→2, 4→1
+    return 0;
+  }
+}
+if (st.sort === 'tier-asc') result.sort((a,b) => {
+  const td = tierRank(a.tier) - tierRank(b.tier);
+  return td !== 0 ? td : tierDetailRank(a) - tierDetailRank(b);
+});
+if (st.sort === 'tier-desc') result.sort((a,b) => {
+  const td = tierRank(b.tier) - tierRank(a.tier);
+  return td !== 0 ? td : tierDetailRank(b) - tierDetailRank(a);
+});
 if (st.sort === 'name-asc') result.sort((a,b) => a.name.localeCompare(b.name, 'ko'));
 if (st.sort === 'name-desc') result.sort((a,b) => b.name.localeCompare(a.name, 'ko'));
 return result;
@@ -5389,8 +5410,8 @@ grid.innerHTML = '';
 let list = [..._uvMembers];
 if (_uvFilter.search) list = list.filter(m => m.name.toLowerCase().includes(_uvFilter.search));
 if (_uvFilter.lanes.size > 0) list = list.filter(m => _uvFilter.lanes.has(m.mainLane) || (Array.isArray(m.subLane) ? m.subLane.some(l => _uvFilter.lanes.has(l)) : _uvFilter.lanes.has(m.subLane)));
-if (_uvFilter.sort === 'tier-asc') list.sort((a,b) => tierRank(a.tier) - tierRank(b.tier));
-if (_uvFilter.sort === 'tier-desc') list.sort((a,b) => tierRank(b.tier) - tierRank(a.tier));
+if (_uvFilter.sort === 'tier-asc') list.sort((a,b) => { const td = tierRank(a.tier)-tierRank(b.tier); return td!==0?td:tierDetailRank(a)-tierDetailRank(b); });
+if (_uvFilter.sort === 'tier-desc') list.sort((a,b) => { const td = tierRank(b.tier)-tierRank(a.tier); return td!==0?td:tierDetailRank(b)-tierDetailRank(a); });
 if (_uvFilter.sort === 'name-asc') list.sort((a,b) => a.name.localeCompare(b.name,'ko'));
 if (_uvFilter.sort === 'name-desc') list.sort((a,b) => b.name.localeCompare(a.name,'ko'));
 const cnt = document.getElementById('uv-mcount');
