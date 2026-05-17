@@ -1272,7 +1272,8 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
   </div>
   <!-- 탭1: 기존 내전 결과 -->
   <div id="s5-panel-result">
- <div class="results-topbar"> <div class="results-title">내전 결과 입력</div> <div style="display:flex;gap:8px;"> <button class="btn-discord-share" id="btn-discord-share-result" onclick="shareResultToDiscord()" style="display:none;" title="Discord 채널에 내전 결과 전송">
+  <div id="finish-banner" style="display:none;"> <div class="finish-banner"> <div class="finish-banner-icon">🏆</div> <div class="finish-banner-text"> <div class="finish-banner-title">내전 종료</div> <div class="finish-banner-sub">모든 대진 결과가 입력되었습니다.</div> </div> <button class="btn-primary" style="padding:10px 24px;font-size:13px;letter-spacing:2px;cursor:pointer;position:relative;z-index:10;"
+ onclick="finishMatch()">내전 완료</button> </div> </div> <div class="results-topbar"> <div class="results-title">내전 결과 입력</div> <div style="display:flex;gap:8px;"> <button class="btn-discord-share" id="btn-discord-share-result" onclick="shareResultToDiscord()" style="display:none;" title="Discord 채널에 내전 결과 전송">
   <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>
   Discord 전송
 </button> <button class="btn-secondary" onclick="addResultMatch()">+ 대진 추가</button> <button class="dev-send-btn admin-only" id="btn-dev-api-send" onclick="openDevApiSendModal()" style="display:none;" title="등록된 외부 API로 내전 데이터 전송">📡 API 전송</button> </div> </div> <div class="match-list" id="result-match-list"></div> </div>
@@ -5416,7 +5417,14 @@ return header + cols + rows;
 return `<div class="scoreboard">${renderTeam(gd.teamA, winA, nameA)}${renderTeam(gd.teamB, winB, nameB)}</div>`;
 }
 function checkAllResultsDone() {
-_updateDiscordShareBtn();
+const banner = document.getElementById('finish-banner');
+if (!banner) return;
+const allDone = resultMatches.length > 0 && resultMatches.every(m => m.winner !== null);
+banner.style.display = allDone ? 'block' : 'none';
+if (allDone && match && match.status !== '내전 종료') {
+match.status = '내전 종료';
+document.getElementById('bar-status').textContent = '내전 종료';
+}
 }
 async function finishMatch() {
 if (!match) return;
@@ -7041,25 +7049,20 @@ function renderCommunityGrid(communities) {
     grid.appendChild(card);
   });
 
-  // 이벤트 위임 - 케밥 메뉴는 body에 붙으므로 document에서 처리
+  // 이벤트 위임
   grid.onclick = function(e) {
+    const edit  = e.target.closest('.kebab-item.edit');
+    const del   = e.target.closest('.kebab-item.del');
+    const dev   = e.target.closest('.kebab-item.dev');
     const enter = e.target.closest('.btn-xs.enter');
     const card  = e.target.closest('.community-card');
+    if (edit)  { e.stopPropagation(); closeAllKebabMenus(); openCommunityEditModal(edit.dataset.cid); return; }
+    if (del)   { e.stopPropagation(); closeAllKebabMenus(); deleteCommunity(del.dataset.cid); return; }
+    if (dev)   { e.stopPropagation(); closeAllKebabMenus(); const _c = _allCommunities.find(x=>x.id===dev.dataset.cid); if(_c) openDevPage(_c); return; }
     if (enter) { e.stopPropagation(); closeAllKebabMenus(); const _c = _allCommunities.find(x=>x.id===enter.dataset.cid); if(_c) enterCommunity(_c); return; }
+    // 비관리자는 카드 클릭으로 입장 불가
     if (card && (isAdmin || isMaster)) { closeAllKebabMenus(); const _c = _allCommunities.find(x=>x.id===card.dataset.cid); if(_c) enterCommunity(_c); }
   };
-  // 케밥 메뉴 아이템은 document 레벨에서 처리 (body에 붙어있으므로)
-  if (!document._kebabHandlerAttached) {
-    document._kebabHandlerAttached = true;
-    document.addEventListener('click', function(e) {
-      const edit  = e.target.closest('.kebab-item.edit');
-      const del   = e.target.closest('.kebab-item.del');
-      const dev   = e.target.closest('.kebab-item.dev');
-      if (edit)  { e.stopPropagation(); closeAllKebabMenus(); openCommunityEditModal(edit.dataset.cid); return; }
-      if (del)   { e.stopPropagation(); closeAllKebabMenus(); deleteCommunity(del.dataset.cid); return; }
-      if (dev)   { e.stopPropagation(); closeAllKebabMenus(); const _c = _allCommunities.find(x=>x.id===dev.dataset.cid); if(_c) openDevPage(_c); return; }
-    }, true); // capture phase로 closeAllKebabMenus보다 먼저 실행
-  }
 }
 
 function copyCommunityLink(cid) {
@@ -9820,7 +9823,7 @@ renderMembers(); updateProgress(); updateConditions();
 if (matchType === 'normal') { renderNormalPool(); renderNormalTeams(); checkNormalConditions(); }
 if (matchType === 'auction') { renderAuctionPool(); renderAuctionTeams(); renderFailZone(); renderOnSale(); checkAuctionConditions(); }
 if (bracketRounds.length > 0) drawBracket();
-renderResultMatches();
+if (resultMatches.length > 0) renderResultMatches();
 _updateDiscordShareBtn();
 restorePips(screen);
 toast('내전 데이터를 불러왔습니다', 'ok');
@@ -9989,13 +9992,15 @@ if (snapshot.status === '내전 모집') {
 openEditMatchModal(snapshot);
 return;
 }
-match = null; members = []; matchType = null; teams = [];
-bracketRounds = []; extraMatches = []; resultMatches = []; _0xB1 = 1;
-_localVersion = 0;
-console.log('[openMatch]', { id, status: snapshot.status, _resultMatches: (snapshot._resultMatches||[]).length });
-const targetScreen = (snapshot.status === '내전 종료' || snapshot._currentScreen === 'screen-5')
-  ? 'screen-5' : (snapshot._currentScreen || 'screen-1');
-restoreMatch({ ...snapshot, _currentScreen: targetScreen });
+if (snapshot.status === '내전 종료') {
+restoreMatch({ ...snapshot, _currentScreen: 'screen-5' });
+return;
+}
+if (snapshot._currentScreen === 'screen-5') {
+restoreMatch(snapshot);
+return;
+}
+restoreMatch(snapshot);
 }
 function openEditMatchModal(snapshot) {
 document.getElementById('em-name').value = snapshot.name;
