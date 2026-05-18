@@ -507,8 +507,16 @@ async function handleDbRead(request, env) {
     /^communities_info\/[^/]+(\/.*)?$/.test(dbPath) &&
     session.communityId && session.communityId === dbPath.split('/')[1];
 
-  if (isOwnCommunityInfo) {
-    // 통과 — 자신의 커뮤니티 정보는 읽기 허용
+  // 관리자/마스터가 커뮤니티 가이드/룰 읽기 허용
+  const isOwnRules = session && (session.role === 'admin' || session.role === 'master') &&
+    /^communities\/[^/]+\/rules(\/.*)?$/.test(dbPath) &&
+    (session.role === 'master' || (session.communityId && session.communityId === dbPath.split('/')[1]));
+
+  // 비로그인도 rules 읽기 허용 (유저뷰에서 가이드 조회)
+  const isPublicRules = /^communities\/[^/]+\/rules(\/.*)?$/.test(dbPath);
+
+  if (isOwnCommunityInfo || isOwnRules || isPublicRules) {
+    // 통과
   } else if (/^blacklist/.test(dbPath) && session) {
     // 관리자 이상 블랙리스트 읽기 허용
   } else {
@@ -697,6 +705,12 @@ function checkPermission(session, dbPath, requireRole) {
   // 일반 관리자도 자신의 커뮤니티 정보 및 하위 경로 수정 가능 (discordChannelId, devApis 등)
   if (/^communities_info\/[^/]+(\/.*)?$/.test(dbPath) && session.role === 'admin') {
     // 자신의 커뮤니티인지 확인
+    const cidFromPath = dbPath.split('/')[1];
+    if (session.communityId && session.communityId === cidFromPath) return true;
+  }
+  // 관리자/마스터 커뮤니티 가이드/룰 쓰기/삭제 허용
+  if (/^communities\/[^/]+\/rules(\/.*)?$/.test(dbPath) && (session.role === 'admin' || session.role === 'master')) {
+    if (session.role === 'master') return true;
     const cidFromPath = dbPath.split('/')[1];
     if (session.communityId && session.communityId === cidFromPath) return true;
   }
