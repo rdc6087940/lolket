@@ -1289,11 +1289,11 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
 </div> <div class="modal-overlay" id="em-modal" style="display:none;" data-id=""> <div class="modal" style="max-width:420px;"> <div class="modal-title">내전 정보 수정</div> <div class="form-row"> <div class="form-label">내전 이름</div> <input class="form-input" type="text" id="em-name"> </div> <div class="form-row"> <div class="form-label">시작 시간</div> <input class="form-input" type="datetime-local" id="em-time"> </div> <div class="form-row"> <div class="form-label">진행 관리자 (선택)</div> <input class="form-input" type="text" id="em-admin" placeholder="공란 가능"> </div> <div class="modal-actions"> <button class="btn-secondary" onclick="closeEditMatchModal()">취소</button> <button class="btn-secondary" onclick="saveEditMatch()">저장</button> <button class="btn-primary" onclick="(function(){saveEditMatch();setTimeout(()=>{const list=dbLoad();const snap=list.find(m=>m.name===document.getElementById('em-name').value.trim());if(snap)proceedToStage1(snap);},100)})()">진행하기 →</button> </div> </div>
 </div> <div class="modal-overlay" id="create-modal" style="display:none;"> <div class="modal"> <div class="modal-title">새 내전 생성</div> <div class="form-row"> <div class="form-label">내전 이름</div> <input class="form-input" type="text" id="m-name" placeholder="예) 금요 정기 내전 시즌 1"> </div> <div class="form-row"> <div class="form-label">시작 시간</div> <input class="form-input" type="datetime-local" id="m-time"> </div> <div class="form-row"> <div class="form-label">진행 관리자 (선택)</div> <input class="form-input" type="text" id="m-admin" placeholder="관리자 닉네임 (공란 가능)"> </div> <div class="modal-actions"> <button class="btn-secondary" onclick="closeCreateModal()">취소</button> <button class="btn-primary" onclick="createMatch()">생성</button> </div> </div>
 </div> <div id="screen-2" class="screen"> <div class="type-select-wrap"> <div style="text-align:center;"> <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:4px;color:var(--gold);margin-bottom:6px;">내전 종류 선택</div> <div style="font-size:13px;color:var(--text-muted);">진행 방식을 선택하면 팀 짜기 단계로 넘어갑니다</div> </div> <div class="type-cards"> <div class="type-card" id="type-normal" onclick="selectType('normal')"> <div class="type-card-icon">⚔️</div> <div class="type-card-title">일반 내전</div> <div class="type-card-desc">관리자가 멤버를 직접 드래그해서 팀을 구성합니다. 빠르고 간단한 팀 배정에 적합합니다.</div> <div class="type-card-tags"> <span class="type-tag">드래그 앤 드롭</span> <span class="type-tag">빠른 배정</span> </div> </div> <div class="type-card" id="type-auction" onclick="selectType('auction')"> <div class="type-card-icon">🏆</div> <div class="type-card-title">경매 내전</div> <div class="type-card-desc">팀장들이 포인트를 가지고 멤버를 입찰해 영입합니다. 전략적이고 긴장감 있는 팀 구성이 가능합니다.</div> <div class="type-card-tags"> <span class="type-tag">포인트 입찰</span> <span class="type-tag">랜덤 경매</span> <span class="type-tag">카운트다운</span> </div> </div> </div> <div class="type-select-footer" style="justify-content:space-between;"> <button class="btn-secondary" onclick="goBackToStage1()">← 이전 단계</button> <button class="btn-next" id="btn-type-next" disabled onclick="goToStage3()">다음 단계 →</button> </div> </div>
-</div> <div id="screen-3-normal" class="screen"> <div class="builder-wrap"> <div class="builder-topbar-row" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;"> <div class="builder-topbar-title" style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;color:var(--gold);">일반 내전 — 팀 구성</div> <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;"> <button class="btn-secondary" onclick="goBackToStage2()">← 이전 단계</button> <button class="btn-secondary" onclick="addTeamModal('normal')">+ 팀 추가</button> <button class="btn-secondary" onclick="openSwapModal()" style="font-size:11px;padding:7px 14px;border-color:rgba(157,72,224,.4);color:#B97EEA;background:rgba(157,72,224,.06);">🔄 선수 교체</button> <button class="btn-secondary" id="btn-copy-live-link" onclick="copyLiveLink()" style="font-size:11px;padding:7px 14px;border-color:rgba(10,200,185,.4);color:var(--blue-bright);background:rgba(10,200,185,.06);" title="관전 링크 복사">🔗 관전 링크 복사</button> <button class="btn-copy-img" onclick="copyTeamBuilderImage()" style="font-size:11px;padding:7px 14px;"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="1" y="3" width="8" height="9" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M4 3V2a1 1 0 011-1h5a1 1 0 011 1v7a1 1 0 01-1 1h-1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg> 이미지 복사</button> <button class="btn-next" id="btn-normal-next" disabled onclick="goToStage4()">다음 단계 →</button> </div> </div> <div class="builder-cond" style="margin-bottom:.75rem;"> <div class="cond-item"><div class="cond-dot" id="n-cond-pool"></div><span id="n-cond-pool-text" style="font-size:12px;color:var(--text-muted);">대기칸 비어있음</span></div> <div class="cond-item"><div class="cond-dot" id="n-cond-teams"></div><span id="n-cond-teams-text" style="font-size:12px;color:var(--text-muted);">팀 조건 충족</span></div> </div> <div class="builder-layout"> <div class="pool-panel"> <div class="pool-header"> <div class="pool-title"><div class="panel-title-dot"></div>대기</div> <div style="display:flex;align-items:center;gap:5px;"> <div class="filter-active-dot" id="np-filter-dot"></div> <div class="count-badge lit" id="n-pool-count">0명</div> </div> </div> <div class="filter-bar" style="padding:.4rem .5rem;gap:.35rem;"> <div class="filter-search-row"> <input class="filter-search-input" id="np-search" placeholder="닉네임 검색..." oninput="applyFilter('np')"> <button class="filter-search-clear" id="np-search-clear" onclick="clearSearch('np')">✕</button> </div> <div class="filter-row"> <span class="filter-label">포지션</span> <button class="lane-filter-btn" data-lane="top" onclick="toggleLaneFilter('np','top')">TOP</button> <button class="lane-filter-btn" data-lane="jg" onclick="toggleLaneFilter('np','jg')">JG</button> <button class="lane-filter-btn" data-lane="mid" onclick="toggleLaneFilter('np','mid')">MID</button> <button class="lane-filter-btn" data-lane="bot" onclick="toggleLaneFilter('np','bot')">BOT</button> <button class="lane-filter-btn" data-lane="sup" onclick="toggleLaneFilter('np','sup')">SUP</button> </div> <div class="filter-row"> <span class="filter-label">정렬</span> <select class="sort-select" id="np-sort" onchange="applyFilter('np')"> <option value="">기본</option> <option value="tier-asc">티어 낮은순</option> <option value="tier-desc">티어 높은순</option> <option value="name-asc">이름 ㄱ→ㅎ</option> <option value="name-desc">이름 ㅎ→ㄱ</option> </select> </div> </div> <div class="pool-body" id="n-pool"
+</div> <div id="screen-3-normal" class="screen"> <div class="builder-wrap"> <div class="builder-topbar-row" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;"> <div class="builder-topbar-title" style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;color:var(--gold);">일반 내전 — 팀 구성</div> <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;"> <button class="btn-secondary" onclick="goBackToStage2()">← 이전 단계</button> <button class="btn-secondary" onclick="addTeamModal('normal')">+ 팀 추가</button> <button class="btn-secondary" onclick="openSwapModal()" style="font-size:11px;padding:7px 14px;border-color:rgba(157,72,224,.4);color:#B97EEA;background:rgba(157,72,224,.06);">🔄 선수 교체</button> <button class="btn-secondary" onclick="openDraftOrderModal()" style="font-size:11px;padding:7px 14px;border-color:rgba(200,170,110,.4);color:var(--gold);background:rgba(200,170,110,.06);">🎲 팀뽑기 순서</button> <button class="btn-secondary" id="btn-copy-live-link" onclick="copyLiveLink()" style="font-size:11px;padding:7px 14px;border-color:rgba(10,200,185,.4);color:var(--blue-bright);background:rgba(10,200,185,.06);" title="관전 링크 복사">🔗 관전 링크 복사</button> <button class="btn-copy-img" onclick="copyTeamBuilderImage()" style="font-size:11px;padding:7px 14px;"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="1" y="3" width="8" height="9" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M4 3V2a1 1 0 011-1h5a1 1 0 011 1v7a1 1 0 01-1 1h-1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg> 이미지 복사</button> <button class="btn-next" id="btn-normal-next" disabled onclick="goToStage4()">다음 단계 →</button> </div> </div> <div class="builder-cond" style="margin-bottom:.75rem;"> <div class="cond-item"><div class="cond-dot" id="n-cond-pool"></div><span id="n-cond-pool-text" style="font-size:12px;color:var(--text-muted);">대기칸 비어있음</span></div> <div class="cond-item"><div class="cond-dot" id="n-cond-teams"></div><span id="n-cond-teams-text" style="font-size:12px;color:var(--text-muted);">팀 조건 충족</span></div> </div>  <div class="builder-layout"> <div class="pool-panel"> <div id="s3n-guide-wrap" style="background:var(--bg-panel);border:1px solid var(--border-gold);border-radius:4px;overflow:hidden;box-shadow:0 2px 12px rgba(200,170,110,.06);margin-bottom:.75rem;"> <div onclick="_s3GuideToggle('s3n-guide-wrap','s3n-guide-list')" style="padding:.45rem 1rem;display:flex;align-items:center;justify-content:space-between;background:rgba(200,170,110,.06);cursor:pointer;user-select:none;"> <span style="font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;color:var(--gold);display:flex;align-items:center;gap:6px;"><span style="width:5px;height:5px;border-radius:50%;background:var(--blue-bright);display:inline-block;flex-shrink:0;"></span>가이드/룰 </span> <span id="s3n-guide-arrow" style="font-size:10px;color:var(--text-muted);transition:transform .2s;">▼</span> </div> <div id="s3n-guide-list" style="display:none;padding:.4rem .5rem;flex-wrap:wrap;gap:5px;max-height:100px;overflow-y:auto;"><div style="font-size:11px;color:var(--text-muted);font-family:Rajdhani,sans-serif;text-align:center;padding:.5rem;width:100%;letter-spacing:1px;">적용된 가이드가 없습니다</div></div> </div><div class="pool-header"> <div class="pool-title"><div class="panel-title-dot"></div>대기</div> <div style="display:flex;align-items:center;gap:5px;"> <div class="filter-active-dot" id="np-filter-dot"></div> <div class="count-badge lit" id="n-pool-count">0명</div> </div> </div> <div class="filter-bar" style="padding:.4rem .5rem;gap:.35rem;"> <div class="filter-search-row"> <input class="filter-search-input" id="np-search" placeholder="닉네임 검색..." oninput="applyFilter('np')"> <button class="filter-search-clear" id="np-search-clear" onclick="clearSearch('np')">✕</button> </div> <div class="filter-row"> <span class="filter-label">포지션</span> <button class="lane-filter-btn" data-lane="top" onclick="toggleLaneFilter('np','top')">TOP</button> <button class="lane-filter-btn" data-lane="jg" onclick="toggleLaneFilter('np','jg')">JG</button> <button class="lane-filter-btn" data-lane="mid" onclick="toggleLaneFilter('np','mid')">MID</button> <button class="lane-filter-btn" data-lane="bot" onclick="toggleLaneFilter('np','bot')">BOT</button> <button class="lane-filter-btn" data-lane="sup" onclick="toggleLaneFilter('np','sup')">SUP</button> </div> <div class="filter-row"> <span class="filter-label">정렬</span> <select class="sort-select" id="np-sort" onchange="applyFilter('np')"> <option value="">기본</option> <option value="tier-asc">티어 낮은순</option> <option value="tier-desc">티어 높은순</option> <option value="name-asc">이름 ㄱ→ㅎ</option> <option value="name-desc">이름 ㅎ→ㄱ</option> </select> </div> </div> <div class="pool-body" id="n-pool"
  ondragover="onDragOver(event,'n-pool')"
  ondragleave="onDragLeave(event,'n-pool')"
  ondrop="onDrop(event,'n-pool','normal')" onclick="if(_isMobile()&&_mobileSelMid)mobileTapZone('n-pool','normal')"> </div> </div> <div class="teams-area"> <div class="teams-grid" id="n-teams-grid"></div> <button class="add-team-btn" onclick="addTeamModal('normal')">+ 팀 추가</button> </div> </div> </div>
-</div> <div id="screen-3-auction" class="screen"> <div class="builder-wrap"> <div class="builder-topbar-row" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;"> <div class="builder-topbar-title" style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;color:var(--gold);">경매 내전 — 팀 구성</div> <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;"> <button class="btn-secondary" onclick="goBackToStage2()">← 이전 단계</button> <button class="btn-secondary" onclick="addTeamModal('auction')">+ 팀 추가</button> <button class="btn-secondary" onclick="openPointsModal()">포인트 설정</button> <button class="btn-secondary" onclick="openSwapModal()" style="font-size:11px;padding:7px 14px;border-color:rgba(157,72,224,.4);color:#B97EEA;background:rgba(157,72,224,.06);">🔄 선수 교체</button> <button class="btn-secondary" onclick="copyLiveLink()" style="font-size:11px;padding:7px 14px;border-color:rgba(10,200,185,.4);color:var(--blue-bright);background:rgba(10,200,185,.06);" title="관전 링크 복사">🔗 관전 링크 복사</button> <button class="btn-copy-img" onclick="copyTeamBuilderImage()" style="font-size:11px;padding:7px 14px;"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="1" y="3" width="8" height="9" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M4 3V2a1 1 0 011-1h5a1 1 0 011 1v7a1 1 0 01-1 1h-1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg> 이미지 복사</button> <button class="btn-next" id="btn-auction-next" disabled onclick="goToStage4()">다음 단계 →</button> </div> </div> <div class="builder-cond" style="margin-bottom:.75rem;"> <div class="cond-item"><div class="cond-dot" id="a-cond-pool"></div><span id="a-cond-pool-text" style="font-size:12px;color:var(--text-muted);">대기칸 비어있음</span></div> <div class="cond-item"><div class="cond-dot" id="a-cond-teams"></div><span id="a-cond-teams-text" style="font-size:12px;color:var(--text-muted);">팀 조건 충족</span></div> </div> <div class="builder-layout auction-layout"> <div class="pool-panel"> <div class="pool-header"> <div class="pool-title"><div class="panel-title-dot"></div>대기</div> <div style="display:flex;align-items:center;gap:5px;"> <div class="filter-active-dot" id="ap-filter-dot"></div> <div class="count-badge lit" id="a-pool-count">0명</div> </div> </div> <div class="filter-bar" style="padding:.4rem .5rem;gap:.35rem;"> <div class="filter-search-row"> <input class="filter-search-input" id="ap-search" placeholder="닉네임 검색..." oninput="applyFilter('ap')"> <button class="filter-search-clear" id="ap-search-clear" onclick="clearSearch('ap')">✕</button> </div> <div class="filter-row"> <span class="filter-label">포지션</span> <button class="lane-filter-btn" data-lane="top" onclick="toggleLaneFilter('ap','top')">TOP</button> <button class="lane-filter-btn" data-lane="jg" onclick="toggleLaneFilter('ap','jg')">JG</button> <button class="lane-filter-btn" data-lane="mid" onclick="toggleLaneFilter('ap','mid')">MID</button> <button class="lane-filter-btn" data-lane="bot" onclick="toggleLaneFilter('ap','bot')">BOT</button> <button class="lane-filter-btn" data-lane="sup" onclick="toggleLaneFilter('ap','sup')">SUP</button> </div> <div class="filter-row"> <span class="filter-label">정렬</span> <select class="sort-select" id="ap-sort" onchange="applyFilter('ap')"> <option value="">기본</option> <option value="tier-asc">티어 낮은순</option> <option value="tier-desc">티어 높은순</option> <option value="name-asc">이름 ㄱ→ㅎ</option> <option value="name-desc">이름 ㅎ→ㄱ</option> </select> </div> </div> <div class="pool-body" id="a-pool"
+</div> <div id="screen-3-auction" class="screen"> <div class="builder-wrap"> <div class="builder-topbar-row" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;"> <div class="builder-topbar-title" style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;color:var(--gold);">경매 내전 — 팀 구성</div> <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;"> <button class="btn-secondary" onclick="goBackToStage2()">← 이전 단계</button> <button class="btn-secondary" onclick="addTeamModal('auction')">+ 팀 추가</button> <button class="btn-secondary" onclick="openPointsModal()">포인트 설정</button> <button class="btn-secondary" onclick="openSwapModal()" style="font-size:11px;padding:7px 14px;border-color:rgba(157,72,224,.4);color:#B97EEA;background:rgba(157,72,224,.06);">🔄 선수 교체</button> <button class="btn-secondary" onclick="openDraftOrderModal()" style="font-size:11px;padding:7px 14px;border-color:rgba(200,170,110,.4);color:var(--gold);background:rgba(200,170,110,.06);">🎲 팀뽑기 순서</button> <button class="btn-secondary" onclick="copyLiveLink()" style="font-size:11px;padding:7px 14px;border-color:rgba(10,200,185,.4);color:var(--blue-bright);background:rgba(10,200,185,.06);" title="관전 링크 복사">🔗 관전 링크 복사</button> <button class="btn-copy-img" onclick="copyTeamBuilderImage()" style="font-size:11px;padding:7px 14px;"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="1" y="3" width="8" height="9" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M4 3V2a1 1 0 011-1h5a1 1 0 011 1v7a1 1 0 01-1 1h-1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg> 이미지 복사</button> <button class="btn-next" id="btn-auction-next" disabled onclick="goToStage4()">다음 단계 →</button> </div> </div> <div class="builder-cond" style="margin-bottom:.75rem;"> <div class="cond-item"><div class="cond-dot" id="a-cond-pool"></div><span id="a-cond-pool-text" style="font-size:12px;color:var(--text-muted);">대기칸 비어있음</span></div> <div class="cond-item"><div class="cond-dot" id="a-cond-teams"></div><span id="a-cond-teams-text" style="font-size:12px;color:var(--text-muted);">팀 조건 충족</span></div> </div>  <div class="builder-layout auction-layout"> <div class="pool-panel"> <div id="s3a-guide-wrap" style="background:var(--bg-panel);border:1px solid var(--border-gold);border-radius:4px;overflow:hidden;box-shadow:0 2px 12px rgba(200,170,110,.06);margin-bottom:.75rem;"> <div onclick="_s3GuideToggle('s3a-guide-wrap','s3a-guide-list')" style="padding:.45rem 1rem;display:flex;align-items:center;justify-content:space-between;background:rgba(200,170,110,.06);cursor:pointer;user-select:none;"> <span style="font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;color:var(--gold);display:flex;align-items:center;gap:6px;"><span style="width:5px;height:5px;border-radius:50%;background:var(--blue-bright);display:inline-block;flex-shrink:0;"></span>가이드/룰 </span> <span id="s3a-guide-arrow" style="font-size:10px;color:var(--text-muted);transition:transform .2s;">▼</span> </div> <div id="s3a-guide-list" style="display:none;padding:.4rem .5rem;flex-wrap:wrap;gap:5px;max-height:100px;overflow-y:auto;"><div style="font-size:11px;color:var(--text-muted);font-family:Rajdhani,sans-serif;text-align:center;padding:.5rem;width:100%;letter-spacing:1px;">적용된 가이드가 없습니다</div></div> </div><div class="pool-header"> <div class="pool-title"><div class="panel-title-dot"></div>대기</div> <div style="display:flex;align-items:center;gap:5px;"> <div class="filter-active-dot" id="ap-filter-dot"></div> <div class="count-badge lit" id="a-pool-count">0명</div> </div> </div> <div class="filter-bar" style="padding:.4rem .5rem;gap:.35rem;"> <div class="filter-search-row"> <input class="filter-search-input" id="ap-search" placeholder="닉네임 검색..." oninput="applyFilter('ap')"> <button class="filter-search-clear" id="ap-search-clear" onclick="clearSearch('ap')">✕</button> </div> <div class="filter-row"> <span class="filter-label">포지션</span> <button class="lane-filter-btn" data-lane="top" onclick="toggleLaneFilter('ap','top')">TOP</button> <button class="lane-filter-btn" data-lane="jg" onclick="toggleLaneFilter('ap','jg')">JG</button> <button class="lane-filter-btn" data-lane="mid" onclick="toggleLaneFilter('ap','mid')">MID</button> <button class="lane-filter-btn" data-lane="bot" onclick="toggleLaneFilter('ap','bot')">BOT</button> <button class="lane-filter-btn" data-lane="sup" onclick="toggleLaneFilter('ap','sup')">SUP</button> </div> <div class="filter-row"> <span class="filter-label">정렬</span> <select class="sort-select" id="ap-sort" onchange="applyFilter('ap')"> <option value="">기본</option> <option value="tier-asc">티어 낮은순</option> <option value="tier-desc">티어 높은순</option> <option value="name-asc">이름 ㄱ→ㅎ</option> <option value="name-desc">이름 ㅎ→ㄱ</option> </select> </div> </div> <div class="pool-body" id="a-pool"
  ondragover="onDragOver(event,'a-pool')"
  ondragleave="onDragLeave(event,'a-pool')"
  ondrop="onDrop(event,'a-pool','auction')" onclick="if(_isMobile()&&_mobileSelMid)mobileTapZone('a-pool','auction')"> </div> <div style="padding:.5rem;border-top:1px solid var(--border-subtle);"> <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;"> <div class="fail-label">유찰</div> <button onclick="moveAllFailToPool()" style="font-size:9px;font-family:'Rajdhani',sans-serif;font-weight:700;letter-spacing:.5px;padding:2px 7px;border-radius:2px;border:1px solid rgba(192,48,48,.35);background:transparent;color:#E05050;cursor:pointer;transition:all .12s;" onmouseover="this.style.background='rgba(192,48,48,.1)'" onmouseout="this.style.background='transparent'" title="유찰 전체 대기로">↑ 전체 대기로</button> </div> <div class="fail-zone" id="a-fail-zone"
@@ -4498,7 +4498,6 @@ function _restoreBracketRounds(raw) {
 function generateBracket(){
 const shuffled=[...teams].sort(() => Math.random()-.5);
 bracketRounds=buildSingleElim(shuffled);
-console.log('[GEN] bracketRounds length:', bracketRounds.length, 'teams:', teams.length, 'rounds:', bracketRounds.map(r=>r.length));
 drawBracket();
 }
 function buildSingleElim(teamList){
@@ -4779,8 +4778,8 @@ pips[3].classList.remove('active'); pips[3].classList.add('done');
 pips[4].classList.add('active');
 initResultMatches();
 showScreen('screen-5');
-match.status='내전 진행';
-document.getElementById('bar-status').textContent='내전 진행';
+match.status='내전 종료';
+document.getElementById('bar-status').textContent='내전 종료';
 await saveCurrentMatch();
 s5SwitchTab('result');
 toast('5단계 결과 입력을 시작합니다', 'ok');
@@ -4924,7 +4923,8 @@ const resultBadge=rm.winner
 const matchIdBadge=rm.customCode
 ?`<span style="font-size:9px;font-family:'Rajdhani',sans-serif;color:var(--text-muted);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${rm.customCode}">${rm.customCode}</span>`
 :'';
-const teamOpts=teams.map(t => `<option value="${t.id}">${getTeamName(t)}</option>`).join('');
+const teamOptsBlue=teams.map(t => `<option value="${t.id}"${rm.teamB && rm.teamB.id===t.id?' disabled':''}>${getTeamName(t)}</option>`).join('');
+const teamOptsRed=teams.map(t => `<option value="${t.id}"${rm.teamA && rm.teamA.id===t.id?' disabled':''}>${getTeamName(t)}</option>`).join('');
 const blueSelStyle='background:#0A1628;border:1px solid #2A5FA5;color:#7EC8E3;padding:6px 10px;border-radius:3px;font-family:Rajdhani,sans-serif;font-size:12px;outline:none;cursor:pointer;width:140px;';
 const redSelStyle='background:#1A0808;border:1px solid #8B2020;color:#E57373;padding:6px 10px;border-radius:3px;font-family:Rajdhani,sans-serif;font-size:12px;outline:none;cursor:pointer;width:140px;';
 card.innerHTML=`
@@ -4944,18 +4944,18 @@ ${rm.teamA
 ? `<span style="font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;color:${colorBlue};">${nameBlue}</span>`
 : `<select id="rm-sel-blue-${rm.id}" style="${blueSelStyle}"
 onchange="setResultTeamDirect(${rm.id},'a',this.value)">
-<option value="">팀 선택...</option>${teamOpts}
+<option value="">팀 선택...</option>${teamOptsBlue}
 </select>`}
-</div> </div> <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;"> <div style="display:flex;gap:6px;"> <button class="win-btn${winA?' active':''}" onclick="setWinner(${rm.id},'a')" ${!rm.teamA?'disabled':''}>
+</div> </div> <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;"> <div style="display:flex;gap:6px;"> <button class="win-btn${winA?' active':''}" onclick="setWinner(${rm.id},'a')">
 블루 승
-</button> <button class="win-btn${winB?' active':''}" onclick="setWinner(${rm.id},'b')" ${!rm.teamB?'disabled':''}>
+</button> <button class="win-btn${winB?' active':''}" onclick="setWinner(${rm.id},'b')">
 레드 승
 </button> </div> <span style="font-size:9px;font-family:'Rajdhani',sans-serif;color:var(--text-muted);letter-spacing:1px;">VS</span> </div> <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:160px;justify-content:flex-end;"> <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end;"> <span style="font-size:9px;font-family:'Rajdhani',sans-serif;letter-spacing:1.5px;color:#E57373;font-weight:700;">RED TEAM</span>
 ${rm.teamB
 ? `<span style="font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;color:${colorRed};">${nameRed}</span>`
 : `<select id="rm-sel-red-${rm.id}" style="${redSelStyle}"
 onchange="setResultTeamDirect(${rm.id},'b',this.value)">
-<option value="">팀 선택...</option>${teamOpts}
+<option value="">팀 선택...</option>${teamOptsRed}
 </select>`}
 </div> <div style="width:4px;height:32px;background:#8B2020;border-radius:2px;flex-shrink:0;"></div> </div> <button onclick="deleteResultMatch(${rm.id})"
 style="background:transparent;border:none;color:var(--text-muted);cursor:pointer;font-size:13px;padding:4px;flex-shrink:0;"
@@ -4997,46 +4997,12 @@ async function setResultTeamDirect(id, side, val){
 const rm=resultMatches.find(m => m.id === id);
 if (!rm) return;
 const team=teams.find(t => t.id === parseInt(val)) || null;
+if (team && side === 'a' && rm.teamB && rm.teamB.id === team.id) { toast('레드팀에 이미 선택된 팀입니다', 'err'); return; }
+if (team && side === 'b' && rm.teamA && rm.teamA.id === team.id) { toast('블루팀에 이미 선택된 팀입니다', 'err'); return; }
 if (side === 'a') rm.teamA=team;
 else rm.teamB=team;
-const hdr=document.getElementById(`rm-hdr-${id}`);
-if (hdr){
-const nameBlue=rm.teamA?getTeamName(rm.teamA):null;
-const nameRed=rm.teamB?getTeamName(rm.teamB):null;
-const label=hdr.querySelector('[onclick*=]');
-if (label){
-const blueSpan=nameBlue?`<span style="color:#7EC8E3">${nameBlue}</span>`:'<span style=>블루팀 미정</span>';
-const redSpan=nameRed?`<span style="color:#E57373">${nameRed}</span>`:'<span style=>레드팀 미정</span>';
-const small=label.querySelector('span');
-if (small) small.innerHTML=`${blueSpan}<span style="margin:0 4px;">vs</span>${redSpan}`;
-}
-}
-if (side === 'a' && rm.teamA){
-const sel=document.getElementById(`rm-sel-blue-${id}`);
-if (sel){
-const span=document.createElement('span');
-span.style.cssText=`font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;color:${getTeamColor(rm.teamA)};`;
-span.textContent=getTeamName(rm.teamA);
-sel.replaceWith(span);
-}
-}
-if (side === 'b' && rm.teamB){
-const sel=document.getElementById(`rm-sel-red-${id}`);
-if (sel){
-const span=document.createElement('span');
-span.style.cssText=`font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;color:${getTeamColor(rm.teamB)};`;
-span.textContent=getTeamName(rm.teamB);
-sel.replaceWith(span);
-}
-}
-const bodyEl=document.getElementById(`rm-body-${id}`);
-if (bodyEl){
-bodyEl.querySelectorAll('.win-btn').forEach((btn, i) =>{
-if (i === 0) btn.disabled=!rm.teamA;
-if (i === 1) btn.disabled=!rm.teamB;
-});
-}
 await saveCurrentMatch();
+setTimeout(function(){ renderResultMatches(); }, 0);
 }
 function setResultTeam(id, side, val){
 setResultTeamDirect(id, side, val);
@@ -5044,9 +5010,13 @@ setResultTeamDirect(id, side, val);
 async function setWinner(id, side){
 const rm=resultMatches.find(m => m.id === id);
 if (!rm) return;
+if (side === 'a' && !rm.teamA) { toast('블루팀을 먼저 선택해 주세요', 'err'); return; }
+if (side === 'b' && !rm.teamB) { toast('레드팀을 먼저 선택해 주세요', 'err'); return; }
+if (!rm.teamA || !rm.teamB) { toast('블루팀과 레드팀을 모두 선택해 주세요', 'err'); return; }
 rm.winner=rm.winner === side?null:side;
 syncBracketWinner(rm);
 renderResultMatches();
+await saveCurrentMatch();
 }
 function syncBracketWinner(rm){
 bracketRounds.forEach(round =>{
@@ -7553,10 +7523,8 @@ function _startLiveSubscription(cid, matchId) {
     console.error('[LIVE] fbSubscribeLive 없음');
     return;
   }
-  console.log('[LIVE] 구독 시작:', `communities/${cid}/matches/${matchId}`);
-  _liveUnsub = window._fb.fbSubscribeLive(cid, matchId, (data) => {
-    console.log('[LIVE] 데이터 수신:', data ? '있음(_teams:' + (data._teams?.length||0) + ')' : '없음');
-    if (!data) {
+    _liveUnsub = window._fb.fbSubscribeLive(cid, matchId, (data) => {
+        if (!data) {
       document.getElementById('live-empty').style.display = 'block';
       document.getElementById('live-teams-grid').innerHTML = '';
       return;
@@ -9253,12 +9221,14 @@ function _buildRankData(matchList) {
   const stats = {};
   const src = matchList || _listCache || [];
   src.forEach(function(snap) {
-    if (!snap || snap.status !== '내전 종료') return;
+    // 내전 종료 상태이거나, screen-5(결과 입력 완료)인 경우 집계
+    const isFinished = snap.status === '내전 종료' || snap._currentScreen === 'screen-5';
+    if (!snap || !isFinished) return;
 
     const results = snap._resultMatches || [];
     const teams   = snap._teams || snap.teams || [];
     const members  = snap._members || snap.members || [];
-    if (!results.length) return;
+    if (!results.length || !results.some(function(r){ return r.winner; })) return;
     // 팀이 없으면 results에서 직접 추출
     const allTeams = teams.length ? teams : (function() {
       const tmap = {};
@@ -9869,6 +9839,10 @@ _0xB1 = resultMatches.length > 0
   : 1;
 _appliedGuides = (snapshot._appliedGuides || []).slice();
 if (typeof renderAppliedGuides === 'function') renderAppliedGuides();
+// 5단계면 무조건 내전 종료 상태로
+if (snapshot._currentScreen === 'screen-5' && snapshot.status !== '내전 종료') {
+snapshot = Object.assign({}, snapshot, { status: '내전 종료' });
+}
 const screen = snapshot.status === '내전 종료'
 ? 'screen-5'
 : (snapshot._currentScreen || 'screen-1');
@@ -10018,12 +9992,14 @@ const dt = new Date(m.time);
 const pad = n => String(n).padStart(2,'0');
 const timeStr = `${dt.getMonth()+1}/${dt.getDate()} ${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
 const stageLabel = STAGE_LABEL[m._currentScreen] || '';
-const statusCls = getStatusClass(m.status);
-const pillCls = getPillClass(m.status);
+// 5단계 데이터는 내전 종료로 표시
+const displayStatus = (m._currentScreen === 'screen-5' && m.status !== '내전 종료') ? '내전 종료' : (m.status || '대기');
+const statusCls = getStatusClass(displayStatus);
+const pillCls = getPillClass(displayStatus);
 const memberCount = (m._members || []).length;
 const card = document.createElement('div');
 card.className = 'list-card ' + statusCls;
-card.innerHTML = '<div class="list-card-body"><div class="list-card-name">'+_escHtml(m.name)+'</div><div class="list-card-meta"><span class="list-card-time">'+timeStr+'</span><span class="list-card-admin">👤 '+m.admin+'</span></div></div><div class="list-card-footer"><span class="list-status-pill '+pillCls+'">'+(m.status||'대기')+'</span><div style="display:flex;align-items:center;gap:2px;"><span class="list-card-stage">'+stageLabel+'</span>'+(isAdmin||isMaster?'<button class="list-card-del" data-mid="'+m.id+'" title="삭제">✕</button>':'')+'</div></div>';
+card.innerHTML = '<div class="list-card-body"><div class="list-card-name">'+_escHtml(m.name)+'</div><div class="list-card-meta"><span class="list-card-time">'+timeStr+'</span><span class="list-card-admin">👤 '+m.admin+'</span></div></div><div class="list-card-footer"><span class="list-status-pill '+pillCls+'">'+displayStatus+'</span><div style="display:flex;align-items:center;gap:2px;"><span class="list-card-stage">'+stageLabel+'</span>'+(isAdmin||isMaster?'<button class="list-card-del" data-mid="'+m.id+'" title="삭제">✕</button>':'')+'</div></div>';
 card.addEventListener('click', () => openMatch(m.id));
 if (isAdmin || isMaster) {
 const delBtn = card.querySelector('.list-card-del');
@@ -10061,7 +10037,6 @@ return;
 match = null; members = []; matchType = null; teams = [];
 bracketRounds = []; extraMatches = []; resultMatches = []; _0xB1 = 1;
 _localVersion = 0;
-console.log('[openMatch]', { id, status: snapshot.status, _resultMatches: (snapshot._resultMatches||[]).length });
 const targetScreen = (snapshot.status === '내전 종료' || snapshot._currentScreen === 'screen-5')
   ? 'screen-5' : (snapshot._currentScreen || 'screen-1');
 restoreMatch({ ...snapshot, _currentScreen: targetScreen });
@@ -11053,7 +11028,7 @@ document.addEventListener('click', function(e) {
 // ═══════════════════════════════════════════
 function _updateDiscordShareBtn() {
   const btn = document.getElementById('btn-discord-share-result');
-  const addBtn = document.querySelector('#screen-5 .btn-secondary[onclick="addResultMatch()"]');
+  const addBtn = document.getElementById('btn-add-result-match');
   const titleEl = document.querySelector('#screen-5 .results-title');
   const isFinished = match?.status === '내전 종료';
   const hasResults = resultMatches && resultMatches.some(r => r.winner);
@@ -12219,6 +12194,13 @@ function _appliedRemove(i) { if(typeof __appliedRemove==='function') return __ap
 function _uvRuleView(i) { if(typeof __uvRuleView==='function') return __uvRuleView(i); }
 function editRuleFromViewer() { if(typeof _editRuleFromViewer==='function') return _editRuleFromViewer(); }
 function renderAppliedGuides() { if(typeof _renderAppliedGuides==='function') return _renderAppliedGuides(); }
+function _updateS3GuideCount() {
+  var cnt = (typeof _appliedGuides !== 'undefined' && _appliedGuides) ? _appliedGuides.length : 0;
+  ['s3n-guide-count', 's3a-guide-count'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = '(' + cnt + ')';
+  });
+}
 </script>
 <script>
 // ══════════════════════════════════════════
@@ -12428,34 +12410,54 @@ async function applySelectedGuides() {
 }
 
 function renderAppliedGuides() {
-  var list = document.getElementById('guide-applied-list');
-  if (!list) return;
+  var emptyHtml = '<div style="font-size:11px;color:var(--text-muted);font-family:Rajdhani,sans-serif;text-align:center;padding:.5rem;width:100%;letter-spacing:1px;">적용된 가이드가 없습니다</div>';
+  // 렌더링 대상 목록 (1단계 + 3단계 normal/auction)
+  var targets = [
+    { list: 'guide-applied-list', removable: true },
+    { list: 's3n-guide-list', removable: false },
+    { list: 's3a-guide-list', removable: false },
+  ];
   if (!_appliedGuides.length) {
-    list.innerHTML = '<div style="font-size:11px;color:var(--text-muted);font-family:Rajdhani,sans-serif;text-align:center;padding:.75rem;letter-spacing:1px;">적용된 가이드가 없습니다</div>';
+    targets.forEach(function(t) {
+      var el = document.getElementById(t.list);
+      if (el) el.innerHTML = emptyHtml;
+    });
+    if (typeof _updateS3GuideCount === 'function') _updateS3GuideCount();
     return;
   }
   var applied = _rulesList.filter(function(r){ return _appliedGuides.indexOf(r.id) >= 0; });
   if (!applied.length) {
     loadRulesList().then(function(){
       var a2 = _rulesList.filter(function(r){ return _appliedGuides.indexOf(r.id) >= 0; });
-      _renderAppliedList(list, a2);
+      targets.forEach(function(t) {
+        var el = document.getElementById(t.list);
+        if (el) _renderAppliedList(el, a2, t.removable);
+      });
     });
     return;
   }
-  _renderAppliedList(list, applied);
+  targets.forEach(function(t) {
+    var el = document.getElementById(t.list);
+    if (el) _renderAppliedList(el, applied, t.removable);
+  });
+  _updateS3GuideCount();
 }
-function _renderAppliedList(list, applied) {
+function _renderAppliedList(list, applied, removable) {
+  var emptyHtml = '<div style="font-size:11px;color:var(--text-muted);font-family:Rajdhani,sans-serif;text-align:center;padding:.5rem;width:100%;letter-spacing:1px;">적용된 가이드가 없습니다</div>';
   if (!applied.length) {
-    list.innerHTML = '<div style="font-size:11px;color:var(--text-muted);font-family:Rajdhani,sans-serif;text-align:center;padding:.75rem;letter-spacing:1px;">적용된 가이드가 없습니다</div>';
+    list.innerHTML = emptyHtml;
     return;
   }
   list.innerHTML = applied.map(function(r, i) {
+    var removeBtn = removable !== false
+      ? '<button class="s1-guide-remove" onclick="event.stopPropagation();_appliedRemove(' + i + ')" title="제거">✕</button>'
+      : '';
     return '<div class="s1-guide-card" onclick="_appliedView(' + i + ')">' +
       '<span class="s1-guide-card-title">' +
         '<span class="s1-guide-dot"></span>' +
         _escHtml(r.title||'제목 없음') +
       '</span>' +
-      '<button class="s1-guide-remove" onclick="event.stopPropagation();_appliedRemove(' + i + ')" title="제거">✕</button>' +
+      removeBtn +
     '</div>';
   }).join('');
   list._appliedData = applied;
@@ -12525,6 +12527,129 @@ var __appliedRemove = _appliedRemove;
 var __uvRuleView = _uvRuleView;
 var _editRuleFromViewer = editRuleFromViewer;
 var _renderAppliedGuides = renderAppliedGuides;
+// _updateS3GuideCount는 래퍼에 이미 정의됨 - 두 번째 script 버전으로 덮어쓰기
+
+// ── 3단계 가이드 섹션 토글 ──
+function _s3GuideToggle(wrapId, listId) {
+  var list = document.getElementById(listId);
+  var arrowId = wrapId.replace('-wrap', '-arrow');
+  var arrow = document.getElementById(arrowId);
+  if (!list) return;
+  var isOpen = list.style.display === 'flex' || list.style.display === 'block';
+  if (isOpen) {
+    list.style.display = 'none';
+    if (arrow) arrow.style.transform = '';
+  } else {
+    list.style.display = 'flex';
+    if (arrow) arrow.style.transform = 'rotate(180deg)';
+  }
+}
+
+// 카운트 뱃지 업데이트
+function _updateS3GuideCount() {
+  var cnt = _appliedGuides ? _appliedGuides.length : 0;
+  ['s3n-guide-count', 's3a-guide-count'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = '(' + cnt + ')';
+  });
+}
+</script>
+
+<!-- ══ 팀뽑기 순서 모달 ══ -->
+<div id="draft-order-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9000;display:none;align-items:center;justify-content:center;padding:1rem;" onclick="if(event.target===this)closeDraftOrderModal()">
+  <div style="background:var(--bg-panel);border:1px solid var(--border-gold);border-radius:6px;width:100%;max-width:480px;max-height:88vh;display:flex;flex-direction:column;animation:modalIn .2s ease;">
+    <div style="padding:.9rem 1.3rem;border-bottom:1px solid var(--border-gold);display:flex;align-items:center;justify-content:space-between;background:rgba(200,170,110,.05);flex-shrink:0;">
+      <span style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:3px;color:var(--gold);">🎲 팀뽑기 순서</span>
+      <button onclick="closeDraftOrderModal()" style="background:transparent;border:none;color:var(--text-muted);font-size:18px;cursor:pointer;padding:0 4px;">✕</button>
+    </div>
+    <div style="flex:1;overflow-y:auto;padding:1rem 1.3rem;display:flex;flex-direction:column;gap:.75rem;">
+      <div id="draft-order-list" style="display:flex;flex-direction:column;gap:.5rem;"></div>
+    </div>
+    <div style="padding:.75rem 1.3rem;border-top:1px solid var(--border-subtle);display:flex;gap:8px;justify-content:flex-end;flex-shrink:0;">
+      <button onclick="closeDraftOrderModal()" style="padding:7px 18px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--text-muted);font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;cursor:pointer;">닫기</button>
+      <button onclick="shuffleDraftOrder()" style="padding:7px 22px;border-radius:2px;border:1px solid var(--border-gold);background:rgba(200,170,110,.15);color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;cursor:pointer;">🔀 다시 섞기</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+// 팀뽑기 순서 기능
+// ══════════════════════════════════════════
+var _draftOrder = [];
+
+function openDraftOrderModal() {
+  // 팀 목록에서 팀장 정보 수집
+  var captains = teams.map(function(t) {
+    // captainId로 members 배열에서 팀장 찾기
+    var captain = t.captainId ? members.find(function(m){ return m.id === t.captainId; }) : null;
+    var captainName = captain ? (captain.name || captain.gameName || '팀장 미정') : '팀장 미정';
+    var teamName = captain ? (captain.name + '팀') : (t.name || ('팀 ' + t.id));
+    return {
+      teamName: teamName,
+      teamColor: t.color || '#888',
+      captainName: captainName,
+    };
+  });
+
+  if (captains.length === 0) {
+    toast('팀이 없습니다', 'err');
+    return;
+  }
+
+  // 처음 열 때 또는 팀 수 변경 시 새로 섞기
+  if (_draftOrder.length !== captains.length) {
+    _draftOrder = captains.slice();
+    _shuffleArray(_draftOrder);
+  }
+
+  _renderDraftOrder();
+  document.getElementById('draft-order-modal').style.display = 'flex';
+}
+
+function closeDraftOrderModal() {
+  document.getElementById('draft-order-modal').style.display = 'none';
+}
+
+function shuffleDraftOrder() {
+  _shuffleArray(_draftOrder);
+  _renderDraftOrder();
+}
+
+function _shuffleArray(arr) {
+  for (var i = arr.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+  }
+}
+
+function _renderDraftOrder() {
+  var list = document.getElementById('draft-order-list');
+  if (!list) return;
+
+  list.innerHTML = _draftOrder.map(function(item, i) {
+    var rank = i + 1;
+    var medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : rank + '번째';
+    var isFirst = rank === 1;
+    return '<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:' +
+      (isFirst ? 'rgba(200,170,110,.1)' : 'var(--bg-dark)') +
+      ';border:1px solid ' +
+      (isFirst ? 'rgba(200,170,110,.4)' : 'var(--border-subtle)') +
+      ';border-radius:4px;transition:all .2s;">' +
+      '<span style="font-size:' + (isFirst ? '22px' : '16px') + ';width:32px;text-align:center;flex-shrink:0;">' + medal + '</span>' +
+      '<div style="flex:1;min-width:0;">' +
+        '<div style="font-family:Rajdhani,sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;color:var(--text-muted);margin-bottom:2px;">' +
+          (isFirst ? '첫 번째 픽' : rank + '번째 픽') +
+        '</div>' +
+        '<div style="display:flex;align-items:center;gap:8px;">' +
+          '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + (item.teamColor||'#888') + ';flex-shrink:0;"></span>' +
+          '<span style="font-size:14px;font-weight:700;color:var(--text-white);font-family:Noto Sans KR,sans-serif;">' + _escHtml(item.teamName) + '</span>' +
+          '<span style="font-size:12px;color:var(--text-muted);font-family:Noto Sans KR,sans-serif;">(' + _escHtml(item.captainName) + ')</span>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
 </script>
 </body>
 </html>
