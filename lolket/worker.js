@@ -507,16 +507,8 @@ async function handleDbRead(request, env) {
     /^communities_info\/[^/]+(\/.*)?$/.test(dbPath) &&
     session.communityId && session.communityId === dbPath.split('/')[1];
 
-  // 관리자/마스터가 커뮤니티 가이드/룰 읽기 허용
-  const isOwnRules = session && (session.role === 'admin' || session.role === 'master') &&
-    /^communities\/[^/]+\/rules(\/.*)?$/.test(dbPath) &&
-    (session.role === 'master' || (session.communityId && session.communityId === dbPath.split('/')[1]));
-
-  // 비로그인도 rules 읽기 허용 (유저뷰에서 가이드 조회)
-  const isPublicRules = /^communities\/[^/]+\/rules(\/.*)?$/.test(dbPath);
-
-  if (isOwnCommunityInfo || isOwnRules || isPublicRules) {
-    // 통과
+  if (isOwnCommunityInfo) {
+    // 통과 — 자신의 커뮤니티 정보는 읽기 허용
   } else if (/^blacklist/.test(dbPath) && session) {
     // 관리자 이상 블랙리스트 읽기 허용
   } else {
@@ -708,12 +700,6 @@ function checkPermission(session, dbPath, requireRole) {
     const cidFromPath = dbPath.split('/')[1];
     if (session.communityId && session.communityId === cidFromPath) return true;
   }
-  // 관리자/마스터 커뮤니티 가이드/룰 쓰기/삭제 허용
-  if (/^communities\/[^/]+\/rules(\/.*)?$/.test(dbPath) && (session.role === 'admin' || session.role === 'master')) {
-    if (session.role === 'master') return true;
-    const cidFromPath = dbPath.split('/')[1];
-    if (session.communityId && session.communityId === cidFromPath) return true;
-  }
   // 관리자 이상 블랙리스트 쓰기 허용
   if (/^blacklist\//.test(dbPath)) return true;
   // 관리자 이상 커뮤니티 메시지 쓰기 허용
@@ -776,7 +762,9 @@ async function handleSummoner(url, key) {
         || entries.find(e => e.highestTierAchieved)?.highestTierAchieved || null;
       return json({ name: account.gameName, tag: account.tagLine, level: summoner.summonerLevel,
         icon: summoner.profileIconId, puuid: puuidParam, solo: formatRank(solo), flex: formatRank(flex),
-        prevSeasonHighest });
+        prevSeasonHighest,
+        soloWins: solo?.wins || 0, soloLosses: solo?.losses || 0,
+        soloLP: solo?.leaguePoints || 0, soloTier: solo?.tier || 'UNRANKED', soloDivision: solo?.rank || '' });
     } catch(e) { return json({ error: '서버 오류', detail: e.message }, 500); }
   }
 
@@ -809,7 +797,10 @@ async function handleSummoner(url, key) {
       || null;
     return json({ name: account.gameName, tag: account.tagLine, level: summoner.summonerLevel,
       icon: summoner.profileIconId, puuid, solo: formatRank(solo), flex: formatRank(flex),
-      prevSeasonHighest, _debug_entries: entries });
+      prevSeasonHighest,
+      soloWins: solo?.wins || 0, soloLosses: solo?.losses || 0,
+      soloLP: solo?.leaguePoints || 0, soloTier: solo?.tier || 'UNRANKED', soloDivision: solo?.rank || '',
+      _debug_entries: entries });
   } catch(e) { return json({ error: '서버 오류', detail: e.message }, 500); }
 }
 
