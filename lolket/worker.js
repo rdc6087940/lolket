@@ -398,6 +398,8 @@ async function handleDbPublicRead(request, env) {
     /^notices($|\/)/,
     /^communities_info($|\/)/,
     /^rtube($|\/)/,
+    /^communities\/[^/]+\/matches($|\/)/,  // 내전 상세 URL 직접 접근
+    /^communities\/[^/]+\/rules($|\/)/,    // 가이드/룰 비로그인 읽기
   ];
   if (!publicRead.some(r => r.test(dbPath))) {
     return json({ ok: false, error: '허용되지 않는 경로입니다' }, 403);
@@ -507,7 +509,13 @@ async function handleDbRead(request, env) {
     /^communities_info\/[^/]+(\/.*)?$/.test(dbPath) &&
     session.communityId && session.communityId === dbPath.split('/')[1];
 
-  if (isOwnCommunityInfo) {
+  // 관리자/마스터 rules 읽기 허용 (세션 있을 때)
+  const isOwnRules = session &&
+    (session.role === 'master' ||
+      (session.role === 'admin' && /^communities\/[^/]+\/rules(\/.*)?$/.test(dbPath) &&
+       session.communityId && session.communityId === dbPath.split('/')[1]));
+
+  if (isOwnCommunityInfo || isOwnRules) {
     // 통과 — 자신의 커뮤니티 정보는 읽기 허용
   } else if (/^blacklist/.test(dbPath) && session) {
     // 관리자 이상 블랙리스트 읽기 허용
@@ -680,7 +688,6 @@ function checkPermission(session, dbPath, requireRole) {
     /^applies\/[^/]+$/,             // 커뮤니티 신청 (누구나)
     /^notices\/[^/]+\/views$/,      // 조회수 (누구나)
     /^invite_codes\/[^/]+\/used$/,  // 초대코드 사용 (누구나)
-    /^communities\/[^/]+\/matches/, // 내전 데이터 (Worker 재시작 시 세션 소멸 대응)
     /^admin\/[^/]+$/,               // 초대 링크로 관리자 계정 생성 (비로그인)
     /^recruits\/[^/]+$/,            // 외전 모집 생성/수정
     /^recruit_comments\/[^/]+\//,   // 외전 댓글
@@ -696,9 +703,28 @@ function checkPermission(session, dbPath, requireRole) {
 
   // 일반 관리자도 자신의 커뮤니티 정보 및 하위 경로 수정 가능 (discordChannelId, devApis 등)
   if (/^communities_info\/[^/]+(\/.*)?$/.test(dbPath) && session.role === 'admin') {
-    // 자신의 커뮤니티인지 확인
     const cidFromPath = dbPath.split('/')[1];
     if (session.communityId && session.communityId === cidFromPath) return true;
+  }
+  // 관리자는 자신의 커뮤니티 내전 데이터만 쓰기/삭제 허용
+  if (/^communities\/[^/]+\/matches(\/.*)?$/.test(dbPath)) {
+    if (!session) return false;
+    if (session.role === 'master') return true;
+    if (session.role === 'admin') {
+      const cidFromPath = dbPath.split('/')[1];
+      return session.communityId && session.communityId === cidFromPath;
+    }
+    return false;
+  }
+  // 관리자/마스터 커뮤니티 가이드/룰 쓰기/삭제 허용
+  if (/^communities\/[^/]+\/rules(\/.*)?$/.test(dbPath)) {
+    if (!session) return false;
+    if (session.role === 'master') return true;
+    if (session.role === 'admin') {
+      const cidFromPath = dbPath.split('/')[1];
+      return session.communityId && session.communityId === cidFromPath;
+    }
+    return false;
   }
   // 관리자 이상 블랙리스트 쓰기 허용
   if (/^blacklist\//.test(dbPath)) return true;
