@@ -509,7 +509,13 @@ async function handleDbRead(request, env) {
     /^communities_info\/[^/]+(\/.*)?$/.test(dbPath) &&
     session.communityId && session.communityId === dbPath.split('/')[1];
 
-  if (isOwnCommunityInfo) {
+  // 관리자/마스터 rules 읽기 허용 (세션 있을 때)
+  const isOwnRules = session &&
+    (session.role === 'master' ||
+      (session.role === 'admin' && /^communities\/[^/]+\/rules(\/.*)?$/.test(dbPath) &&
+       session.communityId && session.communityId === dbPath.split('/')[1]));
+
+  if (isOwnCommunityInfo || isOwnRules) {
     // 통과 — 자신의 커뮤니티 정보는 읽기 허용
   } else if (/^blacklist/.test(dbPath) && session) {
     // 관리자 이상 블랙리스트 읽기 허용
@@ -702,6 +708,16 @@ function checkPermission(session, dbPath, requireRole) {
   }
   // 관리자는 자신의 커뮤니티 내전 데이터만 쓰기/삭제 허용
   if (/^communities\/[^/]+\/matches(\/.*)?$/.test(dbPath)) {
+    if (!session) return false;
+    if (session.role === 'master') return true;
+    if (session.role === 'admin') {
+      const cidFromPath = dbPath.split('/')[1];
+      return session.communityId && session.communityId === cidFromPath;
+    }
+    return false;
+  }
+  // 관리자/마스터 커뮤니티 가이드/룰 쓰기/삭제 허용
+  if (/^communities\/[^/]+\/rules(\/.*)?$/.test(dbPath)) {
     if (!session) return false;
     if (session.role === 'master') return true;
     if (session.role === 'admin') {
