@@ -782,7 +782,6 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
    const _cfgRes = await fetch(_workerBase + '/firebase-config');
    firebaseConfig = await _cfgRes.json();
  } catch(e) {
-   console.error('[Firebase] 설정 로드 실패', e);
    firebaseConfig = {};
  }
  
@@ -852,8 +851,8 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
          body: JSON.stringify({ communityId: cObj.id, imageData: bannerImage }),
        });
        const r = await res.json();
-       if (!r.ok) console.error('[bannerImage 저장 실패]', r.error);
-     } catch(e) { console.error('[bannerImage 저장 실패]', e); }
+       if (!r.ok) {}
+     } catch(e) { }
    })();
 
    return Promise.all([p1, p2]);
@@ -895,7 +894,6 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
  const snap = await get(ref(db, path));
  return snap.val();
  } catch(e) {
- console.error('[Firebase] get 실패 path=' + path, e.code, e.message);
  throw e;
  }
  }
@@ -915,7 +913,7 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
      const result = await res.json();
      if (!result.ok || !result.data) return [];
      return Object.values(result.data).filter(r => r && r.id);
-   } catch(e) { console.error('[fbGetRecruits] 에러:', e); return []; }
+   } catch(e) { return []; }
  }
  async function fbDeleteRecruit(id) {
    return _workerDelete(`recruits/${id}`, null);
@@ -1085,7 +1083,241 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
  };
  window._fb.ready = true;
  window.dispatchEvent(new Event('fb-ready'));
-</script> </head>
+</script> 
+<!-- ══ 모바일 보완 CSS (기존 코드와 완전 분리) ══ -->
+<style id="mobile-enhance">
+/* ── 1단계: 검색 패널 ── */
+@media (max-width: 768px) {
+
+  /* 검색 입력 영역 */
+  #search-input {
+    font-size: 14px !important;
+    padding: 8px 10px !important;
+  }
+  #search-btn {
+    padding: 8px 14px !important;
+    font-size: 12px !important;
+    white-space: nowrap;
+  }
+
+  /* 검색 결과 카드 */
+  #search-result { padding: .75rem !important; }
+
+  /* 라인 선택 버튼 */
+  #main-lanes .lane-btn,
+  #sub-lanes .lane-btn {
+    min-width: 44px !important;
+    min-height: 36px !important;
+    font-size: 11px !important;
+    padding: 5px 6px !important;
+  }
+
+  /* 티어 오버라이드 버튼 */
+  .tier-override-btn {
+    font-size: 9px !important;
+    padding: 3px 5px !important;
+  }
+
+  /* 멤버 카드 */
+  .member-card { height: auto !important; min-height: 112px; }
+  .member-grid { grid-auto-rows: auto !important; }
+
+  /* 필터 영역 */
+  .filter-row { gap: 4px !important; flex-wrap: wrap !important; }
+  .lane-filter-btn { padding: 4px 8px !important; min-height: 30px !important; }
+
+  /* 1단계 버튼 영역 */
+  .next-wrap {
+    padding: .5rem 0 !important;
+    gap: 6px !important;
+    flex-wrap: wrap !important;
+  }
+  .next-wrap .btn-primary,
+  .next-wrap .btn-secondary {
+    font-size: 11px !important;
+    padding: 8px 12px !important;
+    white-space: nowrap;
+  }
+
+  /* ── 2단계 (타입 선택) ── */
+  .type-card {
+    padding: 1rem !important;
+  }
+  .type-card-title { font-size: 18px !important; }
+
+  /* ── 3단계: 빌더 레이아웃 ── */
+  .builder-layout,
+  .builder-layout.auction-layout {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* pool-panel 높이 제한 */
+  .pool-panel { max-height: none !important; }
+  .pool-body { max-height: 240px !important; overflow-y: auto; }
+
+  /* team-slots 스크롤 */
+  .team-slots { max-height: 220px; overflow-y: auto; }
+
+  /* 3단계 버튼 영역 */
+  .builder-topbar-row {
+    flex-wrap: wrap !important;
+    gap: 5px !important;
+  }
+  .builder-topbar-row .btn-secondary {
+    font-size: 10px !important;
+    padding: 6px 10px !important;
+    white-space: nowrap;
+  }
+  /* ✨ 자동밸런싱 등 밸런스 컨트롤 */
+  .balance-ctrl-section {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 6px !important;
+    padding: .5rem .75rem !important;
+  }
+  .balance-ctrl-section > div {
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+  }
+
+  /* mini-card 터치 타겟 확대 */
+  .mini-card {
+    padding: 8px 10px !important;
+    min-height: 44px;
+  }
+
+  /* ── 3단계 팀 합산 점수 ── */
+  .teams-grid { gap: .5rem !important; }
+
+  /* ── 4단계: 대진표 ── */
+  .bracket-wrap { padding: .5rem !important; overflow-x: auto; }
+  .bracket-rounds { flex-wrap: nowrap; overflow-x: auto; gap: .5rem; }
+  .bracket-round { min-width: 130px; }
+  .bracket-match { padding: .4rem .5rem; }
+  .bm-team-name { font-size: 11px; }
+
+  /* ── 5단계: 결과 입력 ── */
+  .result-match-card { padding: .6rem .75rem !important; }
+  .rm-hdr { flex-wrap: wrap; gap: 4px; }
+  .win-btn { min-height: 36px !important; padding: 5px 8px !important; font-size: 11px !important; }
+  select.rm-sel { font-size: 11px !important; padding: 4px 6px !important; }
+
+  /* ── 모달 공통 ── */
+  .modal-overlay { padding: .5rem !important; }
+  .modal { max-height: 92vh !important; }
+
+  /* ── 경매 내전: 입찰 패널 ── */
+  .auction-panel {
+    position: static !important;
+    width: 100% !important;
+  }
+  .bid-amount-row { flex-wrap: wrap; gap: 6px; }
+  .bid-quick-row { flex-wrap: wrap; gap: 4px; }
+  .bid-quick-btn {
+    flex: 1 1 calc(33% - 4px) !important;
+    min-height: 36px !important;
+  }
+
+  /* ── 팀뽑기 순서 모달 ── */
+  #draft-order-modal > div { max-width: 100% !important; }
+
+  /* ── 밸런스 점수 안내 모달 ── */
+  #balance-info-modal > div { max-width: 100% !important; }
+
+  /* ── next-wrap sticky 하단 고정 ── */
+  .next-wrap {
+    background: var(--bg-darkest) !important;
+    border-top: 1px solid var(--border-subtle) !important;
+    padding: .6rem .75rem !important;
+    margin: 0 -.75rem !important;
+  }
+
+  /* 모바일에서 불필요한 요소 숨김 */
+  /* 밸런스 점수 info 박스 (작은 화면에서 공간 낭비) */
+  #balance-score-info .score-info-box { font-size: 9px !important; }
+
+  /* ── 비회원 뷰 ── */
+  .uv-live-layout {
+    grid-template-columns: 1fr !important;
+  }
+  #uv-live-pool-area { margin-top: .75rem; }
+
+  /* ── match-bar 가로 스크롤 ── */
+  .match-bar { overflow-x: auto; flex-wrap: nowrap !important; }
+  .match-bar::-webkit-scrollbar { display: none; }
+
+  /* ── 가이드/룰 섹션 ── */
+  .s1-guide-card { padding: 5px 8px !important; }
+
+  /* ── 승률 랭킹 사이드바 모바일 ── */
+  #s1-rank-sidebar { display: none; }
+
+  /* ── 내전 목록 화면 ── */
+  .list-wrap { padding: .75rem !important; }
+  .list-topbar {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: .5rem !important;
+    margin-bottom: .75rem !important;
+  }
+  .list-topbar > div:last-child {
+    width: 100% !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+  }
+  .list-topbar > div:last-child > input {
+    flex: 1 !important;
+    min-width: 0 !important;
+    width: auto !important;
+  }
+  .list-topbar > div:last-child > button {
+    font-size: 11px !important;
+    padding: 6px 10px !important;
+    white-space: nowrap;
+  }
+  /* 승률 랭킹 사이드바 숨김 (모바일에서 불필요) */
+  #screen-0 > div > div:first-child { display: none !important; }
+  /* list-grid 여백 */
+  #screen-0 > div { padding: .75rem !important; gap: .5rem !important; }
+
+  /* ── 헤더: 블랙리스트/메시지 모바일 숨김, 드로어로 이동 ── */
+  #btn-blacklist { display: none !important; }
+  #btn-msg { display: none !important; }
+  .mobile-drawer-admin-btns { display: flex !important; }
+
+  /* ── match-bar 모바일 그리드 재설계 ── */
+  .match-bar {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: .5rem .75rem !important;
+    padding: .65rem .85rem !important;
+    overflow-x: visible !important;
+  }
+  .match-bar-field { min-width: 0 !important; }
+  .match-bar-value { font-size: 13px !important; white-space: normal !important; }
+  .match-bar-label { font-size: 9px !important; }
+  .match-bar-divider { display: none !important; }
+  .match-bar-spacer { display: none !important; }
+  .progress-block { grid-column: 1 / -1 !important; min-width: 0 !important; }
+  .status-badge { font-size: 11px !important; padding: 3px 10px !important; }
+  /* 수정 버튼 크기 */
+  #btn-edit-time { font-size: 9px !important; padding: 2px 6px !important; }
+}
+
+/* ── 초소형 (360px 이하) ── */
+@media (max-width: 380px) {
+  .logo { font-size: 13px !important; letter-spacing: 1px !important; }
+  .tier-override-btn { font-size: 8px !important; padding: 2px 4px !important; }
+  .lane-filter-btn { font-size: 9px !important; padding: 3px 6px !important; }
+  #main-lanes .lane-btn,
+  #sub-lanes .lane-btn { min-width: 38px !important; font-size: 10px !important; }
+  .mini-card { padding: 6px 8px !important; }
+  .bm-team-name { font-size: 10px; max-width: 90px; }
+}
+</style>
+
+</head>
 <body> <header class="header"> <div class="header-inner"> <div style="display:flex;align-items:center;gap:14px;"> <div class="logo" style="cursor:pointer;" onclick="goHome()"> <div class="logo-diamond"></div>
  룽잉닷컴
  </div><span id="app-version" onclick="isMaster && openVersionModal()" style="font-family:'Rajdhani',sans-serif;font-size:9px;color:var(--text-muted);letter-spacing:1px;opacity:.7;margin-left:2px;transition:all .15s;">v1.1.005</span> <button class="btn-back" id="btn-back" onclick="goToList()" style="display:none;">← 목록</button> <div class="community-indicator" id="community-indicator" onclick="goToList()" title="커뮤니티 홈" style="cursor:pointer;"> <div class="community-indicator-dot"></div> <span id="community-indicator-name"></span> </div> </div> <div class="stage-indicator hidden" id="stage-indicator"> <div class="stage-pip" id="pip-1"><div class="stage-pip-dot"></div>1. 내전 대기</div> <div class="stage-pip" id="pip-2"><div class="stage-pip-dot"></div>2. 종류 선택</div> <div class="stage-pip" id="pip-3"><div class="stage-pip-dot"></div>3. 팀 짜기</div> <div class="stage-pip" id="pip-4"><div class="stage-pip-dot"></div>4. 대진표</div> <div class="stage-pip" id="pip-5"><div class="stage-pip-dot"></div>5. 결과</div> </div> <div class="header-actions"> <div class="role-badge user" id="role-badge"><div class="role-dot"></div><span id="role-label">일반 유저</span></div> <button class="btn-auth" id="btn-auth" onclick="openLoginModal()" style="display:none;">로그아웃</button> <button class="btn-auth" id="btn-master-login" onclick="openMasterLoginModal()" style="font-size:10px;padding:5px 10px;border-color:rgba(157,72,224,.4);color:#B97EEA;background:rgba(157,72,224,.07);">마스터</button> <button class="btn-auth" id="btn-admin-login" onclick="openLoginModal()">관리자 로그인</button> <div class="patch-toggle-wrap master-only" id="patch-toggle-wrap" style="display:none;"><span class="patch-toggle-label" id="patch-toggle-label">패치중</span><label class="patch-toggle"><input type="checkbox" id="patch-toggle-input" onchange="onPatchToggle(this.checked)"><span class="patch-toggle-slider"></span></label></div><button onclick="openGuide()" title="이용 가이드" style="width:28px;height:28px;border-radius:50%;border:1px solid var(--border-subtle);background:rgba(200,170,110,.08);color:var(--gold);font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0;">?</button><button class="btn-secondary admin-only" id="btn-new-match" onclick="openNewMatchFlow()" style="display:none;">+ 새 내전 생성</button> <button class="btn-auth admin-only" id="btn-blacklist" onclick="openBlacklist()" style="display:none;border-color:rgba(192,48,48,.4);color:#E05050;background:rgba(192,48,48,.07);font-size:10px;padding:5px 10px;" title="블랙리스트">🚫 블랙리스트</button> <button class="btn-auth admin-only" id="btn-msg" onclick="toggleMsgPanel()" style="display:none;font-size:10px;padding:5px 10px;position:relative;" title="커뮤니티 메시지">💬 메시지<span id="msg-badge" style="display:none;position:absolute;top:-4px;right:-4px;min-width:16px;height:16px;border-radius:8px;background:#E05050;color:#fff;font-size:9px;font-family:'Rajdhani',sans-serif;font-weight:700;line-height:16px;text-align:center;padding:0 3px;">0</span></button> </div>
@@ -2290,6 +2522,11 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
       <span class="icon">⚔</span> 외전 모집
     </div>
   </div>
+  <!-- 관리자 전용 버튼 (모바일에서만 표시) -->
+  <div class="mobile-drawer-admin-btns admin-only" style="display:none;padding:.5rem .75rem;gap:.5rem;flex-direction:column;border-bottom:1px solid var(--border-subtle);">
+    <button onclick="closeMobileDrawer();openBlacklist();" style="width:100%;padding:9px;background:rgba(192,48,48,.07);border:1px solid rgba(192,48,48,.3);border-radius:3px;color:#E05050;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;cursor:pointer;text-align:left;">🚫 블랙리스트</button>
+    <button onclick="closeMobileDrawer();toggleMsgPanel();" style="width:100%;padding:9px;background:rgba(10,200,185,.06);border:1px solid rgba(10,200,185,.2);border-radius:3px;color:var(--blue-bright);font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;cursor:pointer;text-align:left;position:relative;">💬 메시지<span id="mdrawer-msg-badge" style="display:none;margin-left:8px;background:#E05050;color:#fff;font-size:9px;padding:1px 5px;border-radius:8px;">0</span></button>
+  </div>
   <div class="mobile-drawer-content">
     <!-- 공지사항 섹션 -->
     <div id="mdrawer-notice-section">
@@ -3177,7 +3414,6 @@ if (_sdtw) _sdtw.style.display = 'none';
 const _sdti = document.getElementById('r-tier-detail-input');
 if (_sdti) _sdti.value = '';
 }catch(e){
-console.error('[Search] 오류:', e);
 const key=(gameName+'#'+tagLine).toLowerCase();
 const found=Object.keys(MOCK_DB).find(k => k.toLowerCase() === key)
 || Object.keys(MOCK_DB).find(k => k.toLowerCase().startsWith(gameName.toLowerCase()+'#'));
@@ -5309,7 +5545,6 @@ return;
 _matchPickerTargetId=id;
 showMatchPickerModal(data.matchIds, counts, totalMembers);
 }catch(e){
-console.error('[AutoFind]', e);
 toast('자동 검색 중 오류가 발생했습니다', 'err');
 rm.fetching=false;
 renderResultMatches();
@@ -5446,7 +5681,6 @@ const errMsg=data.error || '조회 실패';
 toast(`❌ ${errMsg}`, 'err');
 }
 }catch(e){
-console.error('[Match]', e);
 toast('네트워크 오류가 발생했습니다', 'err');
 }
 rm.fetching=false;
@@ -5652,7 +5886,6 @@ try {
 await saveCurrentMatch();
 toast('내전이 종료되었습니다 ✓', 'ok');
 } catch(e) {
-console.error('[finishMatch] 저장 실패', e);
 toast('저장 중 오류가 발생했습니다', 'err');
 return;
 }
@@ -5860,7 +6093,6 @@ return await _verifyPw(pw, data.password);
 }
 return false;
 } catch(e) {
-console.error('[Auth] Firebase 조회 실패:', e);
 const errEl = document.getElementById('login-err');
 if (errEl) errEl.innerHTML = '<span style="font-size:13px;">⚠</span> DB 오류: ' + (e.message || e.code || e);
 return false;
@@ -5935,6 +6167,7 @@ function renderUvTeams() {
       var subBadge2 = subTxt2 ? '<span style="font-family:Rajdhani,sans-serif;font-size:9px;font-weight:700;color:var(--gold);background:rgba(200,170,110,.1);border:1px solid rgba(200,170,110,.2);border-radius:2px;padding:0 3px;opacity:.85;">'+subTxt2+'</span>' : '';
       var _init2 = (mb.name||'?')[0];
       var subTxt2 = _subLaneText(mb.subLane);
+      var _bidTag2 = ((window._uvLastSnapshot && window._uvLastSnapshot._matchType === 'auction') && mb.bidPrice) ? '<span style="font-family:Rajdhani,sans-serif;font-size:10px;font-weight:700;color:var(--blue-bright);background:rgba(10,200,185,.1);border:1px solid rgba(10,200,185,.3);border-radius:2px;padding:1px 5px;margin-left:4px;">'+mb.bidPrice+'pt</span>' : '';
       var iconHtml2 = '<div style="width:24px;height:24px;min-width:24px;border-radius:2px;background:var(--bg-dark);border:1px solid var(--border-subtle);display:flex;align-items:center;justify-content:center;font-family:Rajdhani,sans-serif;font-size:9px;color:var(--text-muted);position:relative;overflow:hidden;">' +
         '<span style="position:absolute;">' + _escHtml(_init2) + '</span>' +
         (mb.icon ? '<img src="https://ddragon.leagueoflegends.com/cdn/14.24.1/img/profileicon/'+mb.icon+'.png" style="width:100%;height:100%;object-fit:cover;position:relative;z-index:1;display:block;" onerror="this.style.visibility=&apos;hidden&apos;">' : '') +
@@ -6101,7 +6334,7 @@ function _uvRenderTeams(snapshot) {
     return `<div style="background:var(--bg-panel);border:1px solid var(--border-subtle);border-radius:4px;overflow:hidden;">
       <div style="padding:.6rem 1rem;border-bottom:1px solid var(--border-subtle);background:rgba(200,170,110,.05);display:flex;align-items:center;justify-content:space-between;">
         <span style="font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;color:var(--gold);">${_escHtml(teamName)}</span>
-        <div style="display:flex;align-items:center;gap:8px;">${totalScoreTag}${isAuction?`<span style="font-size:11px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;">${tm.length}명</span>`:''} ${_uvSc?'':pointsTag}</div>
+        <div style="display:flex;align-items:center;gap:8px;">${totalScoreTag}${isAuction?`<span style="font-size:11px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;">${tm.length}명</span>`:''} ${pointsTag}</div>
       </div>
       <div>${memberRows || '<div style="padding:12px;font-size:11px;color:var(--text-muted);text-align:center;">비어 있음</div>'}</div>
     </div>`;
@@ -6139,6 +6372,7 @@ function _uvRenderTeamGrid(snapshot) {
       const isCap = m.id === team.captainId;
       const deepUrl = 'https://www.deeplol.gg/summoner/kr/'+(m.name||'').replace(/ /g,'%20')+'-'+(m.tag||'KR1');
       const subTxt2 = _subLaneText(m.subLane);
+      var _bidTag2 = (isAuction && m.bidPrice) ? '<span style="font-family:Rajdhani,sans-serif;font-size:10px;font-weight:700;color:var(--blue-bright);background:rgba(10,200,185,.1);border:1px solid rgba(10,200,185,.3);border-radius:2px;padding:1px 5px;margin-left:4px;">'+m.bidPrice+'pt</span>' : '';
       let scTag = '';
       if (_uvSc && typeof calcMemberScore === 'function') {
         const sc = calcMemberScore(m, false);
@@ -6148,7 +6382,7 @@ function _uvRenderTeamGrid(snapshot) {
       return '<div onclick="window.open(\'' + deepUrl + '\',\'_blank\')" style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid rgba(30,45,64,.4);'+(isCap?'border-left:2px solid var(--gold);':'border-left:2px solid transparent;')+'cursor:pointer;">' +
         '<div style="width:28px;height:28px;border-radius:2px;flex-shrink:0;background:var(--bg-dark);border:1px solid var(--border-subtle);overflow:hidden;"><img src="https://ddragon.leagueoflegends.com/cdn/14.24.1/img/profileicon/'+(m.icon||0)+'.png" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.visibility=&apos;hidden&apos;"></div>' +
         '<div style="flex:1;min-width:0;">' +
-          '<div style="font-size:12px;color:var(--text-white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+_escHtml(m.name)+(isCap?' <span style="font-family:Rajdhani,sans-serif;font-size:9px;color:var(--gold);font-weight:700;">C</span>':'')+'</div>' +
+          '<div style="font-size:12px;color:var(--text-white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+_escHtml(m.name)+(isCap?' <span style="font-family:Rajdhani,sans-serif;font-size:9px;color:var(--gold);font-weight:700;">C</span>':'')+_bidTag2+'</div>' +
           '<div style="display:flex;align-items:center;gap:4px;margin-top:1px;"><span style="font-family:Rajdhani,sans-serif;font-size:9px;font-weight:700;color:'+color+';">'+tierKo+suffix+'</span>' +
         (LANE_KO[m.mainLane] ? '<span style="font-family:Rajdhani,sans-serif;font-size:9px;font-weight:700;color:var(--blue-bright);background:rgba(10,200,185,.12);border:1px solid rgba(10,200,185,.25);border-radius:2px;padding:0 4px;white-space:nowrap;">'+(LANE_KO[m.mainLane]||'?')+'</span>' : '') +
         (subTxt2 ? '<span style="font-family:Rajdhani,sans-serif;font-size:9px;font-weight:700;color:var(--gold);background:rgba(200,170,110,.1);border:1px solid rgba(200,170,110,.2);border-radius:2px;padding:0 4px;white-space:nowrap;opacity:.85;">'+subTxt2+'</span>' : '') +
@@ -6160,7 +6394,9 @@ function _uvRenderTeamGrid(snapshot) {
     return '<div style="background:var(--bg-panel);border:1px solid var(--border-subtle);border-radius:4px;overflow:hidden;">' +
       '<div style="padding:.6rem 1rem;border-bottom:1px solid var(--border-subtle);background:rgba(200,170,110,.05);display:flex;align-items:center;justify-content:space-between;">' +
         '<span style="font-family:Rajdhani,sans-serif;font-size:14px;font-weight:700;color:var(--gold);">'+_escHtml(teamName)+'</span>' +
-        '<div style="display:flex;align-items:center;gap:8px;">'+totalScoreTag+'<span style="font-size:11px;color:var(--text-muted);font-family:Rajdhani,sans-serif;">'+tm.length+'명</span></div>' +
+        '<div style="display:flex;align-items:center;gap:8px;">'+totalScoreTag+
+        (isAuction && team.points != null ? '<span style="font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;color:var(--blue-bright);">'+team.points+'pt 남음</span>' : '<span style="font-size:11px;color:var(--text-muted);font-family:Rajdhani,sans-serif;">'+tm.length+'명</span>') +
+        '</div>' +
       '</div>' +
       '<div>'+(memberRows||'<div style="padding:12px;font-size:11px;color:var(--text-muted);text-align:center;">비어 있음</div>')+'</div>' +
     '</div>';
@@ -7954,7 +8190,6 @@ function _initLiveMode() {
 function _startLiveSubscription(cid, matchId) {
   if (_liveUnsub) { _liveUnsub(); _liveUnsub = null; }
   if (!window._fb || !window._fb.fbSubscribeLive) {
-    console.error('[LIVE] fbSubscribeLive 없음');
     return;
   }
     _liveUnsub = window._fb.fbSubscribeLive(cid, matchId, (data) => {
@@ -8546,7 +8781,6 @@ async function saveRtubeEdit() {
     closeRtubeEditModal();
     toast('영상이 수정됐습니다', 'ok');
   } catch(e) {
-    console.error('[saveRtubeEdit]', e);
     errEl.textContent = '저장 실패: ' + (e.message || '');
   }
 }
@@ -8590,7 +8824,6 @@ async function saveRtubeVideo() {
     closeRtubeAddModal();
     toast('영상이 추가됐습니다', 'ok');
   } catch(e) {
-    console.error('[saveRtubeVideo] error:', e);
     const msg = e.message || '';
     if (msg.includes('권한') || msg.includes('로그인')) {
       errEl.textContent = '세션이 만료됐습니다. 다시 로그인해주세요.';
@@ -8646,7 +8879,6 @@ async function addRtubeCat() {
     renderRtubeCats();
     toast('카테고리 추가됐습니다', 'ok');
   } catch(e) {
-    console.error('[addRtubeCat] error:', e);
     _rtubeCategories.pop(); // 롤백
     toast('저장 실패: ' + (e.message || ''), 'err');
   }
@@ -9981,7 +10213,6 @@ function loadAppVersion() {
 }
 function subscribePatchMode() {
   if (!window._fb || !window._fb.fbSubscribePatch) {
-    console.warn('[PATCH] fbSubscribePatch 없음');
     return;
   }
   // 기존 구독 해제
@@ -10158,7 +10389,7 @@ async function dbUpsert(matchObj) {
 if (_fbReady) {
 try {
 await window._fb.fbSet(matchObj.id, matchObj);
-} catch(e) { console.error('[DB] Firebase 저장 실패', e); throw e; }
+} catch(e) { throw e; }
 } else {
 const list = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
 const idx = list.findIndex(m => m.id === matchObj.id);
@@ -10169,7 +10400,7 @@ localStorage.setItem(DB_KEY, JSON.stringify(list));
 async function dbDelete(id) {
 if (_fbReady) {
 try { await window._fb.fbDelete(id); }
-catch(e) { console.error('[DB] Firebase 삭제 실패', e); }
+catch(e) { }
 } else {
 const list = JSON.parse(localStorage.getItem(DB_KEY) || '[]').filter(m => m.id !== id);
 localStorage.setItem(DB_KEY, JSON.stringify(list));
@@ -10191,7 +10422,11 @@ name: m.name,
 puuid: m.puuid || '',
 tier: m.tier || '',
 mainLane: m.mainLane || '',
+subLane: m.subLane || null,
 icon: m.icon || '1',
+bidPrice: m.bidPrice || null,
+tag: m.tag || '',
+tierFull: m.tierFull || '',
 })),
 };
 }
@@ -10562,7 +10797,7 @@ async function loadRecruits() {
     _recruits = await window._fb.fbGetRecruits();
     _recruits.sort((a, b) => (a.deadline || 0) - (b.deadline || 0));
   if (typeof _renderMobileRecruits === 'function') _renderMobileRecruits();
-  } catch(e) { console.error('loadRecruits 에러:', e); _recruits = []; }
+  } catch(e) { _recruits = []; }
   renderRecruitList();
   // 작성 버튼 표시
   const btn = document.getElementById('btn-recruit-write');
@@ -13548,17 +13783,14 @@ async function _initMatchDeepLink() {
 
   try {
     var path = 'communities/' + cid + '/matches/' + mid;
-    console.log('[DeepLink] fetch:', RIOT_PROXY_URL + '/db-public-read', path);
     var res = await fetch(RIOT_PROXY_URL + '/db-public-read', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ path: path })
     });
     var result = await res.json();
-    console.log('[DeepLink] result:', result);
     if (!result.ok) { toast('내전을 찾을 수 없습니다 (' + (result.error||'') + ')', 'err'); return; }
     var matchData = result.data;
-    console.log('[DeepLink] matchData:', matchData ? Object.keys(matchData) : null);
     if (!matchData) { toast('내전을 찾을 수 없습니다', 'err'); return; }
 
     window._currentCommunityId = cid;
@@ -13566,7 +13798,6 @@ async function _initMatchDeepLink() {
 
     openUserView(matchData);
   } catch(e) {
-    console.error('[DeepLink] catch:', e);
     toast('내전 데이터를 불러올 수 없습니다: ' + e.message, 'err');
   }
 }
@@ -13622,7 +13853,7 @@ async function _loadChampData() {
       _champData[c.key] = c.name;
       window._champIdMap[c.key] = c.id;
     });
-  } catch(e) { console.error('champData load error', e); }
+  } catch(e) { }
 }
 </script>
 <script>
@@ -13888,8 +14119,6 @@ function _parseFullInput(raw) {
 function _applyParsedInput(parsed) {
   if (!parsed) return;
   if (!parsed.tierHigh && !parsed.tierCur && !parsed.mainLane) return;
-
-  console.log('[Parser] 적용:', parsed);
 
   var best = _higherTier(parsed.tierHigh, parsed.tierCur);
 
