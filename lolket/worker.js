@@ -230,6 +230,9 @@ export default {
     if (path === '/chat-clear' && request.method === 'POST') {
       return handleChatClear(request, env);
     }
+    if (path === '/bid-submit' && request.method === 'POST') {
+      return handleBidSubmit(request, env);
+    }
 
     // DB 읽기 프록시 (마스터 전용 경로)
     if (path === '/db-read' && request.method === 'POST') {
@@ -951,4 +954,52 @@ async function handleChatClear(request, env) {
 
     return json({ ok: true });
   } catch(e) { return json({ ok: false, error: e.message }, 500); }
+}
+
+// ── 팀장 경매 호가 제출 ──
+async function handleBidSubmit(request, env) {
+  try {
+    const body = await request.json();
+    const { matchId, communityId, captainCode, amount, teamName, teamId } = body;
+    if (!matchId || !communityId || !captainCode || !amount) {
+      return json({ ok: false, error: '필수값 누락' }, 400);
+    }
+
+    const dbUrl = env.FB_DATABASE_URL;
+    const secret = env.FB_DB_SECRET;
+    const authQ = secret ? `?auth=${secret}` : '';
+
+    // 1. 팀장 코드 검증
+    const codeRes = await fetch(`${dbUrl}/communities/${communityId}/matches/${matchId}/captainCodes/${captainCode}.json${authQ}`);
+    const codeData = await codeRes.json();
+    if (!codeData) return json({ ok: false, error: '유효하지 않은 코드' }, 403);
+
+    // 2. 현재 매치 데이터 조회
+    const matchRes = await fetch(`${dbUrl}/communities/${communityId}/matches/${matchId}.json${authQ}`);
+    const matchData = await matchRes.json();
+    if (!matchData) return json({ ok: false, error: '내전 데이터 없음' }, 404);
+
+    // 3. 호가 종료 체크
+    if (matchData._bidLocked) return json({ ok: false, error: '호가가 종료됐습니다' }, 400);
+
+    // 4. 현재 최고가보다 높아야 함
+    const currentMax = (matchData._bidLeader && matchData._bidLeader.price) || 0;
+    if (amount <= currentMax) return json({ ok: false, error: `현재 최고가(${currentMax}pt)보다 높아야 합니다` }, 400);
+
+    // 5. 잔여 포인트 체크
+    const teams = matchData._teams || [];
+    const myTeam = teams.find(t => t.id == teamId);
+    if (myTeam && myTeam.points != null && amount > myTeam.points) {
+      return json({ ok: false, error: `잔여 포인트(${myTeam.points}pt) 초과` }, 400);
+    }
+
+    // 6. _bidLeader 업데이트
+    const bidLeader = { price: amount, team: teamName || codeData.teamName, locked: false, ts: Date.now() };
+    await fetch(`${dbUrl}/communities/${communityId}/matches/${matchId}/_bidLeader.json${authQ}`,
+      { method: 'PUT', body: JSON.stringify(bidLeader) });
+
+    return json({ ok: true, bidLeader });
+  } catch(e) {
+    return json({ ok: false, error: e.message }, 500);
+  }
 }
