@@ -224,6 +224,12 @@ export default {
     if (path === '/db-public-read' && request.method === 'POST') {
       return handleDbPublicRead(request, env);
     }
+    if (path === '/chat-send' && request.method === 'POST') {
+      return handleChatSend(request, env);
+    }
+    if (path === '/chat-clear' && request.method === 'POST') {
+      return handleChatClear(request, env);
+    }
 
     // DB 읽기 프록시 (마스터 전용 경로)
     if (path === '/db-read' && request.method === 'POST') {
@@ -400,6 +406,7 @@ async function handleDbPublicRead(request, env) {
     /^rtube($|\/)/,
     /^communities\/[^/]+\/matches($|\/)/,
     /^communities\/[^/]+\/rules($|\/)/,
+    /^communities\/[^/]+\/matches\/[^/]+\/chat($|\/)/,
   ];
   if (!publicRead.some(r => r.test(dbPath))) {
     return json({ ok: false, error: '허용되지 않는 경로입니다' }, 403);
@@ -881,4 +888,67 @@ function formatRank(e) {
   if (!e) return 'UNRANKED';
   if (['MASTER','GRANDMASTER','CHALLENGER'].includes(e.tier)) return `${e.tier} ${e.leaguePoints}LP`;
   return `${e.tier} ${e.rank} ${e.leaguePoints}LP`;
+}
+
+// ── 경매 채팅 전송 (팀장 코드 인증) ──
+async function handleChatSend(request, env) {
+  try {
+    const body = await request.json();
+    const { matchId, communityId, captainCode, message } = body;
+    if (!matchId || !communityId || !message) return json({ ok: false, error: '필수값 누락' }, 400);
+    if (!message.trim() || message.length > 200) return json({ ok: false, error: '메시지 오류' }, 400);
+
+    const dbUrl = env.FB_DATABASE_URL;
+    const secret = env.FB_DB_SECRET;
+    const authQ = secret ? `?auth=${secret}` : '';
+
+    // 팀장 코드 검증
+    let senderName = '관리자';
+    let teamName = '';
+    if (captainCode) {
+      const codeRes = await fetch(`${dbUrl}/communities/${communityId}/matches/${matchId}/captainCodes/${captainCode}.json${authQ}`);
+      const codeData = await codeRes.json();
+      if (!codeData) return json({ ok: false, error: '유효하지 않은 코드' }, 403);
+      senderName = codeData.captainName || '팀장';
+      teamName = codeData.teamName || '';
+    }
+
+    // Firebase serverTimestamp 대신 Date.now() 사용 (REST API 제한)
+    const msgId = `msg_${Date.now()}_${Math.random().toString(36).slice(2,7)}`;
+    const msgObj = {
+      id: msgId,
+      sender: senderName,
+      teamName,
+      message: message.trim(),
+      ts: Date.now(),
+      isCaptain: !!captainCode,
+    };
+    await fetch(`${dbUrl}/communities/${communityId}/matches/${matchId}/chat/${msgId}.json${authQ}`,
+      { method: 'PUT', body: JSON.stringify(msgObj) });
+
+    return json({ ok: true, msgId });
+  } catch(e) { return json({ ok: false, error: e.message }, 500); }
+}
+
+// ── 채팅 전체 삭제 (낙찰/유찰 시) ──
+async function handleChatClear(request, env) {
+  try {
+    const body = await request.json();
+    const { matchId, communityId, sessionToken } = body;
+    if (!matchId || !communityId) return json({ ok: false, error: '필수값 누락' }, 400);
+
+    // 세션 검증 (관리자만)
+    const session = await getSession(sessionToken, env);
+    if (!session || (session.role !== 'admin' && session.role !== 'master')) {
+      return json({ ok: false, error: '권한 없음' }, 403);
+    }
+
+    const dbUrl = env.FB_DATABASE_URL;
+    const secret = env.FB_DB_SECRET;
+    const authQ = secret ? `?auth=${secret}` : '';
+    await fetch(`${dbUrl}/communities/${communityId}/matches/${matchId}/chat.json${authQ}`,
+      { method: 'DELETE' });
+
+    return json({ ok: true });
+  } catch(e) { return json({ ok: false, error: e.message }, 500); }
 }
