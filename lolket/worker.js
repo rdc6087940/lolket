@@ -993,21 +993,59 @@ async function handleBidSubmit(request, env) {
     // 3. 호가 종료 체크
     if (matchData._bidLocked) return json({ ok: false, error: '호가가 종료됐습니다' }, 400);
 
-    // 4. 현재 최고가보다 높아야 함
-    const currentMax = (matchData._bidLeader && matchData._bidLeader.price) || 0;
-    if (amount <= currentMax) return json({ ok: false, error: `현재 최고가(${currentMax}pt)보다 높아야 합니다` }, 400);
-
-    // 5. 잔여 포인트 체크
-    const teams = matchData._teams || [];
-    const myTeam = teams.find(t => t.id == teamId);
+    // 4. 잔여 포인트 체크
+    const teamsArr = Array.isArray(matchData._teams) ? matchData._teams : Object.values(matchData._teams || {});
+    const myTeam = teamsArr.find(t => t.id == teamId);
     if (myTeam && myTeam.points != null && amount > myTeam.points) {
       return json({ ok: false, error: `잔여 포인트(${myTeam.points}pt) 초과` }, 400);
     }
 
-    // 6. _bidLeader 업데이트
-    const bidLeader = { price: amount, team: teamName || codeData.teamName, locked: false, ts: Date.now() };
-    await fetch(`${dbUrl}/communities/${communityId}/matches/${matchId}/_bidLeader.json${authQ}`,
-      { method: 'PUT', body: JSON.stringify(bidLeader) });
+    // 5. Firebase ETag 기반 조건부 업데이트 (동시 호가 충돌 방지)
+    // _bidLeader를 ETag와 함께 읽어서 변경이 없을 때만 PUT
+    const bidLeaderUrl = `${dbUrl}/communities/${communityId}/matches/${matchId}/_bidLeader.json${authQ}`;
+    
+    // ETag 읽기
+    const getRes = await fetch(bidLeaderUrl, { headers: { 'X-Firebase-ETag': 'true' } });
+    const etag = getRes.headers.get('ETag');
+    const currentBidLeader = await getRes.json();
+    
+    // 다시 한번 최고가 확인 (ETag 읽기 시점 기준)
+    const currentMax = (currentBidLeader && currentBidLeader.price) || 0;
+    if (amount <= currentMax) {
+      return json({ ok: false, error: `현재 최고가(${currentMax}pt)보다 높아야 합니다` }, 400);
+    }
+
+    // ETag 조건부 PUT - 다른 호가가 먼저 들어왔으면 412 반환
+    const bidLeader = { 
+      price: amount, 
+      team: teamName || codeData.teamName, 
+      teamId: codeData.teamId || teamId, 
+      locked: false, 
+      ts: Date.now() 
+    };
+    
+    const putHeaders = { 'Content-Type': 'application/json' };
+    if (etag) putHeaders['if-match'] = etag;
+    
+    const putRes = await fetch(bidLeaderUrl, {
+      method: 'PUT',
+      headers: putHeaders,
+      body: JSON.stringify(bidLeader)
+    });
+
+    if (putRes.status === 412) {
+      // 다른 팀장이 먼저 호가함 - 현재 최고가 다시 읽어서 반환
+      const latestRes = await fetch(bidLeaderUrl);
+      const latest = await latestRes.json();
+      return json({ 
+        ok: false, 
+        error: `다른 팀이 먼저 호가했습니다. 현재 최고가: ${latest?.price || 0}pt` 
+      }, 409);
+    }
+
+    if (!putRes.ok) {
+      return json({ ok: false, error: '호가 저장 실패' }, 500);
+    }
 
     return json({ ok: true, bidLeader });
   } catch(e) {
