@@ -969,15 +969,26 @@ async function handleBidSubmit(request, env) {
     const secret = env.FB_DB_SECRET;
     const authQ = secret ? `?auth=${secret}` : '';
 
-    // 1. 팀장 코드 검증
-    const codeRes = await fetch(`${dbUrl}/communities/${communityId}/matches/${matchId}/captainCodes/${captainCode}.json${authQ}`);
-    const codeData = await codeRes.json();
-    if (!codeData) return json({ ok: false, error: '유효하지 않은 코드' }, 403);
-
-    // 2. 현재 매치 데이터 조회
+    // 1. 매치 데이터 조회 (captainCodes + 전체 정보)
     const matchRes = await fetch(`${dbUrl}/communities/${communityId}/matches/${matchId}.json${authQ}`);
     const matchData = await matchRes.json();
     if (!matchData) return json({ ok: false, error: '내전 데이터 없음' }, 404);
+
+    // 2. 팀장 코드 검증 - captainCodes 필드 또는 _teams에서 직접 확인
+    let codeData = null;
+    // captainCodes 필드에서 먼저 확인
+    if (matchData.captainCodes && matchData.captainCodes[captainCode]) {
+      codeData = matchData.captainCodes[captainCode];
+    }
+    // _teams에서 직접 확인 (fallback)
+    if (!codeData && matchData._teams) {
+      const teams = Array.isArray(matchData._teams) ? matchData._teams : Object.values(matchData._teams);
+      const foundTeam = teams.find(t => t && t.captainCode === captainCode);
+      if (foundTeam) {
+        codeData = { teamId: foundTeam.id, teamName: foundTeam.name || ('팀' + foundTeam.id), captainName: '팀장' };
+      }
+    }
+    if (!codeData) return json({ ok: false, error: '유효하지 않은 코드' }, 403);
 
     // 3. 호가 종료 체크
     if (matchData._bidLocked) return json({ ok: false, error: '호가가 종료됐습니다' }, 400);
