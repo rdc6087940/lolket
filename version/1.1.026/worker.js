@@ -410,7 +410,6 @@ async function handleDbPublicRead(request, env) {
     /^communities\/[^/]+\/matches($|\/)/,
     /^communities\/[^/]+\/rules($|\/)/,
     /^communities\/[^/]+\/matches\/[^/]+\/chat($|\/)/,
-    /^communities\/[^/]+\/matches\/[^/]+\/auctionLog($|\/)/,
   ];
   if (!publicRead.some(r => r.test(dbPath))) {
     return json({ ok: false, error: '허용되지 않는 경로입니다' }, 403);
@@ -577,21 +576,12 @@ async function handleDbWrite(request, env) {
   const authQ  = secret ? `?auth=${secret}` : '';
 
   try {
-    if (!dbUrl) return json({ ok: false, error: 'FB_DATABASE_URL 환경변수 없음' }, 500);
-    const fullUrl = `${dbUrl}/${dbPath}.json${authQ}`;
-
-    // matches/{id} PUT 시 auctionLog/captainCodes 보존: PATCH 방식 사용
-    const isMatchRoot = /^communities\/[^/]+\/matches\/[^/]+$/.test(dbPath);
-    const httpMethod = isMatchRoot ? 'PATCH' : 'PUT';
-
-    const res = await fetch(fullUrl, {
-      method: httpMethod,
+    const res = await fetch(`${dbUrl}/${dbPath}.json${authQ}`, {
+      method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
-    const resText = await res.text();
-    if (!res.ok) return json({ ok: false, error: 'DB 쓰기 실패: ' + res.status + ' ' + resText.slice(0,200) }, 500);
-    if (resText === 'null') return json({ ok: false, error: 'Firebase Rules에 의해 거부됨' }, 403);
+    if (!res.ok) return json({ ok: false, error: 'DB 쓰기 실패: ' + res.status }, 500);
 
     // 커뮤니티 신청 저장 시 이메일 발송
     if (/^applies\/[^/]+$/.test(dbPath) && data) {
@@ -730,11 +720,6 @@ function checkPermission(session, dbPath, requireRole) {
   if (/^blacklist\//.test(dbPath)) return true;
   // 관리자 이상 커뮤니티 메시지 쓰기 허용
   if (/^community_messages\//.test(dbPath)) return true;
-  // 관리자 이상 경매 로그 쓰기 허용
-  if (/^communities\/[^/]+\/matches\/[^/]+\/auctionLog($|\/)/.test(dbPath)) {
-    if (session.role === 'master') return true;
-    if (session.role === 'admin') return true;
-  }
   // 관리자 이상 가이드/룰 쓰기 허용 (자신의 커뮤니티)
   if (/^communities\/[^/]+\/rules($|\/)/.test(dbPath)) {
     if (session.role === 'master') return true;
@@ -1009,13 +994,10 @@ async function handleBidSubmit(request, env) {
     }
     // _teams에서 직접 확인 (fallback)
     if (!codeData && matchData._teams) {
-      const teamsArr = Array.isArray(matchData._teams) ? matchData._teams : Object.values(matchData._teams);
-      const foundTeam = teamsArr.find(t => t && t.captainCode === captainCode);
+      const teams = Array.isArray(matchData._teams) ? matchData._teams : Object.values(matchData._teams);
+      const foundTeam = teams.find(t => t && t.captainCode === captainCode);
       if (foundTeam) {
-        const membersList = Array.isArray(matchData._members) ? matchData._members : Object.values(matchData._members || {});
-        const cap = membersList.find(m => m.id === foundTeam.captainId);
-        const tName = cap ? cap.name + '팀' : (foundTeam.name || ('팀' + foundTeam.id));
-        codeData = { teamId: foundTeam.id, teamName: tName, captainName: cap ? cap.name : '팀장' };
+        codeData = { teamId: foundTeam.id, teamName: foundTeam.name || ('팀' + foundTeam.id), captainName: '팀장' };
       }
     }
     if (!codeData) return json({ ok: false, error: '유효하지 않은 코드' }, 403);
@@ -1076,20 +1058,6 @@ async function handleBidSubmit(request, env) {
     if (!putRes.ok) {
       return json({ ok: false, error: '호가 저장 실패' }, 500);
     }
-
-    // 호가 로그 저장
-    const logId = 'log_' + Date.now() + '_' + Math.random().toString(36).slice(2,5);
-    const onSale = matchData._onSaleMember;
-    const onSaleName = (onSale && onSale.name) ? onSale.name : '?';
-    const logEntry = { id: logId, type: 'bid', text: onSaleName + ' — ' + (codeData.teamName || teamName || '') + ' ' + amount + 'pt', ts: Date.now() };
-    const logUrl = `${dbUrl}/communities/${communityId}/matches/${matchId}/auctionLog/${logId}.json${authQ}`;
-    const logRes = await fetch(logUrl, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(logEntry)
-    });
-    const logResText = await logRes.text();
-    console.log('[BID-LOG]', logUrl.replace(secret||'','***'), '→', logRes.status, logResText.slice(0,80));
 
     return json({ ok: true, bidLeader });
   } catch(e) {

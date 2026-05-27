@@ -14885,6 +14885,25 @@ var _origUvSubscribeCallback = null;
   <button class="bid-quick-btn" data-add="50"  disabled onclick="addBidAmount(50)">+50</button>
   <button class="bid-quick-btn" data-add="100" disabled onclick="addBidAmount(100)">+100</button>
 </div> <div class="modal-actions"> <button class="btn-secondary" onclick="closeBidModal()">취소</button> <button class="btn-primary" id="btn-bid-confirm" onclick="confirmBid()">낙찰 확정</button> </div> </div>
-</div
+</div>
+
+<div class="modal-overlay" id="master-login-modal" style="display:none;"> <div class="modal" style="max-width:360px;"> <div class="modal-title" style="display:flex;align-items:center;gap:10px;"> <span style="width:8px;height:8px;border-radius:50%;background:#B97EEA;flex-shrink:0;display:inline-block;"></span>
+ 마스터 관리자 로그인
+ </div> <p style="font-size:12px;color:var(--text-muted);margin-bottom:1.25rem;line-height:1.6;">
+ 모든 커뮤니티를 관리할 수 있는 최고 권한 계정입니다.
+ </p> <div style="display:flex;flex-direction:column;gap:1rem;margin-bottom:1rem;"> <div style="display:flex;flex-direction:column;gap:6px;"> <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;text-transform:uppercase;">아이디</label> <input class="form-input" type="text" id="master-login-id" placeholder="마스터 아이디 입력" style="font-size:14px;" onkeydown="if(event.key==='Enter')document.getElementById('master-login-pw').focus()"> </div> <div style="display:flex;flex-direction:column;gap:6px;"> <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;text-transform:uppercase;">비밀번호</label> <input class="form-input" type="password" id="master-login-pw" placeholder="비밀번호 입력" style="font-size:14px;" onkeydown="if(event.key==='Enter')doMasterLogin()"> </div> </div> <div id="master-login-err" style="font-size:12px;color:#E05050;min-height:18px;margin-bottom:.5rem;"></div> <div class="modal-actions" style="margin-top:.75rem;"> <button class="btn-secondary" onclick="document.getElementById('master-login-modal').style.display='none'">취소</button> <button class="btn-primary" id="btn-do-master-login" onclick="doMasterLogin()" style="padding:9px 24px;font-size:13px;letter-spacing:2px;border-color:rgba(157,72,224,.5);color:#B97EEA;background:rgba(157,72,224,.1);">로그인</button> </div> </div>
+</div>
+<div class="modal-overlay" id="login-modal" style="display:none;"> <div class="modal" style="max-width:360px;"> <div class="modal-title" style="display:flex;align-items:center;gap:10px;"> <span style="width:8px;height:8px;border-radius:50%;background:var(--gold);flex-shrink:0;display:inline-block;"></span>
+ 관리자 로그인
+ </div> <p style="font-size:12px;color:var(--text-muted);margin-bottom:1.25rem;line-height:1.6;">
+ 관리자 계정으로 로그인하면 내전 생성, 편집, 진행 기능을 사용할 수 있습니다.
+ </p> <div style="display:flex;flex-direction:column;gap:1rem;margin-bottom:1rem;"> <div style="display:flex;flex-direction:column;gap:6px;"> <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;text-transform:uppercase;">아이디</label> <input class="form-input" type="text" id="login-id" placeholder="관리자 아이디 입력"
+ style="font-size:14px;"
+ onkeydown="if(event.key==='Enter')document.getElementById('login-pw').focus()"> </div> <div style="display:flex;flex-direction:column;gap:6px;"> <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;text-transform:uppercase;">비밀번호</label> <input class="form-input" type="password" id="login-pw" placeholder="비밀번호 입력"
+ style="font-size:14px;"
+ onkeydown="if(event.key==='Enter')doLogin()"> </div> </div> <div id="login-err" style="font-size:12px;color:#E05050;min-height:18px;margin-bottom:.5rem;
+ display:flex;align-items:center;gap:6px;"></div> <div class="modal-actions" style="margin-top:.75rem;"> <button class="btn-secondary" onclick="closeLoginModal()">취소</button> <button class="btn-primary" id="btn-do-login" onclick="doLogin()"
+ style="padding:9px 24px;font-size:13px;letter-spacing:2px;">로그인</button> </div> </div>
+</div>
 </body>
 </html>
