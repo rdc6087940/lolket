@@ -6414,10 +6414,42 @@ let _uvCurrentTab = 'members';
 let _uvLivePoolLaneFilter2 = '';
 let _uvUnsub = null; // screen-v 전용 Firebase 구독
 
+var _uvBidLeaderUnsub = null;
+
 function _uvSubscribe(communityId, matchId) {
   if (_uvUnsub) { _uvUnsub(); _uvUnsub = null; }
+  if (_uvBidLeaderUnsub) { _uvBidLeaderUnsub(); _uvBidLeaderUnsub = null; }
   if (!communityId || !matchId || !window._fb) return;
-  const path = `communities/${communityId}/matches/${matchId}`;
+
+  // _bidLeader 경로 직접 구독 (빠른 호가 반영)
+  if (window._fb.fbSubscribePath) {
+    var blPath = 'communities/' + communityId + '/matches/' + matchId + '/_bidLeader';
+    _uvBidLeaderUnsub = window._fb.fbSubscribePath(blPath, function(bl) {
+      if (currentScreen !== 'screen-v') return;
+      // 플로팅 패널 호가 정보 즉시 업데이트
+      var emptyEl  = document.getElementById('uv-ap-leader-empty');
+      var infoEl   = document.getElementById('uv-ap-leader-info');
+      var priceEl  = document.getElementById('uv-ap-leader-price');
+      var teamEl   = document.getElementById('uv-ap-leader-team');
+      if (!emptyEl) return;
+      if (bl && bl.price > 0) {
+        emptyEl.style.display = 'none';
+        infoEl.style.display  = '';
+        if (priceEl) priceEl.textContent = bl.price;
+        if (teamEl)  teamEl.textContent  = bl.team || '';
+      } else {
+        emptyEl.style.display = '';
+        infoEl.style.display  = 'none';
+      }
+      // 팀장 호가 모달 업데이트
+      if (typeof _capBidUpdateFromSnapshot === 'function' && _capBidCode && window._uvLastSnapshot) {
+        var snap = Object.assign({}, window._uvLastSnapshot, { _bidLeader: bl });
+        window._uvLastSnapshot = snap;
+        _capBidUpdateFromSnapshot(snap);
+      }
+    });
+  }
+
   _uvUnsub = window._fb.fbSubscribeLive(communityId, matchId, (data) => {
     if (!data || currentScreen !== 'screen-v') return;
     // 비회원 호가 모달 실시간 업데이트
@@ -11129,6 +11161,7 @@ match = null; members = []; matchType = null; teams = [];
 bracketRounds = []; extraMatches = []; resultMatches = []; _0xB1 = 1;
 _localVersion = 0;
 if (typeof _matchBidUnsub !== 'undefined' && _matchBidUnsub) { _matchBidUnsub(); _matchBidUnsub = null; }
+if (window._bidLeaderUnsub) { window._bidLeaderUnsub(); window._bidLeaderUnsub = null; }
 const VALID_MATCH_SCREENS = ['screen-1','screen-2-select','screen-3-normal','screen-3-auction','screen-4','screen-5'];
 const savedScreen = snapshot._currentScreen;
 let targetScreen;
@@ -11141,8 +11174,36 @@ if (snapshot.status === '내전 종료' || savedScreen === 'screen-5') {
 }
 restoreMatch({ ...snapshot, _currentScreen: targetScreen });
 
+// 새 내전 진입 시 호가 상태 초기화
+_bidLeaderPrice  = 0;
+_bidLeaderTeam   = '';
+_bidLeaderTeamId = null;
+_bidLocked       = false;
+if (typeof updateBidLeader === 'function') updateBidLeader('', 0);
 // 실시간 구독: 비회원 호가 등 외부 변경사항 반영
 if (_matchBidUnsub) { _matchBidUnsub(); _matchBidUnsub = null; }
+// _bidLeader 경로 직접 구독 (빠른 실시간 반영)
+if (window._bidLeaderUnsub) { window._bidLeaderUnsub(); window._bidLeaderUnsub = null; }
+if (window._fb && window._fb.fbSubscribePath && window._currentCommunityId) {
+  var _blPath = 'communities/' + window._currentCommunityId + '/matches/' + id + '/_bidLeader';
+  window._bidLeaderUnsub = window._fb.fbSubscribePath(_blPath, function(bl) {
+    if (bl && bl.price > 0) {
+      if (bl.price !== _bidLeaderPrice || bl.team !== _bidLeaderTeam) {
+        _bidLeaderPrice  = bl.price;
+        _bidLeaderTeam   = bl.team || '';
+        _bidLeaderTeamId = bl.teamId || null;
+        if (typeof updateBidLeader === 'function') updateBidLeader(_bidLeaderTeam, _bidLeaderPrice);
+      }
+    } else {
+      if (_bidLeaderPrice > 0) {
+        _bidLeaderPrice  = 0;
+        _bidLeaderTeam   = '';
+        _bidLeaderTeamId = null;
+        if (typeof updateBidLeader === 'function') updateBidLeader('', 0);
+      }
+    }
+  });
+}
 if (window._fb && window._fb.fbSubscribeLive && window._currentCommunityId) {
   _matchBidUnsub = window._fb.fbSubscribeLive(window._currentCommunityId, id, function(data) {
     if (!data || !match || data.id !== match.id) return;
