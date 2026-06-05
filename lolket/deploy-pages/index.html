@@ -14325,18 +14325,22 @@ function copyMatchLink() {
   var mid = match && match.id;
   if (!mid) { toast('내전 정보가 없습니다', 'err'); return; }
   var url = location.origin + location.pathname + '?match=' + cid + '__' + mid;
-  navigator.clipboard.writeText(url).then(function() {
-    toast('내전 링크가 복사됐습니다 🔗', 'ok');
-  }).catch(function() {
-    // fallback
-    var ta = document.createElement('textarea');
-    ta.value = url;
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand('copy');
-    document.body.removeChild(ta);
-    toast('내전 링크가 복사됐습니다 🔗', 'ok');
-  });
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(function() {
+      toast('내전 링크가 복사됐습니다 🔗', 'ok');
+    }).catch(function() { _copyFallback(url); });
+  } else {
+    _copyFallback(url);
+  }
+}
+function _copyFallback(url) {
+  var ta = document.createElement('textarea');
+  ta.value = url;
+  document.body.appendChild(ta);
+  ta.select();
+  document.execCommand('copy');
+  document.body.removeChild(ta);
+  toast('내전 링크가 복사됐습니다 🔗', 'ok');
 }
 
 // URL ?match=cid__mid 파라미터 처리
