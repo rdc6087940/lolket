@@ -1587,7 +1587,7 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
         <span style="font-size:10px;background:rgba(10,200,185,.08);border:1px solid rgba(10,200,185,.2);border-radius:3px;padding:1px 6px;color:var(--blue-bright);font-family:monospace;">{출석인원}</span>
         <span style="font-size:10px;background:rgba(10,200,185,.08);border:1px solid rgba(10,200,185,.2);border-radius:3px;padding:1px 6px;color:var(--blue-bright);font-family:monospace;">{커뮤니티명}</span>
       </div>
-    </div>
+    </div> <div style="display:flex;flex-direction:column;gap:6px;margin-top:.5rem;"> <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;text-transform:uppercase;">딥롤 커넥트 Server ID <span style="color:var(--text-muted);font-size:9px;font-weight:400;">(전적 페이지용)</span></label> <input class="form-input" type="text" id="cm-deeplol-id" placeholder="예) 156" style="border-color:rgba(200,170,110,.2);"> <span style="font-size:10px;color:var(--text-muted);font-family:'Noto Sans KR',sans-serif;">딥롤 커넥트에서 생성한 서버의 ID를 입력하면 전적 페이지가 활성화됩니다.</span> </div>
   </div>
 </div>
 <div style="display:flex;flex-direction:column;gap:6px;">
@@ -7507,6 +7507,7 @@ _editingCommunityId = cid;
 document.getElementById('community-modal-title').textContent = '커뮤니티 수정';
 document.getElementById('cm-name').value = c.name;
 document.getElementById('cm-desc').value = c.description || '';
+if (document.getElementById('cm-deeplol-id')) document.getElementById('cm-deeplol-id').value = c.deeplolServerId || '';
 const dcInput = document.getElementById('cm-discord-channel');
 if (dcInput) dcInput.value = c.discordChannelId || '';
 const alarmInput = document.getElementById('cm-discord-alarm-channel');
@@ -7538,6 +7539,7 @@ async function saveCommunity() {
 const name = document.getElementById('cm-name').value.trim();
 const desc = document.getElementById('cm-desc').value.trim();
 const discordChannelId = (document.getElementById('cm-discord-channel')?.value || '').trim();
+const deeplolServerId  = (document.getElementById('cm-deeplol-id')?.value || '').trim();
 const alarmChannelId = (document.getElementById('cm-discord-alarm-channel')?.value || '').trim();
 const alarmEveryone = !!(document.getElementById('cm-alarm-everyone')?.checked);
 const alarmAuto     = !!(document.getElementById('cm-alarm-auto')?.checked);
@@ -7583,6 +7585,7 @@ try {
     createdAt: existingCreatedAt,
     official,
     discordChannelId: discordChannelId || null,
+  deeplolServerId: deeplolServerId || null,
     alarmChannelId: alarmChannelId || null,
     alarmEveryone: alarmEveryone || false,
     alarmAuto: alarmAuto || false,
@@ -8072,6 +8075,9 @@ function renderCommunityGrid(communities) {
         '<div class="community-card-actions" style="position:relative;margin-left:auto;">' +
           (canManage
             ? '<button class="btn-xs kebab" data-cid="' + c.id + '" onclick="toggleKebabMenu(event,\'' + c.id + '\')">⋮</button>'
+            : '') +
+          (c.deeplolServerId
+            ? '<button class="btn-xs" style="background:rgba(200,170,110,.08);border:1px solid rgba(200,170,110,.3);color:var(--gold);" onclick="event.stopPropagation();window.open(\'stats.html?server_id=' + c.deeplolServerId + '\',\'_blank\')">📊 전적</button>'
             : '') +
           (canEnter
             ? '<button class="btn-xs enter" data-cid="' + c.id + '">입장</button>'
