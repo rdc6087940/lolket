@@ -1738,13 +1738,13 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
   <div id="champ-rank-body"><div class="champ-empty">내전 기록이 없습니다</div></div>
   <button class="champ-more-btn" id="champ-more-btn" onclick="openChampModal()" style="display:none;">더보기 ▶</button>
 </div>
-</div> <div style="flex:1;min-width:0;"> <div class="list-topbar" style="margin-bottom:1.25rem;"> <div class="list-heading">내전 목록</div> <div id="match-cat-bar" style="margin-bottom:.6rem;display:none;">
-  <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+</div> <div style="flex:1;min-width:0;"> <div class="list-topbar" style="margin-bottom:.5rem;"> <div class="list-heading">내전 목록</div> <div style="display:flex;align-items:center;gap:8px;"> <input id="match-search-input" type="text" placeholder="내전 제목 검색..." oninput="renderMatchList()" style="padding:6px 10px;background:var(--bg-dark);border:1px solid var(--border-subtle);border-radius:3px;color:var(--text-white);font-family:'Rajdhani',sans-serif;font-size:12px;outline:none;width:180px;"> <button class="btn-primary admin-only" onclick="openNewMatchFlow()" id="btn-list-new" style="display:none;">+ 새 내전 생성</button> <button class="btn-secondary admin-only" id="btn-manage-cats-main" onclick="openManageCategories()" style="display:none;">🏷 내전 카테고리 관리</button> <button class="btn-secondary admin-only" id="btn-rules-list" onclick="openRulesListModal()" style="display:none;">📋 가이드/룰 목록</button> </div> </div>
+<div id="match-cat-bar" style="margin-bottom:.6rem;display:none;">
+  <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
     <div id="match-cat-tabs" style="display:flex;gap:5px;flex-wrap:wrap;"></div>
     <span id="btn-manage-cats" style="display:none;"></span>
   </div>
 </div>
-<div style="display:flex;align-items:center;gap:8px;"> <input id="match-search-input" type="text" placeholder="내전 제목 검색..." oninput="renderMatchList()" style="padding:6px 10px;background:var(--bg-dark);border:1px solid var(--border-subtle);border-radius:3px;color:var(--text-white);font-family:'Rajdhani',sans-serif;font-size:12px;outline:none;width:180px;"> <button class="btn-primary admin-only" onclick="openNewMatchFlow()" id="btn-list-new" style="display:none;">+ 새 내전 생성</button> <button class="btn-secondary admin-only" id="btn-manage-cats-main" onclick="openManageCategories()" style="display:none;">🏷 내전 카테고리 관리</button> <button class="btn-secondary admin-only" id="btn-rules-list" onclick="openRulesListModal()" style="display:none;">📋 가이드/룰 목록</button> </div> </div>
 <div id="list-grid" class="list-grid"></div> <div id="list-empty" class="list-empty" style="display:none;"> <div class="list-empty-hex">◇</div> <div style="font-size:14px;">생성된 내전이 없습니다</div> <button class="btn-primary admin-only" onclick="openNewMatchFlow()" style="display:none;">첫 내전 생성하기</button> </div> </div> </div>
 </div> <div id="screen-1" class="screen">
 <div class="main"> <div class="match-bar section-full"> <div class="match-bar-field"> <div class="match-bar-label">내전명</div> <div class="match-bar-value" id="bar-name">—</div> </div> <div class="match-bar-divider"></div> <div class="match-bar-field" style="flex-direction:row;align-items:center;gap:10px;"> <div> <div class="match-bar-label">시작 시간</div> <div class="match-bar-value" id="bar-time">—</div> </div> <button id="btn-edit-time" onclick="openEditTimeModal()" style="display:none;padding:3px 9px;background:transparent;border:1px solid var(--border-subtle);border-radius:2px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all .15s;white-space:nowrap;" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'" onmouseout="this.style.borderColor='var(--border-subtle)';this.style.color='var(--text-muted)'">수정</button> </div> <div class="match-bar-divider"></div> <div class="match-bar-field"> <div class="match-bar-label">상태</div> <div class="status-badge" id="bar-status">내전 모집</div> </div> <div class="match-bar-divider"></div> <div class="match-bar-field"> <div class="match-bar-label">진행 관리자</div> <div class="match-bar-value" id="bar-admin">—</div> </div> <div class="match-bar-spacer"></div> <div class="progress-block"> <div class="progress-label"> <span>출석 현황</span> <span id="prog-text">0 / 0</span> </div> <div class="progress-bar-bg"> <div class="progress-bar-fill" id="prog-fill" style="width:0%"></div> </div> </div> </div> <div class="panel" style="display:flex;flex-direction:column;height:calc(100vh - 200px);"> <div class="panel-header"> <div class="panel-title"> <div class="panel-title-dot"></div>
@@ -5859,6 +5859,10 @@ rm.saved=true;
 await saveCurrentMatch();
 renderResultMatches();
 toast(`${(rm.label && rm.label !== 'undefined') ? rm.label : ('대진 '+rm.id)} 저장 완료`, 'ok');
+// 레이팅 가감 처리
+if (window._currentCommunityId && rm.gameData) {
+  await applyMatchRating(rm).catch(e => console.warn('[rating]', e.message));
+}
 }
 function editResultMatch(id){
 const rm=resultMatches.find(m => m.id === id);
@@ -10064,14 +10068,25 @@ let _rankData = []; // [{name, tag, win, lose, lastDate}]
 let _statsFilter = { from: null, to: null }; // 날짜 필터 (null = 전체)
 
 function _getFilteredList() {
-  const src = _listCache || [];
-  if (!_statsFilter.from && !_statsFilter.to) return src;
-  const from = _statsFilter.from ? new Date(_statsFilter.from).getTime() : 0;
-  const to   = _statsFilter.to   ? new Date(_statsFilter.to).getTime() + 86400000 - 1 : Infinity;
-  return src.filter(function(snap) {
-    const t = snap._savedAt || snap.createdAt || 0;
-    return t >= from && t <= to;
-  });
+  let src = _listCache || [];
+  // 날짜 필터
+  if (_statsFilter.from || _statsFilter.to) {
+    const from = _statsFilter.from ? new Date(_statsFilter.from).getTime() : 0;
+    const to   = _statsFilter.to   ? new Date(_statsFilter.to).getTime() + 86400000 - 1 : Infinity;
+    src = src.filter(function(snap) {
+      const t = snap._savedAt || snap.createdAt || 0;
+      return t >= from && t <= to;
+    });
+  }
+  // 카테고리 필터
+  if (_activeCatFilter) {
+    if (_activeCatFilter === '__none__') {
+      src = src.filter(function(snap) { return !snap.categoryId; });
+    } else {
+      src = src.filter(function(snap) { return snap.categoryId === _activeCatFilter; });
+    }
+  }
+  return src;
 }
 
 function applyStatsFilter() {
@@ -16059,6 +16074,171 @@ async function _setMatchCategory(matchId, catId) {
     if (typeof dbSave === 'function') dbSave(store);
   }
 }
+
+
+
+// ══════════════════════════════════════
+// 레이팅 가감 함수
+// ══════════════════════════════════════
+
+// 티어 기본점
+var _TIER_BASE_PTS = {
+  IRON:800, BRONZE:1000, SILVER:1200, GOLD:1500,
+  PLATINUM:1800, EMERALD:2100, DIAMOND:2400,
+  MASTER:2800, GRANDMASTER:2800, CHALLENGER:2800
+};
+
+function _calcRatingDelta(S, aiScore, kda, streak) {
+  var base = 20;
+  var ai = aiScore || 50;
+  var aiMult = ai>=80?1.4 : ai>=65?1.2 : ai>=45?1.0 : ai>=30?0.85 : 0.7;
+  var kdaMult = kda>=5?1.2 : kda>=3?1.1 : kda>=1.5?1.0 : 0.85;
+  var abs = Math.abs(streak||0);
+  var streakMult = abs>=2 ? 1+0.1*Math.min(abs-1,4) : 1.0;
+  return Math.round(S * base * aiMult * kdaMult * streakMult * 10) / 10;
+}
+
+async function applyMatchRating(rm) {
+  var cid = window._currentCommunityId;
+  if (!cid || !rm || !rm.gameData) return;
+  var season = window._currentRatingSeason || 'default';
+  var token = _sessionToken;
+  if (!token) return; // 로그인 필요
+
+  // 딥롤 match-cached API에서 AI 스코어 가져오기
+  var matchCode = rm.customCode || '';
+  var participants = []; // { puuId, aiScore, kda, isWin }
+  if (matchCode) {
+    try {
+      var apiRes = await fetch(
+        'https://b2c-api-cdn.deeplol.gg/match/match-cached?match_id=' +
+        encodeURIComponent(matchCode) + '&platform_id=KR'
+      );
+      if (apiRes.ok) {
+        var apiData = await apiRes.json();
+        var pList = apiData.participants_list || [];
+        pList.forEach(function(p) {
+          var kda = p.final_stat_dict ? p.final_stat_dict.kda : (p.ai_score ? 2 : 1);
+          participants.push({
+            puuId: p.puu_id,
+            aiScore: p.ai_score || 50,
+            kda: kda,
+            isWin: !!p.is_win
+          });
+        });
+      }
+    } catch(e) {}
+  }
+
+  // gameData에서 참여자 목록
+  var teamAMembers = (rm.teamA && rm.teamA.members) ? rm.teamA.members : [];
+  var teamBMembers = (rm.teamB && rm.teamB.members) ? rm.teamB.members : [];
+  var winnerTeam = rm.winner === 'a' ? rm.teamA : rm.teamB;
+  var loserTeam  = rm.winner === 'a' ? rm.teamB : rm.teamA;
+  var winnerIds = new Set((winnerTeam && winnerTeam.members ? winnerTeam.members : []).map(function(m){ return m.id; }));
+  var allTeamMembers = teamAMembers.concat(teamBMembers);
+
+  // 현재 레이팅 일괄 로드
+  var ratingRes = await fetch(RIOT_PROXY_URL + '/rating-read', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ communityId: cid, season: season })
+  });
+  var ratingData = {};
+  if (ratingRes.ok) {
+    var rj = await ratingRes.json();
+    if (rj.ok && rj.data) ratingData = rj.data;
+  }
+
+  // 각 참여자 레이팅 업데이트
+  var updates = [];
+  allTeamMembers.forEach(function(member) {
+    var puuId = member.puuid || member.puu_id;
+    if (!puuId) return;
+    var isWin = winnerIds.has(member.id);
+    var S = isWin ? 1 : -1;
+
+    // 딥롤 AI 스코어 찾기
+    var pData = participants.find(function(p){ return p.puuId === puuId; });
+    var aiScore = pData ? pData.aiScore : 50;
+    var kda     = pData ? pData.kda : 2;
+
+    // 현재 레이팅 데이터
+    var cur = ratingData[puuId] || { current: 1500, wins:0, losses:0, streak:0 };
+    var curStreak = cur.streak || 0;
+
+    // 연승패 계산
+    var newStreak;
+    if (S === 1) {
+      newStreak = curStreak >= 0 ? curStreak + 1 : 1;
+    } else {
+      newStreak = curStreak <= 0 ? curStreak - 1 : -1;
+    }
+
+    var delta = _calcRatingDelta(S, aiScore, kda, newStreak);
+    var newRating = Math.round((cur.current || 1500) + delta);
+    var newWins    = (cur.wins   || 0) + (isWin ? 1 : 0);
+    var newLosses  = (cur.losses || 0) + (isWin ? 0 : 1);
+
+    updates.push({
+      puuId: puuId,
+      name: member.name || member.riot_name || '',
+      delta: delta,
+      aiScore: aiScore,
+      kda: kda,
+      streak: newStreak,
+      isWin: isWin,
+      newRating: newRating,
+      newData: {
+        current: newRating,
+        initial: cur.initial || newRating,
+        wins: newWins,
+        losses: newLosses,
+        streak: newStreak,
+        updatedAt: Date.now()
+      }
+    });
+  });
+
+  // 일괄 저장 + 로그
+  var matchLabel = rm.label || ('대진 '+rm.id);
+  for (var u of updates) {
+    // 레이팅 저장
+    await fetch(RIOT_PROXY_URL + '/rating-write', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        communityId: cid, puuId: u.puuId, season: season,
+        token: token, rating: u.newData
+      })
+    });
+    // 로그 저장
+    await fetch(RIOT_PROXY_URL + '/rating-log-write', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        communityId: cid, season: season, token: token,
+        log: {
+          puuId: u.puuId,
+          name: u.name,
+          matchId: matchCode,
+          matchLabel: matchLabel,
+          delta: u.delta,
+          newRating: u.newRating,
+          isWin: u.isWin,
+          aiScore: u.aiScore,
+          kda: u.kda,
+          streak: u.streak
+        }
+      })
+    });
+  }
+
+  if (updates.length > 0) {
+    toast('레이팅 업데이트 완료 (' + updates.length + '명)', 'ok');
+  }
+}
+window.applyMatchRating = applyMatchRating;
+
+// 현재 시즌 설정
+window._currentRatingSeason = 'default';
 
 </script>
 

@@ -329,9 +329,9 @@ tbody td{padding:.55rem 1rem;font-size:12px;vertical-align:middle;}
           <input class="search-input" id="search-input" type="text" placeholder="소환사 검색">
           <span class="s-icon">🔍</span>
         </div>
-        <button id="btn-master-rating" onclick="openMasterModal()"
+        <button id="btn-init-rating" onclick="openInitRatingModal()"
           style="padding:5px 12px;border-radius:3px;border:1px solid rgba(200,170,110,.3);background:rgba(200,170,110,.06);color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:.5px;cursor:pointer;display:none;">
-          👑 전체 레이팅 계산
+          👑 초기 레이팅 계산
         </button>
         <div id="admin-status" style="display:none;align-items:center;gap:6px;">
           <span id="admin-status-text" style="font-family:'Rajdhani',sans-serif;font-size:11px;color:var(--blue);"></span>
@@ -436,6 +436,7 @@ const SERVER_ID    = urlParams.get('server_id') || '';
 const COMMUNITY_ID = urlParams.get('cid') || '';
 const WORKER_URL   = 'https://delicate-dew-c1bd.rdc6087.workers.dev';
 const SCHEMA_VER   = 1;
+var _currentSeason = 'default';
 const UPDATE_COOLDOWN_MS = 60 * 1000;
 
 const DEFAULT_RATING_CONFIG = {
@@ -631,7 +632,7 @@ async function loadData(){
     document.title=(json.server_name||'커뮤니티')+' 전적';
     // cid 있으면 마스터 버튼 표시
     if (COMMUNITY_ID) {
-      var mb = document.getElementById('btn-master-rating');
+      var mb = document.getElementById('btn-init-rating');
       if (mb) mb.style.display = '';
     }
     allData=(json.tournament_stats&&json.tournament_stats.tournament_stats_all_list)||[];
@@ -722,7 +723,7 @@ function renderPage(){
       </div></td>
       <td class="col-games">${t}</td>
       <td class="col-recent">${timeAgo(m.creation_timestamp)}</td>
-      <td style="width:68px;text-align:center;">${buildRatingCell(m._rating, m._ratingBreakdown)}</td>
+      <td style="width:68px;text-align:center;">${buildRatingCell(m._rating, m._ratingBreakdown, m.cnt)}</td>
       <td style="width:52px;text-align:center;">
         <button class="detail-btn" data-puu="${m.puu_id}"
           style="padding:3px 7px;border-radius:2px;border:1px solid rgba(10,200,185,.3);background:rgba(10,200,185,.06);color:var(--blue);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:.5px;cursor:pointer;white-space:nowrap;">
@@ -757,30 +758,45 @@ function renderPagination(pages){
 function scrollTop(){document.getElementById('table-body-wrap').scrollTop=0;}
 
 // 전체 멤버 레이팅 Firebase에서 일괄 로드 (API 1번 호출)
-async function loadAllRatings() {
-  if (!COMMUNITY_ID || !allData.length) {
-    return;
-  }
+async function loadAllRatings(season) {
+  if (!COMMUNITY_ID || !allData.length) return;
+  season = season || 'default';
   try {
-    const res = await fetch(WORKER_URL + '/member-ratings-read', {
+    // v2 레이팅 시스템
+    const res = await fetch(WORKER_URL + '/rating-read', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ communityId: COMMUNITY_ID, season: season })
+    });
+    const json = await res.json();
+    if (json.ok && json.data && Object.keys(json.data).length > 0) {
+      const ratings = json.data;
+      allData.forEach(function(m) {
+        if (ratings[m.puu_id]) {
+          m._rating = ratings[m.puu_id].current;
+          m._ratingWins = ratings[m.puu_id].wins || 0;
+          m._ratingLosses = ratings[m.puu_id].losses || 0;
+          m._ratingStreak = ratings[m.puu_id].streak || 0;
+        }
+      });
+      renderPage();
+      return;
+    }
+    // 구 시스템 폴백 (member_analysis/rating)
+    const res2 = await fetch(WORKER_URL + '/member-ratings-read', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ communityId: COMMUNITY_ID })
     });
-    const json = await res.json();
-    if (!json.ok || !json.data) return;
-    const ratings = json.data;
-    let matched = 0;
+    const json2 = await res2.json();
+    if (!json2.ok || !json2.data) return;
+    const ratings2 = json2.data;
     allData.forEach(function(m) {
-      if (ratings[m.puu_id]) {
-        m._rating = ratings[m.puu_id].rating;
-        m._ratingBreakdown = ratings[m.puu_id].breakdown || {};
-        // peakTier 복원
-        if (m._ratingBreakdown.peakTier) {
-          m._peakTier = m._ratingBreakdown.peakTier;
-          m._peakLp   = m._ratingBreakdown.peakLp !== undefined ? m._ratingBreakdown.peakLp : null;
-        }
-        matched++;
+      if (ratings2[m.puu_id]) {
+        m._rating = ratings2[m.puu_id].rating;
+        m._ratingBreakdown = ratings2[m.puu_id].breakdown || {};
+        var bd = m._ratingBreakdown;
+        if (bd && bd.peakTier) { m._peakTier = bd.peakTier; m._peakLp = bd.peakLp !== undefined ? bd.peakLp : null; }
       }
     });
     renderPage();
@@ -862,7 +878,7 @@ function syncTableWidth(){} // 단일 테이블 구조에서 불필요
 <div class="master-overlay" id="master-overlay">
   <div class="master-box">
     <div class="master-title">👑 마스터 인증</div>
-    <div class="master-desc">전체 레이팅 계산은 마스터 관리자만 사용 가능합니다</div>
+    <div class="master-desc">초기 레이팅 계산은 마스터 관리자만 사용 가능합니다</div>
     <input class="master-input" id="master-id" type="text" placeholder="마스터 아이디">
     <input class="master-input" id="master-pw" type="password" placeholder="비밀번호">
     <button class="master-btn" onclick="doMasterAuth()">인증</button>
@@ -870,11 +886,16 @@ function syncTableWidth(){} // 단일 테이블 구조에서 불필요
   </div>
 </div>
 
-<!-- ── 전체 레이팅 계산 모달 ── -->
+<!-- ── 초기 레이팅 계산 모달 ── -->
 <div class="batch-overlay" id="batch-overlay">
   <div class="batch-box">
-    <div class="batch-title">전체 멤버 레이팅 계산</div>
-    <div class="batch-desc" id="batch-desc">Firebase에 분석 데이터가 있는 멤버의 레이팅을 일괄 계산합니다.</div>
+    <div class="batch-title">초기 레이팅 계산</div>
+    <div class="batch-desc" id="batch-desc">멤버들의 최고 티어와 내전 전적을 기반으로 시작 레이팅을 계산합니다.</div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:.5rem;">
+      <label style="font-family:'Rajdhani',sans-serif;font-size:11px;color:var(--muted);white-space:nowrap;">시즌 ID:</label>
+      <input id="batch-season-input" type="text" value="default" placeholder="예: season1"
+        style="flex:1;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:3px;padding:4px 8px;color:var(--white);font-family:'Rajdhani',sans-serif;font-size:12px;outline:none;">
+    </div>
     <div class="batch-progress" id="batch-progress" style="display:none;">
       <div style="display:flex;justify-content:space-between;font-family:'Rajdhani',sans-serif;font-size:11px;color:var(--sub);">
         <span id="batch-status-text">계산 중...</span>
@@ -1006,105 +1027,64 @@ async function loadRatingConfig() {
   return _ratingConfig;
 }
 
-function calcRating(memberStats, analysis, cfg) {
-  if (!cfg) return null;
 
-  // 1. 기본 레이팅 (티어 파싱)
-  var tierStr = (typeof memberStats.tier === 'string' ? memberStats.tier : String(memberStats.tier || '')).trim().toUpperCase();
-  var tierParts = tierStr.split(' ');
-  var tierName = tierParts[0]; // IRON, BRONZE, ...
-  var divStr = tierParts[1] || ''; // I, II, III, IV
-  var divMap = { 'I':0, 'II':1, 'III':2, 'IV':3 };
-  var divIdx = divMap[divStr] !== undefined ? divMap[divStr] : 0;
-  // 티어 이름 정규화
-  var tierKeyMap = { IRON:'IRON', BRONZE:'BRONZE', SILVER:'SILVER', GOLD:'GOLD',
-    PLATINUM:'PLATINUM', EMERALD:'EMERALD', DIAMOND:'DIAMOND',
-    MASTER:'MASTER', GRANDMASTER:'MASTER', CHALLENGER:'MASTER' };
-  var tierKey = tierKeyMap[tierName] || 'IRON';
+// ══════════════════════════════════════
+// 레이팅 시스템 v2
+// ══════════════════════════════════════
 
-  var tierBase = cfg.tierBase || {};
-  var baseRating = 0;
-  if (tierKey === 'MASTER') {
-    var masterBase = (tierBase.MASTER && tierBase.MASTER[0]) || 2800;
-    // peakLp 또는 _peakLp에서 LP 추가
-    var masterLp = memberStats._peakLp !== undefined && memberStats._peakLp !== null
-      ? Number(memberStats._peakLp) : 0;
-    baseRating = masterBase + masterLp;
-  } else {
-    var divVals = tierBase[tierKey] || [0,0,0,0];
-    // divIdx: I=0(1단계), IV=3(4단계) → 실제 배열은 [4단계,3단계,2단계,1단계]
-    // 배열 인덱스 0=4단계(최하), 3=1단계(최상)
-    var arrIdx = 3 - divIdx; // I(1단계)=3, IV(4단계)=0
-    baseRating = divVals[arrIdx] !== undefined ? divVals[arrIdx] : 0;
-  }
+// 티어별 기본점
+const TIER_BASE_POINTS = {
+  IRON: 800, BRONZE: 1000, SILVER: 1200, GOLD: 1500,
+  PLATINUM: 1800, EMERALD: 2100, DIAMOND: 2400,
+  MASTER: 2800, GRANDMASTER: 2800, CHALLENGER: 2800
+};
 
-  // 2. 승률 점수
-  var wrMult = cfg.wrMult || 8;
-  var wr = memberStats.cnt > 0 ? (memberStats.win / memberStats.cnt * 100) : 50;
-  var wrScore = (wr - 50) * wrMult;
-
-  // 3. AI 점수 (analysis.matchList에서 평균)
-  var aiScore = 0;
-  if (analysis && analysis.matchList && analysis.matchList.length > 0) {
-    var aiList = analysis.matchList.filter(function(m){ return !m.is_remake && m.ai_score; });
-    if (aiList.length > 0) {
-      var avgAi = aiList.reduce(function(s,m){ return s + m.ai_score; }, 0) / aiList.length;
-      var aiCfg = cfg.aiScore || {};
-      if (avgAi >= 80)      aiScore = aiCfg[5] !== undefined ? aiCfg[5] : 40;
-      else if (avgAi >= 56) aiScore = aiCfg[4] !== undefined ? aiCfg[4] : 20;
-      else if (avgAi >= 45) aiScore = aiCfg[3] !== undefined ? aiCfg[3] : 0;
-      else if (avgAi >= 30) aiScore = aiCfg[2] !== undefined ? aiCfg[2] : -20;
-      else                  aiScore = aiCfg[1] !== undefined ? aiCfg[1] : -40;
-    }
-  }
-
-  // 4. KDA 점수
-  var kdaScore = 0;
-  var avgKda = memberStats.kda || 0;
-  var kdaCfg = cfg.kdaScore || {};
-  if (avgKda >= 4)      kdaScore = kdaCfg[4] !== undefined ? kdaCfg[4] : 20;
-  else if (avgKda >= 3) kdaScore = kdaCfg[3] !== undefined ? kdaCfg[3] : 10;
-  else if (avgKda >= 1.5) kdaScore = kdaCfg[2] !== undefined ? kdaCfg[2] : 0;
-  else                  kdaScore = kdaCfg[1] !== undefined ? kdaCfg[1] : -30;
-
-  // 5. 포지션 보정치
-  var posCorrCfg = cfg.posCorr || {};
-  var posMap = { Top:'Top', Jungle:'Jungle', Middle:'Middle', Bot:'Bottom', Bottom:'Bottom', Supporter:'Support', Support:'Support' };
-  var myPos = posMap[memberStats.most_position] || memberStats.most_position || 'Middle';
-  var posBand = 0; // 0=아이언~골드, 1=플래~다이아3, 2=다이아2~마스터+
-  var highTiers = ['DIAMOND','MASTER','GRANDMASTER','CHALLENGER'];
-  var midTiers  = ['PLATINUM','EMERALD'];
-  if (highTiers.indexOf(tierName) >= 0) {
-    // 다이아1~마스터+ = band2, 다이아2~3 = band1
-    if (tierName !== 'DIAMOND' || divIdx >= 2) posBand = 2; else posBand = 1;
-  } else if (midTiers.indexOf(tierName) >= 0) {
-    posBand = 1;
-  }
-  var posCorrVals = posCorrCfg[myPos] || [1,1,1];
-  var posCorr = posCorrVals[posBand] || 1;
-
-  // 6. 경기수 보정
-  var gamesBase = cfg.gamesBase || 50;
-  var games = memberStats.cnt || 0;
-  var gamesCorr = Math.min(1, games / gamesBase);
-
-  // 7. 가중치
-  var w = cfg.weights || { wr:0.7, ai:0.2, kda:0.1 };
-  var combined = (wrScore * w.wr + aiScore * w.ai + kdaScore * w.kda) * posCorr * gamesCorr;
-  var finalRating = baseRating + combined;
-
-  return {
-    rating: Math.round(finalRating * 10) / 10,
-    breakdown: {
-      baseRating,
-      masterLp: tierKey === 'MASTER' ? masterLp : null,
-      wrScore: Math.round(wrScore*10)/10,
-      aiScore, kdaScore, posCorr, gamesCorr,
-      wr: Math.round(wr*10)/10, avgKda, games,
-      w_wr: w.wr, w_ai: w.ai, w_kda: w.kda
-    }
-  };
+// 초기 레이팅 계산: T + S × K × ln(N+1)
+function calcInitialRating(member) {
+  var W = member.win || 0;
+  var L = (member.cnt || 0) - W;
+  var N = W + L;
+  var S = W - L;
+  var ai = (member.ai_score && N > 0) ? member.ai_score : 50;
+  var aiMult = 0.7 + 0.3 * (ai / 100);
+  var K = 637;
+  var sqrtN = N > 0 ? Math.sqrt(N) : 1;
+  // 패배 감소 폭 완화 (패배는 30%만 반영)
+  var S_adj = S > 0 ? S : S * 0.3;
+  var R0 = 1000 + (S_adj / sqrtN) * K * aiMult;
+  return Math.max(500, Math.round(R0)); // 최솟값 500
 }
+
+// 내전 결과 레이팅 가감
+// S: 1(승) / -1(패), aiScore: 0~100, kda: number, streak: 연승패 수(양수=연승, 음수=연패)
+function calcRatingDelta(S, aiScore, kda, streak) {
+  var base = 20;
+
+  // AI 보정
+  var aiMult = 1.0;
+  if (aiScore >= 80)      aiMult = 1.4;
+  else if (aiScore >= 65) aiMult = 1.2;
+  else if (aiScore >= 45) aiMult = 1.0;
+  else if (aiScore >= 30) aiMult = 0.85;
+  else                     aiMult = 0.7;
+
+  // KDA 보정
+  var kdaMult = 1.0;
+  if (kda >= 5)      kdaMult = 1.2;
+  else if (kda >= 3) kdaMult = 1.1;
+  else if (kda >= 1.5) kdaMult = 1.0;
+  else                  kdaMult = 0.85;
+
+  // 연승패 보정 (streak=연속 횟수, 방향은 S로 판단)
+  var absStreak = Math.abs(streak);
+  var streakMult = 1 + 0.1 * Math.min(absStreak - 1, 4); // 최대 ×1.4
+  if (absStreak < 2) streakMult = 1.0;
+
+  var delta = S * base * aiMult * kdaMult * streakMult;
+  return Math.round(delta * 10) / 10;
+}
+
+
 
 async function saveRatingToFirebase(puuId, ratingResult) {
   if (!COMMUNITY_ID || !ratingResult) {
@@ -1509,28 +1489,13 @@ async function loadDetailData(memberData, isUpdate) {
       if (cache && cache.analysis) {
         // 업데이트 버튼 클릭 시 새 게임 없어도 레이팅 재계산
         if (isUpdate) {
-          var cfg2 = await loadRatingConfig();
-          if (cfg2) {
-            var peakData2 = await fetchPeakTier(memberData.puu_id, memberData.platform_id || 'KR');
-            var peakTier2 = peakData2 ? peakData2.tier : null;
-            var peakLp2   = peakData2 ? peakData2.lp   : 0;
-            var mfr2 = Object.assign({}, memberData, { tier: peakTier2 || memberData.tier });
-            var rr2 = calcRating(mfr2, cache.analysis, cfg2);
-            if (peakTier2) { memberData._peakTier = peakTier2; memberData._peakLp = peakLp2; var mPeak2 = allData.find(function(x){ return x.puu_id === puuId; }); if (mPeak2) { mPeak2._peakTier = peakTier2; mPeak2._peakLp = peakLp2; } }
-            if (rr2) {
-              rr2.breakdown.peakTier = peakTier2 || null;
-              rr2.breakdown.peakLp   = peakLp2;
-              rr2.breakdown.usedTier = peakTier2 || memberData.tier;
-              await saveRatingToFirebase(puuId, rr2);
-              var mu2 = allData.find(function(x){ return x.puu_id === puuId; });
-              if (mu2) { mu2._rating = rr2.rating; mu2._ratingBreakdown = rr2.breakdown; }
-              memberData._rating = rr2.rating;
-              memberData._ratingBreakdown = rr2.breakdown;
-              renderDetail(cache.analysis, memberData, cache.matchIds.size, null, rr2);
-              renderPage();
-              return;
-            }
-          }
+          // v2: 레이팅은 내전 결과로 가감 - 업데이트 시 재계산 없음
+          var rr2 = memberData._rating !== undefined
+            ? { rating: memberData._rating, breakdown: memberData._ratingBreakdown || {} }
+            : null;
+          renderDetail(cache.analysis, memberData, cache.matchIds.size, null, rr2);
+          renderPage();
+          return;
         }
         var rrRating = memberData._rating !== undefined
           ? { rating: memberData._rating, breakdown: memberData._ratingBreakdown || {} } : null;
@@ -1569,25 +1534,16 @@ async function loadDetailData(memberData, isUpdate) {
     }
 
     var ratingResult = null;
-    var cfg = await loadRatingConfig();
-    if (cfg) {
+    // v2: Firebase에서 로드된 레이팅 사용
+    {
       var memberForRating = Object.assign({}, memberData, {
         tier: peakTier || memberData.tier
       });
-      ratingResult = calcRating(memberForRating, analysis, cfg);
-      if (ratingResult) {
-        ratingResult.breakdown.peakTier = peakTier || null;
-        ratingResult.breakdown.peakLp   = peakLp;
-        ratingResult.breakdown.usedTier = peakTier || memberData.tier;
-        await saveRatingToFirebase(puuId, ratingResult);
-        var mFound = allData.find(function(x){ return x.puu_id === puuId; });
-        if (mFound) {
-          mFound._rating = ratingResult.rating;
-          mFound._ratingBreakdown = ratingResult.breakdown;
-        }
-        memberData._rating = ratingResult.rating;
-        memberData._ratingBreakdown = ratingResult.breakdown;
-      }
+      // v2: 레이팅은 내전 결과로 가감 - 상세에서는 계산하지 않음
+      // Firebase에서 로드된 레이팅을 그대로 사용
+      ratingResult = memberData._rating !== undefined
+        ? { rating: memberData._rating, breakdown: memberData._ratingBreakdown || {} }
+        : null;
     }
 
     renderDetail(analysis, memberData, totalCount, savedAt, ratingResult);
@@ -1987,8 +1943,10 @@ function renderDetail(analysis, member, totalLoaded, updatedAt, ratingResult) {
 // ══════════════════════════════════════
 let _masterSessionToken = '';
 let _masterAuthed = false;
+let _masterAuthId = '';
+let _masterAuthPw = '';
 
-function openMasterModal() {
+function openInitRatingModal() {
   if (_masterAuthed) {
     openBatchModal();
     return;
@@ -2016,18 +1974,21 @@ async function doMasterAuth() {
   if (!id || !pw) { document.getElementById('master-err').textContent = '아이디와 비밀번호를 입력하세요'; return; }
   document.getElementById('master-err').textContent = '인증 중...';
   try {
-    var res = await fetch(WORKER_URL + '/auth', {
+    // master 먼저 시도
+    var res = await fetch(WORKER_URL + '/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, password: pw, communityId: COMMUNITY_ID })
+      body: JSON.stringify({ id, pw, type: 'master' })
     });
     var json = await res.json();
-    if (!json.ok || json.role !== 'master') {
+    if (!json.ok) {
       document.getElementById('master-err').textContent = json.error || '마스터 권한이 없습니다';
       return;
     }
     _masterSessionToken = json.token || '';
     _masterAuthed = true;
+    _masterAuthId = id;
+    _masterAuthPw = pw;
     document.getElementById('master-overlay').classList.remove('open');
     openBatchModal();
   } catch(e) {
@@ -2035,7 +1996,7 @@ async function doMasterAuth() {
   }
 }
 window.doMasterAuth = doMasterAuth;
-window.openMasterModal = openMasterModal;
+window.openInitRatingModal = openInitRatingModal;
 
 // ── 일괄 계산 모달 ──
 function openBatchModal() {
@@ -2064,7 +2025,7 @@ function addBatchLog(msg, type) {
 }
 
 async function startBatchRating() {
-  if (!COMMUNITY_ID) { alert('커뮤니티 ID가 없습니다 (URL에 ?cid= 필요)'); return; }
+  if (!COMMUNITY_ID) { alert('커뮤니티 ID가 없습니다'); return; }
 
   var startBtn = document.getElementById('batch-start-btn');
   startBtn.disabled = true;
@@ -2072,13 +2033,10 @@ async function startBatchRating() {
   document.getElementById('batch-progress').style.display = '';
   document.getElementById('batch-log').innerHTML = '';
 
-  // rating_config 로드
-  var cfg = await loadRatingConfig();
-  if (!cfg) {
-    addBatchLog('⚠ 레이팅 설정을 불러올 수 없습니다. 기본값으로 진행합니다.', 'skip');
-  }
+  // 시즌 입력 받기
+  var season = (document.getElementById('batch-season-input') && document.getElementById('batch-season-input').value.trim()) || 'default';
 
-  var members = allData; // 전체 멤버
+  var members = allData;
   var total = members.length;
   var done = 0, ok = 0, skip = 0, err = 0;
 
@@ -2086,51 +2044,33 @@ async function startBatchRating() {
 
   for (var i = 0; i < members.length; i++) {
     var member = members[i];
-    var puuId = member.puu_id;
-
     try {
-      // Firebase에서 분석 데이터 읽기
-      var fbRes = await fetch(WORKER_URL + '/member-analysis-read', {
+      var R0 = calcInitialRating(member);
+      // Firebase에 저장
+      var res = await fetch(WORKER_URL + '/rating-write', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ communityId: COMMUNITY_ID, puuId: puuId, mode: 'custom' })
+        body: JSON.stringify({
+          communityId: COMMUNITY_ID,
+          puuId: member.puu_id,
+          season: season,
+          token: _masterSessionToken,
+          adminId: _masterAuthId,
+          adminPw: _masterAuthPw,
+          rating: {
+            current: R0,
+            initial: R0,
+            wins: 0, losses: 0, streak: 0,
+            updatedAt: Date.now()
+          }
+        })
       });
-      var fbJson = await fbRes.json();
-
-      if (!fbJson.ok || !fbJson.data || !fbJson.data.analysis) {
-        addBatchLog('⏭ ' + member.riot_name + ' — 분석 데이터 없음 (스킵)', 'skip');
-        skip++;
-      } else {
-        var analysis = fbJson.data.analysis;
-        var ratingResult = calcRating(member, analysis, cfg);
-
-        if (!ratingResult) {
-          addBatchLog('✕ ' + member.riot_name + ' — 레이팅 계산 실패', 'err');
-          err++;
-        } else {
-          // 레이팅 저장
-          await fetch(WORKER_URL + '/member-analysis-write', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              communityId: COMMUNITY_ID,
-              serverId: SERVER_ID,
-              puuId: puuId,
-              mode: 'rating',
-              data: {
-                meta: { updatedAt: Date.now(), version: SCHEMA_VER },
-                rating: ratingResult.rating,
-                breakdown: ratingResult.breakdown
-              }
-            })
-          });
-          // allData에도 반영
-          member._rating = ratingResult.rating;
-          member._ratingBreakdown = ratingResult.breakdown;
-          addBatchLog('✓ ' + member.riot_name + ' — ' + ratingResult.rating.toFixed(1) + '점', 'ok');
-          ok++;
-        }
-      }
+      var rjson = await res.json();
+      if (!rjson.ok) throw new Error(rjson.error || '저장 실패');
+      member._rating = R0;
+      member._ratingBreakdown = { initial: true };
+      addBatchLog('✓ ' + member.riot_name + ' — 초기 레이팅: ' + R0, 'ok');
+      ok++;
     } catch(e) {
       addBatchLog('✕ ' + member.riot_name + ' — 오류: ' + e.message, 'err');
       err++;
@@ -2145,12 +2085,10 @@ async function startBatchRating() {
 
   document.getElementById('batch-status-text').textContent =
     '완료 — 성공 ' + ok + '명 / 스킵 ' + skip + '명 / 오류 ' + err + '명';
-  document.getElementById('batch-start-btn').style.display = '';
-  document.getElementById('batch-start-btn').disabled = false;
-  document.getElementById('batch-start-btn').textContent = '▶ 다시 계산';
-
-  // 테이블 리렌더 (레이팅 반영)
-  applyAll();
+  startBtn.style.display = '';
+  startBtn.disabled = false;
+  startBtn.textContent = '▶ 다시 계산';
+  renderPage();
 }
 window.startBatchRating = startBatchRating;
 
