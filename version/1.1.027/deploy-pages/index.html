@@ -8077,7 +8077,7 @@ function renderCommunityGrid(communities) {
             ? '<button class="btn-xs kebab" data-cid="' + c.id + '" onclick="toggleKebabMenu(event,\'' + c.id + '\')">⋮</button>'
             : '') +
           (c.deeplolServerId
-            ? '<button class="btn-xs" style="background:rgba(200,170,110,.08);border:1px solid rgba(200,170,110,.3);color:var(--gold);" onclick="event.stopPropagation();window.open(\'stats.html?server_id=' + c.deeplolServerId + '&cid=' + c.id + '\',\'_blank\')">📊 전적</button>'
+            ? '<button class="btn-xs" style="background:rgba(200,170,110,.08);border:1px solid rgba(200,170,110,.3);color:var(--gold);" onclick="event.stopPropagation();window.open(\'stats.html?server_id=' + c.deeplolServerId + '\',\'_blank\')">📊 전적</button>'
             : '') +
           (canEnter
             ? '<button class="btn-xs enter" data-cid="' + c.id + '">입장</button>'

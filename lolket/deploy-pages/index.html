@@ -929,6 +929,49 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
 .score-info-box{background:var(--bg-dark);border:1px solid var(--border-subtle);border-radius:4px;padding:.75rem 1rem;font-size:11px;line-height:1.8;color:var(--text-muted);font-family:'Noto Sans KR',sans-serif;}
 .score-info-box strong{color:var(--text-white);}
 .score-info-box .score-info-title{font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;color:var(--gold);margin-bottom:.4rem;display:block;}
+
+/* ── 내전 카테고리 ── */
+.cat-tab{padding:4px 12px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--text-muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all .12s;white-space:nowrap;opacity:.45;}
+.cat-tab:hover{opacity:.75;}
+.cat-tab.active{opacity:1 !important;color:var(--text-white);}
+.cat-tab:hover{border-color:rgba(10,200,185,.4);color:var(--blue-bright);}
+.cat-tab.active{background:rgba(10,200,185,.12);border-color:var(--blue-bright);color:var(--blue-bright);}
+.cat-tab.colored{border-color:var(--cat-color,var(--border-subtle));color:var(--cat-color,var(--text-muted));}
+.cat-tab.colored.active{background:rgba(var(--cat-rgb,10,200,185),.12);border-color:var(--cat-color);color:var(--cat-color);}
+.cat-badge{display:inline-block;padding:1px 7px;border-radius:2px;font-family:'Rajdhani',sans-serif;font-size:9px;font-weight:700;letter-spacing:1px;border:1px solid currentColor;opacity:.85;}
+/* 카테고리 관리 모달 */
+.cat-manage-list{display:flex;flex-direction:column;gap:6px;max-height:300px;overflow-y:auto;margin-bottom:.75rem;}
+.cat-manage-row{display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--bg-dark);border:1px solid var(--border-subtle);border-radius:3px;}
+.cat-manage-name{flex:1;font-size:13px;color:var(--text-white);}
+.cat-color-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.cat-edit-row{display:flex;gap:6px;align-items:center;}
+.cat-name-input{flex:1;background:var(--bg-dark);border:1px solid var(--border-subtle);border-radius:2px;padding:5px 8px;color:var(--text-white);font-family:'Rajdhani',sans-serif;font-size:12px;outline:none;transition:border .15s;}
+.cat-name-input:focus{border-color:var(--blue-bright);}
+.cat-color-input{width:36px;height:28px;border:1px solid var(--border-subtle);border-radius:2px;background:transparent;cursor:pointer;padding:2px;}
+/* 내전 카테고리 선택 팝업 */
+.cat-select-list{display:flex;flex-direction:column;gap:4px;max-height:260px;overflow-y:auto;}
+.cat-select-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:3px;border:1px solid var(--border-subtle);background:var(--bg-dark);cursor:pointer;transition:all .12s;font-family:'Rajdhani',sans-serif;font-size:12px;color:var(--text-white);}
+.cat-select-item:hover{border-color:var(--gold);background:rgba(200,170,110,.05);}
+.cat-select-item.selected{border-color:var(--blue-bright);background:rgba(10,200,185,.07);}
+
+/* ── 카테고리 모달 ── */
+.cat-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:1000;display:flex;align-items:center;justify-content:center;}
+.cat-modal-box{background:var(--bg-panel);border:1px solid var(--border-subtle);border-radius:6px;padding:1.25rem 1.5rem;width:320px;max-height:70vh;display:flex;flex-direction:column;gap:.6rem;}
+.cat-modal-title{font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:2px;color:var(--text-white);}
+.cat-manage-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border-subtle);}
+.cat-manage-row:last-child{border-bottom:none;}
+.cat-color-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.cat-name-input{flex:1;background:transparent;border:none;border-bottom:1px solid var(--border-subtle);color:var(--text-white);font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;padding:2px 4px;outline:none;}
+.cat-name-input:focus{border-bottom-color:var(--accent);}
+.cat-color-input{width:24px;height:24px;border:none;border-radius:3px;cursor:pointer;padding:0;background:none;}
+.cat-add-row{display:flex;gap:6px;align-items:center;}
+.cat-add-input{flex:1;background:rgba(255,255,255,.05);border:1px solid var(--border-subtle);border-radius:3px;color:var(--text-white);font-family:'Rajdhani',sans-serif;font-size:12px;padding:5px 8px;outline:none;}
+.cat-add-input:focus{border-color:var(--accent);}
+.cat-select-list{display:flex;flex-direction:column;gap:4px;max-height:240px;overflow-y:auto;}
+.cat-select-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:3px;border:1px solid var(--border-subtle);background:var(--bg-dark);cursor:pointer;transition:all .12s;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;color:var(--text-white);}
+.cat-select-item:hover{border-color:var(--accent);background:rgba(10,200,185,.06);}
+.cat-select-item.selected{border-color:var(--accent);background:rgba(10,200,185,.1);color:var(--accent);}
+.cat-badge{font-family:'Rajdhani',sans-serif;font-size:9px;font-weight:700;letter-spacing:.5px;padding:1px 6px;border-radius:2px;border:1px solid;vertical-align:middle;}
 </style> <script type="module">
  
  
@@ -1695,7 +1738,14 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
   <div id="champ-rank-body"><div class="champ-empty">내전 기록이 없습니다</div></div>
   <button class="champ-more-btn" id="champ-more-btn" onclick="openChampModal()" style="display:none;">더보기 ▶</button>
 </div>
-</div> <div style="flex:1;min-width:0;"> <div class="list-topbar" style="margin-bottom:1.25rem;"> <div class="list-heading">내전 목록</div> <div style="display:flex;align-items:center;gap:8px;"> <input id="match-search-input" type="text" placeholder="내전 제목 검색..." oninput="renderMatchList()" style="padding:6px 10px;background:var(--bg-dark);border:1px solid var(--border-subtle);border-radius:3px;color:var(--text-white);font-family:'Rajdhani',sans-serif;font-size:12px;outline:none;width:180px;"> <button class="btn-primary admin-only" onclick="openNewMatchFlow()" id="btn-list-new" style="display:none;">+ 새 내전 생성</button> <button class="btn-secondary admin-only" id="btn-rules-list" onclick="openRulesListModal()" style="display:none;">📋 가이드/룰 목록</button> </div> </div> <div id="list-grid" class="list-grid"></div> <div id="list-empty" class="list-empty" style="display:none;"> <div class="list-empty-hex">◇</div> <div style="font-size:14px;">생성된 내전이 없습니다</div> <button class="btn-primary admin-only" onclick="openNewMatchFlow()" style="display:none;">첫 내전 생성하기</button> </div> </div> </div>
+</div> <div style="flex:1;min-width:0;"> <div class="list-topbar" style="margin-bottom:1.25rem;"> <div class="list-heading">내전 목록</div> <div id="match-cat-bar" style="margin-bottom:.6rem;display:none;">
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+    <div id="match-cat-tabs" style="display:flex;gap:5px;flex-wrap:wrap;"></div>
+    <span id="btn-manage-cats" style="display:none;"></span>
+  </div>
+</div>
+<div style="display:flex;align-items:center;gap:8px;"> <input id="match-search-input" type="text" placeholder="내전 제목 검색..." oninput="renderMatchList()" style="padding:6px 10px;background:var(--bg-dark);border:1px solid var(--border-subtle);border-radius:3px;color:var(--text-white);font-family:'Rajdhani',sans-serif;font-size:12px;outline:none;width:180px;"> <button class="btn-primary admin-only" onclick="openNewMatchFlow()" id="btn-list-new" style="display:none;">+ 새 내전 생성</button> <button class="btn-secondary admin-only" id="btn-manage-cats-main" onclick="openManageCategories()" style="display:none;">🏷 내전 카테고리 관리</button> <button class="btn-secondary admin-only" id="btn-rules-list" onclick="openRulesListModal()" style="display:none;">📋 가이드/룰 목록</button> </div> </div>
+<div id="list-grid" class="list-grid"></div> <div id="list-empty" class="list-empty" style="display:none;"> <div class="list-empty-hex">◇</div> <div style="font-size:14px;">생성된 내전이 없습니다</div> <button class="btn-primary admin-only" onclick="openNewMatchFlow()" style="display:none;">첫 내전 생성하기</button> </div> </div> </div>
 </div> <div id="screen-1" class="screen">
 <div class="main"> <div class="match-bar section-full"> <div class="match-bar-field"> <div class="match-bar-label">내전명</div> <div class="match-bar-value" id="bar-name">—</div> </div> <div class="match-bar-divider"></div> <div class="match-bar-field" style="flex-direction:row;align-items:center;gap:10px;"> <div> <div class="match-bar-label">시작 시간</div> <div class="match-bar-value" id="bar-time">—</div> </div> <button id="btn-edit-time" onclick="openEditTimeModal()" style="display:none;padding:3px 9px;background:transparent;border:1px solid var(--border-subtle);border-radius:2px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all .15s;white-space:nowrap;" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'" onmouseout="this.style.borderColor='var(--border-subtle)';this.style.color='var(--text-muted)'">수정</button> </div> <div class="match-bar-divider"></div> <div class="match-bar-field"> <div class="match-bar-label">상태</div> <div class="status-badge" id="bar-status">내전 모집</div> </div> <div class="match-bar-divider"></div> <div class="match-bar-field"> <div class="match-bar-label">진행 관리자</div> <div class="match-bar-value" id="bar-admin">—</div> </div> <div class="match-bar-spacer"></div> <div class="progress-block"> <div class="progress-label"> <span>출석 현황</span> <span id="prog-text">0 / 0</span> </div> <div class="progress-bar-bg"> <div class="progress-bar-fill" id="prog-fill" style="width:0%"></div> </div> </div> </div> <div class="panel" style="display:flex;flex-direction:column;height:calc(100vh - 200px);"> <div class="panel-header"> <div class="panel-title"> <div class="panel-title-dot"></div>
  내전 대기 멤버
@@ -1707,13 +1757,13 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
  소환사 검색
  </div> </div> <div class="panel-body search-section"> <div class="search-box-wrap"> <input type="text" id="search-input" placeholder="닉네임#KR1" onkeydown="onSearchKey(event)" /> <button class="search-btn" id="search-btn" onclick="searchSummoner()"> <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="5" cy="5" r="4" stroke="currentColor" stroke-width="1.5"/><line x1="8.5" y1="8.5" x2="12" y2="12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> </button> </div> <div class="search-hint"> <span>닉네임#태그</span> 형식으로 입력. 확장: <span style="color:var(--blue-bright);">닉네임#태그 최고티어/현티어 주라인/부라인</span><br>
  예) 페이커#KR1 · Hide on bush#KR1
- </div> <div id="search-loading" style="display:none;justify-content:center;padding:1.5rem;"> <div class="spinner"></div> </div> <div id="search-result" style="display:none;"> <div class="search-result"> <div class="result-profile"> <div class="result-avatar" id="r-avatar">?</div> <div> <div class="result-name" id="r-name">—</div> <div class="result-tag" id="r-tag">—</div> </div> </div> <div class="result-tiers"> <div class="tier-row"> <span class="tier-row-label">SOLO/DUO</span> <span class="tier-row-val" id="r-solo">—</span> </div> <div class="tier-row"> <span class="tier-row-label">FLEX</span> <span class="tier-row-val" id="r-flex">—</span> </div> <div class="tier-row"> <span class="tier-row-label">LEVEL</span> <span class="tier-row-val" id="r-level">—</span> </div> <div class="tier-row" id="r-prev-row" style="display:none;background:rgba(200,170,110,0.04);border-radius:2px;padding:3px 6px;margin-top:2px;"> <span class="tier-row-label" style="display:flex;align-items:center;gap:4px;"><span style="font-size:9px;">🏆</span>전 시즌 최고</span> <span class="tier-row-val" id="r-prev-season" style="font-size:11px;">—</span> </div> </div> <div style="padding:.6rem 1rem;border-top:1px solid var(--border-subtle);background:rgba(200,170,110,0.03);"> <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;"> <span style="font-size:10px;font-family:'Rajdhani',sans-serif;font-weight:700;letter-spacing:1px;color:var(--gold);">✏ 티어 직접 설정</span> <button onclick="applyTierOverride('')" style="font-size:9px;font-family:'Rajdhani',sans-serif;font-weight:700;color:var(--text-muted);background:transparent;border:1px solid var(--border-subtle);border-radius:2px;padding:1px 7px;cursor:pointer;letter-spacing:.5px;" id="r-tier-reset">API 값으로 초기화</button> </div> <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;" id="r-tier-btns"> <button class="tier-override-btn" data-tier="UNRANKED" onclick="applyTierOverride('UNRANKED')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-iron);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;letter-spacing:.3px;">UNRANK</button> <button class="tier-override-btn" data-tier="IRON" onclick="applyTierOverride('IRON')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-iron);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">IRON</button> <button class="tier-override-btn" data-tier="BRONZE" onclick="applyTierOverride('BRONZE')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-bronze);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">BRONZE</button> <button class="tier-override-btn" data-tier="SILVER" onclick="applyTierOverride('SILVER')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-silver);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">SILVER</button> <button class="tier-override-btn" data-tier="GOLD" onclick="applyTierOverride('GOLD')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-gold);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">GOLD</button> <button class="tier-override-btn" data-tier="PLATINUM" onclick="applyTierOverride('PLATINUM')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-plat);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">PLAT</button> <button class="tier-override-btn" data-tier="EMERALD" onclick="applyTierOverride('EMERALD')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-emerald);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">EMERALD</button> <button class="tier-override-btn" data-tier="DIAMOND" onclick="applyTierOverride('DIAMOND')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-diamond);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">DIAMOND</button> <button class="tier-override-btn" data-tier="MASTER" onclick="applyTierOverride('MASTER')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-master);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">MASTER</button> <button class="tier-override-btn" data-tier="GRANDMASTER" onclick="applyTierOverride('GRANDMASTER')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-grandmaster);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">GM</button> <button class="tier-override-btn" data-tier="CHALLENGER" onclick="applyTierOverride('CHALLENGER')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-challenger);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">CHALL</button> </div> </div> <div class="lane-select"> <div class="lane-select-label">주 포지션</div> <div class="lane-buttons" id="main-lanes"> <button class="lane-btn" data-lane="top" onclick="selectLane('main','top')">TOP</button> <button class="lane-btn" data-lane="jg" onclick="selectLane('main','jg')">JG</button> <button class="lane-btn" data-lane="mid" onclick="selectLane('main','mid')">MID</button> <button class="lane-btn" data-lane="bot" onclick="selectLane('main','bot')">BOT</button> <button class="lane-btn" data-lane="sup" onclick="selectLane('main','sup')">SUP</button> </div> <div class="lane-select-label" style="margin-top:4px;">보조 포지션</div> <div class="lane-buttons" id="sub-lanes"> <button class="lane-btn" data-lane="top" onclick="selectLane('sub','top')">TOP</button> <button class="lane-btn" data-lane="jg" onclick="selectLane('sub','jg')">JG</button> <button class="lane-btn" data-lane="mid" onclick="selectLane('sub','mid')">MID</button> <button class="lane-btn" data-lane="bot" onclick="selectLane('sub','bot')">BOT</button> <button class="lane-btn" data-lane="sup" onclick="selectLane('sub','sup')">SUP</button> </div> </div> <div style="padding:.75rem 1rem;border-top:1px solid var(--border-subtle);"> <button class="btn-add-member" id="btn-add" onclick="addMember()" disabled>멤버 추가</button> </div> </div> </div> </div> </div></div> <div class="next-wrap"> <div class="next-condition"> <div class="cond-item"> <div class="cond-dot" id="cond-count"></div> <span id="cond-count-text" style="font-size:12px;color:var(--text-muted);">인원 10의 배수</span> </div> <div class="cond-item"> <div class="cond-dot" id="cond-attend"></div> <span id="cond-attend-text" style="font-size:12px;color:var(--text-muted);">전원 출석</span> </div> </div> <button onclick="copyMatchLink()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(10,200,185,.4);background:rgba(10,200,185,.06);color:var(--blue-bright);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="내전 상세 링크 복사">🔗 링크 복사</button> <button id="btn-attend-all" onclick="toggleAttendAll()" style="padding:7px 16px;border-radius:2px;border:1px solid rgba(10,200,185,0.4);background:rgba(10,200,185,0.08);color:var(--blue-bright);font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;cursor:pointer;transition:all .15s;">전체 출석</button> <button id="btn-discord-notify" onclick="sendDiscordNotify()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(114,137,218,0.4);background:rgba(114,137,218,0.08);color:#7289DA;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;cursor:pointer;transition:all .15s;"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;margin-right:4px;"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>알림 전송</button> <button class="btn-next" id="btn-next" disabled onclick="goNextStage()">다음 단계 →</button> </div>
+ </div> <div id="search-loading" style="display:none;justify-content:center;padding:1.5rem;"> <div class="spinner"></div> </div> <div id="search-result" style="display:none;"> <div class="search-result"> <div class="result-profile"> <div class="result-avatar" id="r-avatar">?</div> <div> <div class="result-name" id="r-name">—</div> <div class="result-tag" id="r-tag">—</div> </div> </div> <div class="result-tiers"> <div class="tier-row"> <span class="tier-row-label">SOLO/DUO</span> <span class="tier-row-val" id="r-solo">—</span> </div> <div class="tier-row"> <span class="tier-row-label">FLEX</span> <span class="tier-row-val" id="r-flex">—</span> </div> <div class="tier-row"> <span class="tier-row-label">LEVEL</span> <span class="tier-row-val" id="r-level">—</span> </div> <div class="tier-row" id="r-prev-row" style="display:none;background:rgba(200,170,110,0.04);border-radius:2px;padding:3px 6px;margin-top:2px;"> <span class="tier-row-label" style="display:flex;align-items:center;gap:4px;"><span style="font-size:9px;">🏆</span>전 시즌 최고</span> <span class="tier-row-val" id="r-prev-season" style="font-size:11px;">—</span> </div> </div> <div style="padding:.6rem 1rem;border-top:1px solid var(--border-subtle);background:rgba(200,170,110,0.03);"> <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;"> <span style="font-size:10px;font-family:'Rajdhani',sans-serif;font-weight:700;letter-spacing:1px;color:var(--gold);">✏ 티어 직접 설정</span> <button onclick="applyTierOverride('')" style="font-size:9px;font-family:'Rajdhani',sans-serif;font-weight:700;color:var(--text-muted);background:transparent;border:1px solid var(--border-subtle);border-radius:2px;padding:1px 7px;cursor:pointer;letter-spacing:.5px;" id="r-tier-reset">API 값으로 초기화</button> </div> <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;" id="r-tier-btns"> <button class="tier-override-btn" data-tier="UNRANKED" onclick="applyTierOverride('UNRANKED')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-iron);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;letter-spacing:.3px;">UNRANK</button> <button class="tier-override-btn" data-tier="IRON" onclick="applyTierOverride('IRON')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-iron);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">IRON</button> <button class="tier-override-btn" data-tier="BRONZE" onclick="applyTierOverride('BRONZE')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-bronze);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">BRONZE</button> <button class="tier-override-btn" data-tier="SILVER" onclick="applyTierOverride('SILVER')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-silver);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">SILVER</button> <button class="tier-override-btn" data-tier="GOLD" onclick="applyTierOverride('GOLD')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-gold);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">GOLD</button> <button class="tier-override-btn" data-tier="PLATINUM" onclick="applyTierOverride('PLATINUM')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-plat);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">PLAT</button> <button class="tier-override-btn" data-tier="EMERALD" onclick="applyTierOverride('EMERALD')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-emerald);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">EMERALD</button> <button class="tier-override-btn" data-tier="DIAMOND" onclick="applyTierOverride('DIAMOND')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-diamond);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">DIAMOND</button> <button class="tier-override-btn" data-tier="MASTER" onclick="applyTierOverride('MASTER')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-master);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">MASTER</button> <button class="tier-override-btn" data-tier="GRANDMASTER" onclick="applyTierOverride('GRANDMASTER')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-grandmaster);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">GM</button> <button class="tier-override-btn" data-tier="CHALLENGER" onclick="applyTierOverride('CHALLENGER')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-challenger);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">CHALL</button> </div> </div> <div class="lane-select"> <div class="lane-select-label">주 포지션</div> <div class="lane-buttons" id="main-lanes"> <button class="lane-btn" data-lane="top" onclick="selectLane('main','top')">TOP</button> <button class="lane-btn" data-lane="jg" onclick="selectLane('main','jg')">JG</button> <button class="lane-btn" data-lane="mid" onclick="selectLane('main','mid')">MID</button> <button class="lane-btn" data-lane="bot" onclick="selectLane('main','bot')">BOT</button> <button class="lane-btn" data-lane="sup" onclick="selectLane('main','sup')">SUP</button> </div> <div class="lane-select-label" style="margin-top:4px;">보조 포지션</div> <div class="lane-buttons" id="sub-lanes"> <button class="lane-btn" data-lane="top" onclick="selectLane('sub','top')">TOP</button> <button class="lane-btn" data-lane="jg" onclick="selectLane('sub','jg')">JG</button> <button class="lane-btn" data-lane="mid" onclick="selectLane('sub','mid')">MID</button> <button class="lane-btn" data-lane="bot" onclick="selectLane('sub','bot')">BOT</button> <button class="lane-btn" data-lane="sup" onclick="selectLane('sub','sup')">SUP</button> </div> </div> <div style="padding:.75rem 1rem;border-top:1px solid var(--border-subtle);"> <button class="btn-add-member" id="btn-add" onclick="addMember()" disabled>멤버 추가</button> </div> </div> </div> </div> </div></div> <div class="next-wrap"> <div class="next-condition"> <div class="cond-item"> <div class="cond-dot" id="cond-count"></div> <span id="cond-count-text" style="font-size:12px;color:var(--text-muted);">인원 10의 배수</span> </div> <div class="cond-item"> <div class="cond-dot" id="cond-attend"></div> <span id="cond-attend-text" style="font-size:12px;color:var(--text-muted);">전원 출석</span> </div> </div> <button onclick="copyMatchLink()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(10,200,185,.4);background:rgba(10,200,185,.06);color:var(--blue-bright);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="내전 상세 링크 복사">🔗 링크 복사</button> <button onclick="copyTeamText()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(200,170,110,.4);background:rgba(200,170,110,.06);color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="팀 정보 텍스트 복사">📋 팀 정보 복사</button> <button id="btn-attend-all" onclick="toggleAttendAll()" style="padding:7px 16px;border-radius:2px;border:1px solid rgba(10,200,185,0.4);background:rgba(10,200,185,0.08);color:var(--blue-bright);font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;cursor:pointer;transition:all .15s;">전체 출석</button> <button id="btn-discord-notify" onclick="sendDiscordNotify()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(114,137,218,0.4);background:rgba(114,137,218,0.08);color:#7289DA;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;cursor:pointer;transition:all .15s;"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;margin-right:4px;"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>알림 전송</button> <button class="btn-next" id="btn-next" disabled onclick="goNextStage()">다음 단계 →</button> </div>
 </div>
 </div> <div class="modal-overlay" id="edit-time-modal" style="display:none;"> <div class="modal" style="max-width:360px;"> <div class="modal-title">시작 시간 수정</div> <div class="form-row"> <div class="form-label">새 시작 시간</div> <input class="form-input" type="datetime-local" id="et-time"> </div> <div class="modal-actions"> <button class="btn-secondary" onclick="closeEditTimeModal()">취소</button> <button class="btn-primary" onclick="saveEditTime()">저장</button> </div> </div>
 </div> <div class="modal-overlay" id="em-modal" style="display:none;" data-id=""> <div class="modal" style="max-width:420px;"> <div class="modal-title">내전 정보 수정</div> <div class="form-row"> <div class="form-label">내전 이름</div> <input class="form-input" type="text" id="em-name"> </div> <div class="form-row"> <div class="form-label">시작 시간</div> <input class="form-input" type="datetime-local" id="em-time"> </div> <div class="form-row"> <div class="form-label">진행 관리자 (선택)</div> <input class="form-input" type="text" id="em-admin" placeholder="공란 가능"> </div> <div class="modal-actions"> <button class="btn-secondary" onclick="closeEditMatchModal()">취소</button> <button class="btn-secondary" onclick="saveEditMatch()">저장</button> <button class="btn-primary" onclick="(function(){saveEditMatch();setTimeout(()=>{const list=dbLoad();const snap=list.find(m=>m.name===document.getElementById('em-name').value.trim());if(snap)proceedToStage1(snap);},100)})()">진행하기 →</button> </div> </div>
-</div> <div class="modal-overlay" id="create-modal" style="display:none;"> <div class="modal"> <div class="modal-title">새 내전 생성</div> <div class="form-row"> <div class="form-label">내전 이름</div> <input class="form-input" type="text" id="m-name" placeholder="예) 금요 정기 내전 시즌 1"> </div> <div class="form-row"> <div class="form-label">시작 시간</div> <input class="form-input" type="datetime-local" id="m-time"> </div> <div class="form-row"> <div class="form-label">진행 관리자 (선택)</div> <input class="form-input" type="text" id="m-admin" placeholder="관리자 닉네임 (공란 가능)"> </div> <div class="modal-actions"> <button class="btn-secondary" onclick="closeCreateModal()">취소</button> <button class="btn-primary" onclick="createMatch()">생성</button> </div> </div>
+</div> <div class="modal-overlay" id="create-modal" style="display:none;"> <div class="modal"> <div class="modal-title">새 내전 생성</div> <div class="form-row"> <div class="form-label">내전 이름</div> <input class="form-input" type="text" id="m-name" placeholder="예) 금요 정기 내전 시즌 1"> </div> <div class="form-row"> <div class="form-label">시작 시간</div> <input class="form-input" type="datetime-local" id="m-time"> </div> <div class="form-row"> <div class="form-label">진행 관리자 (선택)</div> <input class="form-input" type="text" id="m-admin" placeholder="관리자 닉네임 (공란 가능)"> </div> <div class="form-row" id="m-cat-row" style="display:none;"> <div class="form-label">카테고리 (선택)</div> <select class="form-input" id="m-cat" style="cursor:pointer;font-family:'Rajdhani',sans-serif;font-size:12px;"><option value="">없음 (미분류)</option></select> </div> <div class="modal-actions"> <button class="btn-secondary" onclick="closeCreateModal()">취소</button> <button class="btn-primary" onclick="createMatch()">생성</button> </div> </div>
 </div> <div id="screen-2" class="screen"> <div class="type-select-wrap"> <div style="text-align:center;"> <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:4px;color:var(--gold);margin-bottom:6px;">내전 종류 선택</div> <div style="font-size:13px;color:var(--text-muted);">진행 방식을 선택하면 팀 짜기 단계로 넘어갑니다</div> </div> <div class="type-cards"> <div class="type-card" id="type-normal" onclick="selectType('normal')"> <div class="type-card-icon">⚔️</div> <div class="type-card-title">일반 내전</div> <div class="type-card-desc">관리자가 멤버를 직접 드래그해서 팀을 구성합니다. 빠르고 간단한 팀 배정에 적합합니다.</div> <div class="type-card-tags"> <span class="type-tag">드래그 앤 드롭</span> <span class="type-tag">빠른 배정</span> </div> </div> <div class="type-card" id="type-auction" onclick="selectType('auction')"> <div class="type-card-icon">🏆</div> <div class="type-card-title">경매 내전</div> <div class="type-card-desc">팀장들이 포인트를 가지고 멤버를 입찰해 영입합니다. 전략적이고 긴장감 있는 팀 구성이 가능합니다.</div> <div class="type-card-tags"> <span class="type-tag">포인트 입찰</span> <span class="type-tag">랜덤 경매</span> <span class="type-tag">카운트다운</span> </div> </div> </div> <div class="type-select-footer" style="justify-content:space-between;"> <button class="btn-secondary" onclick="goBackToStage1()">← 이전 단계</button> <button class="btn-next" id="btn-type-next" disabled onclick="goToStage3()">다음 단계 →</button> </div> </div>
-</div> <div id="screen-3-normal" class="screen"> <div class="builder-wrap"> <div class="builder-topbar-row" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;"> <div class="builder-topbar-title" style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;color:var(--gold);">일반 내전 — 팀 구성</div> <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;"> <button class="btn-secondary" onclick="goBackToStage2()">← 이전 단계</button> <button onclick="copyMatchLink()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(10,200,185,.4);background:rgba(10,200,185,.06);color:var(--blue-bright);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="내전 상세 링크 복사">🔗 링크 복사</button> <button class="btn-secondary" onclick="addTeamModal('normal')">+ 팀 추가</button> <button class="btn-secondary" onclick="openSwapModal()" style="font-size:11px;padding:7px 14px;border-color:rgba(157,72,224,.4);color:#B97EEA;background:rgba(157,72,224,.06);">🔄 선수 교체</button> <button class="btn-secondary" onclick="openDraftOrderModal()" style="font-size:11px;padding:7px 14px;border-color:rgba(200,170,110,.4);color:var(--gold);background:rgba(200,170,110,.06);">🎲 팀뽑기 순서</button> <button class="btn-copy-img" onclick="copyTeamBuilderImage()" style="font-size:11px;padding:7px 14px;"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="1" y="3" width="8" height="9" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M4 3V2a1 1 0 011-1h5a1 1 0 011 1v7a1 1 0 01-1 1h-1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg> 이미지 복사</button> <button class="btn-next" id="btn-normal-next" disabled onclick="goToStage4()">다음 단계 →</button> </div> </div> <div class="builder-cond" style="margin-bottom:.75rem;"> <div class="cond-item"><div class="cond-dot" id="n-cond-pool"></div><span id="n-cond-pool-text" style="font-size:12px;color:var(--text-muted);">대기칸 비어있음</span></div> <div class="cond-item"><div class="cond-dot" id="n-cond-teams"></div><span id="n-cond-teams-text" style="font-size:12px;color:var(--text-muted);">팀 조건 충족</span></div> </div>  <div class="builder-layout"> <div class="pool-panel"> <div class="balance-ctrl-section">
+</div> <div id="screen-3-normal" class="screen"> <div class="builder-wrap"> <div class="builder-topbar-row" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;"> <div class="builder-topbar-title" style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;color:var(--gold);">일반 내전 — 팀 구성</div> <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;"> <button class="btn-secondary" onclick="goBackToStage2()">← 이전 단계</button> <button onclick="copyMatchLink()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(10,200,185,.4);background:rgba(10,200,185,.06);color:var(--blue-bright);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="내전 상세 링크 복사">🔗 링크 복사</button> <button onclick="copyTeamText()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(200,170,110,.4);background:rgba(200,170,110,.06);color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="팀 정보 텍스트 복사">📋 팀 정보 복사</button> <button class="btn-secondary" onclick="addTeamModal('normal')">+ 팀 추가</button> <button class="btn-secondary" onclick="openSwapModal()" style="font-size:11px;padding:7px 14px;border-color:rgba(157,72,224,.4);color:#B97EEA;background:rgba(157,72,224,.06);">🔄 선수 교체</button> <button class="btn-secondary" onclick="openDraftOrderModal()" style="font-size:11px;padding:7px 14px;border-color:rgba(200,170,110,.4);color:var(--gold);background:rgba(200,170,110,.06);">🎲 팀뽑기 순서</button> <button class="btn-copy-img" onclick="copyTeamBuilderImage()" style="font-size:11px;padding:7px 14px;"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="1" y="3" width="8" height="9" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M4 3V2a1 1 0 011-1h5a1 1 0 011 1v7a1 1 0 01-1 1h-1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg> 이미지 복사</button> <button class="btn-next" id="btn-normal-next" disabled onclick="goToStage4()">다음 단계 →</button> </div> </div> <div class="builder-cond" style="margin-bottom:.75rem;"> <div class="cond-item"><div class="cond-dot" id="n-cond-pool"></div><span id="n-cond-pool-text" style="font-size:12px;color:var(--text-muted);">대기칸 비어있음</span></div> <div class="cond-item"><div class="cond-dot" id="n-cond-teams"></div><span id="n-cond-teams-text" style="font-size:12px;color:var(--text-muted);">팀 조건 충족</span></div> </div>  <div class="builder-layout"> <div class="pool-panel"> <div class="balance-ctrl-section">
   <span class="balance-ctrl-label">⚖️ 밸런스 점수</span>
   <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
     <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;font-size:12px;color:var(--text-muted);">
@@ -1736,7 +1786,7 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
  ondragover="onDragOver(event,'n-pool')"
  ondragleave="onDragLeave(event,'n-pool')"
  ondrop="onDrop(event,'n-pool','normal')" onclick="if(_isMobile()&&_mobileSelMid)mobileTapZone('n-pool','normal')"> </div> </div> <div class="teams-area"> <div class="teams-grid" id="n-teams-grid"></div> <button class="add-team-btn" onclick="addTeamModal('normal')">+ 팀 추가</button> </div> </div> </div>
-</div> <div id="screen-3-auction" class="screen"> <div class="builder-wrap"> <div class="builder-topbar-row" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;"> <div class="builder-topbar-title" style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;color:var(--gold);">경매 내전 — 팀 구성</div> <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;"> <button class="btn-secondary" onclick="goBackToStage2()">← 이전 단계</button> <button onclick="showCaptainCodes()" style="padding:7px 14px;border-radius:2px;border:1px solid var(--gold);background:rgba(200,170,110,.06);color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;">🔑 팀장 코드</button> <button onclick="window.openAuctionLogModal()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(10,200,185,.4);background:rgba(10,200,185,.06);color:var(--blue-bright);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;">📋 경매 로그</button> <button onclick="copyMatchLink()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(10,200,185,.4);background:rgba(10,200,185,.06);color:var(--blue-bright);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="내전 상세 링크 복사">🔗 링크 복사</button> <button class="btn-secondary" onclick="addTeamModal('auction')">+ 팀 추가</button> <button class="btn-secondary" onclick="openPointsModal()">포인트 설정</button> <button class="btn-secondary" onclick="openSwapModal()" style="font-size:11px;padding:7px 14px;border-color:rgba(157,72,224,.4);color:#B97EEA;background:rgba(157,72,224,.06);">🔄 선수 교체</button> <button class="btn-secondary" onclick="openDraftOrderModal()" style="font-size:11px;padding:7px 14px;border-color:rgba(200,170,110,.4);color:var(--gold);background:rgba(200,170,110,.06);">🎲 팀뽑기 순서</button> <button class="btn-copy-img" onclick="copyTeamBuilderImage()" style="font-size:11px;padding:7px 14px;"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="1" y="3" width="8" height="9" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M4 3V2a1 1 0 011-1h5a1 1 0 011 1v7a1 1 0 01-1 1h-1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg> 이미지 복사</button> <button class="btn-next" id="btn-auction-next" disabled onclick="goToStage4()">다음 단계 →</button> </div> </div> <div class="builder-cond" style="margin-bottom:.75rem;"> <div class="cond-item"><div class="cond-dot" id="a-cond-pool"></div><span id="a-cond-pool-text" style="font-size:12px;color:var(--text-muted);">대기칸 비어있음</span></div> <div class="cond-item"><div class="cond-dot" id="a-cond-teams"></div><span id="a-cond-teams-text" style="font-size:12px;color:var(--text-muted);">팀 조건 충족</span></div> </div>  <div class="builder-layout auction-layout"> <div class="pool-panel"> <div class="balance-ctrl-section">
+</div> <div id="screen-3-auction" class="screen"> <div class="builder-wrap"> <div class="builder-topbar-row" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;"> <div class="builder-topbar-title" style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;color:var(--gold);">경매 내전 — 팀 구성</div> <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;"> <button class="btn-secondary" onclick="goBackToStage2()">← 이전 단계</button> <button onclick="showCaptainCodes()" style="padding:7px 14px;border-radius:2px;border:1px solid var(--gold);background:rgba(200,170,110,.06);color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;">🔑 팀장 코드</button> <button onclick="window.openAuctionLogModal()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(10,200,185,.4);background:rgba(10,200,185,.06);color:var(--blue-bright);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;">📋 경매 로그</button> <button onclick="copyMatchLink()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(10,200,185,.4);background:rgba(10,200,185,.06);color:var(--blue-bright);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="내전 상세 링크 복사">🔗 링크 복사</button> <button onclick="copyTeamText()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(200,170,110,.4);background:rgba(200,170,110,.06);color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="팀 정보 텍스트 복사">📋 팀 정보 복사</button> <button class="btn-secondary" onclick="addTeamModal('auction')">+ 팀 추가</button> <button class="btn-secondary" onclick="openPointsModal()">포인트 설정</button> <button class="btn-secondary" onclick="openSwapModal()" style="font-size:11px;padding:7px 14px;border-color:rgba(157,72,224,.4);color:#B97EEA;background:rgba(157,72,224,.06);">🔄 선수 교체</button> <button class="btn-secondary" onclick="openDraftOrderModal()" style="font-size:11px;padding:7px 14px;border-color:rgba(200,170,110,.4);color:var(--gold);background:rgba(200,170,110,.06);">🎲 팀뽑기 순서</button> <button class="btn-copy-img" onclick="copyTeamBuilderImage()" style="font-size:11px;padding:7px 14px;"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="1" y="3" width="8" height="9" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M4 3V2a1 1 0 011-1h5a1 1 0 011 1v7a1 1 0 01-1 1h-1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg> 이미지 복사</button> <button class="btn-next" id="btn-auction-next" disabled onclick="goToStage4()">다음 단계 →</button> </div> </div> <div class="builder-cond" style="margin-bottom:.75rem;"> <div class="cond-item"><div class="cond-dot" id="a-cond-pool"></div><span id="a-cond-pool-text" style="font-size:12px;color:var(--text-muted);">대기칸 비어있음</span></div> <div class="cond-item"><div class="cond-dot" id="a-cond-teams"></div><span id="a-cond-teams-text" style="font-size:12px;color:var(--text-muted);">팀 조건 충족</span></div> </div>  <div class="builder-layout auction-layout"> <div class="pool-panel"> <div class="balance-ctrl-section">
   <span class="balance-ctrl-label">⚖️ 밸런스 점수</span>
   <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
     <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;font-size:12px;color:var(--text-muted);">
@@ -1834,7 +1884,7 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
   </div>
 </div>
 
-<div id="screen-4" class="screen"> <div class="bracket-wrap"> <div class="bracket-topbar"> <div class="bracket-title">토너먼트 대진표</div> <div class="bracket-actions"> <button onclick="copyMatchLink()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(10,200,185,.4);background:rgba(10,200,185,.06);color:var(--blue-bright);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="내전 상세 링크 복사">🔗 링크 복사</button> <button class="btn-secondary" onclick="goBackToStage3()">← 이전 단계</button> <button class="btn-regen" onclick="generateBracket()">↺ 재추첨</button> <button class="btn-secondary" onclick="openExtraMatchModal()">+ 추가 대진</button> <button class="btn-copy-img" onclick="copyBracketImage()"> <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="1" y="3" width="8" height="9" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M4 3V2a1 1 0 011-1h5a1 1 0 011 1v7a1 1 0 01-1 1h-1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+<div id="screen-4" class="screen"> <div class="bracket-wrap"> <div class="bracket-topbar"> <div class="bracket-title">토너먼트 대진표</div> <div class="bracket-actions"> <button onclick="copyMatchLink()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(10,200,185,.4);background:rgba(10,200,185,.06);color:var(--blue-bright);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="내전 상세 링크 복사">🔗 링크 복사</button> <button onclick="copyTeamText()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(200,170,110,.4);background:rgba(200,170,110,.06);color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="팀 정보 텍스트 복사">📋 팀 정보 복사</button> <button class="btn-secondary" onclick="goBackToStage3()">← 이전 단계</button> <button class="btn-regen" onclick="generateBracket()">↺ 재추첨</button> <button class="btn-secondary" onclick="openExtraMatchModal()">+ 추가 대진</button> <button class="btn-copy-img" onclick="copyBracketImage()"> <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="1" y="3" width="8" height="9" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M4 3V2a1 1 0 011-1h5a1 1 0 011 1v7a1 1 0 01-1 1h-1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
  이미지 복사
  </button> <button class="btn-next" id="btn-stage4-next" onclick="goToStage5()">다음 단계 →</button> </div> </div> <div class="bracket-scroll"> <canvas id="bracket-canvas" style="cursor:pointer;" onclick="onBracketClick(event)"></canvas> </div> </div>
 </div> <div class="modal-overlay" id="extra-match-modal" style="display:none;"> <div class="modal" style="max-width:480px;"> <div class="modal-title">추가 대진 관리</div> <div style="font-size:12px;color:var(--text-muted);margin-bottom:1rem;">토너먼트 외 추가 경기를 설정합니다.</div> <div class="extra-match-list" id="extra-match-list"></div> <div style="margin-top:.75rem;"> <button class="btn-secondary" style="width:100%;font-size:12px;" onclick="addExtraMatch()">+ 대진 추가</button> </div> <div class="modal-actions"> <button class="btn-primary" onclick="closeExtraMatchModal()">닫기</button> </div> </div>
@@ -1846,7 +1896,7 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
   </div>
   <!-- 탭1: 기존 내전 결과 -->
   <div id="s5-panel-result">
- <div class="results-topbar"> <div class="results-title">내전 결과 입력</div> <div style="display:flex;gap:8px;"> <button onclick="copyMatchLink()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(10,200,185,.4);background:rgba(10,200,185,.06);color:var(--blue-bright);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="내전 상세 링크 복사">🔗 링크 복사</button> <button class="btn-discord-share" id="btn-discord-share-result" onclick="shareResultToDiscord()" style="display:none;" title="Discord 채널에 내전 결과 전송">
+ <div class="results-topbar"> <div class="results-title">내전 결과 입력</div> <div style="display:flex;gap:8px;"> <button onclick="copyMatchLink()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(10,200,185,.4);background:rgba(10,200,185,.06);color:var(--blue-bright);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="내전 상세 링크 복사">🔗 링크 복사</button> <button onclick="copyTeamText()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(200,170,110,.4);background:rgba(200,170,110,.06);color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="팀 정보 텍스트 복사">📋 팀 정보 복사</button> <button class="btn-discord-share" id="btn-discord-share-result" onclick="shareResultToDiscord()" style="display:none;" title="Discord 채널에 내전 결과 전송">
   <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>
   Discord 전송
 </button> <button class="btn-secondary" onclick="addResultMatch()">+ 대진 추가</button> <button class="dev-send-btn admin-only" id="btn-dev-api-send" onclick="openDevApiSendModal()" style="display:none;" title="등록된 외부 API로 내전 데이터 전송">📡 API 전송</button> </div> </div> <div class="match-list" id="result-match-list"></div> </div>
@@ -3500,6 +3550,7 @@ const parts=str.split(' ');
 return{tier: parts[0] || 'UNRANKED', div: parts[1] || '', lp: parts[2] || ''};
 }
 function openCreateModal(){
+  _updateCreateModalCatSelect();
 const now=new Date();
 now.setHours(now.getHours()+1);
 const pad=n => String(n).padStart(2,'0');
@@ -3516,6 +3567,7 @@ async function createMatch(){
 const name=document.getElementById('m-name').value.trim();
 const time=document.getElementById('m-time').value;
 const admin=document.getElementById('m-admin').value.trim();
+const categoryId=(document.getElementById('m-cat')&&document.getElementById('m-cat').value)||null;
 if (!name) return toast('내전 이름을 입력하세요', 'err');
 if (!time) return toast('시작 시간을 설정하세요', 'err');
 if (new Date(time) <= new Date()) return toast('시작 시간은 현재 시간 이후여야 합니다', 'err');
@@ -3570,7 +3622,7 @@ match.status=newStatus;
 document.getElementById('bar-status').textContent=match.status;
 await saveCurrentMatch();
 const lGrid=document.getElementById('list-grid');
-if (lGrid) renderMatchList();
+if (lGrid) { loadCategories().then(() => renderMatchList()); }
 }
 }, 10000);
 }
@@ -6316,6 +6368,10 @@ return result;
 }
 let isAdmin = false;
 function applyRole(admin) {
+  // 카테고리 로드 (커뮤니티 있을 때)
+  if (window._currentCommunityId) {
+    loadCategories();
+  }
 isAdmin = admin;
 updateRoleUI();
 const btnAuth = document.getElementById('btn-auth');
@@ -7411,7 +7467,7 @@ window._currentCommunityId = community.id;
 document.getElementById('community-indicator-name').textContent = community.name;
 document.getElementById('community-indicator').classList.add('visible');
 const canCreateMatch = isMaster || (isAdmin && currentAdminData?.communityId === community.id);
-['btn-list-new', 'btn-new-match', 'btn-rules-list'].forEach(id => {
+['btn-list-new', 'btn-new-match', 'btn-rules-list', 'btn-manage-cats-main'].forEach(id => {
 const el = document.getElementById(id);
 if (el) el.style.display = canCreateMatch ? '' : 'none';
 });
@@ -7450,7 +7506,7 @@ if (match && match.id) {
 });
 }
 showScreenRaw('screen-0');
-renderMatchList();
+loadCategories().then(function(){ renderMatchList(); }).catch(function(){ renderMatchList(); });
 }
 let _allCommunities = []; 
 async function renderCommunityList() {
@@ -8076,9 +8132,14 @@ function renderCommunityGrid(communities) {
           (canManage
             ? '<button class="btn-xs kebab" data-cid="' + c.id + '" onclick="toggleKebabMenu(event,\'' + c.id + '\')">⋮</button>'
             : '') +
-          (c.deeplolServerId
-            ? '<button class="btn-xs" style="background:rgba(200,170,110,.08);border:1px solid rgba(200,170,110,.3);color:var(--gold);" onclick="event.stopPropagation();window.open(\'stats.html?server_id=' + c.deeplolServerId + '\',\'_blank\')">📊 전적</button>'
+          (c.deeplolServerId && (isMaster || (isAdmin && c.id === window._currentCommunityId))
+            ? '<button class="btn-xs" style="background:rgba(200,170,110,.08);border:1px solid rgba(200,170,110,.3);color:var(--gold);" onclick="event.stopPropagation();window.open(\'stats.html?server_id=' + c.deeplolServerId + '&cid=' + c.id + '\',\'_blank\')">📊 전적</button>'
             : '') +
+
+          ((isMaster || (isAdmin && c.id === window._currentCommunityId)) ? (function(){
+            var _role = isMaster ? 'master' : 'admin';
+            return '<button class="btn-xs" style="background:rgba(10,200,185,.06);border:1px solid rgba(10,200,185,.2);color:var(--blue);" onclick="event.stopPropagation();window.open(\'rating-config.html?cid=' + c.id + '&token=' + encodeURIComponent(_sessionToken) + '&role=' + _role + '\',\'_blank\')">⚙ 레이팅</button>';
+          })() : '') +
           (canEnter
             ? '<button class="btn-xs enter" data-cid="' + c.id + '">입장</button>'
             : '<span style="font-family:\'Rajdhani\',sans-serif;font-size:10px;color:var(--text-muted);display:flex;align-items:center;gap:3px;padding:3px 6px;">🔒 관리자 전용</span>') +
@@ -11085,10 +11146,17 @@ allList.sort((a, b) => {
     || 0;
   return getTs(b) - getTs(a);
 });
+// 카테고리 필터
+const catFilter = _activeCatFilter; // null = 전체
+const catFiltered = catFilter === '__none__'
+  ? allList.filter(m => !m.categoryId)
+  : catFilter
+    ? allList.filter(m => m.categoryId === catFilter)
+    : allList;
 // 검색 필터
 const list = query
-  ? allList.filter(m => (m.name || '').toLowerCase().includes(query))
-  : allList;
+  ? catFiltered.filter(m => (m.name || '').toLowerCase().includes(query))
+  : catFiltered;
 const grid = document.getElementById('list-grid');
 const empty = document.getElementById('list-empty');
 grid.innerHTML = '';
@@ -11106,11 +11174,17 @@ const displayStatus = (m._currentScreen === 'screen-5' && m.status !== '내전 �
 const statusCls = getStatusClass(displayStatus);
 const pillCls = getPillClass(displayStatus);
 const memberCount = (m._members || []).length;
+// 카테고리 뱃지
+const mCat = m.categoryId ? _matchCategories.find(c => c.id === m.categoryId) : null;
+const catBadge = mCat ? `<span class="cat-badge" style="color:${_escHtml(mCat.color)};border-color:${_escHtml(mCat.color)};margin-left:6px;">${_escHtml(mCat.name)}</span>` : '';
 const card = document.createElement('div');
 card.className = 'list-card ' + statusCls;
 // 자신의 커뮤니티 내전인지 확인
 const isOwnMatch = isMaster || (isAdmin && m.communityId === window._currentCommunityId);
-card.innerHTML = '<div class="list-card-body"><div class="list-card-name">'+_escHtml(m.name)+'</div><div class="list-card-meta"><span class="list-card-time">'+timeStr+'</span><span class="list-card-admin">👤 '+m.admin+'</span></div></div><div class="list-card-footer"><span class="list-status-pill '+pillCls+'">'+displayStatus+'</span><div style="display:flex;align-items:center;gap:2px;"><span class="list-card-stage">'+stageLabel+'</span>'+(isOwnMatch?'<button class="list-card-del" data-mid="'+m.id+'" title="삭제">✕</button>':'')+'</div></div>';
+const catMenuBtn = isOwnMatch
+  ? `<button onclick="event.stopPropagation();openSetCatModal('${m.id}')" style="font-size:10px;padding:2px 6px;border:1px solid var(--border-subtle);background:transparent;color:var(--text-muted);border-radius:2px;cursor:pointer;font-family:'Rajdhani',sans-serif;font-weight:700;margin-left:4px;" title="카테고리 변경">🏷</button>`
+  : '';
+card.innerHTML = '<div class="list-card-body"><div class="list-card-name">'+_escHtml(m.name)+catBadge+'</div><div class="list-card-meta"><span class="list-card-time">'+timeStr+'</span><span class="list-card-admin">👤 '+m.admin+'</span></div></div><div class="list-card-footer"><span class="list-status-pill '+pillCls+'">'+displayStatus+'</span><div style="display:flex;align-items:center;gap:2px;"><span class="list-card-stage">'+stageLabel+'</span>'+catMenuBtn+(isOwnMatch?'<button class="list-card-del" data-mid="'+m.id+'" title="삭제">✕</button>':'')+'</div></div>';
 // 내전 상세 진입: 자신의 커뮤니티만 가능
 card.addEventListener('click', function() {
   if (!isOwnMatch && isAdmin && m.communityId && window._currentCommunityId) {
@@ -14387,6 +14461,127 @@ async function autoBalance() {
 // ══════════════════════════════════════════
 
 // 관전/내전 상세 링크 복사
+
+function copyTeamText() {
+  const TEAM_EMOJI = ['🔵','🔴','🟢','🟡','🟣','🟠'];
+  const POS_KO = { top:'탑', jg:'정글', mid:'미드', bot:'원딜', sup:'서폿' };
+
+  function posLabel(p) {
+    if (!p) return '—';
+    if (Array.isArray(p)) return p.map(x => POS_KO[x] || x).join(', ');
+    return POS_KO[p] || p;
+  }
+
+  // 티어 문자열 → 짧은 표기 (공백 없이)
+  // tierFull 예: "DIAMOND I", "MASTER 254LP", "GM 1174LP", "GRANDMASTER 1182LP"
+  function tierText(m) {
+    const tf = (m.tierFull || m.tier || 'UNRANKED').trim().toUpperCase();
+    const HIGH = { GRANDMASTER:'GM', CHALLENGER:'C', MASTER:'M' };
+    const MID  = { DIAMOND:'D', EMERALD:'E', PLATINUM:'P', GOLD:'G', SILVER:'S', BRONZE:'B', IRON:'I' };
+    // LP 패턴: "GRANDMASTER 1182LP" 또는 "GM 1182LP"
+    const lpMatch = tf.match(/^(GRANDMASTER|CHALLENGER|MASTER|GM|C|M)\s*(\d+)(?:LP)?$/);
+    if (lpMatch) {
+      const abbr = HIGH[lpMatch[1]] || lpMatch[1];
+      return abbr + lpMatch[2];
+    }
+    // 일반 티어: "DIAMOND I", "EMERALD IV" 등
+    const parts = tf.split(/\s+/);
+    const abbr = HIGH[parts[0]] || MID[parts[0]] || parts[0][0];
+    const div = parts[1] ? parts[1].replace(/^([IVX]+).*/, '$1') : '';
+    const divNum = { 'I':'1','II':'2','III':'3','IV':'4' };
+    return abbr + (divNum[div] || div || '');
+  }
+
+  // 솔로 티어 (soloTier + soloDivision + soloLP)
+  function soloTierText(m) {
+    const tier = (m.soloTier || '').trim().toUpperCase();
+    const div  = (m.soloDivision || '').trim().toUpperCase();
+    const lp   = m.soloLP;
+    const HIGH = { GRANDMASTER:'GM', CHALLENGER:'C', MASTER:'M' };
+    const MID  = { DIAMOND:'D', EMERALD:'E', PLATINUM:'P', GOLD:'G', SILVER:'S', BRONZE:'B', IRON:'I' };
+    const abbr = HIGH[tier] || MID[tier] || (tier ? tier[0] : 'U');
+    const isHigh = !!HIGH[tier];
+    if (isHigh) return abbr + (lp !== undefined && lp !== '' ? lp : '0');
+    const divNum = { 'I':'1','II':'2','III':'3','IV':'4' };
+    return abbr + (divNum[div] || div || '');
+  }
+
+  const lines = [];
+
+  // 내전명 + 진행자
+  const matchName = match.name || '내전';
+  const admin     = match.admin || '';
+  lines.push('📌 ' + matchName + (admin ? '  |  진행자: ' + admin : ''));
+  lines.push('');
+
+  const sortedTeams = [...teams].sort((a, b) => a.id - b.id);
+
+  sortedTeams.forEach((team, ti) => {
+    const emoji = TEAM_EMOJI[ti] || '⚪';
+    lines.push(emoji + ' ' + (ti + 1) + '팀');
+
+    // team.members는 멤버 객체 배열
+    const teamMembers = Array.isArray(team.members) ? team.members : Object.values(team.members || {});
+
+    // 유니코드 동아시아 너비 계산 (한글/일어/한자 = 2, 나머지 = 1)
+    function visWidth(str) {
+      let w = 0;
+      for (const ch of str) {
+        const cp = ch.codePointAt(0);
+        if (
+          (cp >= 0x1100 && cp <= 0x115F) ||
+          (cp >= 0x2E80 && cp <= 0x303F) ||
+          (cp >= 0x3040 && cp <= 0x33FF) ||
+          (cp >= 0xA000 && cp <= 0xA4CF) ||
+          (cp >= 0xAC00 && cp <= 0xD7AF) ||
+          (cp >= 0xF900 && cp <= 0xFAFF) ||
+          (cp >= 0xFE10 && cp <= 0xFE1F) ||
+          (cp >= 0xFE30 && cp <= 0xFE4F) ||
+          (cp >= 0xFF01 && cp <= 0xFF60) ||
+          (cp >= 0xFFE0 && cp <= 0xFFE6)
+        ) { w += 2; } else { w += 1; }
+      }
+      return w;
+    }
+    function padEnd(str, targetW) {
+      const w = visWidth(str);
+      return str + ' '.repeat(Math.max(0, targetW - w));
+    }
+
+    const rows = teamMembers.filter(Boolean).map(m => ({
+      name: m.name + (m.tag ? '#' + m.tag : ''),
+      tier: tierText(m) + ' / ' + soloTierText(m),
+      main: posLabel(m.mainLane),
+      sub:  posLabel(m.subLane),
+    }));
+    const nameW = Math.max(...rows.map(r => visWidth(r.name)), 0);
+    const tierW = Math.max(...rows.map(r => visWidth(r.tier)), 0);
+    rows.forEach(r => {
+      lines.push('  • ' + padEnd(r.name, nameW) + '  ' + padEnd(r.tier, tierW) + '  │  주: ' + r.main + '  │  희망: ' + r.sub);
+    });
+
+    if (ti < sortedTeams.length - 1) {
+      lines.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    }
+  });
+
+  const text = lines.join('\n');
+  navigator.clipboard.writeText(text).then(function() {
+    toast('팀 정보가 복사되었습니다', 'ok');
+  }).catch(function() {
+    // fallback
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    toast('팀 정보가 복사되었습니다', 'ok');
+  });
+}
+
 function copyMatchLink() {
   var cid = window._currentCommunityId || (match && match.communityId) || 'default';
   var mid = match && match.id;
@@ -15660,6 +15855,240 @@ window._uvApUpdate = function(snapshot) {
     _renderLogList(document.getElementById('cap-bid-log-list'), Object.values(snapshot.auctionLog));
   }
 };
+
+
+// ══════════════════════════════════════
+// 내전 카테고리 시스템
+// ══════════════════════════════════════
+var _matchCategories = [];  // { id, name, color }
+var _activeCatFilter = null; // null=전체, '__none__'=미분류, 'cat_xxx'=특정
+
+// Firebase 경로: communities/{cid}/match_categories
+async function loadCategories() {
+  if (!window._currentCommunityId) return;
+  try {
+    const res = await fetch(RIOT_PROXY_URL + '/db-public-read', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path: 'communities/' + window._currentCommunityId + '/match_categories' })
+    });
+    const json = await res.json();
+    console.log('[cat load] ok:', json.ok, 'data:', json.data, 'error:', json.error);
+    if (json.ok && json.data) {
+      _matchCategories = Object.entries(json.data).map(([id, v]) => ({ id, ...v }))
+        .sort((a, b) => (a.order || 0) - (b.order || 0));
+    } else {
+      _matchCategories = [];
+    }
+  } catch(e) {
+    console.error('[cat load] 오류:', e.message);
+    _matchCategories = [];
+  }
+  renderCatTabs();
+}
+
+async function saveCategories() {
+  if (!window._currentCommunityId) { console.warn('[cat] communityId 없음'); return; }
+  if (!_sessionToken) { console.warn('[cat] sessionToken 없음 - 로그인 필요'); return; }
+  const data = {};
+  _matchCategories.forEach(function(c, i) {
+    data[c.id] = { name: c.name, color: c.color, order: i };
+  });
+  try {
+    await _workerWrite('communities/' + window._currentCommunityId + '/match_categories', data);
+    console.log('[cat] 저장 성공:', Object.keys(data).length, '개');
+  } catch(e) {
+    console.error('[cat] 저장 실패:', e.message);
+    toast('카테고리 저장 실패: ' + e.message, 'err');
+  }
+}
+
+function renderCatTabs() {
+  const bar = document.getElementById('match-cat-bar');
+  const tabs = document.getElementById('match-cat-tabs');
+  const manageBtn = document.getElementById('btn-manage-cats');
+  console.log('[cat] bar:', !!bar, 'isAdmin:', isAdmin, 'isMaster:', isMaster, 'cats:', _matchCategories.length);
+  if (!bar || !tabs) return;
+
+  // 관리자는 카테고리 없어도 bar + 관리 버튼 표시
+  if (_matchCategories.length === 0) {
+    if (isAdmin || isMaster) {
+      bar.style.display = '';
+      if (manageBtn) manageBtn.style.display = '';
+      if (tabs) tabs.innerHTML = '';
+    } else {
+      bar.style.display = 'none';
+    }
+    return;
+  }
+  bar.style.display = '';
+  if (manageBtn) manageBtn.style.display = 'none'; // 메인 버튼으로 대체
+
+  let html = '';
+  // 전체 탭
+  html += `<button class="cat-tab${_activeCatFilter === null ? ' active' : ''}" onclick="setCatFilter(null)">전체</button>`;
+  // 미분류 탭 (카테고리 없는 내전 있을 때만)
+  const allList = dbLoad();
+  const hasNone = allList.some(m => !m.categoryId);
+  if (hasNone) {
+    html += `<button class="cat-tab${_activeCatFilter === '__none__' ? ' active' : ''}" onclick="setCatFilter('__none__')">미분류</button>`;
+  }
+  // 카테고리 탭
+  _matchCategories.forEach(function(c) {
+    const active = _activeCatFilter === c.id ? ' active' : '';
+    html += `<button class="cat-tab colored${active}" style="--cat-color:${c.color};" onclick="setCatFilter('${c.id}')">${_escHtml(c.name)}</button>`;
+  });
+  tabs.innerHTML = html;
+}
+
+function setCatFilter(catId) {
+  _activeCatFilter = catId;
+  renderCatTabs();
+  renderMatchList();
+}
+window.setCatFilter = setCatFilter;
+
+// ── 카테고리 관리 모달 ──
+function openManageCategories() {
+  renderManageCatList();
+  document.getElementById('modal-manage-cats').style.display = 'flex';
+}
+window.openManageCategories = openManageCategories;
+
+function renderManageCatList() {
+  const el = document.getElementById('cat-manage-list');
+  if (!el) return;
+  if (_matchCategories.length === 0) {
+    el.innerHTML = '<div style="font-size:11px;color:var(--text-muted);text-align:center;padding:.5rem;">카테고리가 없습니다</div>';
+    return;
+  }
+  el.innerHTML = _matchCategories.map(function(c, i) {
+    return `<div class="cat-manage-row">
+      <div class="cat-color-dot" style="background:${c.color};"></div>
+      <input class="cat-name-input" value="${_escHtml(c.name)}" maxlength="20"
+        onchange="_matchCategories[${i}].name=this.value;saveCategories();renderCatTabs();">
+      <input class="cat-color-input" type="color" value="${c.color}"
+        oninput="_matchCategories[${i}].color=this.value;saveCategories();renderCatTabs();renderManageCatList();">
+      <button onclick="deleteCategory('${c.id}')" style="padding:3px 7px;border-radius:2px;border:1px solid transparent;background:transparent;color:var(--text-muted);cursor:pointer;font-size:12px;" title="삭제">✕</button>
+    </div>`;
+  }).join('');
+}
+
+async function addCategory() {
+  const nameEl = document.getElementById('cat-new-name');
+  const colorEl = document.getElementById('cat-new-color');
+  const name = nameEl.value.trim();
+  if (!name) { nameEl.focus(); return; }
+  const id = 'cat_' + Date.now();
+  const color = colorEl.value || '#0AC8B9';
+  _matchCategories.push({ id, name, color, order: _matchCategories.length });
+  await saveCategories();
+  nameEl.value = '';
+  renderManageCatList();
+  renderCatTabs();
+  if (typeof _updateCreateModalCatSelect === 'function') _updateCreateModalCatSelect();
+}
+window.addCategory = addCategory;
+
+async function deleteCategory(catId) {
+  if (!confirm('카테고리를 삭제하면 해당 카테고리의 내전들이 미분류로 바뀝니다. 계속할까요?')) return;
+  _matchCategories = _matchCategories.filter(c => c.id !== catId);
+  await saveCategories();
+  // 해당 카테고리 쓰던 내전들 categoryId 제거
+  const allList = dbLoad();
+  const toUpdate = allList.filter(m => m.categoryId === catId);
+  for (const m of toUpdate) {
+    await _setMatchCategory(m.id, null);
+  }
+  if (_activeCatFilter === catId) _activeCatFilter = null;
+  renderManageCatList();
+  renderCatTabs();
+  renderMatchList();
+  if (typeof _updateCreateModalCatSelect === 'function') _updateCreateModalCatSelect();
+}
+window.deleteCategory = deleteCategory;
+
+// ── 내전 카테고리 선택 모달 ──
+var _setCatTargetId = null;
+
+function openSetCatModal(matchId) {
+  _setCatTargetId = matchId;
+  const m = dbLoad().find(x => x.id === matchId);
+  document.getElementById('set-cat-title').textContent = (m ? m.name : '내전') + ' · 카테고리';
+  const el = document.getElementById('cat-select-list');
+  const currentCat = m ? m.categoryId : null;
+  let html = `<div class="cat-select-item${!currentCat ? ' selected' : ''}" onclick="applySetCat(null)">
+    <span style="font-size:12px;color:var(--text-muted);">없음 (미분류)</span>
+  </div>`;
+  _matchCategories.forEach(function(c) {
+    const sel = currentCat === c.id ? ' selected' : '';
+    html += `<div class="cat-select-item${sel}" onclick="applySetCat('${c.id}')">
+      <div class="cat-color-dot" style="background:${c.color};"></div>
+      <span>${_escHtml(c.name)}</span>
+    </div>`;
+  });
+  el.innerHTML = html;
+  document.getElementById('modal-set-cat').style.display = 'flex';
+}
+window.openSetCatModal = openSetCatModal;
+
+async function applySetCat(catId) {
+  if (!_setCatTargetId) return;
+  await _setMatchCategory(_setCatTargetId, catId || null);
+  document.getElementById('modal-set-cat').style.display = 'none';
+  renderCatTabs();
+  renderMatchList();
+}
+window.applySetCat = applySetCat;
+
+async function _setMatchCategory(matchId, catId) {
+  // Firebase에서 해당 match의 categoryId 업데이트
+  try {
+    await fetch(WORKER_URL + '/db-write', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Session-Token': _sessionToken || '' },
+      body: JSON.stringify({ path: 'matches/' + matchId + '/categoryId', value: catId || null })
+    });
+  } catch(e) {}
+  // 로컬 dbStore 업데이트
+  const store = dbLoad();
+  const m = store.find(x => x.id === matchId);
+  if (m) {
+    m.categoryId = catId || null;
+    // dbSave 같은 함수가 있으면 호출, 아니면 snapshot 업데이트
+    if (typeof dbSave === 'function') dbSave(store);
+  }
+}
+
 </script>
+
+<!-- ── 카테고리 관리 모달 ── -->
+<div class="cat-modal-overlay" id="modal-manage-cats" style="display:none;">
+  <div class="cat-modal-box">
+    <div class="cat-modal-title">🏷 카테고리 관리</div>
+    <div id="cat-manage-list" style="flex:1;overflow-y:auto;min-height:40px;"></div>
+    <div style="display:flex;gap:6px;align-items:center;margin-top:.5rem;">
+      <input class="cat-add-input" id="cat-new-name" placeholder="새 카테고리 이름" maxlength="20"
+        onkeydown="if(event.key==='Enter')addCategory()" style="flex:1;background:rgba(255,255,255,.05);border:1px solid var(--border-subtle);border-radius:3px;color:var(--text-white);font-family:'Rajdhani',sans-serif;font-size:12px;padding:5px 8px;outline:none;">
+      <input type="color" id="cat-new-color" value="#10C8B9" style="width:28px;height:28px;border:none;border-radius:3px;cursor:pointer;padding:0;background:none;">
+      <button onclick="addCategory()" style="padding:5px 10px;background:var(--accent-dim);border:1px solid var(--accent);border-radius:3px;color:var(--accent);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">추가</button>
+    </div>
+    <div style="display:flex;justify-content:flex-end;margin-top:.75rem;padding-top:.5rem;border-top:1px solid var(--border-subtle);">
+      <button onclick="document.getElementById('modal-manage-cats').style.display='none'" style="padding:5px 14px;border-radius:3px;border:1px solid var(--border-subtle);background:transparent;color:var(--text-muted);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── 내전 카테고리 지정 모달 ── -->
+<div class="cat-modal-overlay" id="modal-set-cat" style="display:none;">
+  <div class="cat-modal-box">
+    <div class="cat-modal-title" id="set-cat-title">카테고리 지정</div>
+    <div id="cat-select-list" style="display:flex;flex-direction:column;gap:4px;max-height:240px;overflow-y:auto;margin-top:.5rem;"></div>
+    <div style="display:flex;justify-content:flex-end;margin-top:.75rem;padding-top:.5rem;border-top:1px solid var(--border-subtle);">
+      <button onclick="document.getElementById('modal-set-cat').style.display='none'" style="padding:5px 14px;border-radius:3px;border:1px solid var(--border-subtle);background:transparent;color:var(--text-muted);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;">취소</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>

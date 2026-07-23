@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>레이팅 설정</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0A0F13;--panel:#0F1923;--hover:#162233;
+  --border:rgba(255,255,255,.06);--bacc:rgba(10,200,185,.2);
+  --gold:#C8AA6E;--blue:#0AC8B9;--red:#E84057;
+  --white:#F0E6D3;--muted:#5B6474;--sub:#A0A8B0;
+}
+html,body{background:var(--bg);color:var(--white);font-family:'Noto Sans KR',sans-serif;min-height:100vh;}
+::-webkit-scrollbar{width:4px;} ::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+
+/* 레이아웃 */
+.page-header{background:var(--panel);border-bottom:1px solid var(--border);padding:.75rem 1.5rem;display:flex;align-items:center;gap:1rem;position:sticky;top:0;z-index:100;}
+.page-title{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;color:var(--gold);}
+.community-name{font-family:'Rajdhani',sans-serif;font-size:13px;color:var(--muted);}
+.header-right{margin-left:auto;display:flex;gap:.5rem;}
+
+.page-body{max-width:900px;margin:0 auto;padding:1.5rem;}
+.section{background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:1.25rem 1.5rem;margin-bottom:1rem;}
+.section-title{font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:2px;color:var(--gold);margin-bottom:.25rem;}
+.section-desc{font-family:'Rajdhani',sans-serif;font-size:11px;color:var(--muted);letter-spacing:.5px;margin-bottom:.9rem;}
+.formula-box{background:rgba(10,200,185,.04);border:1px solid var(--bacc);border-radius:4px;padding:.65rem 1rem;font-family:'Rajdhani',sans-serif;font-size:12px;color:var(--blue);letter-spacing:.5px;margin-bottom:.9rem;line-height:1.7;}
+
+/* 입력 */
+.form-row{display:flex;align-items:center;gap:.75rem;margin-bottom:.5rem;flex-wrap:wrap;}
+.form-label{font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:.5px;color:var(--sub);min-width:120px;}
+.num-input{background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:3px;padding:4px 8px;color:var(--white);font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;width:90px;outline:none;text-align:right;transition:border-color .15s;-moz-appearance:textfield;}
+.num-input::-webkit-outer-spin-button,.num-input::-webkit-inner-spin-button{-webkit-appearance:none;}
+.num-input:focus{border-color:var(--bacc);}
+.input-unit{font-family:'Rajdhani',sans-serif;font-size:11px;color:var(--muted);}
+.warn-text{font-family:'Rajdhani',sans-serif;font-size:10px;color:var(--red);letter-spacing:.5px;}
+.ok-text{font-family:'Rajdhani',sans-serif;font-size:10px;color:var(--blue);letter-spacing:.5px;}
+
+/* 테이블형 설정 */
+.cfg-table{width:100%;border-collapse:collapse;margin-top:.25rem;}
+.cfg-table th{font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;color:var(--muted);padding:.4rem .6rem;text-align:left;border-bottom:1px solid var(--border);}
+.cfg-table td{padding:.4rem .6rem;border-bottom:1px solid rgba(255,255,255,.03);vertical-align:middle;}
+.cfg-table td:first-child{font-family:'Rajdhani',sans-serif;font-size:12px;color:var(--sub);}
+.tier-label{font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;}
+
+/* 포지션 보정 테이블 */
+.pos-table{width:100%;border-collapse:collapse;margin-top:.25rem;}
+.pos-table th{font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;color:var(--muted);padding:.4rem .6rem;text-align:center;border-bottom:1px solid var(--border);}
+.pos-table th:first-child{text-align:left;}
+.pos-table td{padding:.4rem .6rem;border-bottom:1px solid rgba(255,255,255,.03);text-align:center;vertical-align:middle;}
+.pos-table td:first-child{font-family:'Rajdhani',sans-serif;font-size:12px;color:var(--sub);text-align:left;}
+.pos-total{font-family:'Rajdhani',sans-serif;font-size:11px;color:var(--muted);}
+.pos-total-ok{color:var(--blue);}
+.pos-total-err{color:var(--red);}
+
+/* 버튼 */
+.btn-save{background:rgba(10,200,185,.1);border:1px solid var(--bacc);border-radius:3px;color:var(--blue);font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;padding:6px 20px;cursor:pointer;transition:background .15s;}
+.btn-save:hover{background:rgba(10,200,185,.18);}
+.btn-reset{background:transparent;border:1px solid rgba(255,255,255,.1);border-radius:3px;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;padding:6px 16px;cursor:pointer;transition:all .15s;}
+.btn-reset:hover{border-color:rgba(255,255,255,.2);color:var(--white);}
+.btn-row{display:flex;align-items:center;justify-content:flex-end;gap:.5rem;margin-top:1.25rem;padding-top:1rem;border-top:1px solid var(--border);}
+
+/* 예시 계산 */
+.calc-box{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:4px;padding:.75rem 1rem;font-family:'Rajdhani',sans-serif;font-size:12px;line-height:2;}
+.calc-result{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--gold);letter-spacing:2px;}
+
+/* 인증 오버레이 */
+.auth-overlay{position:fixed;inset:0;background:var(--bg);z-index:999;display:flex;align-items:center;justify-content:center;}
+.auth-box{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:2rem;width:320px;text-align:center;}
+.auth-title{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;color:var(--gold);margin-bottom:.25rem;}
+.auth-desc{font-family:'Rajdhani',sans-serif;font-size:12px;color:var(--muted);margin-bottom:1.25rem;}
+.auth-input{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:3px;padding:8px 12px;color:var(--white);font-family:'Noto Sans KR',sans-serif;font-size:13px;outline:none;margin-bottom:.75rem;}
+.auth-input:focus{border-color:var(--bacc);}
+.auth-btn{width:100%;background:rgba(10,200,185,.1);border:1px solid var(--bacc);border-radius:3px;color:var(--blue);font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;letter-spacing:1px;padding:8px;cursor:pointer;}
+.auth-err{color:var(--red);font-family:'Rajdhani',sans-serif;font-size:11px;margin-top:.5rem;}
+
+/* 저장 토스트 */
+.toast-bar{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);background:rgba(10,200,185,.15);border:1px solid var(--bacc);border-radius:4px;padding:8px 20px;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;color:var(--blue);display:none;z-index:200;}
+</style>
+</head>
+<body>
+
+<!-- 인증 오버레이 -->
+<div id="auth-overlay" class="auth-overlay">
+  <div class="auth-box">
+    <div class="auth-title">레이팅 설정</div>
+    <div class="auth-desc">관리자 또는 마스터 계정으로 로그인하세요</div>
+    <input class="auth-input" id="auth-id" type="text" placeholder="아이디">
+    <input class="auth-input" id="auth-pw" type="password" placeholder="비밀번호" onkeydown="if(event.key==='Enter')doAuth()">
+    <button class="auth-btn" onclick="doAuth()">로그인</button>
+    <div class="auth-err" id="auth-err"></div>
+  </div>
+</div>
+
+<!-- 메인 -->
+<div id="main-content" style="display:none;">
+
+<div class="page-header">
+  <div>
+    <div class="page-title">⚙ 레이팅 설정</div>
+    <div class="community-name" id="community-name">커뮤니티 로딩 중...</div>
+  </div>
+  <div class="header-right">
+    <button class="btn-reset" onclick="resetToDefault()">기본값으로 초기화</button>
+    <button class="btn-save" onclick="saveConfig()">💾 저장</button>
+  </div>
+</div>
+
+<div class="page-body">
+
+  <!-- 수식 설명 -->
+  <div class="section">
+    <div class="section-title">📐 레이팅 수식</div>
+    <div class="formula-box">
+      최종 레이팅 = 기본 레이팅 + ((승률점수 × W1) + (AI점수 × W2) + (KDA점수 × W3)) × 포지션보정 × 경기수보정<br>
+      <span style="color:var(--muted);">단, W1 + W2 + W3 = 1.0 이 되어야 합니다</span>
+    </div>
+    <div class="section-desc">실시간 계산 예시</div>
+    <div class="calc-box" id="calc-preview">계산 중...</div>
+  </div>
+
+  <!-- 1. 가중치 설정 -->
+  <div class="section">
+    <div class="section-title">1. 수식 가중치 설정</div>
+    <div class="section-desc">승률점수·AI점수·KDA점수의 배율 (세 값의 합이 반드시 1.0이어야 합니다)</div>
+    <div class="form-row">
+      <span class="form-label">승률 점수 배율 W1</span>
+      <input class="num-input" id="w-wr" type="number" step="0.01" min="0" max="1" value="0.7" oninput="onWeightChange()">
+      <span class="input-unit">배</span>
+    </div>
+    <div class="form-row">
+      <span class="form-label">AI 점수 배율 W2</span>
+      <input class="num-input" id="w-ai" type="number" step="0.01" min="0" max="1" value="0.2" oninput="onWeightChange()">
+      <span class="input-unit">배</span>
+    </div>
+    <div class="form-row">
+      <span class="form-label">KDA 점수 배율 W3</span>
+      <input class="num-input" id="w-kda" type="number" step="0.01" min="0" max="1" value="0.1" oninput="onWeightChange()">
+      <span class="input-unit">배</span>
+    </div>
+    <div id="weight-status" class="ok-text">✓ 합계: 1.00 (정상)</div>
+  </div>
+
+  <!-- 2. 기본 레이팅 -->
+  <div class="section">
+    <div class="section-title">2. 기본 레이팅 (티어별)</div>
+    <div class="section-desc">마스터 이상은 기본값 + 리그 포인트 1점당 1점 추가</div>
+    <table class="cfg-table">
+      <thead><tr><th>티어</th><th>4단계</th><th>3단계</th><th>2단계</th><th>1단계</th></tr></thead>
+      <tbody id="tier-table-body"></tbody>
+    </table>
+  </div>
+
+  <!-- 3. 승률 점수 -->
+  <div class="section">
+    <div class="section-title">3. 승률 점수 설정</div>
+    <div class="section-desc">승률 점수 = (승률% − 50) × 배율 &nbsp;(50% 기준, 그 이상이면 양수, 이하면 음수)</div>
+    <div class="formula-box">예: 승률 58%, 배율 8 → (58 − 50) × 8 = 64점</div>
+    <div class="form-row">
+      <span class="form-label">승률 점수 배율</span>
+      <input class="num-input" id="wr-mult" type="number" step="0.5" min="1" value="8" oninput="updatePreview()">
+      <span class="input-unit">배</span>
+    </div>
+  </div>
+
+  <!-- 4. AI 점수 -->
+  <div class="section">
+    <div class="section-title">4. AI 점수 설정</div>
+    <div class="section-desc">평균 AI 점수 구간별 부여 점수 (음수 가능)</div>
+    <table class="cfg-table">
+      <thead><tr><th>구간</th><th>기준</th><th>점수</th></tr></thead>
+      <tbody>
+        <tr><td>최상위</td><td style="font-family:Rajdhani,sans-serif;color:var(--sub);">AI ≥ 80</td><td><input class="num-input" id="ai-5" type="number" value="40" style="width:70px;" oninput="updatePreview()"><span class="input-unit" style="margin-left:4px;">점</span></td></tr>
+        <tr><td>상위</td><td style="font-family:Rajdhani,sans-serif;color:var(--sub);">56 ≤ AI < 80</td><td><input class="num-input" id="ai-4" type="number" value="20" style="width:70px;" oninput="updatePreview()"><span class="input-unit" style="margin-left:4px;">점</span></td></tr>
+        <tr><td>중위</td><td style="font-family:Rajdhani,sans-serif;color:var(--sub);">45 ≤ AI < 56</td><td><input class="num-input" id="ai-3" type="number" value="0" style="width:70px;" oninput="updatePreview()"><span class="input-unit" style="margin-left:4px;">점</span></td></tr>
+        <tr><td>하위</td><td style="font-family:Rajdhani,sans-serif;color:var(--sub);">30 ≤ AI < 45</td><td><input class="num-input" id="ai-2" type="number" value="-20" style="width:70px;" oninput="updatePreview()"><span class="input-unit" style="margin-left:4px;">점</span></td></tr>
+        <tr><td>최하위</td><td style="font-family:Rajdhani,sans-serif;color:var(--sub);">AI < 30</td><td><input class="num-input" id="ai-1" type="number" value="-40" style="width:70px;" oninput="updatePreview()"><span class="input-unit" style="margin-left:4px;">점</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 5. KDA 점수 -->
+  <div class="section">
+    <div class="section-title">5. KDA 점수 설정</div>
+    <div class="section-desc">평균 KDA 구간별 부여 점수 (음수 가능)</div>
+    <table class="cfg-table">
+      <thead><tr><th>구간</th><th>기준</th><th>점수</th></tr></thead>
+      <tbody>
+        <tr><td>최상위</td><td style="font-family:Rajdhani,sans-serif;color:var(--sub);">KDA ≥ 4.0</td><td><input class="num-input" id="kda-4" type="number" value="20" style="width:70px;" oninput="updatePreview()"><span class="input-unit" style="margin-left:4px;">점</span></td></tr>
+        <tr><td>상위</td><td style="font-family:Rajdhani,sans-serif;color:var(--sub);">3.0 ≤ KDA < 4.0</td><td><input class="num-input" id="kda-3" type="number" value="10" style="width:70px;" oninput="updatePreview()"><span class="input-unit" style="margin-left:4px;">점</span></td></tr>
+        <tr><td>중위</td><td style="font-family:Rajdhani,sans-serif;color:var(--sub);">1.5 ≤ KDA < 3.0</td><td><input class="num-input" id="kda-2" type="number" value="0" style="width:70px;" oninput="updatePreview()"><span class="input-unit" style="margin-left:4px;">점</span></td></tr>
+        <tr><td>하위</td><td style="font-family:Rajdhani,sans-serif;color:var(--sub);">KDA < 1.5</td><td><input class="num-input" id="kda-1" type="number" value="-30" style="width:70px;" oninput="updatePreview()"><span class="input-unit" style="margin-left:4px;">점</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 6. 포지션 보정치 -->
+  <div class="section">
+    <div class="section-title">6. 포지션 보정치</div>
+    <div class="section-desc">각 포지션 × 티어 구간별 보정 배율 (각 구간 합계는 5.0 권장)</div>
+    <table class="pos-table">
+      <thead>
+        <tr>
+          <th>포지션</th>
+          <th>아이언~골드1</th>
+          <th>플래4~다이아3</th>
+          <th>다이아2~마스터+</th>
+        </tr>
+      </thead>
+      <tbody id="pos-table-body"></tbody>
+      <tfoot>
+        <tr>
+          <td style="font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;color:var(--muted);">합계</td>
+          <td><span id="pos-sum-0" class="pos-total">5.00</span></td>
+          <td><span id="pos-sum-1" class="pos-total">5.00</span></td>
+          <td><span id="pos-sum-2" class="pos-total">5.00</span></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <!-- 7. 경기수 보정치 -->
+  <div class="section">
+    <div class="section-title">7. 경기수 보정치</div>
+    <div class="section-desc">경기수 보정치 = MIN(1, 경기수 ÷ 기준판수) — 기준판수 미만이면 비례 감소</div>
+    <div class="formula-box" id="games-formula-preview">MIN(1, 경기수 ÷ 50)</div>
+    <div class="form-row">
+      <span class="form-label">기준 판수</span>
+      <input class="num-input" id="games-base" type="number" step="5" min="10" value="50" oninput="updateGamesFormula();updatePreview();">
+      <span class="input-unit">판</span>
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn-reset" onclick="resetToDefault()">기본값으로 초기화</button>
+    <button class="btn-save" onclick="saveConfig()">💾 저장</button>
+  </div>
+
+</div><!-- page-body -->
+</div><!-- main-content -->
+
+<div class="toast-bar" id="toast-bar">✅ 설정이 저장되었습니다</div>
+
+<script>
+const urlParams = new URLSearchParams(location.search);
+const COMMUNITY_ID = urlParams.get('cid') || '';
+const WORKER_URL   = 'https://delicate-dew-c1bd.rdc6087.workers.dev';
+
+let _sessionToken = '';
+let _userRole = '';
+
+// ── 인증 ──
+async function doAuth() {
+  const id = document.getElementById('auth-id').value.trim();
+  const pw = document.getElementById('auth-pw').value.trim();
+  if (!id || !pw) { document.getElementById('auth-err').textContent = '아이디와 비밀번호를 입력하세요'; return; }
+
+  try {
+    // master 먼저 시도, 실패하면 admin 시도
+    var res = await fetch(WORKER_URL + '/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, pw, type: 'master' })
+    });
+    var json = await res.json();
+    if (!json.ok) {
+      res = await fetch(WORKER_URL + '/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, pw, type: 'admin' })
+      });
+      json = await res.json();
+    }
+    if (!json.ok) { document.getElementById('auth-err').textContent = json.error || '로그인 실패'; return; }
+    if (!['admin', 'master'].includes(json.role)) {
+      document.getElementById('auth-err').textContent = '관리자 권한이 필요합니다'; return;
+    }
+    _sessionToken = json.token || '';
+    _userRole = json.role;
+    document.getElementById('auth-overlay').style.display = 'none';
+    document.getElementById('main-content').style.display = '';
+    init();
+  } catch(e) {
+    document.getElementById('auth-err').textContent = '오류: ' + e.message;
+  }
+}
+document.getElementById('auth-pw').addEventListener('keydown', function(e){ if(e.key==='Enter') doAuth(); });
+
+// ── DEFAULT 설정 ──
+const DEFAULT_CONFIG = {
+  weights: { wr: 0.7, ai: 0.2, kda: 0.1 },
+  tierBase: {
+    IRON:      [0, 100, 200, 300],
+    BRONZE:    [400, 500, 600, 700],
+    SILVER:    [800, 900, 1000, 1100],
+    GOLD:      [1200, 1300, 1400, 1500],
+    PLATINUM:  [1600, 1700, 1800, 1900],
+    EMERALD:   [2000, 2100, 2200, 2300],
+    DIAMOND:   [2400, 2500, 2600, 2700],
+    MASTER:    [2800],
+  },
+  wrMult: 8,
+  aiScore: { 5: 40, 4: 20, 3: 0, 2: -20, 1: -40 },
+  kdaScore: { 4: 20, 3: 10, 2: 0, 1: -30 },
+  posCorr: {
+    Top:     [1.05, 0.95, 0.95],
+    Jungle:  [0.90, 1.05, 1.10],
+    Middle:  [1.00, 1.10, 1.00],
+    Bottom:  [0.95, 1.00, 1.05],
+    Support: [1.10, 0.90, 0.90],
+  },
+  gamesBase: 50,
+};
+
+const TIER_LABELS = { IRON:'아이언', BRONZE:'브론즈', SILVER:'실버', GOLD:'골드', PLATINUM:'플래티넘', EMERALD:'에메랄드', DIAMOND:'다이아몬드', MASTER:'마스터' };
+const TIER_COLORS = { IRON:'#7A7A7A', BRONZE:'#C8874A', SILVER:'#A0A8B0', GOLD:'#F0C050', PLATINUM:'#3CB371', EMERALD:'#3CB371', DIAMOND:'#4A90D9', MASTER:'#9E5CC8' };
+const POS_LABELS  = { Top:'탑 (Top)', Jungle:'정글 (Jg)', Middle:'미드 (Mid)', Bottom:'원딜 (ADC)', Support:'서포터 (Sup)' };
+const TIER_KEYS   = ['IRON','BRONZE','SILVER','GOLD','PLATINUM','EMERALD','DIAMOND','MASTER'];
+const POS_KEYS    = ['Top','Jungle','Middle','Bottom','Support'];
+
+// ── 테이블 렌더 ──
+function renderTierTable(cfg) {
+  const tbody = document.getElementById('tier-table-body');
+  tbody.innerHTML = TIER_KEYS.map(function(t){
+    const vals = cfg.tierBase[t];
+    const c = TIER_COLORS[t];
+    if (t === 'MASTER') {
+      return '<tr><td><span class="tier-label" style="color:'+c+'">'+TIER_LABELS[t]+'</span></td>'+
+        '<td colspan="4"><input class="num-input" id="tier-'+t+'-0" type="number" value="'+(vals[0]||2800)+'" style="width:90px;" oninput="updatePreview()"> <span class="input-unit">점 (기본값, +LP×1)</span></td></tr>';
+    }
+    return '<tr><td><span class="tier-label" style="color:'+c+'">'+TIER_LABELS[t]+'</span></td>'+
+      [0,1,2,3].map(function(i){
+        return '<td><input class="num-input" id="tier-'+t+'-'+i+'" type="number" value="'+(vals[i]||0)+'" style="width:72px;" oninput="updatePreview()"></td>';
+      }).join('')+'</tr>';
+  }).join('');
+}
+
+function renderPosTable(cfg) {
+  const tbody = document.getElementById('pos-table-body');
+  tbody.innerHTML = POS_KEYS.map(function(p){
+    return '<tr><td>'+POS_LABELS[p]+'</td>'+
+      [0,1,2].map(function(g){
+        return '<td><input class="num-input" id="pos-'+p+'-'+g+'" type="number" step="0.05" value="'+(cfg.posCorr[p][g]||1)+'" style="width:70px;" oninput="updatePosSum()"></td>';
+      }).join('')+'</tr>';
+  }).join('');
+  updatePosSum();
+}
+
+function updatePosSum() {
+  [0,1,2].forEach(function(g){
+    var sum = POS_KEYS.reduce(function(acc, p){
+      return acc + (parseFloat(document.getElementById('pos-'+p+'-'+g).value)||0);
+    }, 0);
+    var el = document.getElementById('pos-sum-'+g);
+    el.textContent = sum.toFixed(2);
+    el.className = 'pos-total ' + (Math.abs(sum - 5) < 0.01 ? 'pos-total-ok' : 'pos-total-err');
+  });
+  updatePreview();
+}
+
+// ── 가중치 합계 체크 ──
+function onWeightChange() {
+  var w1 = parseFloat(document.getElementById('w-wr').value)||0;
+  var w2 = parseFloat(document.getElementById('w-ai').value)||0;
+  var w3 = parseFloat(document.getElementById('w-kda').value)||0;
+  var sum = Math.round((w1+w2+w3)*100)/100;
+  var el = document.getElementById('weight-status');
+  if (Math.abs(sum - 1.0) < 0.001) {
+    el.className = 'ok-text';
+    el.textContent = '✓ 합계: '+sum.toFixed(2)+' (정상)';
+  } else {
+    el.className = 'warn-text';
+    el.textContent = '⚠ 합계: '+sum.toFixed(2)+' (1.0이 되어야 합니다)';
+  }
+  updatePreview();
+}
+
+function updateGamesFormula() {
+  var base = parseInt(document.getElementById('games-base').value)||50;
+  document.getElementById('games-formula-preview').textContent = 'MIN(1, 경기수 ÷ '+base+')';
+}
+
+// ── 실시간 계산 예시 ──
+var EXAMPLE = { baseRating:1400, wr:58, ai:56, kda:2.54, posCorr:1.054, games:130 };
+
+function calcPreview() {
+  var w1 = parseFloat(document.getElementById('w-wr').value)||0.7;
+  var w2 = parseFloat(document.getElementById('w-ai').value)||0.2;
+  var w3 = parseFloat(document.getElementById('w-kda').value)||0.1;
+  var wrMult = parseFloat(document.getElementById('wr-mult').value)||8;
+  var gamesBase = parseInt(document.getElementById('games-base').value)||50;
+
+  var wrScore  = (EXAMPLE.wr - 50) * wrMult;
+
+  var ai = EXAMPLE.ai;
+  var aiScore = parseInt(document.getElementById(ai>=80?'ai-5':ai>=56?'ai-4':ai>=45?'ai-3':ai>=30?'ai-2':'ai-1').value)||0;
+
+  var kda = EXAMPLE.kda;
+  var kdaScore = parseInt(document.getElementById(kda>=4?'kda-4':kda>=3?'kda-3':kda>=1.5?'kda-2':'kda-1').value)||0;
+
+  var posCorr = EXAMPLE.posCorr;
+  var gamesCorr = Math.min(1, EXAMPLE.games / gamesBase);
+  var combined = (wrScore*w1 + aiScore*w2 + kdaScore*w3) * posCorr * gamesCorr;
+  var final = EXAMPLE.baseRating + combined;
+
+  document.getElementById('calc-preview').innerHTML =
+    '<span style="color:var(--muted);">예시: 기본레이팅 '+EXAMPLE.baseRating+' | 승률 '+EXAMPLE.wr+'% | AI '+EXAMPLE.ai+' | KDA '+EXAMPLE.kda+' | 포지션보정 '+EXAMPLE.posCorr+' | '+EXAMPLE.games+'게임</span><br>'+
+    '승률점수 = ('+EXAMPLE.wr+' - 50) × '+wrMult+' = <b>'+wrScore.toFixed(1)+'</b><br>'+
+    'AI점수 = <b>'+aiScore+'</b> &nbsp; KDA점수 = <b>'+kdaScore+'</b><br>'+
+    '경기수보정 = MIN(1, '+EXAMPLE.games+' ÷ '+gamesBase+') = <b>'+gamesCorr.toFixed(2)+'</b><br>'+
+    '포지션보정 = <b>'+posCorr+'</b><br>'+
+    '최종 = '+EXAMPLE.baseRating+' + (('+wrScore.toFixed(1)+'×'+w1+') + ('+aiScore+'×'+w2+') + ('+kdaScore+'×'+w3+')) × '+posCorr+' × '+gamesCorr.toFixed(2)+' = '+
+    '<span class="calc-result"> '+final.toFixed(1)+'</span>';
+}
+function updatePreview() { try { calcPreview(); } catch(e){} }
+
+// ── 현재 값 읽기 ──
+function readConfig() {
+  var cfg = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
+  cfg.weights.wr  = parseFloat(document.getElementById('w-wr').value)||0.7;
+  cfg.weights.ai  = parseFloat(document.getElementById('w-ai').value)||0.2;
+  cfg.weights.kda = parseFloat(document.getElementById('w-kda').value)||0.1;
+  cfg.wrMult = parseFloat(document.getElementById('wr-mult').value)||8;
+  TIER_KEYS.forEach(function(t){
+    if (t === 'MASTER') {
+      cfg.tierBase[t] = [parseInt(document.getElementById('tier-'+t+'-0').value)||2800];
+    } else {
+      cfg.tierBase[t] = [0,1,2,3].map(function(i){ return parseInt(document.getElementById('tier-'+t+'-'+i).value)||0; });
+    }
+  });
+  cfg.aiScore = {
+    5: parseInt(document.getElementById('ai-5').value)||40,
+    4: parseInt(document.getElementById('ai-4').value)||20,
+    3: parseInt(document.getElementById('ai-3').value)||0,
+    2: parseInt(document.getElementById('ai-2').value)||-20,
+    1: parseInt(document.getElementById('ai-1').value)||-40,
+  };
+  cfg.kdaScore = {
+    4: parseInt(document.getElementById('kda-4').value)||20,
+    3: parseInt(document.getElementById('kda-3').value)||10,
+    2: parseInt(document.getElementById('kda-2').value)||0,
+    1: parseInt(document.getElementById('kda-1').value)||-30,
+  };
+  POS_KEYS.forEach(function(p){
+    cfg.posCorr[p] = [0,1,2].map(function(g){ return parseFloat(document.getElementById('pos-'+p+'-'+g).value)||1; });
+  });
+  cfg.gamesBase = parseInt(document.getElementById('games-base').value)||50;
+  return cfg;
+}
+
+// ── 값 적용 ──
+function applyConfig(cfg) {
+  document.getElementById('w-wr').value  = cfg.weights.wr;
+  document.getElementById('w-ai').value  = cfg.weights.ai;
+  document.getElementById('w-kda').value = cfg.weights.kda;
+  document.getElementById('wr-mult').value = cfg.wrMult;
+  document.getElementById('games-base').value = cfg.gamesBase;
+  document.getElementById('ai-5').value = cfg.aiScore[5];
+  document.getElementById('ai-4').value = cfg.aiScore[4];
+  document.getElementById('ai-3').value = cfg.aiScore[3];
+  document.getElementById('ai-2').value = cfg.aiScore[2];
+  document.getElementById('ai-1').value = cfg.aiScore[1];
+  document.getElementById('kda-4').value = cfg.kdaScore[4];
+  document.getElementById('kda-3').value = cfg.kdaScore[3];
+  document.getElementById('kda-2').value = cfg.kdaScore[2];
+  document.getElementById('kda-1').value = cfg.kdaScore[1];
+  TIER_KEYS.forEach(function(t){
+    var vals = cfg.tierBase[t];
+    if (t === 'MASTER') {
+      document.getElementById('tier-'+t+'-0').value = vals[0]||2800;
+    } else {
+      [0,1,2,3].forEach(function(i){ document.getElementById('tier-'+t+'-'+i).value = vals[i]||0; });
+    }
+  });
+  POS_KEYS.forEach(function(p){
+    [0,1,2].forEach(function(g){ document.getElementById('pos-'+p+'-'+g).value = cfg.posCorr[p][g]||1; });
+  });
+  onWeightChange(); updatePosSum(); updateGamesFormula(); updatePreview();
+}
+
+function resetToDefault() {
+  if (!confirm('기본값으로 초기화하시겠습니까?')) return;
+  applyConfig(DEFAULT_CONFIG);
+}
+
+// ── 저장 ──
+async function saveConfig() {
+  var w1 = parseFloat(document.getElementById('w-wr').value)||0;
+  var w2 = parseFloat(document.getElementById('w-ai').value)||0;
+  var w3 = parseFloat(document.getElementById('w-kda').value)||0;
+  if (Math.abs(w1+w2+w3-1.0) > 0.01) {
+    alert('가중치 합계가 1.0이 되어야 합니다. 현재: '+(w1+w2+w3).toFixed(2)); return;
+  }
+  var cfg = readConfig();
+  cfg.updatedAt = Date.now();
+  cfg.updatedBy = _userRole;
+
+  try {
+    const res = await fetch(WORKER_URL + '/db-write', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Session-Token': _sessionToken },
+      body: JSON.stringify({
+        path: 'communities/' + COMMUNITY_ID + '/rating_config',
+        data: cfg,
+        requireRole: 'admin'
+      })
+    });
+    const json = await res.json();
+    if (!json.ok) { alert('저장 실패: ' + (json.error||'')); return; }
+    showToast('✅ 설정이 저장되었습니다');
+  } catch(e) { alert('저장 오류: ' + e.message); }
+}
+
+// ── Firebase에서 설정 로드 ──
+async function loadConfig() {
+  if (!COMMUNITY_ID) return;
+  try {
+    const res = await fetch(WORKER_URL + '/db-public-read', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path: 'communities/' + COMMUNITY_ID + '/rating_config' })
+    });
+    const json = await res.json();
+    if (json.ok && json.data) {
+      // 기본값에 덮어쓰기 (미래 필드 추가 대비)
+      var cfg = Object.assign(JSON.parse(JSON.stringify(DEFAULT_CONFIG)), json.data);
+      applyConfig(cfg);
+    }
+  } catch(e) {}
+}
+
+// ── 커뮤니티 이름 로드 ──
+async function loadCommunityName() {
+  if (!COMMUNITY_ID) return;
+  try {
+    const res = await fetch(WORKER_URL + '/db-public-read', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path: 'communities/' + COMMUNITY_ID + '/name' })
+    });
+    const json = await res.json();
+    if (json.ok && json.data) {
+      document.getElementById('community-name').textContent = json.data + ' 커뮤니티';
+    }
+  } catch(e) {}
+}
+
+function showToast(msg) {
+  var t = document.getElementById('toast-bar');
+  t.textContent = msg;
+  t.style.display = 'block';
+  setTimeout(function(){ t.style.display = 'none'; }, 2500);
+}
+
+// ── 초기화 ──
+async function init() {
+  renderTierTable(DEFAULT_CONFIG);
+  renderPosTable(DEFAULT_CONFIG);
+  onWeightChange();
+  updateGamesFormula();
+  updatePreview();
+  await loadCommunityName();
+  await loadConfig();
+}
+
+// URL에 token 파라미터 있으면 자동 인증 (index.html에서 넘어올 때)
+(function() {
+  var token = urlParams.get('token');
+  var role  = urlParams.get('role');
+  if (token && ['admin','master'].includes(role)) {
+    _sessionToken = token;
+    _userRole = role;
+    document.getElementById('auth-overlay').style.display = 'none';
+    document.getElementById('main-content').style.display = '';
+    init();
+  }
+})();
+</script>
+</body>
+</html>

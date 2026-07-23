@@ -79,12 +79,10 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:'Noto 
 .gsep{color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:11px;}
 
 /* ── 테이블 헤더 (sticky-top 안에 포함) ── */
-.table-head{
+/* table-head div 제거 - thead가 sticky로 대체 */
+.table-body-wrap table thead th{
+  position:sticky;top:0;z-index:10;
   background:var(--panel);border-bottom:2px solid var(--border);
-  overflow:hidden;
-}
-.table-head table{width:100%;border-collapse:collapse;min-width:860px;table-layout:fixed;}
-.table-head th{
   padding:.45rem 1rem;font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;
   letter-spacing:1px;color:var(--muted);text-align:left;white-space:nowrap;
 }
@@ -96,21 +94,21 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:'Noto 
 
 /* ── 스크롤 영역 ── */
 .table-body-wrap{overflow-x:auto;overflow-y:auto;flex:1;}
-.table-body-wrap table{width:100%;border-collapse:collapse;min-width:860px;table-layout:fixed;}
+.table-body-wrap table{width:100%;border-collapse:collapse;min-width:980px;}
 tbody tr{border-bottom:1px solid var(--border);transition:background .1s;}
 tbody tr:hover{background:var(--hover);}
 tbody td{padding:.55rem 1rem;font-size:12px;vertical-align:middle;}
 
 /* 컬럼 너비 (헤더/바디 동일하게) */
-.c0{width:44px;}   /* # */
-.c1{width:160px;}  /* 소환사명 */
-.c2{width:60px;}   /* 포지션 */
-.c3{width:84px;}   /* 티어 */
-.c4{width:110px;}  /* 챔피언 */
-.c5{width:68px;}   /* KDA */
-.c6{}              /* 승률 (flex) */
-.c7{width:70px;}   /* 게임수 */
-.c8{width:90px;}   /* 최근게임 */
+.c0{width:40px;}   /* # */
+.c1{width:140px;}  /* 소환사명 */
+.c2{width:54px;}   /* 포지션 */
+.c3{width:72px;}   /* 티어 */
+.c4{width:96px;}  /* 챔피언 */
+.c5{width:60px;}   /* KDA */
+.c6{min-width:160px;}              /* 승률 (flex) */
+.c7{width:62px;}   /* 게임수 */
+.c8{width:80px;}   /* 최근게임 */
 
 .col-rank{color:var(--muted);font-family:'Rajdhani',sans-serif;font-weight:700;font-size:12px;text-align:center;}
 .s-name{font-weight:700;font-size:13px;}
@@ -147,6 +145,173 @@ tbody td{padding:.55rem 1rem;font-size:12px;vertical-align:middle;}
 .pbtn.active{border-color:var(--blue);color:var(--blue);background:rgba(10,200,185,.08);}
 .pbtn:disabled{opacity:.3;cursor:not-allowed;}
 .pinfo{font-family:'Rajdhani',sans-serif;font-size:11px;color:var(--muted);padding:0 .3rem;}
+
+/* ── 유저 상세 팝업 ── */
+.detail-overlay {
+  position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1000;
+  display:none;align-items:flex-start;justify-content:center;
+  padding:1.5rem 1rem;overflow-y:auto;
+}
+.detail-overlay.open{display:flex;}
+.detail-modal {
+  background:#0D1620;border:1px solid rgba(255,255,255,.08);border-radius:8px;
+  width:100%;max-width:900px;overflow:hidden;flex-shrink:0;
+}
+.dm-header{
+  display:flex;align-items:center;gap:1rem;padding:1rem 1.25rem;
+  background:rgba(10,200,185,.05);border-bottom:1px solid rgba(255,255,255,.06);
+}
+.dm-avatar{width:44px;height:44px;border-radius:50%;border:2px solid rgba(10,200,185,.3);object-fit:cover;}
+.dm-name{font-size:16px;font-weight:700;}
+.dm-tag{color:var(--muted);font-size:12px;}
+.dm-tier{font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;padding:2px 8px;border-radius:2px;}
+.dm-stats{margin-left:auto;display:flex;gap:1.5rem;}
+.dm-stat{text-align:center;}
+.dm-stat-val{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;color:var(--blue);}
+.dm-stat-lbl{font-family:'Rajdhani',sans-serif;font-size:10px;letter-spacing:1px;color:var(--muted);}
+.dm-close{background:transparent;border:1px solid rgba(255,255,255,.1);border-radius:50%;width:28px;height:28px;color:var(--muted);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.dm-close:hover{color:var(--white);border-color:rgba(255,255,255,.3);}
+.dm-loading{display:flex;align-items:center;justify-content:center;gap:10px;padding:3rem;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:13px;letter-spacing:1px;}
+.dm-body{padding:1rem 1.25rem;display:flex;flex-direction:column;gap:1rem;}
+.dm-section{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:5px;padding:.75rem 1rem;}
+.dm-section-title{font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:2px;color:var(--gold);margin-bottom:.6rem;}
+
+/* 진행바 */
+.stat-bar-wrap{display:flex;align-items:center;gap:8px;margin-bottom:5px;}
+.stat-bar-label{font-family:'Rajdhani',sans-serif;font-size:11px;color:var(--sub);width:80px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.stat-bar{flex:1;height:6px;background:rgba(255,255,255,.06);border-radius:1px;overflow:hidden;}
+.stat-bar-fill{height:100%;border-radius:1px;transition:width .4s;}
+.stat-bar-val{font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;width:44px;text-align:right;flex-shrink:0;}
+
+/* 매치 리스트 */
+.match-list{display:flex;flex-direction:column;gap:4px;max-height:280px;overflow-y:auto;}
+.match-row{
+  display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:3px;
+  border-left:3px solid transparent;font-family:'Rajdhani',sans-serif;font-size:11px;
+}
+.match-row.win{background:rgba(83,131,232,.08);border-color:#5383E8;}
+.match-row.lose{background:rgba(232,64,87,.08);border-color:var(--red);}
+.match-row.remake{background:rgba(255,255,255,.04);border-color:var(--muted);}
+.mr-result{font-weight:700;width:24px;font-size:10px;}
+.mr-champ{width:24px;height:24px;border-radius:50%;object-fit:cover;}
+.mr-pos{color:var(--muted);width:28px;font-size:10px;}
+.mr-kda{font-weight:700;min-width:60px;}
+.mr-cs{color:var(--sub);min-width:40px;}
+.mr-ai{color:var(--gold);min-width:40px;}
+.mr-time{color:var(--muted);margin-left:auto;}
+.mr-dur{color:var(--muted);}
+
+/* 유저 승률 테이블 */
+.ur-table{width:100%;border-collapse:collapse;}
+.ur-table th{font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;color:var(--muted);padding:4px 6px;text-align:left;border-bottom:1px solid rgba(255,255,255,.05);}
+.ur-table td{padding:5px 6px;font-size:11px;border-bottom:1px solid rgba(255,255,255,.03);}
+.ur-name{font-weight:700;}
+.ur-games{color:var(--sub);font-family:'Rajdhani',sans-serif;}
+.ur-pct{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:12px;}
+
+/* 2열 그리드 */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;}
+@media(max-width:600px){.two-col{grid-template-columns:1fr;}.dm-stats{gap:.75rem;}}
+
+/* 챔피언 아이콘 소형 */
+.mini-champ{width:22px;height:22px;border-radius:50%;object-fit:cover;border:1px solid rgba(255,255,255,.1);}
+
+/* ── 마스터 로그인 모달 ── */
+.master-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:2000;display:none;align-items:center;justify-content:center;}
+.master-overlay.open{display:flex;}
+.master-box{background:#0D1620;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:2rem;width:320px;text-align:center;}
+.master-title{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;color:var(--gold);margin-bottom:.25rem;}
+.master-desc{font-family:'Rajdhani',sans-serif;font-size:11px;color:var(--muted);margin-bottom:1.25rem;letter-spacing:.5px;}
+.master-input{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:3px;padding:7px 10px;color:var(--white);font-family:'Noto Sans KR',sans-serif;font-size:13px;outline:none;margin-bottom:.6rem;transition:border-color .15s;}
+.master-input:focus{border-color:var(--bacc);}
+.master-btn{width:100%;background:rgba(10,200,185,.1);border:1px solid var(--bacc);border-radius:3px;color:var(--blue);font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;padding:7px;cursor:pointer;transition:background .15s;}
+.master-btn:hover{background:rgba(10,200,185,.18);}
+.master-err{color:var(--red);font-family:'Rajdhani',sans-serif;font-size:11px;margin-top:.5rem;min-height:16px;}
+
+/* ── 일괄 계산 모달 ── */
+.batch-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:2000;display:none;align-items:center;justify-content:center;}
+.batch-overlay.open{display:flex;}
+.batch-box{background:#0D1620;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:1.5rem;width:440px;max-height:80vh;overflow-y:auto;}
+.batch-title{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;color:var(--gold);margin-bottom:.25rem;}
+.batch-desc{font-family:'Rajdhani',sans-serif;font-size:11px;color:var(--muted);margin-bottom:1rem;letter-spacing:.5px;}
+.batch-progress{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:4px;padding:.75rem 1rem;margin-bottom:.75rem;}
+.batch-bar-wrap{height:6px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden;margin:.5rem 0;}
+.batch-bar-fill{height:100%;background:var(--blue);border-radius:3px;transition:width .3s;}
+.batch-log{max-height:200px;overflow-y:auto;font-family:'Rajdhani',sans-serif;font-size:11px;color:var(--sub);line-height:1.8;}
+.batch-log-item{padding:1px 0;border-bottom:1px solid rgba(255,255,255,.03);}
+.batch-log-ok{color:var(--blue);}.batch-log-skip{color:var(--muted);}.batch-log-err{color:var(--red);}
+.batch-footer{display:flex;justify-content:flex-end;gap:.5rem;margin-top:.75rem;}
+.batch-close-btn{padding:5px 14px;border-radius:2px;border:1px solid rgba(255,255,255,.1);background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;}
+.batch-start-btn{padding:5px 14px;border-radius:2px;border:1px solid var(--bacc);background:rgba(10,200,185,.08);color:var(--blue);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;}
+
+/* ── 레이팅 커스텀 툴팁 ── */
+.rating-tip-wrap{position:relative;display:inline-block;}
+.rating-tip-box{
+  display:none;position:fixed;
+  background:#0A0F13;border:1px solid rgba(200,170,110,.3);border-radius:4px;
+  padding:.6rem .85rem;min-width:220px;z-index:9999;white-space:nowrap;
+  font-family:'Rajdhani',sans-serif;font-size:11px;line-height:1.9;
+  box-shadow:0 4px 20px rgba(0,0,0,.7);pointer-events:none;
+}
+.rating-tip-box::after{
+  content:'';position:absolute;top:100%;right:10px;
+  border:5px solid transparent;border-top-color:rgba(200,170,110,.3);
+}
+/* JS로 위치 제어 */
+.rt-row{display:flex;justify-content:space-between;gap:1.5rem;}
+.rt-lbl{color:var(--muted);}
+.rt-val{color:var(--white);font-weight:700;}
+.rt-val.pos{color:var(--blue);}
+.rt-val.neg{color:var(--red);}
+.rt-val.gold{color:var(--gold);}
+.rt-divider{border:none;border-top:1px solid rgba(255,255,255,.06);margin:.25rem 0;}
+.rt-total{display:flex;justify-content:space-between;gap:1.5rem;margin-top:.1rem;}
+.rt-total-lbl{font-weight:700;color:var(--sub);}
+.rt-total-val{font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:1px;color:var(--gold);}
+
+/* ── 티어 커스텀 툴팁 ── */
+.tier-tip-wrap{position:relative;display:inline-block;}
+.tier-tip-box{
+  display:none;position:fixed;
+  background:#0A0F13;border:1px solid rgba(200,170,110,.3);border-radius:4px;
+  padding:.5rem .75rem;min-width:140px;z-index:9999;white-space:nowrap;
+  font-family:'Rajdhani',sans-serif;font-size:11px;line-height:1.8;
+  box-shadow:0 4px 20px rgba(0,0,0,.7);pointer-events:none;
+}
+.tier-tip-box::after{
+  content:'';position:absolute;top:100%;right:10px;
+  border:5px solid transparent;border-top-color:rgba(200,170,110,.3);
+}
+
+/* ── 관리자 로그인 + 임시 티어 ── */
+.admin-login-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:2000;display:none;align-items:center;justify-content:center;}
+.admin-login-overlay.open{display:flex;}
+.admin-login-box{background:#0D1620;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:1.75rem;width:300px;text-align:center;}
+.al-title{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;color:var(--gold);margin-bottom:.2rem;}
+.al-desc{font-family:'Rajdhani',sans-serif;font-size:11px;color:var(--muted);margin-bottom:1rem;letter-spacing:.5px;}
+.al-input{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:3px;padding:6px 10px;color:var(--white);font-family:'Noto Sans KR',sans-serif;font-size:12px;outline:none;margin-bottom:.5rem;transition:border-color .15s;}
+.al-input:focus{border-color:var(--bacc);}
+.al-btn{width:100%;background:rgba(10,200,185,.1);border:1px solid var(--bacc);border-radius:3px;color:var(--blue);font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;padding:6px;cursor:pointer;}
+.al-err{color:var(--red);font-family:'Rajdhani',sans-serif;font-size:10px;margin-top:.4rem;min-height:14px;}
+
+/* 임시 티어 팝업 */
+.tt-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:2000;display:none;align-items:center;justify-content:center;}
+.tt-overlay.open{display:flex;}
+.tt-box{background:#0D1620;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:1.5rem;width:320px;}
+.tt-title{font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:2px;color:var(--gold);margin-bottom:.15rem;}
+.tt-name{font-family:'Rajdhani',sans-serif;font-size:12px;color:var(--muted);margin-bottom:1rem;}
+.tt-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:.75rem;}
+.tt-tier-btn{padding:5px 4px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;text-align:center;transition:all .12s;white-space:nowrap;overflow:hidden;font-size:9px;}
+.tt-tier-btn:hover{border-color:rgba(255,255,255,.2);color:var(--white);}
+.tt-tier-btn.selected{border-color:var(--blue);color:var(--blue);background:rgba(10,200,185,.1);}
+.tt-footer{display:flex;gap:.5rem;justify-content:flex-end;margin-top:.5rem;}
+.tt-cancel{padding:5px 12px;border-radius:2px;border:1px solid rgba(255,255,255,.1);background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;}
+.tt-save{padding:5px 12px;border-radius:2px;border:1px solid var(--bacc);background:rgba(10,200,185,.08);color:var(--blue);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;}
+.tt-remove{padding:5px 12px;border-radius:2px;border:1px solid rgba(232,64,87,.3);background:transparent;color:var(--red);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;}
+.temp-tier-cell{cursor:pointer;opacity:.7;transition:opacity .15s;}
+.temp-tier-cell:hover{opacity:1;}
+.temp-tier-empty{font-family:'Rajdhani',sans-serif;font-size:10px;color:var(--muted);letter-spacing:.5px;border:1px dashed rgba(255,255,255,.1);border-radius:2px;padding:2px 6px;cursor:pointer;}
+.temp-tier-empty:hover{border-color:rgba(10,200,185,.3);color:var(--blue);}
 </style>
 </head>
 <body>
@@ -164,6 +329,18 @@ tbody td{padding:.55rem 1rem;font-size:12px;vertical-align:middle;}
           <input class="search-input" id="search-input" type="text" placeholder="소환사 검색">
           <span class="s-icon">🔍</span>
         </div>
+        <button id="btn-master-rating" onclick="openMasterModal()"
+          style="padding:5px 12px;border-radius:3px;border:1px solid rgba(200,170,110,.3);background:rgba(200,170,110,.06);color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:.5px;cursor:pointer;display:none;">
+          👑 전체 레이팅 계산
+        </button>
+        <div id="admin-status" style="display:none;align-items:center;gap:6px;">
+          <span id="admin-status-text" style="font-family:'Rajdhani',sans-serif;font-size:11px;color:var(--blue);"></span>
+          <button onclick="statsAdminLogout()" style="padding:3px 8px;border-radius:2px;border:1px solid rgba(255,255,255,.1);background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;">로그아웃</button>
+        </div>
+        <button id="btn-admin-login" onclick="openAdminLogin()"
+          style="padding:5px 12px;border-radius:3px;border:1px solid rgba(200,170,110,.3);background:rgba(200,170,110,.06);color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:.5px;cursor:pointer;display:none;">
+          🔑 관리자 로그인
+        </button>
         <button class="btn-refresh" id="btn-refresh"><span class="ri">↻</span> 새로고침</button>
       </div>
     </div>
@@ -202,39 +379,45 @@ tbody td{padding:.55rem 1rem;font-size:12px;vertical-align:middle;}
       </div>
     </div>
 
-    <!-- 테이블 헤더 -->
-    <div class="table-head" id="table-head">
-      <table>
-        <colgroup>
-          <col class="c0"><col class="c1"><col class="c2"><col class="c3">
-          <col class="c4"><col class="c5"><col class="c6"><col class="c7"><col class="c8">
-        </colgroup>
-        <thead>
-          <tr>
-            <th class="c0 th-center">#</th>
-            <th class="c1 sortable" data-sort="name">소환사명</th>
-            <th class="c2 th-center">포지션</th>
-            <th class="c3 sortable" data-sort="tier">티어</th>
-            <th class="c4">모스트 챔피언</th>
-            <th class="c5 sortable" data-sort="kda">KDA</th>
-            <th class="c6 sortable" data-sort="winrate">승률</th>
-            <th class="c7 sortable sort-asc" data-sort="games">게임 수</th>
-            <th class="c8 sortable" data-sort="recent">최근 게임</th>
-          </tr>
-        </thead>
-      </table>
-    </div>
   </div>
 
   <!-- ── 스크롤 바디 ── -->
   <div class="table-body-wrap" id="table-body-wrap">
     <table>
       <colgroup>
-        <col class="c0"><col class="c1"><col class="c2"><col class="c3">
-        <col class="c4"><col class="c5"><col class="c6"><col class="c7"><col class="c8">
+        <col style="width:40px;">
+        <col style="width:150px;">
+        <col style="width:54px;">
+        <col style="width:70px;">
+        <col style="width:70px;">
+        <col style="width:70px;">
+        <col style="width:96px;">
+        <col style="width:60px;">
+        <col style="width:160px;">
+        <col style="width:62px;">
+        <col style="width:80px;">
+        <col style="width:68px;">
+        <col style="width:52px;">
       </colgroup>
+      <thead id="table-head">
+        <tr>
+          <th class="c0 th-center">#</th>
+          <th class="c1 sortable" data-sort="name">소환사명</th>
+          <th class="c2 th-center">포지션</th>
+          <th class="c3 sortable" data-sort="tier">현 티어</th>
+          <th class="sortable" data-sort="peakTier">최고 티어</th>
+          <th id="th-temp-tier">임시 티어</th>
+          <th class="c4">모스트 챔피언</th>
+          <th class="c5 sortable" data-sort="kda">KDA</th>
+          <th class="c6 sortable" data-sort="winrate">승률</th>
+          <th class="c7 sortable sort-asc" data-sort="games">게임 수</th>
+          <th class="c8 sortable" data-sort="recent">최근 게임</th>
+          <th class="sortable" data-sort="rating" style="color:var(--gold);">레이팅</th>
+          <th></th>
+        </tr>
+      </thead>
       <tbody id="stats-body">
-        <tr><td colspan="9"><div class="state loading-state"><div class="spinner"></div> 불러오는 중...</div></td></tr>
+        <tr><td colspan="13"><div class="state loading-state"><div class="spinner"></div> 불러오는 중...</div></td></tr>
       </tbody>
     </table>
   </div>
@@ -249,7 +432,33 @@ const DD_VER = '15.10.1';
 const DD_ICON = id => `https://ddragon.leagueoflegends.com/cdn/${DD_VER}/img/champion/${id}.png`;
 const PER_PAGE = 20;
 const urlParams = new URLSearchParams(location.search);
-const SERVER_ID = urlParams.get('server_id') || '';
+const SERVER_ID    = urlParams.get('server_id') || '';
+const COMMUNITY_ID = urlParams.get('cid') || '';
+const WORKER_URL   = 'https://delicate-dew-c1bd.rdc6087.workers.dev';
+const SCHEMA_VER   = 1;
+const UPDATE_COOLDOWN_MS = 60 * 1000;
+
+const DEFAULT_RATING_CONFIG = {
+  weights: { wr: 0.7, ai: 0.2, kda: 0.1 },
+  tierBase: {
+    IRON:     [0,100,200,300], BRONZE:  [400,500,600,700],
+    SILVER:   [800,900,1000,1100], GOLD: [1200,1300,1400,1500],
+    PLATINUM: [1600,1700,1800,1900], EMERALD: [2000,2100,2200,2300],
+    DIAMOND:  [2400,2500,2600,2700], MASTER: [2800]
+  },
+  wrMult: 8,
+  aiScore: { 5:40, 4:20, 3:0, 2:-20, 1:-40 },
+  kdaScore: { 4:20, 3:10, 2:0, 1:-30 },
+  posCorr: {
+    Top:[1.05,0.95,0.95], Jungle:[0.90,1.05,1.10],
+    Middle:[1.00,1.10,1.00], Bottom:[0.95,1.00,1.05], Support:[1.10,0.90,0.90]
+  },
+  gamesBase: 50
+};
+// 관리자 인증 (index.html에서 넘어올 때 URL 파라미터로 전달)
+const _sessionToken = urlParams.get('token') || '';
+const _userRole     = urlParams.get('role') || '';
+const _isMaster     = _userRole === 'master';
 
 const POS_COLOR = {Top:'#C8AA6E',Jungle:'#3CB371',Middle:'#5B9BD5',Bottom:'#E84057',Support:'#9E5CC8'};
 const POS_SHORT = {Top:'TOP',Jungle:'JUG',Middle:'MID',Bottom:'AD',Support:'SUP'};
@@ -269,7 +478,7 @@ const TIER_COLOR = {CHALLENGER:'#F4C874',GRANDMASTER:'#CD4545',MASTER:'#9E5CC8',
 const TIER_ORDER = ['CHALLENGER','GRANDMASTER','MASTER','DIAMOND','EMERALD','PLATINUM','GOLD','SILVER','BRONZE','IRON'];
 
 function parseTier(s){
-  if(!s) return {tier:'UNRANKED',short:'UN'};
+  if(!s || typeof s === 'object') return {tier:'UNRANKED',short:'UN'};
   const p=s.trim().split(' ');
   const t=p[0].toUpperCase();
   const dmap={'I':'1','II':'2','III':'3','IV':'4'};
@@ -282,6 +491,102 @@ function tierOrder(s){
   const ti=TIER_ORDER.indexOf(p.tier);
   return ti<0?99:ti*10;
 }
+function renderTierBadge(tierStr, lp) {
+  // 객체로 들어오면 tier/lp 추출
+  if (tierStr && typeof tierStr === 'object') {
+    lp = tierStr.lp !== undefined ? tierStr.lp : lp;
+    tierStr = tierStr.tier || null;
+  }
+  if (!tierStr) return '<span style="color:var(--muted);font-size:11px;font-family:Rajdhani,sans-serif;">—</span>';
+  var pp = parseTier(tierStr);
+  var pc = TIER_COLOR[pp.tier] || '#5B6474';
+  // 마스터 이상 LP 표시
+  var HIGH_TIERS = ['CHALLENGER','GRANDMASTER','MASTER'];
+  var showLp = lp !== undefined && lp !== null && HIGH_TIERS.includes(pp.tier);
+  var badgeText = showLp ? esc(pp.short) + ' ' + lp : esc(pp.short);
+  var tipHtml = '';
+  if (lp !== undefined && lp !== null) {
+    tipHtml =
+      '<div class="rt-row"><span class="rt-lbl">티어</span><span class="rt-val" style="color:'+pc+';">'+esc(pp.short)+'</span></div>'+
+      '<div class="rt-row"><span class="rt-lbl">LP</span><span class="rt-val gold">'+lp+' LP</span></div>';
+  }
+  return '<div class="tier-tip-wrap">'+
+    '<span class="tier-badge" style="color:'+pc+';background:'+pc+'18;border:1px solid '+pc+'30;cursor:'+(tipHtml?'help':'default')+';">'+badgeText+'</span>'+
+    (tipHtml ? '<div class="tier-tip-box">'+tipHtml+'</div>' : '')+
+  '</div>';
+}
+
+function ratingTooltip(bd) {
+  if (!bd || typeof bd !== 'object') return '';
+  try {
+    var wr = bd.wr !== undefined ? bd.wr.toFixed(1)+'%' : '—';
+    var kda = bd.avgKda !== undefined ? bd.avgKda.toFixed(2) : '—';
+    var games = bd.games !== undefined ? bd.games+'판' : '—';
+    var gCorr = (bd.gamesCorr||1).toFixed ? (bd.gamesCorr||1).toFixed(2) : (bd.gamesCorr||1);
+    var wrS = bd.wrScore||0, aiS = bd.aiScore||0, kdaS = bd.kdaScore||0;
+    function valClass(v){ return v > 0 ? 'pos' : v < 0 ? 'neg' : ''; }
+    function sign(v){ return v > 0 ? '+'+v : v; }
+    return '<div class="rt-row"><span class="rt-lbl">기본 레이팅</span><span class="rt-val gold">'+(bd.baseRating||0)+'</span></div>'+
+      '<hr class="rt-divider">'+
+      '<div class="rt-row"><span class="rt-lbl">승률 점수</span><span class="rt-val '+valClass(wrS)+'">'+sign(wrS)+' <span style="color:var(--muted);font-weight:400;">('+wr+')</span></span></div>'+
+      '<div class="rt-row"><span class="rt-lbl">AI 점수</span><span class="rt-val '+valClass(aiS)+'">'+sign(aiS)+'</span></div>'+
+      '<div class="rt-row"><span class="rt-lbl">KDA 점수</span><span class="rt-val '+valClass(kdaS)+'">'+sign(kdaS)+' <span style="color:var(--muted);font-weight:400;">('+kda+')</span></span></div>'+
+      '<div class="rt-row"><span class="rt-lbl">포지션 보정</span><span class="rt-val">×'+(bd.posCorr||1)+'</span></div>'+
+      '<div class="rt-row"><span class="rt-lbl">경기수 보정</span><span class="rt-val">×'+gCorr+' <span style="color:var(--muted);font-weight:400;">('+games+')</span></span></div>'+
+      '<hr class="rt-divider">'+
+      '<div class="rt-total"><span class="rt-total-lbl">최종 레이팅</span><span class="rt-total-val">'+(bd.baseRating||0)+' → ';
+  } catch(e) { return ''; }
+}
+
+function buildRatingCell(rating, bd, isHeader) {
+  if (rating === undefined || rating === null) {
+    return '<span style="font-family:Rajdhani,sans-serif;font-size:11px;color:var(--muted);">—</span>';
+  }
+  var tipHtml = '';
+  if (bd && typeof bd === 'object') {
+    try {
+      var wr = bd.wr !== undefined ? bd.wr.toFixed(1)+'%' : '—';
+      var kda = bd.avgKda !== undefined ? bd.avgKda.toFixed(2) : '—';
+      var games = bd.games !== undefined ? bd.games+'판' : '—';
+      var gCorr = (bd.gamesCorr||1).toFixed ? (bd.gamesCorr||1).toFixed(2) : (bd.gamesCorr||1);
+      var wrS = bd.wrScore||0, aiS = bd.aiScore||0, kdaS = bd.kdaScore||0;
+      function valCls(v){ return v > 0 ? 'pos' : v < 0 ? 'neg' : ''; }
+      function sgn(v){ return v > 0 ? '+'+v : String(v); }
+      var posCorr = bd.posCorr || 1;
+      var combined = ((wrS * (bd.w_wr||0.7)) + (aiS * (bd.w_ai||0.2)) + (kdaS * (bd.w_kda||0.1)));
+      var combinedWithCorr = (combined * posCorr * (bd.gamesCorr||1)).toFixed(1);
+      tipHtml =
+        // 수식 설명
+        '<div style="color:var(--muted);font-size:10px;margin-bottom:.3rem;letter-spacing:.5px;">기본 + ((승률×W1 + AI×W2 + KDA×W3) × 포지션 × 경기수)</div>'+
+        '<hr class="rt-divider">'+
+        // 기본 레이팅
+        '<div class="rt-row"><span class="rt-lbl">기본 레이팅</span><span class="rt-val gold">'+(bd.baseRating||0)+'</span></div>'+
+        '<hr class="rt-divider">'+
+        // 승률 점수
+        '<div class="rt-row"><span class="rt-lbl">승률 점수 ×'+(bd.w_wr||0.7)+'</span><span class="rt-val '+valCls(wrS)+'">'+sgn(wrS)+' <span style="color:var(--muted);font-size:10px;">('+wr+')</span></span></div>'+
+        // AI 점수
+        '<div class="rt-row"><span class="rt-lbl">AI 점수 ×'+(bd.w_ai||0.2)+'</span><span class="rt-val '+valCls(aiS)+'">'+sgn(aiS)+'</span></div>'+
+        // KDA 점수
+        '<div class="rt-row"><span class="rt-lbl">KDA 점수 ×'+(bd.w_kda||0.1)+'</span><span class="rt-val '+valCls(kdaS)+'">'+sgn(kdaS)+' <span style="color:var(--muted);font-size:10px;">('+kda+')</span></span></div>'+
+        '<hr class="rt-divider">'+
+        // 보정치
+        '<div class="rt-row"><span class="rt-lbl">포지션 보정</span><span class="rt-val">×'+posCorr+'</span></div>'+
+        '<div class="rt-row"><span class="rt-lbl">경기수 보정</span><span class="rt-val">×'+gCorr+' <span style="color:var(--muted);font-size:10px;">('+games+')</span></span></div>'+
+        '<hr class="rt-divider">'+
+        // 계산 과정
+        '<div style="color:var(--muted);font-size:10px;margin:.1rem 0;">' +
+          (bd.baseRating||0)+' + '+combinedWithCorr+' = '+
+          '<span style="color:var(--gold);font-weight:700;">'+Math.round(rating)+'</span>'+
+        '</div>'+
+        '<div class="rt-total"><span class="rt-total-lbl">최종 레이팅</span><span class="rt-total-val">'+Math.round(rating)+'</span></div>';
+    } catch(e) {}
+  }
+  return '<div class="rating-tip-wrap">'+
+    '<span style="font-family:Rajdhani,sans-serif;font-size:13px;font-weight:700;color:var(--gold);cursor:help;">'+Math.round(rating)+'</span>'+
+    (tipHtml ? '<div class="rating-tip-box">'+tipHtml+'</div>' : '')+
+  '</div>';
+}
+
 function timeAgo(ts){
   if(!ts) return '—';
   const d=Math.floor(Date.now()/1000)-ts;
@@ -311,12 +616,12 @@ async function loadChampMap(){
 
 async function loadData(){
   if(!SERVER_ID){
-    document.getElementById('stats-body').innerHTML='<tr><td colspan="9"><div class="state" style="color:var(--red);">⚠ URL에 server_id 파라미터가 없습니다. 예: ?server_id=156</div></td></tr>';
+    document.getElementById('stats-body').innerHTML='<tr><td colspan="13"><div class="state" style="color:var(--red);">⚠ URL에 server_id 파라미터가 없습니다. 예: ?server_id=156</div></td></tr>';
     return;
   }
   const btn=document.getElementById('btn-refresh');
   btn.classList.add('loading');
-  document.getElementById('stats-body').innerHTML='<tr><td colspan="9"><div class="state loading-state"><div class="spinner"></div> 불러오는 중...</div></td></tr>';
+  document.getElementById('stats-body').innerHTML='<tr><td colspan="13"><div class="state loading-state"><div class="spinner"></div> 불러오는 중...</div></td></tr>';
   document.getElementById('pagination').style.display='none';
   try{
     const res=await fetch(`https://b2c-api-cdn.deeplol.gg/tournament/server_info?server_id=${SERVER_ID}`);
@@ -324,12 +629,17 @@ async function loadData(){
     const json=await res.json();
     document.getElementById('server-name').textContent=(json.server_name||'커뮤니티')+' 전적';
     document.title=(json.server_name||'커뮤니티')+' 전적';
+    // cid 있으면 마스터 버튼 표시
+    if (COMMUNITY_ID) {
+      var mb = document.getElementById('btn-master-rating');
+      if (mb) mb.style.display = '';
+    }
     allData=(json.tournament_stats&&json.tournament_stats.tournament_stats_all_list)||[];
     document.getElementById('member-count').textContent=allData.length;
     currentPage=1;
     applyAll();
   }catch(e){
-    document.getElementById('stats-body').innerHTML=`<tr><td colspan="9"><div class="state" style="color:var(--red);">⚠ ${esc(e.message)}</div></td></tr>`;
+    document.getElementById('stats-body').innerHTML=`<tr><td colspan="13"><div class="state" style="color:var(--red);">⚠ ${esc(e.message)}</div></td></tr>`;
   }finally{
     btn.classList.remove('loading');
   }
@@ -371,7 +681,7 @@ function renderPage(){
   const slice=filteredData.slice(start,start+PER_PAGE);
 
   if(!slice.length){
-    document.getElementById('stats-body').innerHTML='<tr><td colspan="9"><div class="state" style="color:var(--muted);">검색 결과가 없습니다</div></td></tr>';
+    document.getElementById('stats-body').innerHTML='<tr><td colspan="13"><div class="state" style="color:var(--muted);">검색 결과가 없습니다</div></td></tr>';
     document.getElementById('pagination').style.display='none';
     return;
   }
@@ -385,7 +695,7 @@ function renderPage(){
     const tc=TIER_COLOR[tp.tier]||'#5B6474';
     const champs=(m.most_three_champ||[]).slice(0,3).map(cid=>{
       const cn=champMap[String(cid)]||String(cid);
-      return `<div class="cw"><img class="ci" src="${DD_ICON(cn)}" onerror="this.style.opacity='.15'" loading="lazy"><div class="ctip">${esc(cn)}</div></div>`;
+      return `<div class="cw"><img class="ci" src="${DD_ICON(cn)}" onerror="this.style.opacity=0.15" loading="lazy"><div class="ctip">${esc(cn)}</div></div>`;
     }).join('');
     const kv=m.kda?m.kda.toFixed(2):'—';
     const kc=m.kda>=4?'kh':m.kda>=2.5?'km':'kl';
@@ -399,7 +709,9 @@ function renderPage(){
       <td class="col-rank">${rank}</td>
       <td><span class="s-name">${esc(m.riot_name)}</span> <span class="s-tag">#${esc(m.riot_tag)}</span></td>
       <td><span class="pos-txt" style="color:${posC}">${posS}</span></td>
-      <td><span class="tier-badge" style="color:${tc};background:${tc}18;border:1px solid ${tc}30">${esc(tp.short)}</span></td>
+      <td>${renderTierBadge(m.tier)}</td>
+      <td>${renderTierBadge(m._peakTier, m._peakLp)}</td>
+      <td>${renderTempTierCell(m)}</td>
       <td><div class="champ-list">${champs}</div></td>
       <td><span class="kda-val ${kc}">${kv}</span></td>
       <td><div class="wr-wrap">
@@ -410,6 +722,13 @@ function renderPage(){
       </div></td>
       <td class="col-games">${t}</td>
       <td class="col-recent">${timeAgo(m.creation_timestamp)}</td>
+      <td style="width:68px;text-align:center;">${buildRatingCell(m._rating, m._ratingBreakdown)}</td>
+      <td style="width:52px;text-align:center;">
+        <button class="detail-btn" data-puu="${m.puu_id}"
+          style="padding:3px 7px;border-radius:2px;border:1px solid rgba(10,200,185,.3);background:rgba(10,200,185,.06);color:var(--blue);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:.5px;cursor:pointer;white-space:nowrap;">
+          상세
+        </button>
+      </td>
     </tr>`;
   }).join('');
 
@@ -437,12 +756,43 @@ function renderPagination(pages){
 
 function scrollTop(){document.getElementById('table-body-wrap').scrollTop=0;}
 
+// 전체 멤버 레이팅 Firebase에서 일괄 로드 (API 1번 호출)
+async function loadAllRatings() {
+  if (!COMMUNITY_ID || !allData.length) {
+    return;
+  }
+  try {
+    const res = await fetch(WORKER_URL + '/member-ratings-read', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ communityId: COMMUNITY_ID })
+    });
+    const json = await res.json();
+    if (!json.ok || !json.data) return;
+    const ratings = json.data;
+    let matched = 0;
+    allData.forEach(function(m) {
+      if (ratings[m.puu_id]) {
+        m._rating = ratings[m.puu_id].rating;
+        m._ratingBreakdown = ratings[m.puu_id].breakdown || {};
+        // peakTier 복원
+        if (m._ratingBreakdown.peakTier) {
+          m._peakTier = m._ratingBreakdown.peakTier;
+          m._peakLp   = m._ratingBreakdown.peakLp !== undefined ? m._ratingBreakdown.peakLp : null;
+        }
+        matched++;
+      }
+    });
+    renderPage();
+  } catch(e) {}
+}
+
 // 정렬
-document.querySelectorAll('.table-head th.sortable').forEach(th=>{
+document.querySelectorAll('#table-head th.sortable').forEach(th=>{
   th.addEventListener('click',()=>{
     const k=th.dataset.sort;
     sortDir=sortKey===k?-sortDir:-1;sortKey=k;
-    document.querySelectorAll('.table-head th').forEach(t=>t.classList.remove('sort-asc','sort-desc'));
+    document.querySelectorAll('#table-head th').forEach(t=>t.classList.remove('sort-asc','sort-desc'));
     th.classList.add(sortDir===-1?'sort-desc':'sort-asc');
     applyAll();
   });
@@ -457,11 +807,1626 @@ document.getElementById('games-max').addEventListener('input',e=>{gamesMax=e.tar
 document.getElementById('btn-refresh').addEventListener('click',loadData);
 
 // 가로 스크롤 동기화 (헤더 ↔ 바디)
-const headEl=document.getElementById('table-head');
 const bodyWrap=document.getElementById('table-body-wrap');
-bodyWrap.addEventListener('scroll',()=>{headEl.scrollLeft=bodyWrap.scrollLeft;});
+function syncTableWidth(){} // 단일 테이블 구조에서 불필요
 
-(async()=>{await loadChampMap();await loadData();})();
+(async()=>{
+  await loadChampMap();
+  await loadData();
+  await loadAllRatings();
+  if (COMMUNITY_ID) {
+    await loadTempTiers();
+    // 관리자 로그인 버튼 표시 (cid 있을 때만)
+    var loginBtn = document.getElementById('btn-admin-login');
+    if (loginBtn) loginBtn.style.display = '';
+  }
+})();
+
 </script>
+
+
+
+<!-- ── 관리자 로그인 모달 ── -->
+<div class="admin-login-overlay" id="admin-login-overlay">
+  <div class="admin-login-box">
+    <div class="al-title">🔑 관리자 로그인</div>
+    <div class="al-desc">임시 티어 설정 권한이 필요합니다</div>
+    <input class="al-input" id="al-id" type="text" placeholder="아이디">
+    <input class="al-input" id="al-pw" type="password" placeholder="비밀번호">
+    <button class="al-btn" onclick="doStatsAdminLogin()">로그인</button>
+    <div class="al-err" id="al-err"></div>
+  </div>
+</div>
+
+<!-- ── 임시 티어 설정 팝업 ── -->
+<div class="tt-overlay" id="tt-overlay">
+  <div class="tt-box">
+    <div class="tt-title">임시 티어 설정</div>
+    <div class="tt-name" id="tt-member-name">—</div>
+    <div class="tt-grid" id="tt-tier-grid"></div>
+    <div id="tt-lp-section" style="display:none;margin-bottom:.6rem;">
+      <label style="font-family:'Rajdhani',sans-serif;font-size:10px;color:var(--muted);letter-spacing:.5px;display:block;margin-bottom:.3rem;">리그 포인트 (LP)</label>
+      <input id="tt-lp-input" type="number" min="0" max="9999" placeholder="0"
+        style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:3px;padding:5px 10px;color:var(--white);font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;outline:none;-moz-appearance:textfield;"
+        oninput="this.style.borderColor='var(--bacc)'">
+    </div>
+    <div class="tt-footer">
+      <button class="tt-remove" id="tt-remove-btn" onclick="saveTempTier(null)">제거</button>
+      <button class="tt-cancel" onclick="closeTempTierPopup()">취소</button>
+      <button class="tt-save" onclick="saveTempTier()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── 마스터 로그인 모달 ── -->
+<div class="master-overlay" id="master-overlay">
+  <div class="master-box">
+    <div class="master-title">👑 마스터 인증</div>
+    <div class="master-desc">전체 레이팅 계산은 마스터 관리자만 사용 가능합니다</div>
+    <input class="master-input" id="master-id" type="text" placeholder="마스터 아이디">
+    <input class="master-input" id="master-pw" type="password" placeholder="비밀번호">
+    <button class="master-btn" onclick="doMasterAuth()">인증</button>
+    <div class="master-err" id="master-err"></div>
+  </div>
+</div>
+
+<!-- ── 전체 레이팅 계산 모달 ── -->
+<div class="batch-overlay" id="batch-overlay">
+  <div class="batch-box">
+    <div class="batch-title">전체 멤버 레이팅 계산</div>
+    <div class="batch-desc" id="batch-desc">Firebase에 분석 데이터가 있는 멤버의 레이팅을 일괄 계산합니다.</div>
+    <div class="batch-progress" id="batch-progress" style="display:none;">
+      <div style="display:flex;justify-content:space-between;font-family:'Rajdhani',sans-serif;font-size:11px;color:var(--sub);">
+        <span id="batch-status-text">계산 중...</span>
+        <span id="batch-pct">0%</span>
+      </div>
+      <div class="batch-bar-wrap"><div class="batch-bar-fill" id="batch-bar" style="width:0%"></div></div>
+    </div>
+    <div class="batch-log" id="batch-log"></div>
+    <div class="batch-footer">
+      <button class="batch-close-btn" onclick="closeBatchModal()">닫기</button>
+      <button class="batch-start-btn" id="batch-start-btn" onclick="startBatchRating()">▶ 계산 시작</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── 유저 상세 팝업 ── -->
+<div class="detail-overlay" id="detail-overlay" onclick="if(event.target===this)closeDetail()">
+  <div class="detail-modal" id="detail-modal">
+    <div class="dm-header" id="dm-header">
+      <img class="dm-avatar" id="dm-avatar" src="" onerror="this.style.display='none'">
+      <div>
+        <div class="dm-name" id="dm-name">—</div>
+        <div class="dm-tag" id="dm-tag"></div>
+        <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
+          <span class="dm-tier" id="dm-tier"></span>
+          <div style="display:none;">
+            <span style="font-family:'Rajdhani',sans-serif;font-size:9px;color:var(--muted);margin-right:2px;">최고</span>
+            <span class="dm-tier" id="dm-peak-tier"></span>
+          </div>
+        </div>
+      </div>
+      <div class="dm-stats" id="dm-stats"></div>
+      <div style="display:flex;align-items:center;gap:4px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:3px;padding:2px;">
+        <button id="dm-toggle-custom" onclick="setQueueMode('custom')"
+          style="padding:3px 9px;border-radius:2px;border:none;font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:.5px;cursor:pointer;transition:all .15s;background:var(--blue);color:#0A0F13;">
+          🏆 내전
+        </button>
+        <button id="dm-toggle-all" onclick="setQueueMode('all')"
+          style="padding:3px 9px;border-radius:2px;border:none;font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:.5px;cursor:pointer;transition:all .15s;background:transparent;color:var(--muted);">
+          🎮 전체 큐
+        </button>
+      </div>
+      <button class="dm-close" onclick="closeDetail()">✕</button>
+    </div>
+    <div id="dm-content">
+      <div class="dm-loading"><div class="spinner"></div> 분석 중...</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+// 유저 상세 분석
+// ══════════════════════════════════════════
+const API_BASE = 'https://b2c-api-cdn.deeplol.gg';
+// puuId → { matchIds: Set, matches: [], analysis: {} }
+let detailCache = { custom: {}, all: {} }; // 모드별 캐시 분리
+let _currentEnemyChamps = [];
+let _queueMode = 'custom'; // 'custom' | 'all'
+let _currentMember = null; // 현재 열린 팝업의 유저
+let _lastUpdateTime = {}; // puuId+mode → timestamp (쿨타임용)
+
+// ── Firebase 저장/로드 ──
+function _cacheKey(puuId, mode) { return puuId + '__' + mode; }
+
+async function loadFromFirebase(puuId, mode) {
+  if (!COMMUNITY_ID) return null;
+  try {
+    const res = await fetch(WORKER_URL + '/member-analysis-read', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ communityId: COMMUNITY_ID, puuId, mode })
+    });
+    const json = await res.json();
+    if (!json.ok || !json.data) return null;
+    return json.data;
+  } catch(e) { return null; }
+}
+
+// ══════════════════════════════════════════
+// 레이팅 계산
+// ══════════════════════════════════════════
+let _ratingConfig = null;
+
+// 딥롤 summoner API에서 지난 시즌 최고 티어 조회
+async function fetchPeakTier(puuId, platform) {
+  if (!puuId) return null;
+  try {
+    const url = 'https://b2c-api-cdn.deeplol.gg/summoner/summoner-realtime?platform_id='
+      + (platform || 'KR') + '&summoner_id=&puu_id=' + encodeURIComponent(puuId);
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const json = await res.json();
+    const solo = json.season_tier_info_dict && json.season_tier_info_dict.ranked_solo_5x5;
+    if (!solo) return null;
+    // high_tier: 지난 시즌 최고 티어 (division 정보 없음 → 티어명만)
+    // high_tier 없으면 현재 tier + division 사용
+    if (solo.high_tier) {
+      return { tier: solo.high_tier, lp: solo.high_lp || 0 };
+    }
+    // fallback: 현재 티어
+    if (!solo.tier) return null;
+    const noDivTiers = ['GRANDMASTER','CHALLENGER','MASTER'];
+    const divMap = {1:'I', 2:'II', 3:'III', 4:'IV'};
+    const tierStr = noDivTiers.includes(solo.tier.toUpperCase())
+      ? solo.tier
+      : solo.tier + (solo.division ? ' ' + (divMap[solo.division] || solo.division) : '');
+    return { tier: tierStr, lp: solo.league_points || 0 };
+  } catch(e) { return null; }
+}
+
+async function loadRatingConfig() {
+  if (_ratingConfig) return _ratingConfig;
+  if (!COMMUNITY_ID) return DEFAULT_RATING_CONFIG;
+  try {
+    const res = await fetch(WORKER_URL + '/db-public-read', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path: 'communities/' + COMMUNITY_ID + '/rating_config' })
+    });
+    const json = await res.json();
+    // Firebase 설정 없으면 DEFAULT 사용
+    _ratingConfig = (json.ok && json.data)
+      ? Object.assign(JSON.parse(JSON.stringify(DEFAULT_RATING_CONFIG)), json.data)
+      : DEFAULT_RATING_CONFIG;
+  } catch(e) {
+    _ratingConfig = DEFAULT_RATING_CONFIG;
+  }
+  return _ratingConfig;
+}
+
+function calcRating(memberStats, analysis, cfg) {
+  if (!cfg) return null;
+
+  // 1. 기본 레이팅 (티어 파싱)
+  var tierStr = (typeof memberStats.tier === 'string' ? memberStats.tier : String(memberStats.tier || '')).trim().toUpperCase();
+  var tierParts = tierStr.split(' ');
+  var tierName = tierParts[0]; // IRON, BRONZE, ...
+  var divStr = tierParts[1] || ''; // I, II, III, IV
+  var divMap = { 'I':0, 'II':1, 'III':2, 'IV':3 };
+  var divIdx = divMap[divStr] !== undefined ? divMap[divStr] : 0;
+  // 티어 이름 정규화
+  var tierKeyMap = { IRON:'IRON', BRONZE:'BRONZE', SILVER:'SILVER', GOLD:'GOLD',
+    PLATINUM:'PLATINUM', EMERALD:'EMERALD', DIAMOND:'DIAMOND',
+    MASTER:'MASTER', GRANDMASTER:'MASTER', CHALLENGER:'MASTER' };
+  var tierKey = tierKeyMap[tierName] || 'IRON';
+
+  var tierBase = cfg.tierBase || {};
+  var baseRating = 0;
+  if (tierKey === 'MASTER') {
+    var masterBase = (tierBase.MASTER && tierBase.MASTER[0]) || 2800;
+    // peakLp 또는 _peakLp에서 LP 추가
+    var masterLp = memberStats._peakLp !== undefined && memberStats._peakLp !== null
+      ? Number(memberStats._peakLp) : 0;
+    baseRating = masterBase + masterLp;
+  } else {
+    var divVals = tierBase[tierKey] || [0,0,0,0];
+    // divIdx: I=0(1단계), IV=3(4단계) → 실제 배열은 [4단계,3단계,2단계,1단계]
+    // 배열 인덱스 0=4단계(최하), 3=1단계(최상)
+    var arrIdx = 3 - divIdx; // I(1단계)=3, IV(4단계)=0
+    baseRating = divVals[arrIdx] !== undefined ? divVals[arrIdx] : 0;
+  }
+
+  // 2. 승률 점수
+  var wrMult = cfg.wrMult || 8;
+  var wr = memberStats.cnt > 0 ? (memberStats.win / memberStats.cnt * 100) : 50;
+  var wrScore = (wr - 50) * wrMult;
+
+  // 3. AI 점수 (analysis.matchList에서 평균)
+  var aiScore = 0;
+  if (analysis && analysis.matchList && analysis.matchList.length > 0) {
+    var aiList = analysis.matchList.filter(function(m){ return !m.is_remake && m.ai_score; });
+    if (aiList.length > 0) {
+      var avgAi = aiList.reduce(function(s,m){ return s + m.ai_score; }, 0) / aiList.length;
+      var aiCfg = cfg.aiScore || {};
+      if (avgAi >= 80)      aiScore = aiCfg[5] !== undefined ? aiCfg[5] : 40;
+      else if (avgAi >= 56) aiScore = aiCfg[4] !== undefined ? aiCfg[4] : 20;
+      else if (avgAi >= 45) aiScore = aiCfg[3] !== undefined ? aiCfg[3] : 0;
+      else if (avgAi >= 30) aiScore = aiCfg[2] !== undefined ? aiCfg[2] : -20;
+      else                  aiScore = aiCfg[1] !== undefined ? aiCfg[1] : -40;
+    }
+  }
+
+  // 4. KDA 점수
+  var kdaScore = 0;
+  var avgKda = memberStats.kda || 0;
+  var kdaCfg = cfg.kdaScore || {};
+  if (avgKda >= 4)      kdaScore = kdaCfg[4] !== undefined ? kdaCfg[4] : 20;
+  else if (avgKda >= 3) kdaScore = kdaCfg[3] !== undefined ? kdaCfg[3] : 10;
+  else if (avgKda >= 1.5) kdaScore = kdaCfg[2] !== undefined ? kdaCfg[2] : 0;
+  else                  kdaScore = kdaCfg[1] !== undefined ? kdaCfg[1] : -30;
+
+  // 5. 포지션 보정치
+  var posCorrCfg = cfg.posCorr || {};
+  var posMap = { Top:'Top', Jungle:'Jungle', Middle:'Middle', Bot:'Bottom', Bottom:'Bottom', Supporter:'Support', Support:'Support' };
+  var myPos = posMap[memberStats.most_position] || memberStats.most_position || 'Middle';
+  var posBand = 0; // 0=아이언~골드, 1=플래~다이아3, 2=다이아2~마스터+
+  var highTiers = ['DIAMOND','MASTER','GRANDMASTER','CHALLENGER'];
+  var midTiers  = ['PLATINUM','EMERALD'];
+  if (highTiers.indexOf(tierName) >= 0) {
+    // 다이아1~마스터+ = band2, 다이아2~3 = band1
+    if (tierName !== 'DIAMOND' || divIdx >= 2) posBand = 2; else posBand = 1;
+  } else if (midTiers.indexOf(tierName) >= 0) {
+    posBand = 1;
+  }
+  var posCorrVals = posCorrCfg[myPos] || [1,1,1];
+  var posCorr = posCorrVals[posBand] || 1;
+
+  // 6. 경기수 보정
+  var gamesBase = cfg.gamesBase || 50;
+  var games = memberStats.cnt || 0;
+  var gamesCorr = Math.min(1, games / gamesBase);
+
+  // 7. 가중치
+  var w = cfg.weights || { wr:0.7, ai:0.2, kda:0.1 };
+  var combined = (wrScore * w.wr + aiScore * w.ai + kdaScore * w.kda) * posCorr * gamesCorr;
+  var finalRating = baseRating + combined;
+
+  return {
+    rating: Math.round(finalRating * 10) / 10,
+    breakdown: {
+      baseRating,
+      masterLp: tierKey === 'MASTER' ? masterLp : null,
+      wrScore: Math.round(wrScore*10)/10,
+      aiScore, kdaScore, posCorr, gamesCorr,
+      wr: Math.round(wr*10)/10, avgKda, games,
+      w_wr: w.wr, w_ai: w.ai, w_kda: w.kda
+    }
+  };
+}
+
+async function saveRatingToFirebase(puuId, ratingResult) {
+  if (!COMMUNITY_ID || !ratingResult) {
+    return;
+  }
+  try {
+    const saveRes = await fetch(WORKER_URL + '/member-analysis-write', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        communityId: COMMUNITY_ID,
+        serverId: SERVER_ID,
+        puuId,
+        mode: 'rating',
+        data: {
+          meta: { updatedAt: Date.now(), version: SCHEMA_VER },
+          rating: ratingResult.rating,
+          breakdown: ratingResult.breakdown
+        }
+      })
+    });
+    const saveJson = await saveRes.json();
+  } catch(e) {}
+}
+
+async function saveToFirebase(puuId, mode, analysis, matchIds, memberData) {
+  memberData = memberData || {};
+  if (!COMMUNITY_ID) return;
+  const payload = {
+    meta: {
+      updatedAt: Date.now(),
+      matchCount: matchIds ? matchIds.size : 0,
+      version: SCHEMA_VER,
+    },
+    matchIds: matchIds ? Array.from(matchIds) : [],
+    peakTier: memberData._peakTier || null,
+    peakLp: memberData._peakLp !== undefined ? memberData._peakLp : null,
+    analysis: {
+      allies:         analysis.allies,
+      alliesAsc:      analysis.alliesAsc,
+      enemies:        analysis.enemies,
+      enemiesAsc:     analysis.enemiesAsc,
+      laneEnemies:    analysis.laneEnemies,
+      laneEnemiesAsc: analysis.laneEnemiesAsc,
+      enemyChamps:    analysis.enemyChamps,
+      matchList:      analysis.matchList,
+    }
+  };
+  // 저장 전 pendingSave 등록 (visibilitychange 대비)
+  var saveBody = {
+    communityId: COMMUNITY_ID, serverId: SERVER_ID || '',
+    puuId, mode, data: payload
+  };
+  _pendingSave = saveBody;
+  try {
+    const res = await fetch(WORKER_URL + '/member-analysis-write', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(saveBody)
+    });
+    const json = await res.json();
+  } catch(e) {}
+}
+
+function setQueueMode(mode) {
+  _queueMode = mode;
+  // 토글 스타일
+  var tc = document.getElementById('dm-toggle-custom');
+  var ta = document.getElementById('dm-toggle-all');
+  if (tc) { tc.style.background = mode==='custom' ? 'var(--blue)' : 'transparent'; tc.style.color = mode==='custom' ? '#0A0F13' : 'var(--muted)'; }
+  if (ta) { ta.style.background = mode==='all' ? 'var(--blue)' : 'transparent'; ta.style.color = mode==='all' ? '#0A0F13' : 'var(--muted)'; }
+  // 현재 모드 캐시에 해당 유저 없으면 새로 로드
+  var _ov = document.getElementById('detail-overlay');
+  if (_currentMember && _ov && _ov.classList.contains('open')) {
+    const existing = detailCache[mode][_currentMember.puu_id];
+    if (existing && existing.analysis) {
+      var exRating = _currentMember && _currentMember._rating !== undefined
+        ? { rating: _currentMember._rating, breakdown: _currentMember._ratingBreakdown || {} } : null;
+      renderDetail(existing.analysis, _currentMember, existing.matchIds.size, null, exRating);
+    } else {
+      loadDetailData(_currentMember, false);
+    }
+  }
+}
+window.setQueueMode = setQueueMode;
+
+function closeDetail() {
+  document.getElementById('detail-overlay').classList.remove('open');
+}
+document.addEventListener('keydown', function(e) { if(e.key==='Escape') closeDetail(); });
+
+// 상세보기 버튼 이벤트 위임
+window.loadDetailData = loadDetailData;
+
+// 레이팅 툴팁 마우스 위치 기반 표시
+(function() {
+  var activeTip = null;
+  document.addEventListener('mouseover', function(e) {
+    var wrap = e.target.closest('.rating-tip-wrap, .tier-tip-wrap');
+    if (!wrap) return;
+    var tip = wrap.querySelector('.rating-tip-box, .tier-tip-box');
+    if (!tip) return;
+    activeTip = tip;
+    tip.style.display = 'block';
+    positionTip(tip, wrap);
+  });
+  document.addEventListener('mouseout', function(e) {
+    var wrap = e.target.closest('.rating-tip-wrap, .tier-tip-wrap');
+    if (!wrap) return;
+    var tip = wrap.querySelector('.rating-tip-box, .tier-tip-box');
+    if (tip) tip.style.display = 'none';
+    activeTip = null;
+  });
+  function positionTip(tip, wrap) {
+    // 일단 측정용으로 렌더
+    tip.style.visibility = 'hidden';
+    tip.style.display = 'block';
+    tip.style.left = '0px';
+    tip.style.top = '0px';
+    var tipW = tip.offsetWidth;
+    var tipH = tip.offsetHeight;
+    tip.style.visibility = '';
+
+    var rect = wrap.getBoundingClientRect();
+    var vw = window.innerWidth;
+    var vh = window.innerHeight;
+
+    // 가로 위치: wrap 우측 정렬, 화면 밖으로 넘으면 좌측 정렬
+    var left = rect.right - tipW;
+    if (left < 8) left = rect.left;
+    if (left + tipW > vw - 8) left = vw - tipW - 8;
+
+    // 세로 위치: wrap 위로, 화면 위 넘으면 아래로
+    var top = rect.top - tipH - 6;
+    if (top < 8) top = rect.bottom + 6;
+
+    tip.style.left = left + 'px';
+    tip.style.top = top + 'px';
+  }
+})();
+
+// 체크박스 변경 시 해당 섹션 테이블만 리렌더
+window.reRenderSection = function(sectionId) {
+  if (!_currentMember) return;
+  const cache = detailCache[_queueMode][_currentMember.puu_id];
+  if (!cache || !cache.analysis) return;
+  const a = cache.analysis;
+
+  const sectionData = {
+    'ally-top':  { users: a.allies,        el: 'ally-top' },
+    'ally-bot':  { users: a.alliesAsc,     el: 'ally-bot' },
+    'enemy-top': { users: a.enemies,       el: 'enemy-top' },
+    'enemy-bot': { users: a.enemiesAsc,    el: 'enemy-bot' },
+    'lane-top':  { users: a.laneEnemies,   el: 'lane-top' },
+    'lane-bot':  { users: a.laneEnemiesAsc,el: 'lane-bot' },
+  };
+  const s = sectionData[sectionId];
+  if (!s) return;
+
+  // 해당 섹션의 테이블 요소 찾아서 교체
+  const cb = document.getElementById('cb-'+sectionId);
+  const minG = (cb && cb.checked) ? 5 : 1;
+  const filtered = s.users.filter(function(u){ return u.total >= minG; });
+
+  function wrColor(v){ return v>=55?'var(--red)':v>=50?'var(--gold)':'#5383E8'; }
+  function wrTextColor(v){ return v>=55?'var(--red)':v>=50?'var(--gold)':'var(--sub)'; }
+
+  const html = filtered.length
+    ? '<table class="ur-table"><tr><th>소환사명</th><th>게임</th><th>승률</th></tr>'+
+        filtered.slice(0,5).map(function(u){
+          const gl = u.total<5?'<span style="color:var(--muted);font-size:9px;"> (소표본)</span>':'';
+          return '<tr><td class="ur-name">'+esc(u.name)+'</td>'+
+            '<td class="ur-games">'+u.total+'</td>'+
+            '<td class="ur-pct" style="color:'+wrTextColor(u.wr)+'">'+u.wr.toFixed(0)+'%'+gl+'</td></tr>';
+        }).join('')+'</table>'
+    : '<div style="font-family:Rajdhani,sans-serif;font-size:11px;color:var(--muted);padding:.5rem 0;">데이터 없음</div>';
+
+  // cb 다음 형제 요소(테이블/div) 교체
+  const label = cb && cb.parentElement;
+  if (label && label.nextSibling) {
+    label.nextSibling.outerHTML = html;
+  }
+};
+
+// 맞라인 챔피언 라인 필터
+document.addEventListener('click', function(e) {
+  const chip = e.target.closest('.lf-chip');
+  if (!chip) return;
+  const pos = chip.dataset.pos;
+  // 칩 스타일 토글
+  document.querySelectorAll('.lf-chip').forEach(function(c) {
+    const isActive = c.dataset.pos === pos;
+    c.classList.toggle('active', isActive);
+    c.style.borderColor = isActive ? 'var(--blue)' : 'rgba(255,255,255,.08)';
+    c.style.background = isActive ? 'rgba(10,200,185,.08)' : 'transparent';
+    c.style.color = isActive ? 'var(--blue)' : 'var(--muted)';
+  });
+  // 그리드 필터링
+  const grid = document.getElementById('lane-champ-grid');
+  if (!grid || !_currentEnemyChamps) return;
+  const filtered = pos === 'ALL'
+    ? _currentEnemyChamps
+    : _currentEnemyChamps.filter(function(c){ return c.pos === pos; });
+  grid.innerHTML = filtered.length
+    ? filtered.map(function(c){
+        const bg = c.wr>=55?'rgba(232,64,87,.1)':c.wr>=50?'rgba(200,170,110,.08)':'rgba(83,131,232,.08)';
+        const bc = c.wr>=55?'rgba(232,64,87,.25)':c.wr>=50?'rgba(200,170,110,.2)':'rgba(83,131,232,.2)';
+        const wrC = c.wr>=55?'var(--red)':c.wr>=50?'var(--gold)':'#5383E8';
+        return '<div style="display:flex;align-items:center;gap:6px;padding:5px 7px;border-radius:3px;background:'+bg+';border:1px solid '+bc+';">'+
+          '<img class="mini-champ" src="'+DD_ICON(c.name)+'" onerror="this.style.opacity=0.15">'+
+          '<div style="flex:1;min-width:0;">'+
+            '<div style="font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+esc(c.name)+'</div>'+
+            '<div style="display:flex;align-items:center;gap:4px;margin-top:2px;">'+
+              '<div style="flex:1;height:4px;background:rgba(255,255,255,.06);border-radius:1px;overflow:hidden;">'+
+                '<div style="height:100%;background:'+wrC+';width:'+c.wr.toFixed(0)+'%"></div>'+
+              '</div>'+
+              '<span style="font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;color:'+wrC+';">'+c.wr.toFixed(0)+'%</span>'+
+            '</div>'+
+          '</div>'+
+          '<span style="font-family:Rajdhani,sans-serif;font-size:10px;color:var(--muted);flex-shrink:0;">'+c.total+'판</span>'+
+        '</div>';
+      }).join('')
+    : '<div style="font-family:Rajdhani,sans-serif;font-size:11px;color:var(--muted);padding:.5rem;">해당 라인 데이터 없음</div>';
+});
+
+document.addEventListener('change', function(e) {
+  if (e.target.classList.contains('sample-filter-cb')) {
+    window.reRenderSection(e.target.dataset.sid);
+  }
+});
+
+document.addEventListener('click', function(e) {
+  // 업데이트 버튼
+  const ubtn = e.target.closest('.update-btn');
+  if (ubtn) {
+    if (ubtn.disabled) return;
+    const puuId = ubtn.dataset.puu;
+    const member = filteredData.find(function(m){ return m.puu_id === puuId; });
+    if (!member) return;
+    // 쿨타임 시작
+    const cKey = _cacheKey(puuId, _queueMode);
+    _lastUpdateTime[cKey] = Date.now();
+    ubtn.disabled = true;
+    ubtn.style.opacity = '.5';
+    ubtn.style.cursor = 'not-allowed';
+    ubtn.style.color = 'var(--muted)';
+    ubtn.textContent = '↻ 쿨타임 60초';
+    // 카운트다운
+    let sec = 60;
+    const timer = setInterval(function(){
+      sec--;
+      if (ubtn && document.contains(ubtn)) {
+        ubtn.textContent = '↻ 쿨타임 ' + sec + '초';
+      }
+      if (sec <= 0) {
+        clearInterval(timer);
+        if (ubtn && document.contains(ubtn)) {
+          ubtn.disabled = false;
+          ubtn.style.opacity = '1';
+          ubtn.style.cursor = 'pointer';
+          ubtn.style.color = 'var(--blue)';
+          ubtn.textContent = '↻ 업데이트';
+        }
+      }
+    }, 1000);
+    loadDetailData(member, true);
+    return;
+  }
+  const btn = e.target.closest('.detail-btn');
+  if (!btn) return;
+  const puuId = btn.dataset.puu;
+  const member = filteredData.find(function(m){ return m.puu_id === puuId; });
+  if (member) openDetail(member);
+});
+
+async function openDetail(memberData) {
+  _currentMember = memberData;
+  _queueMode = 'custom'; // 새 유저 열 때 항상 내전 모드로 초기화
+  const overlay = document.getElementById('detail-overlay');
+  overlay.classList.add('open');
+  // 토글 스타일 초기화
+  setTimeout(function(){
+    var tc = document.getElementById('dm-toggle-custom');
+    var ta = document.getElementById('dm-toggle-all');
+    if (tc) { tc.style.background='var(--blue)'; tc.style.color='#0A0F13'; }
+    if (ta) { ta.style.background='transparent'; ta.style.color='var(--muted)'; }
+  }, 0);
+  const tp = parseTier(memberData.tier);
+  const tc = TIER_COLOR[tp.tier] || '#5B6474';
+  document.getElementById('dm-avatar').src =
+    'https://ddragon.leagueoflegends.com/cdn/' + DD_VER + '/img/profileicon/' + (memberData.profile_icon||1) + '.png';
+  document.getElementById('dm-name').textContent = memberData.riot_name;
+  document.getElementById('dm-tag').textContent = '#' + memberData.riot_tag;
+  document.getElementById('dm-tier').textContent = tp.short;
+  document.getElementById('dm-tier').style.cssText = 'color:'+tc+';background:'+tc+'18;border:1px solid '+tc+'30';
+  // 최고 티어 표시
+  var peakTierEl = document.getElementById('dm-peak-tier');
+  if (peakTierEl) {
+    var pt = memberData._peakTier;
+    if (pt) {
+      var ptp = parseTier(pt);
+      var ptc = TIER_COLOR[ptp.tier] || '#5B6474';
+      var ptLp = memberData._peakLp;
+      var tipInner = '<div class="rt-row"><span class="rt-lbl">최고 티어</span><span class="rt-val" style="color:'+ptc+'">'+esc(ptp.short)+'</span></div>'+
+        (ptLp !== undefined && ptLp !== null ? '<div class="rt-row"><span class="rt-lbl">최고 LP</span><span class="rt-val gold">'+ptLp+' LP</span></div>' : '');
+      var peakParent = peakTierEl.parentElement;
+      peakParent.innerHTML =
+        '<div class="tier-tip-wrap">'+
+          '<span class="tier-badge" style="color:'+ptc+';background:'+ptc+'18;border:1px solid '+ptc+'30;cursor:help;">'+esc(ptp.short)+'</span>'+
+          '<div class="tier-tip-box">'+tipInner+'</div>'+
+        '</div>';
+      peakParent.style.display = '';
+    } else {
+      if (peakTierEl && peakTierEl.parentElement) peakTierEl.parentElement.style.display = 'none';
+    }
+  }
+  const w = memberData.win||0, t = memberData.cnt||0;
+  const pct = t ? (w/t*100).toFixed(1) : '—';
+  const modeLabel = _queueMode === 'custom' ? '🏆 내전 기준' : '🎮 전체 큐 기준';
+  // 초기 ratingHtml 불필요 (renderDetail에서 슬롯 업데이트)
+  document.getElementById('dm-stats').innerHTML =
+    '<div class="dm-stat"><div class="dm-stat-val">'+t+'</div><div class="dm-stat-lbl">게임 수</div></div>' +
+    '<div id="dm-rating-slot"></div>' +
+    '<div style="font-family:Rajdhani,sans-serif;font-size:10px;color:var(--muted);align-self:center;">'+modeLabel+'</div>' +
+    '<div class="dm-stat"><div class="dm-stat-val" style="color:var(--gold)">'+pct+'%</div><div class="dm-stat-lbl">승률</div></div>' +
+    '<div class="dm-stat"><div class="dm-stat-val" style="color:#A0A8B0">'+(memberData.kda?memberData.kda.toFixed(2):'—')+'</div><div class="dm-stat-lbl">KDA</div></div>';
+  document.getElementById('dm-content').innerHTML =
+    '<div class="dm-loading"><div class="spinner"></div> 매치 데이터 분석 중...</div>';
+
+  const memCache = detailCache[_queueMode][memberData.puu_id];
+  if (memCache && memCache.analysis) {
+    // 메모리 캐시 있으면 즉시 렌더
+    var memRating = memberData._rating !== undefined
+      ? { rating: memberData._rating, breakdown: memberData._ratingBreakdown || {} } : null;
+    renderDetail(memCache.analysis, memberData, memCache.matchIds ? memCache.matchIds.size : 0, null, memRating);
+    return;
+  }
+
+  // Firebase에서 로드 시도
+  document.getElementById('dm-content').innerHTML =
+    '<div class="dm-loading"><div class="spinner"></div> 저장된 분석 데이터 확인 중...</div>';
+  // cid 없으면 Firebase 스킵하고 바로 분석
+  if (!COMMUNITY_ID) {
+    await loadDetailData(memberData, false);
+    return;
+  }
+  const fbData = await loadFromFirebase(memberData.puu_id, _queueMode);
+  if (fbData && fbData.analysis && fbData.meta) {
+    // Firebase matchIds를 knownIds로 설정하고 loadDetailData로 넘겨 새 게임만 fetch
+    // (Firebase의 분석 결과를 바로 쓰지 않고 항상 최신 데이터로 재분석)
+    detailCache[_queueMode][memberData.puu_id] = {
+      matchIds: new Set(fbData.matchIds || []),
+      matches: [],
+      analysis: fbData.analysis // 임시 보관 (새 분석 완료 전까지 표시용)
+    };
+    // peakTier 복원
+    if (fbData.peakTier) {
+      memberData._peakTier = fbData.peakTier;
+      memberData._peakLp   = fbData.peakLp !== undefined ? fbData.peakLp : null;
+      var mFbRestore = allData.find(function(x){ return x.puu_id === memberData.puu_id; });
+      if (mFbRestore) { mFbRestore._peakTier = fbData.peakTier; mFbRestore._peakLp = memberData._peakLp; }
+    }
+    // 레이팅도 Firebase에서 로드 시도
+    var fbRating = null;
+    if (_queueMode === 'custom') {
+      var rFb = await loadFromFirebase(memberData.puu_id, 'rating');
+      if (rFb && rFb.rating) {
+        fbRating = { rating: rFb.rating, breakdown: rFb.breakdown };
+        memberData._rating = rFb.rating;
+        memberData._ratingBreakdown = rFb.breakdown || {};
+        var mFb = allData.find(function(x){ return x.puu_id === memberData.puu_id; });
+        if (mFb) { mFb._rating = rFb.rating; mFb._ratingBreakdown = rFb.breakdown || {}; }
+      }
+    }
+    // Firebase 분석 결과를 임시 표시 (로딩 중 보여주기)
+    renderDetail(fbData.analysis, memberData,
+      fbData.meta.matchCount || (fbData.matchIds && fbData.matchIds.length) || 0,
+      fbData.meta.updatedAt, fbRating);
+    // 새 게임 체크 + 재분석을 위해 loadDetailData 계속 진행 (return 제거)
+    // knownIds는 이미 detailCache에 세팅됨
+  }
+
+  // Firebase에도 없거나, Firebase 로드 후 새 게임 체크 새로 분석
+  // isUpdate=true: cache.matchIds(Firebase matchIds)를 knownIds로 사용해 새 게임만 fetch
+  await loadDetailData(memberData, true);
+}
+
+async function loadDetailData(memberData, isUpdate) {
+  const puuId = memberData.puu_id;
+  const platform = memberData.platform_id || 'KR';
+  const cache = detailCache[_queueMode][puuId];
+  const knownIds = (isUpdate && cache) ? cache.matchIds : null;
+  const label = '분석 중';
+
+  try {
+    document.getElementById('dm-content').innerHTML =
+      '<div class="dm-loading"><div class="spinner"></div> match_id 목록 불러오는 중...</div>';
+
+    const newIds = await fetchAllMatchIds(puuId, platform, knownIds);
+
+    if (!newIds.length) {
+      if (cache && cache.analysis) {
+        // 업데이트 버튼 클릭 시 새 게임 없어도 레이팅 재계산
+        if (isUpdate) {
+          var cfg2 = await loadRatingConfig();
+          if (cfg2) {
+            var peakData2 = await fetchPeakTier(memberData.puu_id, memberData.platform_id || 'KR');
+            var peakTier2 = peakData2 ? peakData2.tier : null;
+            var peakLp2   = peakData2 ? peakData2.lp   : 0;
+            var mfr2 = Object.assign({}, memberData, { tier: peakTier2 || memberData.tier });
+            var rr2 = calcRating(mfr2, cache.analysis, cfg2);
+            if (peakTier2) { memberData._peakTier = peakTier2; memberData._peakLp = peakLp2; var mPeak2 = allData.find(function(x){ return x.puu_id === puuId; }); if (mPeak2) { mPeak2._peakTier = peakTier2; mPeak2._peakLp = peakLp2; } }
+            if (rr2) {
+              rr2.breakdown.peakTier = peakTier2 || null;
+              rr2.breakdown.peakLp   = peakLp2;
+              rr2.breakdown.usedTier = peakTier2 || memberData.tier;
+              await saveRatingToFirebase(puuId, rr2);
+              var mu2 = allData.find(function(x){ return x.puu_id === puuId; });
+              if (mu2) { mu2._rating = rr2.rating; mu2._ratingBreakdown = rr2.breakdown; }
+              memberData._rating = rr2.rating;
+              memberData._ratingBreakdown = rr2.breakdown;
+              renderDetail(cache.analysis, memberData, cache.matchIds.size, null, rr2);
+              renderPage();
+              return;
+            }
+          }
+        }
+        var rrRating = memberData._rating !== undefined
+          ? { rating: memberData._rating, breakdown: memberData._ratingBreakdown || {} } : null;
+        renderDetail(cache.analysis, memberData, cache.matchIds.size, null, rrRating);
+        return;
+      }
+      document.getElementById('dm-content').innerHTML =
+        '<div class="dm-loading" style="color:var(--muted);">최신 데이터입니다</div>';
+      return;
+    }
+
+    const newMatches = await fetchMatchesBatch(newIds, platform, label);
+
+    // 캐시 병합
+    if (!detailCache[_queueMode][puuId]) {
+      detailCache[_queueMode][puuId] = { matchIds: new Set(), matches: [] };
+    }
+    newIds.forEach(function(id){ detailCache[_queueMode][puuId].matchIds.add(id); });
+    detailCache[_queueMode][puuId].matches.unshift.apply(detailCache[_queueMode][puuId].matches, newMatches);
+
+    const analysis = analyzeMatches(detailCache[_queueMode][puuId].matches, puuId);
+    detailCache[_queueMode][puuId].analysis = analysis;
+    const totalCount = detailCache[_queueMode][puuId].matchIds.size;
+    const savedAt = Date.now();
+
+    // 레이팅 계산 (커스텀 모드일 때만)
+    // 최고 티어 조회 (레이팅 계산 및 저장에 모두 사용)
+    var peakData = await fetchPeakTier(memberData.puu_id, memberData.platform_id || 'KR');
+    var peakTier = peakData ? peakData.tier : null;
+    var peakLp   = peakData ? peakData.lp   : 0;
+    if (peakTier) {
+      memberData._peakTier = peakTier;
+      memberData._peakLp   = peakLp;
+      var mPeak = allData.find(function(x){ return x.puu_id === puuId; });
+      if (mPeak) { mPeak._peakTier = peakTier; mPeak._peakLp = peakLp; }
+    }
+
+    var ratingResult = null;
+    var cfg = await loadRatingConfig();
+    if (cfg) {
+      var memberForRating = Object.assign({}, memberData, {
+        tier: peakTier || memberData.tier
+      });
+      ratingResult = calcRating(memberForRating, analysis, cfg);
+      if (ratingResult) {
+        ratingResult.breakdown.peakTier = peakTier || null;
+        ratingResult.breakdown.peakLp   = peakLp;
+        ratingResult.breakdown.usedTier = peakTier || memberData.tier;
+        await saveRatingToFirebase(puuId, ratingResult);
+        var mFound = allData.find(function(x){ return x.puu_id === puuId; });
+        if (mFound) {
+          mFound._rating = ratingResult.rating;
+          mFound._ratingBreakdown = ratingResult.breakdown;
+        }
+        memberData._rating = ratingResult.rating;
+        memberData._ratingBreakdown = ratingResult.breakdown;
+      }
+    }
+
+    renderDetail(analysis, memberData, totalCount, savedAt, ratingResult);
+
+    // 테이블에 레이팅 즉시 반영
+    renderPage();
+
+    // Firebase에 분석 데이터 저장 (await로 완료 보장)
+    // (비동기)
+    const cKey = _cacheKey(puuId, _queueMode);
+    _lastUpdateTime[cKey] = savedAt;
+    await saveToFirebase(puuId, _queueMode, analysis, detailCache[_queueMode][puuId].matchIds, memberData);
+  } catch(e) {
+    document.getElementById('dm-content').innerHTML =
+      '<div class="dm-loading" style="color:var(--red);">⚠ '+esc(e.message)+'</div>';
+  }
+}
+
+// 모든 match_id 가져오기 (offset 페이지네이션, 중복 시 중단)
+async function fetchAllMatchIds(puuId, platform, knownIds) {
+  const allIds = [];
+  let offset = 0;
+  const PAGE = 20;
+  const MAX_PAGES = 50; // 최대 1000게임
+  let page = 0;
+
+  while (page < MAX_PAGES) {
+    const res = await fetch(
+      API_BASE+'/match/matches?puu_id='+encodeURIComponent(puuId)+
+      '&platform_id='+platform+'&offset='+offset+'&count='+PAGE+
+      '&queue_type=CUSTOM&champion_id=0&only_list=1&last_updated_at=1'
+    );
+    const json = await res.json();
+    const list = json.match_id_list || [];
+    if (!list.length) break;
+
+    let allKnown = true; // 이 페이지가 전부 기존 ID면 탐색 중단
+    for (const item of list) {
+      if (!knownIds || !knownIds.has(item.match_id)) {
+        allIds.push(item.match_id);
+        allKnown = false;
+      }
+    }
+    // 페이지 전체가 이미 알고 있는 ID면 더 오래된 건 없음
+    if (allKnown && knownIds && knownIds.size > 0) break;
+    if (list.length < PAGE) break;
+    offset += PAGE;
+    page++;
+  }
+  return allIds;
+}
+
+async function fetchMatchesBatch(matchIds, platform, labelPrefix) {
+  const BATCH = 8;
+  const results = [];
+  for (let i=0; i<matchIds.length; i+=BATCH) {
+    const batch = matchIds.slice(i,i+BATCH);
+    const fetched = await Promise.all(batch.map(function(mid){
+      return fetch(API_BASE+'/match/match-cached?match_id='+mid+'&platform_id='+platform)
+        .then(function(r){return r.json();}).catch(function(){return null;});
+    }));
+    results.push.apply(results, fetched.filter(Boolean));
+    const done = Math.min(i+BATCH, matchIds.length);
+    const pct = Math.round(done/matchIds.length*100);
+    document.getElementById('dm-content').innerHTML =
+      '<div class="dm-loading"><div class="spinner"></div>'+(labelPrefix||'분석')+' '+pct+'% ('+done+'/'+matchIds.length+'게임)</div>';
+  }
+  return results;
+}
+
+// Wilson Score 신뢰구간 하한 (소표본 승률 보정)
+function wilsonScore(wins, total) {
+  if (total === 0) return 0;
+  const z = 1.96; // 95% 신뢰구간
+  const p = wins / total;
+  const z2 = z * z;
+  return (p + z2/(2*total) - z*Math.sqrt((p*(1-p) + z2/(4*total))/total)) / (1 + z2/total);
+}
+
+const CUSTOM_QUEUE_ID = 3130; // 딥롤 커넥트 커스텀 게임
+
+function analyzeMatches(matches, myPuuId) {
+  // 커뮤니티 멤버 puuId Set (필터링용)
+  const communityPuuIds = new Set(allData.map(function(m){ return m.puu_id; }));
+
+  const matchList=[], allies={}, enemies={}, laneEnemies={}, enemyChamps={};
+  for (const matchData of matches) {
+    if (!matchData||!matchData.participants_list) continue;
+    // 큐 타입 필터
+    const basic0 = matchData.match_basic_dict || {};
+    if (_queueMode === 'custom' && basic0.queue_id && basic0.queue_id !== CUSTOM_QUEUE_ID) continue;
+    // 커뮤니티 필터: puu_id_list에 커뮤니티 멤버가 4명 이상 포함된 게임만
+    if (_queueMode === 'custom' && communityPuuIds.size > 0 && basic0.puu_id_list) {
+      const overlap = basic0.puu_id_list.filter(function(id){ return communityPuuIds.has(id); }).length;
+      if (overlap < 4) continue;
+    }
+    const participants = matchData.participants_list;
+    const me = participants.find(function(p){return p.puu_id===myPuuId;});
+    if (!me) continue;
+    const basic = matchData.match_basic_dict||{};
+    const isWin=me.is_win, myPos=me.position, mySide=me.side;
+    matchList.push({
+      match_id:basic.match_id, creation_timestamp:basic.creation_timestamp,
+      game_duration:basic.game_duration, champion_id:me.champion_id,
+      position:me.position, is_win:isWin, is_remake:basic.is_remake,
+      kda:me.final_stat_dict&&me.final_stat_dict.kda,
+      kills:me.final_stat_dict&&me.final_stat_dict.kills,
+      deaths:me.final_stat_dict&&me.final_stat_dict.deaths,
+      assists:me.final_stat_dict&&me.final_stat_dict.assists,
+      cs:me.final_stat_dict&&me.final_stat_dict.cs,
+      ai_score:me.ai_score
+    });
+    if (basic.is_remake) continue;
+    for (const p of participants) {
+      if (p.puu_id===myPuuId) continue;
+      const name=p.riot_id_name||p.summoner_name||'?', key=p.puu_id;
+      if (p.side===mySide) {
+        if(!allies[key]) allies[key]={name,win:0,total:0};
+        allies[key].total++; if(isWin) allies[key].win++;
+      } else {
+        if(!enemies[key]) enemies[key]={name,win:0,total:0};
+        enemies[key].total++; if(isWin) enemies[key].win++;
+        if (p.position&&myPos&&p.position===myPos) {
+          if(!laneEnemies[key]) laneEnemies[key]={name,win:0,total:0,pos:myPos};
+          laneEnemies[key].total++; if(isWin) laneEnemies[key].win++;
+          const cid=String(p.champion_id), cname=champMap[cid]||cid;
+          const champKey=cid+'__'+myPos; // 챔피언+포지션 복합키
+          if(!enemyChamps[champKey]) enemyChamps[champKey]={name:cname,cid,win:0,total:0,pos:myPos};
+          enemyChamps[champKey].total++; if(isWin) enemyChamps[champKey].win++;
+        }
+      }
+    }
+  }
+  function sortByWr(obj,min){
+    return Object.entries(obj).filter(function(e){return e[1].total>=min;})
+      .map(function(e){
+        const v=e[1];
+        return Object.assign({id:e[0]},v,{
+          wr: v.win/v.total*100,
+          score: wilsonScore(v.win, v.total) * 100,
+          scoreAsc: wilsonScore(v.total-v.win, v.total) * 100  // 낮은 승률 보정
+        });
+      })
+      .sort(function(a,b){return b.score-a.score;});
+  }
+  function sortByWrAsc(obj,min){
+    return Object.entries(obj).filter(function(e){return e[1].total>=min;})
+      .map(function(e){
+        const v=e[1];
+        return Object.assign({id:e[0]},v,{
+          wr: v.win/v.total*100,
+          score: wilsonScore(v.win, v.total) * 100,
+          scoreAsc: wilsonScore(v.total-v.win, v.total) * 100
+        });
+      })
+      .sort(function(a,b){return b.scoreAsc-a.scoreAsc;});
+  }
+  return {
+    matchList:matchList.sort(function(a,b){return (b.creation_timestamp||0)-(a.creation_timestamp||0);}),
+    allies:sortByWr(allies,1), alliesAsc:sortByWrAsc(allies,1),
+    enemies:sortByWr(enemies,1), enemiesAsc:sortByWrAsc(enemies,1),
+    laneEnemies:sortByWr(laneEnemies,1), laneEnemiesAsc:sortByWrAsc(laneEnemies,1),
+    enemyChamps:sortByWr(enemyChamps,1)
+  };
+}
+
+function renderDetail(analysis, member, totalLoaded, updatedAt, ratingResult) {
+  const {matchList,allies,alliesAsc,enemies,enemiesAsc,laneEnemies,laneEnemiesAsc,enemyChamps}=analysis;
+  _currentEnemyChamps = enemyChamps;
+
+  // 헤더 레이팅 슬롯 업데이트
+  var ratingSlot = document.getElementById('dm-rating-slot');
+  if (ratingSlot) {
+    if (ratingResult && ratingResult.rating !== undefined) {
+      var bd2 = ratingResult.breakdown || {};
+      var tip2 = '';
+      try {
+        var wr2 = bd2.wr !== undefined ? bd2.wr.toFixed(1)+'%' : '—';
+        var kda2 = bd2.avgKda !== undefined ? bd2.avgKda.toFixed(2) : '—';
+        var games2 = bd2.games !== undefined ? bd2.games+'판' : '—';
+        var gCorr2 = (bd2.gamesCorr||1).toFixed ? (bd2.gamesCorr||1).toFixed(2) : (bd2.gamesCorr||1);
+        var wrS2=bd2.wrScore||0, aiS2=bd2.aiScore||0, kdaS2=bd2.kdaScore||0;
+        function vc2(v){return v>0?'pos':v<0?'neg':'';}
+        function sg2(v){return v>0?'+'+v:String(v);}
+        var tierLabel2 = bd2.usedTier
+          ? (bd2.peakTier ? '기본 레이팅 (최고티어: '+bd2.usedTier+')' : '기본 레이팅 ('+bd2.usedTier+')')
+          : '기본 레이팅';
+        tip2='<div class="rt-row"><span class="rt-lbl">'+tierLabel2+'</span><span class="rt-val gold">'+(bd2.baseRating||0)+'</span></div>'+
+          '<hr class="rt-divider">'+
+          '<div class="rt-row"><span class="rt-lbl">승률 점수</span><span class="rt-val '+vc2(wrS2)+'">'+sg2(wrS2)+'</span></div>'+
+          '<div class="rt-row"><span class="rt-lbl">승률</span><span class="rt-val">'+wr2+'</span></div>'+
+          '<div class="rt-row"><span class="rt-lbl">AI 점수</span><span class="rt-val '+vc2(aiS2)+'">'+sg2(aiS2)+'</span></div>'+
+          '<div class="rt-row"><span class="rt-lbl">KDA 점수</span><span class="rt-val '+vc2(kdaS2)+'">'+sg2(kdaS2)+'</span></div>'+
+          '<div class="rt-row"><span class="rt-lbl">평균 KDA</span><span class="rt-val">'+kda2+'</span></div>'+
+          '<div class="rt-row"><span class="rt-lbl">포지션 보정</span><span class="rt-val">×'+(bd2.posCorr||1)+'</span></div>'+
+          '<div class="rt-row"><span class="rt-lbl">경기수 보정</span><span class="rt-val">×'+gCorr2+'</span></div>'+
+          '<div class="rt-row"><span class="rt-lbl">경기수</span><span class="rt-val">'+games2+'</span></div>'+
+          '<hr class="rt-divider">'+
+          '<div class="rt-total"><span class="rt-total-lbl">최종 레이팅</span><span class="rt-total-val">'+Math.round(ratingResult.rating)+'</span></div>';
+      } catch(e) {}
+      ratingSlot.innerHTML =
+        '<div class="dm-stat" style="position:relative;">'+
+          '<div class="rating-tip-wrap">'+
+            '<div class="dm-stat-val" style="color:var(--gold);cursor:help;">'+Math.round(ratingResult.rating)+'</div>'+
+            (tip2 ? '<div class="rating-tip-box" style="bottom:calc(100% + 4px);right:auto;left:50%;transform:translateX(-50%);">'+tip2+'</div>' : '')+
+          '</div>'+
+          '<div class="dm-stat-lbl" style="margin-top:2px;">레이팅</div>'+
+        '</div>';
+    } else {
+      ratingSlot.innerHTML = '';
+    }
+  }
+  const champStats={};
+  for (const m of matchList) {
+    if(m.is_remake) continue;
+    const cid=String(m.champion_id);
+    if(!champStats[cid]) champStats[cid]={win:0,total:0};
+    champStats[cid].total++; if(m.is_win) champStats[cid].win++;
+  }
+  const topChamps=Object.entries(champStats).map(function(e){
+    return {cid:e[0],name:champMap[e[0]]||e[0],win:e[1].win,total:e[1].total,wr:e[1].win/e[1].total*100};
+  }).map(function(c){ return Object.assign(c, {score: wilsonScore(c.win,c.total)*100}); })
+    .sort(function(a,b){return b.total-a.total;});
+  const totalGames=matchList.filter(function(m){return !m.is_remake;}).length;
+  const wins=matchList.filter(function(m){return m.is_win&&!m.is_remake;}).length;
+
+  function wrColor(v){return v>=55?'var(--red)':v>=50?'var(--gold)':'#5383E8';}
+  function wrTextColor(v){return v>=55?'var(--red)':v>=50?'var(--gold)':'var(--sub)';}
+
+  function champBar(c){
+    return '<div class="stat-bar-wrap">'+
+      '<div style="display:flex;align-items:center;gap:5px;width:110px;flex-shrink:0;">'+
+        '<img class="mini-champ" src="'+DD_ICON(c.name)+'" onerror="this.style.opacity=0.15">'+
+        '<span class="stat-bar-label" style="width:auto">'+esc(c.name)+'</span>'+
+      '</div>'+
+      '<div class="stat-bar"><div class="stat-bar-fill" style="width:'+c.wr.toFixed(0)+'%;background:'+wrColor(c.wr)+'"></div></div>'+
+      '<span class="stat-bar-val" style="color:'+wrTextColor(c.wr)+'">'+c.wr.toFixed(0)+'%</span>'+
+      '<span style="font-family:Rajdhani,sans-serif;font-size:10px;color:var(--muted);margin-left:4px;">'+c.total+'판</span>'+
+    '</div>';
+  }
+
+  function miniWinBar(w,l){
+    const t=w+l, wp=t?(w/t*100).toFixed(1):0, lp=t?(l/t*100).toFixed(1):0, pct=t?(w/t*100):0;
+    return '<span style="font-family:Rajdhani,sans-serif;font-size:11px;color:#5383E8;">'+w+'승</span>'+
+      '<div style="flex:1;height:6px;background:rgba(255,255,255,.06);border-radius:1px;overflow:hidden;min-width:60px;">'+
+        '<div style="height:100%;display:flex;"><div style="background:#5383E8;width:'+wp+'%"></div><div style="background:var(--red);width:'+lp+'%"></div></div>'+
+      '</div>'+
+      '<span style="font-family:Rajdhani,sans-serif;font-size:11px;color:var(--red);">'+l+'패</span>'+
+      '<span style="font-family:Rajdhani,sans-serif;font-size:12px;font-weight:700;color:'+wrTextColor(pct)+';">'+pct.toFixed(1)+'%</span>';
+  }
+
+  function userTable(users, sectionId){
+    var minG = 1;
+    if (sectionId) {
+      var cb = document.getElementById('cb-'+sectionId);
+      if (cb && cb.checked) minG = 5;
+    }
+    var filtered = users.filter(function(u){ return u.total >= minG; });
+    if(!filtered.length) return '<div style="font-family:Rajdhani,sans-serif;font-size:11px;color:var(--muted);padding:.5rem 0;">데이터 없음</div>';
+    return '<table class="ur-table"><tr><th>소환사명</th><th>게임</th><th>승률</th></tr>'+
+      filtered.slice(0,5).map(function(u){
+        const gameLabel = u.total < 5
+          ? '<span style="color:var(--muted);font-size:9px;"> (소표본)</span>' : '';
+        return '<tr><td class="ur-name">'+esc(u.name)+'</td>'+
+          '<td class="ur-games">'+u.total+'</td>'+
+          '<td class="ur-pct" style="color:'+wrTextColor(u.wr)+'">'+u.wr.toFixed(0)+'%'+gameLabel+'</td></tr>';
+      }).join('')+'</table>';
+  }
+
+  // 그리드 카드형 챔피언 표시 (맞라인 챔피언용)
+  function champCard(c) {
+    const bg = c.wr>=55?'rgba(232,64,87,.1)':c.wr>=50?'rgba(200,170,110,.08)':'rgba(83,131,232,.08)';
+    const bc = c.wr>=55?'rgba(232,64,87,.25)':c.wr>=50?'rgba(200,170,110,.2)':'rgba(83,131,232,.2)';
+    return '<div style="display:flex;align-items:center;gap:6px;padding:5px 7px;border-radius:3px;background:'+bg+';border:1px solid '+bc+';">'+
+      '<img class="mini-champ" src="'+DD_ICON(c.name)+'" onerror="this.style.opacity=0.15">'+
+      '<div style="flex:1;min-width:0;">'+
+        '<div style="font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+esc(c.name)+'</div>'+
+        '<div style="display:flex;align-items:center;gap:4px;margin-top:2px;">'+
+          '<div style="flex:1;height:4px;background:rgba(255,255,255,.06);border-radius:1px;overflow:hidden;">'+
+            '<div style="height:100%;background:'+wrColor(c.wr)+';width:'+c.wr.toFixed(0)+'%"></div>'+
+          '</div>'+
+          '<span style="font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;color:'+wrTextColor(c.wr)+';white-space:nowrap;">'+c.wr.toFixed(0)+'%</span>'+
+        '</div>'+
+      '</div>'+
+      '<span style="font-family:Rajdhani,sans-serif;font-size:10px;color:var(--muted);flex-shrink:0;">'+c.total+'판</span>'+
+    '</div>';
+  }
+
+  // 라인 필터 버튼 생성
+  function buildLaneFilterBtns(champs) {
+    const poses = [];
+    champs.forEach(function(c){
+      if (c.pos && poses.indexOf(c.pos) < 0) poses.push(c.pos);
+    });
+    return poses.map(function(p){
+      const label = POS_SHORT[normalizePos(p)] || p;
+      const color = POS_COLOR[normalizePos(p)] || '#5B6474';
+      return '<button class="lf-chip" data-pos="'+p+'" '+
+        'style="padding:2px 8px;border-radius:2px;border:1px solid rgba(255,255,255,.08);background:transparent;color:var(--muted);font-family:Rajdhani,sans-serif;font-size:10px;font-weight:700;cursor:pointer;">'+
+        label+'</button>';
+    }).join('');
+  }
+
+  function sampleFilter(sectionId) {
+    return '<label style="display:flex;align-items:center;gap:4px;font-family:Rajdhani,sans-serif;font-size:10px;color:var(--muted);cursor:pointer;margin-bottom:.4rem;user-select:none;">'
+      + '<input type="checkbox" class="sample-filter-cb" data-sid="'+sectionId+'" id="cb-'+sectionId+'"'
+      + ' style="width:12px;height:12px;accent-color:var(--blue);cursor:pointer;">'
+      + '소표본(5게임 미만) 제거</label>';
+  }
+
+  function matchRows(){
+    return matchList.slice(0,15).map(function(m){
+      const cn=champMap[String(m.champion_id)]||String(m.champion_id);
+      const pos=POS_SHORT[normalizePos(m.position)]||m.position||'—';
+      const posC=POS_COLOR[normalizePos(m.position)]||'#5B6474';
+      const dur=m.game_duration?Math.floor(m.game_duration/60)+'분':'';
+      const kda=m.kills!==undefined?(m.kills+'/'+m.deaths+'/'+m.assists):'';
+      const rc=m.is_remake?'remake':m.is_win?'win':'lose';
+      const rl=m.is_remake?'RE':m.is_win?'승':'패';
+      return '<div class="match-row '+rc+'">'+
+        '<span class="mr-result" style="color:'+(m.is_remake?'var(--muted)':m.is_win?'#5383E8':'var(--red)')+'">'+rl+'</span>'+
+        '<img class="mr-champ" src="'+DD_ICON(cn)+'" onerror="this.style.opacity=0.2">'+
+        '<span class="mr-pos" style="color:'+posC+'">'+pos+'</span>'+
+        '<span class="mr-kda">'+kda+'</span>'+
+        '<span class="mr-cs">CS '+(m.cs||0)+'</span>'+
+        (m.ai_score?'<span class="mr-ai">'+m.ai_score.toFixed(0)+'점</span>':'')+
+        '<span class="mr-time">'+timeAgo(m.creation_timestamp)+'</span>'+
+        '<span class="mr-dur">'+dur+'</span>'+
+      '</div>';
+    }).join('');
+  }
+
+  const cKey = _cacheKey(member.puu_id, _queueMode);
+  const lastUp = _lastUpdateTime[cKey] || 0;
+  const coolRemain = Math.max(0, UPDATE_COOLDOWN_MS - (Date.now() - lastUp));
+  const isCooling = coolRemain > 0;
+  const coolSec = Math.ceil(coolRemain / 1000);
+  const updatedStr = updatedAt
+    ? '마지막 저장: ' + timeAgo(Math.floor(updatedAt/1000))
+    : '';
+  const updateBtnHtml = '<div style="display:flex;align-items:center;justify-content:space-between;padding:.5rem 1.25rem .25rem;">'+
+    '<span style="font-family:Rajdhani,sans-serif;font-size:10px;color:var(--muted);">'+(totalLoaded||0)+'게임 분석됨'+
+      (updatedStr ? ' · '+updatedStr : '')+
+    '</span>'+
+    '<button class="update-btn" id="update-btn-'+esc(member.puu_id)+'" data-puu="'+esc(member.puu_id)+'" '+
+    (isCooling ? 'disabled ' : '')+
+    'style="padding:4px 12px;border-radius:2px;border:1px solid rgba(10,200,185,.3);background:rgba(10,200,185,.06);color:'+(isCooling?'var(--muted)':'var(--blue)')+';font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;letter-spacing:.5px;cursor:'+(isCooling?'not-allowed':'pointer')+';opacity:'+(isCooling?'.5':'1')+';">'+
+    (isCooling ? '↻ 쿨타임 '+coolSec+'초' : '↻ 업데이트')+
+    '</button></div>';
+
+  document.getElementById('dm-content').innerHTML = updateBtnHtml +
+    '<div class="dm-body">'+
+      '<div class="two-col">'+
+        '<div class="dm-section" style="display:flex;flex-direction:column;">'+
+          '<div class="dm-section-title">내 챔피언 ('+totalGames+'게임 기준)</div>'+
+          '<div style="flex:1;overflow-y:auto;max-height:300px;display:flex;flex-direction:column;gap:4px;padding-right:2px;">'+
+            topChamps.map(champBar).join('')+
+          '</div>'+
+        '</div>'+
+        '<div class="dm-section"><div class="dm-section-title">최근 전적</div>'+
+          '<div style="display:flex;gap:.5rem;align-items:center;margin-bottom:.6rem;">'+miniWinBar(wins,totalGames-wins)+'</div>'+
+          '<div class="match-list">'+matchRows()+'</div>'+
+        '</div>'+
+      '</div>'+
+      '<div class="two-col">'+
+        '<div class="dm-section"><div class="dm-section-title">🤝 아군 승률 TOP 5</div>'+sampleFilter('ally-top')+userTable(allies,'ally-top')+'</div>'+
+        '<div class="dm-section"><div class="dm-section-title">💔 아군 승률 BOT 5</div>'+sampleFilter('ally-bot')+userTable(alliesAsc,'ally-bot')+'</div>'+
+      '</div>'+
+      '<div class="two-col">'+
+        '<div class="dm-section"><div class="dm-section-title">⚔ 적 상대 승률 TOP 5</div>'+sampleFilter('enemy-top')+userTable(enemies,'enemy-top')+'</div>'+
+        '<div class="dm-section"><div class="dm-section-title">😰 적 상대 승률 BOT 5</div>'+sampleFilter('enemy-bot')+userTable(enemiesAsc,'enemy-bot')+'</div>'+
+      '</div>'+
+      (laneEnemies.length?
+        '<div class="two-col">'+
+          '<div class="dm-section"><div class="dm-section-title">🎯 맞라인 승률 TOP 5</div>'+sampleFilter('lane-top')+userTable(laneEnemies,'lane-top')+'</div>'+
+          '<div class="dm-section"><div class="dm-section-title">😓 맞라인 승률 BOT 5</div>'+sampleFilter('lane-bot')+userTable(laneEnemiesAsc,'lane-bot')+'</div>'+
+        '</div>':'')+
+      (enemyChamps.length?
+        '<div class="dm-section">'+
+          '<div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.6rem;flex-wrap:wrap;">'+
+            '<div class="dm-section-title" style="margin-bottom:0;">🐉 맞라인 챔피언별 승률</div>'+
+            '<div id="lane-filter-chips" style="display:flex;gap:3px;flex-wrap:wrap;">'+
+              '<button class="lf-chip active" data-pos="ALL" style="padding:2px 8px;border-radius:2px;border:1px solid var(--blue);background:rgba(10,200,185,.08);color:var(--blue);font-family:Rajdhani,sans-serif;font-size:10px;font-weight:700;cursor:pointer;">전체</button>'+
+              buildLaneFilterBtns(enemyChamps)+
+            '</div>'+
+          '</div>'+
+          '<div id="lane-champ-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:5px;">'+
+            enemyChamps.map(function(c){return champCard(c);}).join('')+
+          '</div>'+
+        '</div>':'')+
+    '</div>';
+}
+
+
+// ══════════════════════════════════════
+// 마스터 인증 + 전체 레이팅 계산
+// ══════════════════════════════════════
+let _masterSessionToken = '';
+let _masterAuthed = false;
+
+function openMasterModal() {
+  if (_masterAuthed) {
+    openBatchModal();
+    return;
+  }
+  document.getElementById('master-overlay').classList.add('open');
+  document.getElementById('master-err').textContent = '';
+  document.getElementById('master-id').value = '';
+  document.getElementById('master-pw').value = '';
+  setTimeout(function(){ document.getElementById('master-id').focus(); }, 100);
+}
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    document.getElementById('master-overlay').classList.remove('open');
+    closeBatchModal();
+  }
+});
+document.getElementById('master-pw').addEventListener('keydown', function(e){
+  if (e.key === 'Enter') doMasterAuth();
+});
+
+async function doMasterAuth() {
+  var id = document.getElementById('master-id').value.trim();
+  var pw = document.getElementById('master-pw').value.trim();
+  if (!id || !pw) { document.getElementById('master-err').textContent = '아이디와 비밀번호를 입력하세요'; return; }
+  document.getElementById('master-err').textContent = '인증 중...';
+  try {
+    var res = await fetch(WORKER_URL + '/auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, password: pw, communityId: COMMUNITY_ID })
+    });
+    var json = await res.json();
+    if (!json.ok || json.role !== 'master') {
+      document.getElementById('master-err').textContent = json.error || '마스터 권한이 없습니다';
+      return;
+    }
+    _masterSessionToken = json.token || '';
+    _masterAuthed = true;
+    document.getElementById('master-overlay').classList.remove('open');
+    openBatchModal();
+  } catch(e) {
+    document.getElementById('master-err').textContent = '오류: ' + e.message;
+  }
+}
+window.doMasterAuth = doMasterAuth;
+window.openMasterModal = openMasterModal;
+
+// ── 일괄 계산 모달 ──
+function openBatchModal() {
+  var overlay = document.getElementById('batch-overlay');
+  overlay.classList.add('open');
+  document.getElementById('batch-log').innerHTML = '';
+  document.getElementById('batch-progress').style.display = 'none';
+  document.getElementById('batch-start-btn').style.display = '';
+  document.getElementById('batch-start-btn').disabled = false;
+  document.getElementById('batch-desc').textContent =
+    'Firebase에 분석 데이터가 있는 멤버의 레이팅을 일괄 계산합니다. (총 ' + allData.length + '명 중 분석된 멤버만)';
+}
+
+function closeBatchModal() {
+  document.getElementById('batch-overlay').classList.remove('open');
+}
+window.closeBatchModal = closeBatchModal;
+
+function addBatchLog(msg, type) {
+  var el = document.createElement('div');
+  el.className = 'batch-log-item batch-log-' + (type||'ok');
+  el.textContent = msg;
+  var log = document.getElementById('batch-log');
+  log.appendChild(el);
+  log.scrollTop = log.scrollHeight;
+}
+
+async function startBatchRating() {
+  if (!COMMUNITY_ID) { alert('커뮤니티 ID가 없습니다 (URL에 ?cid= 필요)'); return; }
+
+  var startBtn = document.getElementById('batch-start-btn');
+  startBtn.disabled = true;
+  startBtn.style.display = 'none';
+  document.getElementById('batch-progress').style.display = '';
+  document.getElementById('batch-log').innerHTML = '';
+
+  // rating_config 로드
+  var cfg = await loadRatingConfig();
+  if (!cfg) {
+    addBatchLog('⚠ 레이팅 설정을 불러올 수 없습니다. 기본값으로 진행합니다.', 'skip');
+  }
+
+  var members = allData; // 전체 멤버
+  var total = members.length;
+  var done = 0, ok = 0, skip = 0, err = 0;
+
+  document.getElementById('batch-status-text').textContent = '0 / ' + total + '명 처리 중...';
+
+  for (var i = 0; i < members.length; i++) {
+    var member = members[i];
+    var puuId = member.puu_id;
+
+    try {
+      // Firebase에서 분석 데이터 읽기
+      var fbRes = await fetch(WORKER_URL + '/member-analysis-read', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ communityId: COMMUNITY_ID, puuId: puuId, mode: 'custom' })
+      });
+      var fbJson = await fbRes.json();
+
+      if (!fbJson.ok || !fbJson.data || !fbJson.data.analysis) {
+        addBatchLog('⏭ ' + member.riot_name + ' — 분석 데이터 없음 (스킵)', 'skip');
+        skip++;
+      } else {
+        var analysis = fbJson.data.analysis;
+        var ratingResult = calcRating(member, analysis, cfg);
+
+        if (!ratingResult) {
+          addBatchLog('✕ ' + member.riot_name + ' — 레이팅 계산 실패', 'err');
+          err++;
+        } else {
+          // 레이팅 저장
+          await fetch(WORKER_URL + '/member-analysis-write', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              communityId: COMMUNITY_ID,
+              serverId: SERVER_ID,
+              puuId: puuId,
+              mode: 'rating',
+              data: {
+                meta: { updatedAt: Date.now(), version: SCHEMA_VER },
+                rating: ratingResult.rating,
+                breakdown: ratingResult.breakdown
+              }
+            })
+          });
+          // allData에도 반영
+          member._rating = ratingResult.rating;
+          member._ratingBreakdown = ratingResult.breakdown;
+          addBatchLog('✓ ' + member.riot_name + ' — ' + ratingResult.rating.toFixed(1) + '점', 'ok');
+          ok++;
+        }
+      }
+    } catch(e) {
+      addBatchLog('✕ ' + member.riot_name + ' — 오류: ' + e.message, 'err');
+      err++;
+    }
+
+    done++;
+    var pct = Math.round(done / total * 100);
+    document.getElementById('batch-bar').style.width = pct + '%';
+    document.getElementById('batch-pct').textContent = pct + '%';
+    document.getElementById('batch-status-text').textContent = done + ' / ' + total + '명 처리 중...';
+  }
+
+  document.getElementById('batch-status-text').textContent =
+    '완료 — 성공 ' + ok + '명 / 스킵 ' + skip + '명 / 오류 ' + err + '명';
+  document.getElementById('batch-start-btn').style.display = '';
+  document.getElementById('batch-start-btn').disabled = false;
+  document.getElementById('batch-start-btn').textContent = '▶ 다시 계산';
+
+  // 테이블 리렌더 (레이팅 반영)
+  applyAll();
+}
+window.startBatchRating = startBatchRating;
+
+
+// 모바일 백그라운드 전환 시 저장 보장 (visibilitychange)
+var _pendingSave = null;
+document.addEventListener('visibilitychange', function() {
+  if (document.visibilityState === 'hidden' && _pendingSave) {
+    // sendBeacon으로 페이지 언로드 시에도 저장 보장
+    var blob = new Blob([JSON.stringify(_pendingSave)], { type: 'application/json' });
+    navigator.sendBeacon && navigator.sendBeacon(WORKER_URL + '/member-analysis-write', blob);
+    _pendingSave = null;
+  }
+});
+
+
+
+// ══════════════════════════════════════
+// 관리자 로그인 + 임시 티어
+// ══════════════════════════════════════
+let _statsAdminToken = '';
+let _statsAdminRole  = '';
+let _statsAdminId    = '';
+let _statsAdminPw    = '';
+let _tempTiers = {};       // puuId → { tier, lp } 또는 문자열
+let _ttCurrentMember = null;
+let _ttSelectedTier  = null;
+var LP_TIERS = ['CHALLENGER','GRANDMASTER','MASTER'];
+
+const TIER_OPTIONS = [
+  { label:'챌린저',  value:'CHALLENGER' },
+  { label:'그랜드마스터', value:'GRANDMASTER' },
+  { label:'마스터', value:'MASTER' },
+  { label:'다이아 I',  value:'DIAMOND I' },   { label:'다이아 II', value:'DIAMOND II' },
+  { label:'다이아 III',value:'DIAMOND III' },  { label:'다이아 IV', value:'DIAMOND IV' },
+  { label:'에메 I',    value:'EMERALD I' },    { label:'에메 II',   value:'EMERALD II' },
+  { label:'에메 III',  value:'EMERALD III' },  { label:'에메 IV',   value:'EMERALD IV' },
+  { label:'플래 I',    value:'PLATINUM I' },   { label:'플래 II',   value:'PLATINUM II' },
+  { label:'플래 III',  value:'PLATINUM III' }, { label:'플래 IV',   value:'PLATINUM IV' },
+  { label:'골드 I',    value:'GOLD I' },       { label:'골드 II',   value:'GOLD II' },
+  { label:'골드 III',  value:'GOLD III' },     { label:'골드 IV',   value:'GOLD IV' },
+  { label:'실버 I',    value:'SILVER I' },     { label:'실버 II',   value:'SILVER II' },
+  { label:'실버 III',  value:'SILVER III' },   { label:'실버 IV',   value:'SILVER IV' },
+  { label:'브론즈 I',  value:'BRONZE I' },     { label:'브론즈 II', value:'BRONZE II' },
+  { label:'브론즈 III',value:'BRONZE III' },   { label:'브론즈 IV', value:'BRONZE IV' },
+  { label:'아이언 I',  value:'IRON I' },       { label:'아이언 II', value:'IRON II' },
+  { label:'아이언 III',value:'IRON III' },     { label:'아이언 IV', value:'IRON IV' },
+];
+
+function isStatsAdmin() { return !!_statsAdminToken; }
+
+// 관리자 로그인 열기
+function openAdminLogin() {
+  document.getElementById('admin-login-overlay').classList.add('open');
+  document.getElementById('al-err').textContent = '';
+  document.getElementById('al-id').value = '';
+  document.getElementById('al-pw').value = '';
+  setTimeout(function(){ document.getElementById('al-id').focus(); }, 100);
+}
+window.openAdminLogin = openAdminLogin;
+
+document.getElementById('al-pw').addEventListener('keydown', function(e){
+  if (e.key === 'Enter') doStatsAdminLogin();
+});
+
+async function doStatsAdminLogin() {
+  var id = document.getElementById('al-id').value.trim();
+  var pw = document.getElementById('al-pw').value.trim();
+  if (!id || !pw) { document.getElementById('al-err').textContent = '아이디와 비밀번호를 입력하세요'; return; }
+  document.getElementById('al-err').textContent = '로그인 중...';
+  try {
+    // master 먼저 시도, 실패하면 admin 시도
+    var loginType = 'master';
+    var res = await fetch(WORKER_URL + '/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, pw, type: 'master' })
+    });
+    var data = await res.json();
+    if (!data.ok) {
+      // master 실패 → admin 시도
+      res = await fetch(WORKER_URL + '/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, pw, type: 'admin' })
+      });
+      data = await res.json();
+      loginType = 'admin';
+    }
+    if (!data.ok) {
+      document.getElementById('al-err').textContent = data.error || '아이디 또는 비밀번호가 틀렸습니다';
+      return;
+    }
+    // admin인 경우 해당 커뮤니티 관리자인지 확인
+    if (loginType === 'admin' && data.data && data.data.communityId && COMMUNITY_ID && data.data.communityId !== COMMUNITY_ID) {
+      document.getElementById('al-err').textContent = '이 커뮤니티의 관리자가 아닙니다';
+      return;
+    }
+    _statsAdminToken = data.token || '';
+    _statsAdminRole  = data.role;
+    _statsAdminId    = id;
+    _statsAdminPw    = pw;
+    document.getElementById('admin-login-overlay').classList.remove('open');
+    document.getElementById('btn-admin-login').style.display = 'none';
+    var statusEl = document.getElementById('admin-status');
+    statusEl.style.display = 'flex';
+    document.getElementById('admin-status-text').textContent = (_statsAdminRole === 'master' ? '👑 마스터' : '🔑 관리자') + ' ' + id;
+    renderPage();
+  } catch(e) {
+    document.getElementById('al-err').textContent = '오류: ' + e.message;
+  }
+}
+window.doStatsAdminLogin = doStatsAdminLogin;
+
+function statsAdminLogout() {
+  _statsAdminToken = '';
+  _statsAdminRole  = '';
+  document.getElementById('btn-admin-login').style.display = '';
+  document.getElementById('admin-status').style.display = 'none';
+  renderPage();
+}
+window.statsAdminLogout = statsAdminLogout;
+
+// 임시 티어 셀 렌더
+function renderTempTierCell(m) {
+  var tierRaw = _tempTiers[m.puu_id] || m._tempTier || null;
+  // 항상 { tier, lp } 또는 문자열 → 통일
+  var tierStr = tierRaw && typeof tierRaw === 'object' ? (tierRaw.tier || null) : tierRaw;
+  var tierLp  = tierRaw && typeof tierRaw === 'object' ? (tierRaw.lp  || null) : null;
+  var tier = tierStr; // 하위 호환
+  if (!isStatsAdmin()) {
+    return tierStr ? renderTierBadge(tierStr, tierLp) : '<span style="color:var(--muted);font-size:11px;font-family:Rajdhani,sans-serif;">—</span>';
+  }
+  if (tierStr) {
+    return '<div class="temp-tier-cell" data-puu="'+esc(m.puu_id)+'" data-name="'+esc(m.riot_name)+'">'+ renderTierBadge(tierStr, tierLp) +'</div>';
+  }
+  return '<div class="temp-tier-empty" data-puu="'+esc(m.puu_id)+'" data-name="'+esc(m.riot_name)+'">+ 설정</div>';
+}
+
+// 임시 티어 팝업 열기
+function openTempTierPopup(puuId, name) {
+  var member = filteredData.find(function(m){ return m.puu_id === puuId; });
+  _ttCurrentMember = member || { puu_id: puuId };
+  _ttSelectedTier  = _tempTiers[puuId] || null;
+  document.getElementById('tt-member-name').textContent = name + ' 의 임시 티어';
+  document.getElementById('tt-remove-btn').style.display = _ttSelectedTier ? '' : 'none';
+  // LP 입력칸 초기화
+  var lpSection = document.getElementById('tt-lp-section');
+  var lpInput = document.getElementById('tt-lp-input');
+  var existingLp = _tempTiers[puuId] && _tempTiers[puuId].lp !== undefined ? _tempTiers[puuId].lp : '';
+  var needLp = _ttSelectedTier && LP_TIERS.includes(parseTier(_ttSelectedTier).tier);
+  lpSection.style.display = needLp ? '' : 'none';
+  lpInput.value = needLp ? (existingLp || '') : '';
+  // 티어 그리드 렌더
+  var grid = document.getElementById('tt-tier-grid');
+  grid.innerHTML = TIER_OPTIONS.map(function(t) {
+    var pp = parseTier(t.value);
+    var pc = TIER_COLOR[pp.tier] || '#5B6474';
+    var sel = t.value === _ttSelectedTier;
+    return '<button class="tt-tier-btn'+(sel?' selected':'')+'" data-val="'+t.value+'" '+
+      'style="color:'+pc+';'+(sel?'border-color:var(--blue);background:rgba(10,200,185,.1);':'')+'">'
+      +t.label+'</button>';
+  }).join('');
+  document.getElementById('tt-overlay').classList.add('open');
+}
+window.openTempTierPopup = openTempTierPopup;
+
+// 티어 버튼 클릭
+document.getElementById('tt-tier-grid').addEventListener('click', function(e) {
+  var btn = e.target.closest('.tt-tier-btn');
+  if (!btn) return;
+  _ttSelectedTier = btn.dataset.val;
+  document.querySelectorAll('.tt-tier-btn').forEach(function(b){
+    var sel = b.dataset.val === _ttSelectedTier;
+    b.classList.toggle('selected', sel);
+    var pp = parseTier(b.dataset.val);
+    var pc = TIER_COLOR[pp.tier] || '#5B6474';
+    b.style.borderColor = sel ? 'var(--blue)' : '';
+    b.style.background  = sel ? 'rgba(10,200,185,.1)' : '';
+  });
+  // LP 입력칸 표시
+  var lpSection = document.getElementById('tt-lp-section');
+  var needLp = _ttSelectedTier && LP_TIERS.includes(parseTier(_ttSelectedTier).tier);
+  lpSection.style.display = needLp ? '' : 'none';
+  if (!needLp) document.getElementById('tt-lp-input').value = '';
+});
+
+function closeTempTierPopup() {
+  document.getElementById('tt-overlay').classList.remove('open');
+  _ttCurrentMember = null;
+  _ttSelectedTier  = null;
+}
+window.closeTempTierPopup = closeTempTierPopup;
+
+async function saveTempTier(override) {
+  var tier = override !== undefined ? override : _ttSelectedTier;
+  var puuId = _ttCurrentMember && _ttCurrentMember.puu_id;
+  if (!puuId) return;
+
+  // LP 값 포함
+  var lp = null;
+  var tierStrForLp = typeof tier === 'object' ? (tier && tier.tier) : tier;
+  if (tierStrForLp && LP_TIERS.includes(parseTier(tierStrForLp).tier)) {
+    var lpVal = parseInt(document.getElementById('tt-lp-input').value);
+    lp = isNaN(lpVal) ? 0 : lpVal;
+  }
+  var saveData = tier ? { tier: tier, lp: lp } : null;
+  try {
+    var res = await fetch(WORKER_URL + '/temp-tier-write', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ communityId: COMMUNITY_ID, puuId: puuId, tier: saveData, token: _statsAdminToken, adminId: _statsAdminId, adminPw: _statsAdminPw })
+    });
+    var json = await res.json();
+    if (!json.ok) { alert('저장 실패: ' + (json.error||'')); return; }
+    // 로컬 캐시 업데이트
+    if (saveData) {
+      _tempTiers[puuId] = saveData;
+      var m = allData.find(function(x){ return x.puu_id === puuId; });
+      if (m) { m._tempTier = saveData.tier; m._tempLp = saveData.lp; }
+    } else {
+      delete _tempTiers[puuId];
+      var m2 = allData.find(function(x){ return x.puu_id === puuId; });
+      if (m2) { delete m2._tempTier; delete m2._tempLp; }
+    }
+    closeTempTierPopup();
+    renderPage();
+  } catch(e) { alert('오류: ' + e.message); }
+}
+window.saveTempTier = saveTempTier;
+
+// 임시 티어 셀 클릭 이벤트 위임
+document.addEventListener('click', function(e) {
+  var cell = e.target.closest('.temp-tier-cell, .temp-tier-empty');
+  if (!cell || !isStatsAdmin()) return;
+  openTempTierPopup(cell.dataset.puu, cell.dataset.name);
+});
+
+// 임시 티어 전체 로드
+async function loadTempTiers() {
+  if (!COMMUNITY_ID) return;
+  try {
+    var res = await fetch(WORKER_URL + '/temp-tiers-read', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ communityId: COMMUNITY_ID })
+    });
+    var json = await res.json();
+    if (json.ok && json.data) {
+      _tempTiers = json.data;
+      // allData에도 반영
+      allData.forEach(function(m) {
+        if (_tempTiers[m.puu_id]) m._tempTier = _tempTiers[m.puu_id];
+      });
+      renderPage();
+    }
+  } catch(e) {}
+}
+
+// ESC로 팝업 닫기
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    document.getElementById('admin-login-overlay').classList.remove('open');
+    closeTempTierPopup();
+  }
+});
+
+// 오버레이 클릭으로 닫기
+document.getElementById('admin-login-overlay').addEventListener('click', function(e) {
+  if (e.target === this) this.classList.remove('open');
+});
+document.getElementById('tt-overlay').addEventListener('click', function(e) {
+  if (e.target === this) closeTempTierPopup();
+});
+
+</script>
+
 </body>
 </html>
