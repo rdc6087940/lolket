@@ -312,6 +312,17 @@ tbody td{padding:.55rem 1rem;font-size:12px;vertical-align:middle;}
 .temp-tier-cell:hover{opacity:1;}
 .temp-tier-empty{font-family:'Rajdhani',sans-serif;font-size:10px;color:var(--muted);letter-spacing:.5px;border:1px dashed rgba(255,255,255,.1);border-radius:2px;padding:2px 6px;cursor:pointer;}
 .temp-tier-empty:hover{border-color:rgba(10,200,185,.3);color:var(--blue);}
+
+/* ── 레이팅 로그 ── */
+.rl-row{display:flex;align-items:center;gap:10px;padding:.5rem .75rem;border-bottom:1px solid rgba(255,255,255,.04);font-family:'Rajdhani',sans-serif;font-size:11px;}
+.rl-row:hover{background:rgba(255,255,255,.02);}
+.rl-label{flex:1;color:var(--sub);}
+.rl-delta{font-weight:700;min-width:50px;text-align:right;}
+.rl-delta.pos{color:var(--blue);}
+.rl-delta.neg{color:var(--red);}
+.rl-rating{color:var(--gold);font-weight:700;min-width:50px;text-align:right;}
+.rl-date{color:var(--muted);font-size:10px;min-width:70px;text-align:right;}
+.rl-header{display:flex;align-items:center;gap:10px;padding:.35rem .75rem;font-family:'Rajdhani',sans-serif;font-size:9px;font-weight:700;letter-spacing:1px;color:var(--muted);border-bottom:1px solid var(--border);}
 </style>
 </head>
 <body>
@@ -539,7 +550,14 @@ function ratingTooltip(bd) {
   } catch(e) { return ''; }
 }
 
-function buildRatingCell(rating, bd, isHeader) {
+function buildRatingCell(rating, bd, games) {
+  if (rating === undefined || rating === null) {
+    return '<span style="font-family:Rajdhani,sans-serif;font-size:11px;color:var(--muted);">—</span>';
+  }
+  // 딥롤 전체 내전 판수 10판 미만이면 배치중 표시
+  if (typeof games === 'number' && games < 10) {
+    return '<span style="font-size:11px;color:var(--muted);">배치중</span>';
+  }
   if (rating === undefined || rating === null) {
     return '<span style="font-family:Rajdhani,sans-serif;font-size:11px;color:var(--muted);">—</span>';
   }
@@ -940,8 +958,18 @@ function syncTableWidth(){} // 단일 테이블 구조에서 불필요
       </div>
       <button class="dm-close" onclick="closeDetail()">✕</button>
     </div>
+    <!-- 탭 헤더 -->
+    <div style="display:flex;gap:4px;padding:.5rem 1rem 0;border-bottom:1px solid var(--border);">
+      <button id="dm-tab-analysis" onclick="switchDetailTab('analysis')"
+        style="padding:4px 10px;border-radius:2px 2px 0 0;border:1px solid var(--border);border-bottom:2px solid var(--blue);background:rgba(10,200,185,.08);color:var(--blue);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:.5px;">📊 분석</button>
+      <button id="dm-tab-rating-log" onclick="switchDetailTab('rating-log')"
+        style="padding:4px 10px;border-radius:2px 2px 0 0;border:1px solid var(--border);border-bottom:none;background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:.5px;">📈 레이팅 로그</button>
+    </div>
     <div id="dm-content">
       <div class="dm-loading"><div class="spinner"></div> 분석 중...</div>
+    </div>
+    <div id="dm-rating-log" style="display:none;overflow-y:auto;max-height:500px;padding:.5rem 0;">
+      <div style="padding:2rem;text-align:center;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:12px;">로딩 중...</div>
     </div>
   </div>
 </div>
@@ -1522,29 +1550,21 @@ async function loadDetailData(memberData, isUpdate) {
     const savedAt = Date.now();
 
     // 레이팅 계산 (커스텀 모드일 때만)
-    // 최고 티어 조회 (레이팅 계산 및 저장에 모두 사용)
-    var peakData = await fetchPeakTier(memberData.puu_id, memberData.platform_id || 'KR');
-    var peakTier = peakData ? peakData.tier : null;
-    var peakLp   = peakData ? peakData.lp   : 0;
-    if (peakTier) {
-      memberData._peakTier = peakTier;
-      memberData._peakLp   = peakLp;
-      var mPeak = allData.find(function(x){ return x.puu_id === puuId; });
-      if (mPeak) { mPeak._peakTier = peakTier; mPeak._peakLp = peakLp; }
+    // 최고 티어 조회 (표시용만 - 레이팅 계산과 무관)
+    if (!memberData._peakTier) {
+      var peakData = await fetchPeakTier(memberData.puu_id, memberData.platform_id || 'KR');
+      if (peakData) {
+        memberData._peakTier = peakData.tier;
+        memberData._peakLp   = peakData.lp || 0;
+        var mPeak = allData.find(function(x){ return x.puu_id === puuId; });
+        if (mPeak) { mPeak._peakTier = peakData.tier; mPeak._peakLp = peakData.lp || 0; }
+      }
     }
 
-    var ratingResult = null;
-    // v2: Firebase에서 로드된 레이팅 사용
-    {
-      var memberForRating = Object.assign({}, memberData, {
-        tier: peakTier || memberData.tier
-      });
-      // v2: 레이팅은 내전 결과로 가감 - 상세에서는 계산하지 않음
-      // Firebase에서 로드된 레이팅을 그대로 사용
-      ratingResult = memberData._rating !== undefined
-        ? { rating: memberData._rating, breakdown: memberData._ratingBreakdown || {} }
-        : null;
-    }
+    // v2: 레이팅은 내전 결과로 가감 - 상세에서는 계산하지 않고 Firebase 값 그대로 사용
+    var ratingResult = memberData._rating !== undefined
+      ? { rating: memberData._rating, breakdown: {} }
+      : null;
 
     renderDetail(analysis, memberData, totalCount, savedAt, ratingResult);
 
@@ -2033,58 +2053,68 @@ async function startBatchRating() {
   document.getElementById('batch-progress').style.display = '';
   document.getElementById('batch-log').innerHTML = '';
 
-  // 시즌 입력 받기
   var season = (document.getElementById('batch-season-input') && document.getElementById('batch-season-input').value.trim()) || 'default';
-
   var members = allData;
   var total = members.length;
-  var done = 0, ok = 0, skip = 0, err = 0;
+  var done = 0, ok = 0, err = 0;
 
-  document.getElementById('batch-status-text').textContent = '0 / ' + total + '명 처리 중...';
+  document.getElementById('batch-status-text').textContent = '레이팅 계산 중...';
 
+  // 1단계: 전체 계산 (Firebase 요청 없음)
+  var ratingsMap = {};
   for (var i = 0; i < members.length; i++) {
     var member = members[i];
     try {
       var R0 = calcInitialRating(member);
-      // Firebase에 저장
-      var res = await fetch(WORKER_URL + '/rating-write', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          communityId: COMMUNITY_ID,
-          puuId: member.puu_id,
-          season: season,
-          token: _masterSessionToken,
-          adminId: _masterAuthId,
-          adminPw: _masterAuthPw,
-          rating: {
-            current: R0,
-            initial: R0,
-            wins: 0, losses: 0, streak: 0,
-            updatedAt: Date.now()
-          }
-        })
-      });
-      var rjson = await res.json();
-      if (!rjson.ok) throw new Error(rjson.error || '저장 실패');
+      ratingsMap[member.puu_id] = {
+        current: R0, initial: R0,
+        wins: 0, losses: 0, streak: 0,
+        updatedAt: Date.now()
+      };
       member._rating = R0;
-      member._ratingBreakdown = { initial: true };
-      addBatchLog('✓ ' + member.riot_name + ' — 초기 레이팅: ' + R0, 'ok');
+      addBatchLog('✓ ' + member.riot_name + ' — ' + R0 + '점', 'ok');
       ok++;
     } catch(e) {
       addBatchLog('✕ ' + member.riot_name + ' — 오류: ' + e.message, 'err');
       err++;
     }
-
     done++;
-    var pct = Math.round(done / total * 100);
+    var pct = Math.round(done / total * 80); // 80%까지 계산
     document.getElementById('batch-bar').style.width = pct + '%';
     document.getElementById('batch-pct').textContent = pct + '%';
-    document.getElementById('batch-status-text').textContent = done + ' / ' + total + '명 처리 중...';
+    document.getElementById('batch-status-text').textContent = done + ' / ' + total + '명 계산 완료...';
   }
 
+  // 2단계: Firebase에 한 번에 저장
+  document.getElementById('batch-status-text').textContent = 'Firebase 저장 중...';
+  document.getElementById('batch-bar').style.width = '90%';
+  try {
+    var saveRes = await fetch(WORKER_URL + '/rating-batch-write', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        communityId: COMMUNITY_ID,
+        season: season,
+        token: _masterSessionToken,
+        adminId: _masterAuthId,
+        adminPw: _masterAuthPw,
+        ratings: ratingsMap
+      })
+    });
+    var saveJson = await saveRes.json();
+    if (!saveJson.ok) {
+      addBatchLog('⚠ Firebase 저장 실패: ' + (saveJson.error || ''), 'err');
+    } else {
+      addBatchLog('✅ Firebase 저장 완료 (' + (saveJson.count || ok) + '명)', 'ok');
+    }
+  } catch(e) {
+    addBatchLog('⚠ 저장 오류: ' + e.message, 'err');
+  }
+
+  document.getElementById('batch-bar').style.width = '100%';
+  document.getElementById('batch-pct').textContent = '100%';
   document.getElementById('batch-status-text').textContent =
-    '완료 — 성공 ' + ok + '명 / 스킵 ' + skip + '명 / 오류 ' + err + '명';
+    '완료 — 성공 ' + ok + '명 / 오류 ' + err + '명';
   startBtn.style.display = '';
   startBtn.disabled = false;
   startBtn.textContent = '▶ 다시 계산';
@@ -2363,6 +2393,81 @@ document.getElementById('admin-login-overlay').addEventListener('click', functio
 document.getElementById('tt-overlay').addEventListener('click', function(e) {
   if (e.target === this) closeTempTierPopup();
 });
+
+
+var _detailCurrentMemberForLog = null;
+
+function switchDetailTab(tab) {
+  var analysisTab = document.getElementById('dm-tab-analysis');
+  var logTab = document.getElementById('dm-tab-rating-log');
+  var contentEl = document.getElementById('dm-content');
+  var logEl = document.getElementById('dm-rating-log');
+  if (!analysisTab || !logTab) return;
+
+  if (tab === 'analysis') {
+    analysisTab.style.background = 'var(--panel)';
+    analysisTab.style.color = 'var(--white)';
+    logTab.style.background = 'transparent';
+    logTab.style.color = 'var(--muted)';
+    if (contentEl) contentEl.style.display = '';
+    if (logEl) logEl.style.display = 'none';
+  } else {
+    logTab.style.background = 'var(--panel)';
+    logTab.style.color = 'var(--white)';
+    analysisTab.style.background = 'transparent';
+    analysisTab.style.color = 'var(--muted)';
+    if (contentEl) contentEl.style.display = 'none';
+    if (logEl) {
+      logEl.style.display = '';
+      loadRatingLog(_detailCurrentMemberForLog);
+    }
+  }
+}
+window.switchDetailTab = switchDetailTab;
+
+async function loadRatingLog(member) {
+  var logEl = document.getElementById('dm-rating-log');
+  if (!logEl || !member || !COMMUNITY_ID) return;
+  logEl.innerHTML = '<div class="dm-loading" style="color:var(--muted);">로딩 중...</div>';
+
+  try {
+    var res = await fetch(WORKER_URL + '/rating-log-read', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        communityId: COMMUNITY_ID,
+        puuId: member.puu_id,
+        season: _currentSeason || 'default',
+        limit: 50
+      })
+    });
+    var json = await res.json();
+    if (!json.ok || !json.data || !json.data.length) {
+      logEl.innerHTML = '<div class="dm-loading" style="color:var(--muted);">레이팅 로그가 없습니다</div>';
+      return;
+    }
+    var logs = json.data;
+    var html = '<div class="rl-header"><span style="flex:1;">대진</span><span style="min-width:50px;text-align:right;">변화</span><span style="min-width:50px;text-align:right;">레이팅</span><span style="min-width:70px;text-align:right;">날짜</span></div>';
+    logs.forEach(function(log) {
+      var sign = log.delta >= 0 ? '+' : '';
+      var cls = log.delta >= 0 ? 'pos' : 'neg';
+      var date = log.timestamp ? new Date(log.timestamp).toLocaleDateString('ko-KR', {month:'2-digit',day:'2-digit'}) : '—';
+      var aiStr = log.aiScore ? ' AI ' + Math.round(log.aiScore) : '';
+      var kdaStr = log.kda ? ' KDA ' + log.kda.toFixed(1) : '';
+      var winStr = log.isWin ? '🔵 승' : '🔴 패';
+      html += '<div class="rl-row">' +
+        '<div class="rl-label"><span style="font-size:10px;">' + winStr + '</span> ' +
+        esc(log.matchLabel || log.matchId || '—') +
+        '<span style="color:var(--muted);font-size:9px;">' + aiStr + kdaStr + '</span></div>' +
+        '<div class="rl-delta ' + cls + '">' + sign + log.delta + '</div>' +
+        '<div class="rl-rating">' + (log.newRating || '—') + '</div>' +
+        '<div class="rl-date">' + date + '</div>' +
+        '</div>';
+    });
+    logEl.innerHTML = html;
+  } catch(e) {
+    logEl.innerHTML = '<div class="dm-loading" style="color:var(--red);">오류: ' + esc(e.message) + '</div>';
+  }
+}
 
 </script>
 

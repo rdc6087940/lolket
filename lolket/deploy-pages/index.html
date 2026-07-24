@@ -5810,11 +5810,27 @@ else match.winner=null;
 });
 });
 }
-function deleteResultMatch(id){
+async function deleteResultMatch(id){
+const rmToDel = resultMatches.find(m => m.id === id);
+// 저장된 대진이고 ratingMatchKey가 있으면 레이팅 원복
+if (rmToDel && rmToDel.saved && rmToDel.ratingMatchKey && window._currentCommunityId) {
+  fetch(RIOT_PROXY_URL + '/rating-match-revert', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      communityId: window._currentCommunityId,
+      season: window._currentRatingSeason || 'default',
+      token: _sessionToken,
+      matchKey: rmToDel.ratingMatchKey
+    })
+  }).then(function(r){ return r.json(); }).then(function(j){
+    if (j.ok && j.reverted > 0) toast('레이팅 원복 완료 (' + j.reverted + '명)', 'ok');
+  }).catch(function(){});
+}
 resultMatches=resultMatches.filter(m => m.id !== id);
 let extraIdx=1;
 resultMatches.forEach(r =>{if (r.isExtra) r.label=`추가 대진 ${extraIdx++}`;});
 renderResultMatches();
+await saveCurrentMatch();
 }
 function updateCustomCode(id, val){
 const rm=resultMatches.find(m => m.id === id);
@@ -6024,6 +6040,10 @@ rm.fetching=true;
 renderResultMatches();
 try{
 let matchId=rm.customCode.trim();
+// URL에서 매치 ID 추출 (예: https://www.deeplol.gg/.../matches/KR_8309657651)
+const urlMatch = matchId.match(/matches\/([A-Z]+_\d+)/);
+if (urlMatch) matchId = urlMatch[1];
+// 숫자만 입력한 경우 KR_ 붙이기
 if (/^\d+$/.test(matchId)) matchId='KR_'+matchId;
 const url=`${RIOT_PROXY_URL}/match?code=${encodeURIComponent(matchId)}&region=KR`;
 const resp=await fetch(url);
@@ -7826,7 +7846,9 @@ const data = await res.json();
 if (data.ok) {
 isMaster = true; isAdmin = true; currentAdminData = null;
 _sessionToken = data.token || '';
+_loginId = id; _loginPw = pw;
 localStorage.setItem('injeong_session_token', _sessionToken);
+localStorage.setItem('injeong_login_id', id);
 localStorage.setItem('injeong_admin', '__master__');
 localStorage.setItem('injeong_is_master', '1');
 localStorage.setItem('injeong_pw_hash', pw);
@@ -7919,7 +7941,9 @@ const data = await res.json();
 if (data.ok && data.data) {
 isMaster = false;
 _sessionToken = data.token || '';
+_loginId = id; _loginPw = pw;
 localStorage.setItem('injeong_session_token', _sessionToken);
+localStorage.setItem('injeong_login_id', id);
 localStorage.setItem('injeong_pw_hash', pw);
 localStorage.setItem('injeong_login_id', id);
 currentAdminData = data.data;
@@ -16100,14 +16124,15 @@ function _calcRatingDelta(S, aiScore, kda, streak) {
 
 async function applyMatchRating(rm) {
   var cid = window._currentCommunityId;
-  if (!cid || !rm || !rm.gameData) return;
+  if (!cid || !rm) return;
   var season = window._currentRatingSeason || 'default';
   var token = _sessionToken;
-  if (!token) return; // 로그인 필요
+  // matchKey: 대진과 로그를 연결하는 고유 키
+  var matchKey = 'match_' + match.id + '_rm_' + rm.id;
 
-  // 딥롤 match-cached API에서 AI 스코어 가져오기
+  // 딥롤 match-cached API에서 AI 스코어/KDA 가져오기
   var matchCode = rm.customCode || '';
-  var participants = []; // { puuId, aiScore, kda, isWin }
+  var participants = {};
   if (matchCode) {
     try {
       var apiRes = await fetch(
@@ -16116,123 +16141,123 @@ async function applyMatchRating(rm) {
       );
       if (apiRes.ok) {
         var apiData = await apiRes.json();
-        var pList = apiData.participants_list || [];
-        pList.forEach(function(p) {
-          var kda = p.final_stat_dict ? p.final_stat_dict.kda : (p.ai_score ? 2 : 1);
-          participants.push({
-            puuId: p.puu_id,
+        (apiData.participants_list || []).forEach(function(p) {
+          participants[p.puu_id] = {
             aiScore: p.ai_score || 50,
-            kda: kda,
+            kda: (p.final_stat_dict && p.final_stat_dict.kda) || 2,
             isWin: !!p.is_win
-          });
+          };
         });
       }
     } catch(e) {}
   }
 
-  // gameData에서 참여자 목록
+  // 참여 멤버 목록
   var teamAMembers = (rm.teamA && rm.teamA.members) ? rm.teamA.members : [];
   var teamBMembers = (rm.teamB && rm.teamB.members) ? rm.teamB.members : [];
-  var winnerTeam = rm.winner === 'a' ? rm.teamA : rm.teamB;
-  var loserTeam  = rm.winner === 'a' ? rm.teamB : rm.teamA;
-  var winnerIds = new Set((winnerTeam && winnerTeam.members ? winnerTeam.members : []).map(function(m){ return m.id; }));
-  var allTeamMembers = teamAMembers.concat(teamBMembers);
+  var winnerTeam = rm.winner === 'a' ? teamAMembers : teamBMembers;
+  var winnerIds = new Set(winnerTeam.map(function(m){ return m.id; }));
+  var allMembers = teamAMembers.concat(teamBMembers);
 
-  // 현재 레이팅 일괄 로드
-  var ratingRes = await fetch(RIOT_PROXY_URL + '/rating-read', {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ communityId: cid, season: season })
-  });
-  var ratingData = {};
-  if (ratingRes.ok) {
-    var rj = await ratingRes.json();
-    if (rj.ok && rj.data) ratingData = rj.data;
+  // puuid 없는 멤버 필터 + 딥롤 승률 통계 allData와 매칭
+  // member.puuid = 라이엇 puuId (딥롤 puu_id와 동일)
+  if (!allMembers.some(function(m){ return m.puuid || m.puu_id; })) {
+    console.warn('[rating] 팀 멤버에 puuid 없음 - allData에서 name으로 매칭 시도');
+    allMembers = allMembers.map(function(m) {
+      if (m.puuid || m.puu_id) return m;
+      var found = (window.allData || []).find(function(d){ return d.riot_name === m.name && d.riot_tag === m.tag; });
+      return found ? Object.assign({}, m, { puuid: found.puu_id }) : m;
+    });
   }
 
-  // 각 참여자 레이팅 업데이트
-  var updates = [];
-  allTeamMembers.forEach(function(member) {
+  // 현재 레이팅 로드
+  var ratingData = {};
+  try {
+    var rRes = await fetch(RIOT_PROXY_URL + '/rating-read', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ communityId: cid, season: season })
+    });
+    var rj = await rRes.json();
+    if (rj.ok && rj.data) ratingData = rj.data;
+    console.log('[rating] 현재 레이팅 로드:', Object.keys(ratingData).length, '명');
+  } catch(e) { console.warn('[rating] 레이팅 로드 실패:', e.message); }
+
+  // 각 멤버 레이팅 계산
+  var newRatings = {};
+  var logs = {};
+  var matchLabel = (rm.label && rm.label !== 'undefined') ? rm.label : ('대진 ' + rm.id);
+
+  allMembers.forEach(function(member) {
     var puuId = member.puuid || member.puu_id;
-    if (!puuId) return;
+    if (!puuId) {
+      console.warn('[rating] puuId 없는 멤버:', member.name);
+      return;
+    }
     var isWin = winnerIds.has(member.id);
     var S = isWin ? 1 : -1;
-
-    // 딥롤 AI 스코어 찾기
-    var pData = participants.find(function(p){ return p.puuId === puuId; });
-    var aiScore = pData ? pData.aiScore : 50;
-    var kda     = pData ? pData.kda : 2;
-
-    // 현재 레이팅 데이터
-    var cur = ratingData[puuId] || { current: 1500, wins:0, losses:0, streak:0 };
+    // 딥롤 API 데이터 매칭 (puu_id로)
+    var pData = participants[puuId] || { aiScore: 50, kda: 2 };
+    console.log('[rating]', member.name, '| puuId:', puuId.slice(0,12), '| win:', isWin, '| ai:', pData.aiScore, '| kda:', pData.kda);
+    var cur = ratingData[puuId] || { current: 1000, wins: 0, losses: 0, streak: 0, initial: 1000 };
     var curStreak = cur.streak || 0;
+    var newStreak = S === 1
+      ? (curStreak >= 0 ? curStreak + 1 : 1)
+      : (curStreak <= 0 ? curStreak - 1 : -1);
+    var delta = _calcRatingDelta(S, pData.aiScore, pData.kda, newStreak);
+    var newRating = Math.round((cur.current || 1000) + delta);
 
-    // 연승패 계산
-    var newStreak;
-    if (S === 1) {
-      newStreak = curStreak >= 0 ? curStreak + 1 : 1;
-    } else {
-      newStreak = curStreak <= 0 ? curStreak - 1 : -1;
-    }
-
-    var delta = _calcRatingDelta(S, aiScore, kda, newStreak);
-    var newRating = Math.round((cur.current || 1500) + delta);
-    var newWins    = (cur.wins   || 0) + (isWin ? 1 : 0);
-    var newLosses  = (cur.losses || 0) + (isWin ? 0 : 1);
-
-    updates.push({
-      puuId: puuId,
-      name: member.name || member.riot_name || '',
-      delta: delta,
-      aiScore: aiScore,
-      kda: kda,
+    newRatings[puuId] = {
+      current: newRating,
+      initial: cur.initial || 1000,
+      wins: (cur.wins || 0) + (isWin ? 1 : 0),
+      losses: (cur.losses || 0) + (isWin ? 0 : 1),
       streak: newStreak,
-      isWin: isWin,
+      updatedAt: Date.now()
+    };
+
+    var logId = matchKey + '_' + puuId.slice(0, 8);
+    logs[logId] = {
+      puuId: puuId,
+      name: member.name || '',
+      matchKey: matchKey,
+      matchId: matchCode,
+      matchLabel: matchLabel,
+      delta: delta,
+      prevRating: cur.current || 1000,
       newRating: newRating,
-      newData: {
-        current: newRating,
-        initial: cur.initial || newRating,
-        wins: newWins,
-        losses: newLosses,
-        streak: newStreak,
-        updatedAt: Date.now()
-      }
-    });
+      isWin: isWin,
+      aiScore: pData.aiScore,
+      kda: pData.kda,
+      streak: newStreak,
+      timestamp: Date.now()
+    };
   });
 
-  // 일괄 저장 + 로그
-  var matchLabel = rm.label || ('대진 '+rm.id);
-  for (var u of updates) {
-    // 레이팅 저장
-    await fetch(RIOT_PROXY_URL + '/rating-write', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        communityId: cid, puuId: u.puuId, season: season,
-        token: token, rating: u.newData
-      })
-    });
-    // 로그 저장
-    await fetch(RIOT_PROXY_URL + '/rating-log-write', {
-      method:'POST', headers:{'Content-Type':'application/json'},
+  // 한 번에 저장
+  if (Object.keys(newRatings).length === 0) return;
+  try {
+    // 세션 토큰 + admin id/pw 함께 전송 (Worker 무상태 대응)
+    var saveRes = await fetch(RIOT_PROXY_URL + '/rating-match-apply', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         communityId: cid, season: season, token: token,
-        log: {
-          puuId: u.puuId,
-          name: u.name,
-          matchId: matchCode,
-          matchLabel: matchLabel,
-          delta: u.delta,
-          newRating: u.newRating,
-          isWin: u.isWin,
-          aiScore: u.aiScore,
-          kda: u.kda,
-          streak: u.streak
-        }
+        adminId: _loginId || '',
+        adminPw: _loginPw || '',
+        ratings: newRatings, logs: logs, matchKey: matchKey
       })
     });
-  }
-
-  if (updates.length > 0) {
-    toast('레이팅 업데이트 완료 (' + updates.length + '명)', 'ok');
+    var sj = await saveRes.json();
+    console.log('[rating] apply result:', sj);
+    if (sj.ok) {
+      rm.ratingMatchKey = matchKey;
+      await saveCurrentMatch();
+      toast('레이팅 업데이트 완료 (' + Object.keys(newRatings).length + '명)', 'ok');
+    } else {
+      toast('레이팅 저장 실패: ' + (sj.error || '알 수 없는 오류'), 'err');
+      console.error('[rating] error:', sj);
+    }
+  } catch(e) {
+    toast('레이팅 저장 오류: ' + e.message, 'err');
   }
 }
 window.applyMatchRating = applyMatchRating;

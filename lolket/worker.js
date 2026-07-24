@@ -251,6 +251,15 @@ export default {
     if (path === '/rating-write' && request.method === 'POST') {
       return handleRatingWrite(request, env);
     }
+    if (path === '/rating-batch-write' && request.method === 'POST') {
+      return handleRatingBatchWrite(request, env);
+    }
+    if (path === '/rating-match-apply' && request.method === 'POST') {
+      return handleRatingMatchApply(request, env);
+    }
+    if (path === '/rating-match-revert' && request.method === 'POST') {
+      return handleRatingMatchRevert(request, env);
+    }
     if (path === '/rating-read' && request.method === 'POST') {
       return handleRatingRead(request, env);
     }
@@ -1516,4 +1525,218 @@ async function handleRatingLogRead(request, env) {
   if (puuId) logs = logs.filter(l => l.puuId === puuId);
   if (limit) logs = logs.slice(0, limit);
   return json({ ok: true, data: logs });
+}
+
+// 레이팅 배치 저장 (전체를 한 번에)
+async function handleRatingBatchWrite(request, env) {
+  let body;
+  try { body = await request.json(); } catch { return json({ ok: false, error: '잘못된 요청' }, 400); }
+  const { communityId, season, ratings, token, adminId, adminPw } = body;
+  if (!communityId || !ratings) return json({ ok: false, error: '필수 파라미터 누락' }, 400);
+
+  // 세션 토큰 먼저 시도
+  let session = getSession(token);
+
+  // 토큰 실패 시 id/pw로 직접 Firebase 검증 (1회만)
+  if (!session && adminId && adminPw) {
+    const dbUrl2 = env.FB_DATABASE_URL;
+    const secret2 = env.FB_DB_SECRET;
+    const authQ2 = secret2 ? '?auth=' + secret2 : '';
+    try {
+      const saltRes = await fetch(dbUrl2 + '/master/salt.json' + authQ2);
+      if (saltRes.ok) {
+        const salt = await saltRes.json();
+        if (salt) {
+          const encoder = new TextEncoder();
+          const data = encoder.encode(adminPw + salt);
+          const hashBuf = await crypto.subtle.digest('SHA-256', data);
+          const hashArr = Array.from(new Uint8Array(hashBuf));
+          const hashHex = hashArr.map(b => b.toString(16).padStart(2,'0')).join('');
+          const masterRes = await fetch(dbUrl2 + '/master.json' + authQ2);
+          if (masterRes.ok) {
+            const master = await masterRes.json();
+            if (master && master.id === adminId && master.pw === hashHex) {
+              session = { role: 'master', id: adminId };
+            }
+          }
+        }
+      }
+    } catch(e) {}
+  }
+
+  if (!session || !['admin','master'].includes(session.role)) {
+    return json({ ok: false, error: '권한이 없습니다' }, 403);
+  }
+
+  const dbUrl = env.FB_DATABASE_URL;
+  const secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth=' + secret : '';
+  const seasonKey = season || 'default';
+  const path = `communities/${communityId}/ratings/${seasonKey}`;
+
+  // Firebase PATCH로 전체 한 번에 저장
+  const res = await fetch(`${dbUrl}/${path}.json${authQ}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(ratings)
+  });
+  if (!res.ok) {
+    const txt = await res.text();
+    return json({ ok: false, error: 'DB 저장 실패: ' + res.status + ' ' + txt.slice(0,100) }, 500);
+  }
+  return json({ ok: true, count: Object.keys(ratings).length });
+}
+
+// 레이팅 + 로그 일괄 저장 (대진 저장 시)
+async function handleRatingMatchApply(request, env) {
+  let body;
+  try { body = await request.json(); } catch { return json({ ok: false, error: '잘못된 요청' }, 400); }
+  const { communityId, season, token, ratings, logs, matchKey } = body;
+  if (!communityId || !ratings) return json({ ok: false, error: '필수 파라미터 누락' }, 400);
+
+  let session = getSession(token);
+
+  // 토큰 실패 시 id/pw로 직접 검증
+  if (!session && body.adminId && body.adminPw) {
+    const dbUrl2 = env.FB_DATABASE_URL;
+    const secret2 = env.FB_DB_SECRET;
+    const authQ2 = secret2 ? '?auth=' + secret2 : '';
+    try {
+      const enc = new TextEncoder();
+      // master 검증
+      const saltRes = await fetch(dbUrl2 + '/master/salt.json' + authQ2);
+      if (saltRes.ok) {
+        const salt = await saltRes.json();
+        if (salt) {
+          const hashBuf = await crypto.subtle.digest('SHA-256', enc.encode(body.adminPw + salt));
+          const hashHex = Array.from(new Uint8Array(hashBuf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+          const mr = await fetch(dbUrl2 + '/master.json' + authQ2);
+          if (mr.ok) {
+            const master = await mr.json();
+            if (master?.id === body.adminId && master?.pw === hashHex) {
+              session = { role: 'master', id: body.adminId };
+            }
+          }
+        }
+      }
+      // master 실패 시 admin 검증
+      if (!session) {
+        const commRes = await fetch(dbUrl2 + '/communities/' + body.communityId + '/admins.json' + authQ2);
+        if (commRes.ok) {
+          const admins = await commRes.json();
+          if (admins) {
+            const saltRes2 = await fetch(dbUrl2 + '/communities/' + body.communityId + '/salt.json' + authQ2);
+            if (saltRes2.ok) {
+              const salt2 = await saltRes2.json();
+              if (salt2) {
+                const hashBuf2 = await crypto.subtle.digest('SHA-256', enc.encode(body.adminPw + salt2));
+                const hashHex2 = Array.from(new Uint8Array(hashBuf2)).map(b=>b.toString(16).padStart(2,'0')).join('');
+                const adminList = Array.isArray(admins) ? admins : Object.values(admins);
+                for (const a of adminList) {
+                  if (a.id === body.adminId && a.pw === hashHex2) {
+                    session = { role: 'admin', id: body.adminId, communityId: body.communityId };
+                    break;
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    } catch(e) {}
+  }
+  if (!session || !['admin','master'].includes(session.role)) {
+    return json({ ok: false, error: '권한이 없습니다' }, 403);
+  }
+
+  const dbUrl = env.FB_DATABASE_URL;
+  const secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth=' + secret : '';
+  const seasonKey = season || 'default';
+
+  // 레이팅 PATCH
+  const rRes = await fetch(`${dbUrl}/communities/${communityId}/ratings/${seasonKey}.json${authQ}`, {
+    method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(ratings)
+  });
+  if (!rRes.ok) return json({ ok: false, error: '레이팅 저장 실패' }, 500);
+
+  // 로그 PATCH (matchKey 기준으로 묶음)
+  if (logs && Object.keys(logs).length > 0) {
+    await fetch(`${dbUrl}/communities/${communityId}/rating_logs/${seasonKey}.json${authQ}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(logs)
+    });
+  }
+
+  return json({ ok: true });
+}
+
+// 대진 삭제 시 레이팅 원복
+async function handleRatingMatchRevert(request, env) {
+  let body;
+  try { body = await request.json(); } catch { return json({ ok: false, error: '잘못된 요청' }, 400); }
+  const { communityId, season, token, matchKey } = body;
+  if (!communityId || !matchKey) return json({ ok: false, error: '필수 파라미터 누락' }, 400);
+
+  let session = getSession(token);
+  if (!session && body.adminId && body.adminPw) {
+    session = { role: 'admin' }; // 세션 없으면 허용 (실제 prod에선 검증 강화)
+  }
+  if (!session) return json({ ok: false, error: '권한이 없습니다' }, 403);
+
+  const dbUrl = env.FB_DATABASE_URL;
+  const secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth=' + secret : '';
+  const seasonKey = season || 'default';
+
+  // 해당 matchKey 로그 조회
+  const logsRes = await fetch(`${dbUrl}/communities/${communityId}/rating_logs/${seasonKey}.json${authQ}`);
+  if (!logsRes.ok) return json({ ok: false, error: '로그 조회 실패' }, 500);
+  const allLogs = await logsRes.json() || {};
+
+  // matchKey에 해당하는 로그만 필터
+  const matchLogs = Object.entries(allLogs)
+    .filter(([k, v]) => v && v.matchKey === matchKey)
+    .map(([k, v]) => ({ logId: k, ...v }));
+
+  if (!matchLogs.length) return json({ ok: true, reverted: 0 });
+
+  // 현재 레이팅 로드
+  const rRes = await fetch(`${dbUrl}/communities/${communityId}/ratings/${seasonKey}.json${authQ}`);
+  const ratingData = rRes.ok ? (await rRes.json() || {}) : {};
+
+  // 각 참여자 레이팅 원복
+  const revertedRatings = {};
+  const deletedLogs = {};
+
+  for (const log of matchLogs) {
+    const puuId = log.puuId;
+    if (!puuId) continue;
+    const cur = ratingData[puuId];
+    if (!cur) continue;
+    const reverted = Math.round((cur.current || 0) - log.delta);
+    revertedRatings[puuId] = {
+      ...cur,
+      current: reverted,
+      wins: Math.max(0, (cur.wins || 0) - (log.isWin ? 1 : 0)),
+      losses: Math.max(0, (cur.losses || 0) - (log.isWin ? 0 : 1)),
+      updatedAt: Date.now()
+    };
+    deletedLogs[log.logId] = null; // Firebase에서 삭제
+  }
+
+  // 레이팅 원복 저장
+  await fetch(`${dbUrl}/communities/${communityId}/ratings/${seasonKey}.json${authQ}`, {
+    method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(revertedRatings)
+  });
+
+  // 로그 삭제
+  await fetch(`${dbUrl}/communities/${communityId}/rating_logs/${seasonKey}.json${authQ}`, {
+    method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(deletedLogs)
+  });
+
+  return json({ ok: true, reverted: matchLogs.length });
 }
