@@ -257,6 +257,39 @@ export default {
     if (path === '/rating-match-apply' && request.method === 'POST') {
       return handleRatingMatchApply(request, env);
     }
+    // 마스터 전용 Cron 수동 실행 테스트
+    if (path === '/cron-rating-test' && request.method === 'POST') {
+      let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
+      let session = getSession(body.token);
+      // 토큰 실패 시 id/pw로 직접 검증
+      if (!session && body.adminId && body.adminPw) {
+        const dbUrl2 = env.FB_DATABASE_URL;
+        const secret2 = env.FB_DB_SECRET;
+        const authQ2 = secret2 ? '?auth=' + secret2 : '';
+        try {
+          const saltRes = await fetch(dbUrl2 + '/master/salt.json' + authQ2);
+          if (saltRes.ok) {
+            const salt = await saltRes.json();
+            if (salt) {
+              const enc = new TextEncoder();
+              const hashBuf = await crypto.subtle.digest('SHA-256', enc.encode(body.adminPw + salt));
+              const hashHex = Array.from(new Uint8Array(hashBuf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+              const mr = await fetch(dbUrl2 + '/master.json' + authQ2);
+              if (mr.ok) { const master = await mr.json(); if (master?.id === body.adminId && master?.pw === hashHex) session = { role: 'master' }; }
+            }
+          }
+        } catch(e) {}
+      }
+      console.log('[cron-test] session:', session?.role, 'adminId:', body.adminId ? 'yes' : 'no');
+      if (!session || session.role !== 'master') return json({ok:false,error:'마스터 권한 필요 (session:'+session?.role+')'},403);
+      try {
+        await runScheduledRatingCalc(env);
+        return json({ok:true, message:'Cron 실행 완료'});
+      } catch(e) {
+        console.error('[cron-test] 오류:', e.message);
+        return json({ok:false, error: e.message});
+      }
+    }
     if (path === '/rating-match-revert' && request.method === 'POST') {
       return handleRatingMatchRevert(request, env);
     }
@@ -890,6 +923,18 @@ async function handleSummoner(url, key) {
         prevSeasonHighest,
         soloWins: solo?.wins || 0, soloLosses: solo?.losses || 0,
         soloLP: solo?.leaguePoints || 0, soloTier: solo?.tier || 'UNRANKED', soloDivision: solo?.rank || '',
+        highTier: await (async () => {
+          try {
+            const dlRes = await fetch(`https://b2c-api-cdn.deeplol.gg/summoner/summoner-realtime?platform_id=${platform}&puu_id=${encodeURIComponent(puuidParam)}`);
+            if (!dlRes.ok) return null;
+            const dlData = await dlRes.json();
+            const dlSolo = dlData?.tier_info?.ranked_solo_5x5;
+            if (dlSolo?.high_tier) return dlSolo.high_tier + (dlSolo.high_lp ? ' ' + dlSolo.high_lp + 'LP' : '');
+            if (dlSolo?.tier) return dlSolo.tier + (dlSolo.division ? ' ' + dlSolo.division : '');
+            return null;
+          } catch(e) { return null; }
+        })(),
+        highLp: 0,
         topChampions: topChamps.map(c => ({ championId: c.championId, masteryLevel: c.championLevel, masteryPoints: c.championPoints })) });
     } catch(e) { return json({ error: '서버 오류', detail: e.message }, 500); }
   }
@@ -1762,100 +1807,88 @@ async function runScheduledRatingCalc(env) {
   const secret = env.FB_DB_SECRET;
   const authQ = secret ? '?auth=' + secret : '';
 
+  console.log('[cron] 시작. dbUrl:', dbUrl ? 'ok' : 'MISSING', 'secret:', secret ? 'ok' : 'MISSING');
+
   try {
-    // communities_info에서 커뮤니티 목록 조회 (deeplolServerId 포함)
-    const commRes = await fetch(`${dbUrl}/communities_info.json${authQ}`);
+    // communities_info shallow 조회로 cid 목록
+    const shallowQ = authQ ? authQ + '&shallow=true' : '?shallow=true';
+    const commRes = await fetch(`${dbUrl}/communities_info.json${shallowQ}`);
+    const commRaw = await commRes.text();
+    console.log('[cron] communities_info shallow status:', commRes.status, 'raw:', commRaw.slice(0, 200));
     if (!commRes.ok) return;
-    const communities = await commRes.json();
-    if (!communities) return;
 
-    for (const [cid, comm] of Object.entries(communities)) {
+    let commKeys;
+    try { commKeys = JSON.parse(commRaw); } catch(e) { console.error('[cron] parse 실패:', e.message); return; }
+    if (!commKeys || typeof commKeys !== 'object') { console.error('[cron] commKeys 비어있음'); return; }
+
+    const cidList = Object.keys(commKeys);
+    console.log('[cron] 커뮤니티 목록:', JSON.stringify(cidList));
+
+    for (const cid of cidList) {
       try {
-        // 해당 커뮤니티의 딥롤 server_id 확인
-        const serverId = comm.deeplolServerId || comm.server_id;
-        if (!serverId) {
-          console.log(`[cron] ${cid} serverId 없음 - 스킵`);
-          continue;
-        }
+        const sidRes = await fetch(`${dbUrl}/communities_info/${cid}/deeplolServerId.json${authQ}`);
+        const sidData = sidRes.ok ? await sidRes.json() : null;
+        const serverId = sidData ? String(sidData) : null;
+        console.log(`[cron] ${cid} serverId:`, serverId);
+        if (!serverId) continue;
 
-        // 딥롤 server_info API로 멤버 통계 조회
-        const statsRes = await fetch(
-          `https://b2c-api-cdn.deeplol.gg/tournament/server_info?server_id=${serverId}`
-        );
-        if (!statsRes.ok) continue;
+        const statsRes = await fetch(`https://b2c-api-cdn.deeplol.gg/tournament/server_info?server_id=${serverId}`);
+        if (!statsRes.ok) { console.error(`[cron] ${cid} 딥롤 API 실패:`, statsRes.status); continue; }
         const statsJson = await statsRes.json();
         const members = (statsJson.tournament_stats && statsJson.tournament_stats.tournament_stats_all_list) || [];
+        console.log(`[cron] ${cid} 멤버 수:`, members.length);
         if (!members.length) continue;
 
         // 초기 레이팅 계산
         const ratingsMap = {};
         for (const m of members) {
-          const puuId = m.puu_id;
-          if (!puuId) continue;
-          const W = m.win || 0;
-          const L = (m.cnt || 0) - W;
-          const N = W + L;
-          const S = W - L;
+          if (!m.puu_id) continue;
+          const W = m.win || 0, N = m.cnt || 0, L = N - W, S = W - L;
           const ai = m.ai_score || 50;
           const aiMult = 0.7 + 0.3 * (ai / 100);
-          const K = 637;
           const sqrtN = N > 0 ? Math.sqrt(N) : 1;
           const S_adj = S > 0 ? S : S * 0.3;
-          const R0 = Math.max(500, Math.round(1000 + (S_adj / sqrtN) * K * aiMult));
-
-          ratingsMap[puuId] = {
-            current: R0,
-            initial: R0,
-            updatedAt: Date.now()
-          };
+          const R0 = Math.max(500, Math.round(1000 + (S_adj / sqrtN) * 637 * aiMult));
+          ratingsMap[m.puu_id] = { current: R0, initial: R0, updatedAt: Date.now() };
         }
 
-        // 기존 레이팅 읽기 (변화량 계산용)
+        // 기존 레이팅 읽기
         const prevRes = await fetch(`${dbUrl}/communities/${cid}/ratings/default.json${authQ}`);
         const prevRatings = prevRes.ok ? (await prevRes.json() || {}) : {};
 
-        // 변화 있는 유저만 히스토리 저장
-        const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+        // 변화 있는 유저 히스토리
+        const now = new Date();
+        const today = now.toISOString().slice(0, 10);
+        const hhmm = now.getUTCHours().toString().padStart(2,'0') + now.getUTCMinutes().toString().padStart(2,'0');
+        const histKey = today + '_' + hhmm;
         const historyMap = {};
         for (const [puuId, newData] of Object.entries(ratingsMap)) {
           const prev = prevRatings[puuId];
-          const prevRating = prev ? prev.current : null;
-          const delta = prevRating !== null ? newData.current - prevRating : null;
-          // 변화가 있거나 처음 등록되는 경우만
+          const delta = prev ? newData.current - prev.current : null;
           if (delta === null || delta !== 0) {
-            historyMap[puuId] = {
-              rating: newData.current,
-              delta: delta,
-              timestamp: Date.now()
-            };
+            historyMap[puuId] = { rating: newData.current, delta, timestamp: Date.now() };
           }
         }
 
-        // 레이팅 PATCH
+        // 저장
         await fetch(`${dbUrl}/communities/${cid}/ratings/default.json${authQ}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
+          method: 'PATCH', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(ratingsMap)
         });
 
-        // 히스토리 저장 (변화 있는 유저만) - 날짜/시각 키로 저장
         if (Object.keys(historyMap).length > 0) {
-          const now = new Date();
-          const hhmm = now.getUTCHours().toString().padStart(2,'0') + now.getUTCMinutes().toString().padStart(2,'0');
-          const histKey = today + '_' + hhmm;
           await fetch(`${dbUrl}/communities/${cid}/rating_history/${histKey}.json${authQ}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            method: 'PUT', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(historyMap)
           });
         }
 
-        console.log(`[cron] ${cid} 레이팅 계산 완료: ${Object.keys(ratingsMap).length}명, 변화: ${Object.keys(historyMap).length}명`);
+        console.log(`[cron] ${cid} 완료: ${Object.keys(ratingsMap).length}명 레이팅, ${Object.keys(historyMap).length}명 변화`);
       } catch(e) {
-        console.error(`[cron] ${cid} 오류:`, e.message);
+        console.error(`[cron] ${cid} 오류:`, e.message, e.stack?.slice(0,200));
       }
     }
   } catch(e) {
-    console.error('[cron] 전체 오류:', e.message);
+    console.error('[cron] 전체 오류:', e.message, e.stack?.slice(0,200));
   }
 }

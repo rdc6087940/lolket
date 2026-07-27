@@ -344,6 +344,10 @@ tbody td{padding:.55rem 1rem;font-size:12px;vertical-align:middle;}
           style="padding:5px 12px;border-radius:3px;border:1px solid rgba(200,170,110,.3);background:rgba(200,170,110,.06);color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:.5px;cursor:pointer;display:none;">
           👑 초기 레이팅 계산
         </button>
+        <button id="btn-cron-test" onclick="runCronTest()"
+          style="padding:5px 12px;border-radius:3px;border:1px solid rgba(200,100,100,.3);background:rgba(200,100,100,.06);color:#e88;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:.5px;cursor:pointer;display:none;">
+          🔄 Cron 수동실행
+        </button>
         <div id="admin-status" style="display:none;align-items:center;gap:6px;">
           <span id="admin-status-text" style="font-family:'Rajdhani',sans-serif;font-size:11px;color:var(--blue);"></span>
           <button onclick="statsAdminLogout()" style="padding:3px 8px;border-radius:2px;border:1px solid rgba(255,255,255,.1);background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;">로그아웃</button>
@@ -664,6 +668,8 @@ async function loadData(){
     if (COMMUNITY_ID) {
       var mb = document.getElementById('btn-init-rating');
       if (mb) mb.style.display = '';
+      var mbCron = document.getElementById('btn-cron-test');
+      if (mbCron) mbCron.style.display = '';
     }
     allData=(json.tournament_stats&&json.tournament_stats.tournament_stats_all_list)||[];
     document.getElementById('member-count').textContent=allData.length;
@@ -1468,10 +1474,12 @@ async function openDetail(memberData) {
     // v2: 레이팅은 loadAllRatings에서 이미 _rating에 세팅됨 - 구 경로 로드 안 함
     var fbRating = memberData._rating !== undefined
       ? { rating: memberData._rating, breakdown: {} } : null;
-    // Firebase 분석 결과를 임시 표시 (로딩 중 보여주기)
-    renderDetail(fbData.analysis, memberData,
-      fbData.meta.matchCount || (fbData.matchIds && fbData.matchIds.length) || 0,
-      fbData.meta.updatedAt, fbRating);
+    // Firebase 분석 결과를 임시 표시 (analysis가 있을 때만)
+    if (fbData.analysis) {
+      renderDetail(fbData.analysis, memberData,
+        fbData.meta.matchCount || (fbData.matchIds && fbData.matchIds.length) || 0,
+        fbData.meta.updatedAt, fbRating);
+    }
     // 새 게임 체크 + 재분석을 위해 loadDetailData 계속 진행 (return 제거)
     // knownIds는 이미 detailCache에 세팅됨
   }
@@ -2080,7 +2088,10 @@ async function startBatchRating() {
       addBatchLog('✅ Firebase 저장 완료 (' + (saveJson.count || ok) + '명)', 'ok');
 
       // 히스토리 저장 (변화 있는 유저만)
-      var today = new Date().toISOString().slice(0, 10);
+      var _now = new Date();
+      var today = _now.toISOString().slice(0, 10);
+      var _hhmm = _now.getHours().toString().padStart(2,'0') + _now.getMinutes().toString().padStart(2,'0');
+      var histKey = today + '_' + _hhmm;
       var historyMap = {};
       Object.entries(ratingsMap).forEach(function(kv) {
         var puuId = kv[0], newData = kv[1];
@@ -2100,7 +2111,7 @@ async function startBatchRating() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               communityId: COMMUNITY_ID,
-              season: 'history_' + today,
+              season: 'history_' + histKey,
               token: _masterSessionToken,
               adminId: _masterAuthId,
               adminPw: _masterAuthPw,
@@ -2735,6 +2746,31 @@ function _buildRankTable(entries, isRise) {
   });
   html += '</tbody></table>';
   return html;
+}
+
+
+async function runCronTest() {
+  if (!_masterAuthed) {
+    // 마스터 인증 먼저
+    openInitRatingModal();
+    return;
+  }
+  if (!confirm('Cron을 수동으로 실행합니다. 전체 레이팅이 업데이트됩니다.')) return;
+  try {
+    const res = await fetch(WORKER_URL + '/cron-rating-test', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: _masterSessionToken, adminId: _masterAuthId, adminPw: _masterAuthPw })
+    });
+    const j = await res.json();
+    if (j.ok) {
+      alert('Cron 실행 시작! 잠시 후 레이팅이 업데이트됩니다.');
+    } else {
+      alert('오류: ' + j.error);
+    }
+  } catch(e) {
+    alert('오류: ' + e.message);
+  }
 }
 
 </script>

@@ -3672,6 +3672,8 @@ icon: String(data.icon),
 solo: data.solo,
 flex: data.flex,
 puuid: data.puuid,
+highTier: data.highTier || null,
+highLp: data.highLp || 0,
 prevSeasonHighest: data.prevSeasonHighest || null,
 soloWins: data.soloWins || 0,
 soloLosses: data.soloLosses || 0,
@@ -3684,7 +3686,12 @@ document.getElementById('r-name').textContent=data.name;
 document.getElementById('r-tag').textContent='#'+data.tag;
 const tierStr=data.solo.split(' ')[0];
 const color=TIER_COLORS[tierStr] || '#5B6474';
-document.getElementById('r-solo').innerHTML=`<span style="color:${color}">${data.solo}</span>`;
+// 최고 티어가 있으면 최고 티어 표시, 없으면 현티어
+var _dispTier = data.highTier || data.solo;
+var _tierStr = (_dispTier || '').split(' ')[0].toUpperCase();
+var _tierColor = TIER_COLORS[_tierStr] || '#5B6474';
+var _highLabel = data.highTier ? '<span style="font-size:9px;color:var(--gold);margin-left:4px;">(최고)</span>' : '';
+document.getElementById('r-solo').innerHTML=`<span style="color:${_tierColor}">${_dispTier}</span>${_highLabel}`;
 document.getElementById('r-flex').textContent=data.flex;
 var _soloW = data.soloWins || 0;
 var _soloL = data.soloLosses || 0;
@@ -3892,7 +3899,9 @@ return toast(`${searchResult.name}#${searchResult.tag}은(는) 이미 추가되�
 const solo = searchResult.solo;
 const overrideTier = _tierOverride;
 const detailVal = _getTierDetailSuffix();
-const tierStr = overrideTier || solo.split(' ')[0];
+// 최고 티어 우선, 없으면 현재 솔로랭 티어
+const highTierRaw = searchResult.highTier;
+const tierStr = overrideTier || (highTierRaw ? highTierRaw.split(' ')[0] : solo.split(' ')[0]);
 const member={
 id: Date.now(),
 name: searchResult.name,
@@ -3904,6 +3913,8 @@ mainLane: selectedMainLane,
 subLane: selectedSubLanes.size === 1 ? [...selectedSubLanes][0] : [...selectedSubLanes],
 level: searchResult.level,
 puuid: searchResult.puuid || null,
+highTier: searchResult.highTier || null,
+highLp: searchResult.highLp || 0,
 prevSeasonHighest: searchResult.prevSeasonHighest || null,
 present: false,
 soloWins: searchResult.soloWins || 0,
