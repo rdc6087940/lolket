@@ -392,6 +392,32 @@ tbody td{padding:.55rem 1rem;font-size:12px;vertical-align:middle;}
 
   </div>
 
+  <!-- ── 메인 탭 ── -->
+  <div style="display:flex;gap:6px;padding:.5rem 1rem 0;border-bottom:1px solid var(--border);">
+    <button id="main-tab-stats" onclick="switchMainTab('stats')"
+      style="padding:5px 14px;border-radius:2px 2px 0 0;border:1px solid var(--border);border-bottom:2px solid var(--blue);background:rgba(10,200,185,.08);color:var(--blue);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">
+      📊 전적
+    </button>
+    <button id="main-tab-rating" onclick="switchMainTab('rating')"
+      style="padding:5px 14px;border-radius:2px 2px 0 0;border:1px solid var(--border);border-bottom:none;background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">
+      📈 레이팅 변화
+    </button>
+  </div>
+
+  <!-- ── 레이팅 변화 랭킹 뷰 ── -->
+  <div id="rating-rank-view" style="display:none;padding:1rem;">
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:1rem;flex-wrap:wrap;">
+      <label style="font-family:'Rajdhani',sans-serif;font-size:11px;color:var(--muted);">기간:</label>
+      <input type="date" id="rating-rank-from" style="background:var(--bg-dark);border:1px solid var(--border);border-radius:3px;padding:4px 8px;color:var(--white);font-family:'Rajdhani',sans-serif;font-size:11px;outline:none;">
+      <span style="color:var(--muted);font-size:11px;">~</span>
+      <input type="date" id="rating-rank-to" style="background:var(--bg-dark);border:1px solid var(--border);border-radius:3px;padding:4px 8px;color:var(--white);font-family:'Rajdhani',sans-serif;font-size:11px;outline:none;">
+      <button onclick="loadRatingRank()" style="padding:4px 12px;border-radius:3px;border:1px solid rgba(10,200,185,.4);background:rgba(10,200,185,.08);color:var(--blue);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;">조회</button>
+    </div>
+    <div id="rating-rank-body">
+      <div style="text-align:center;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:12px;padding:2rem;">기간을 선택하고 조회하세요</div>
+    </div>
+  </div>
+
   <!-- ── 스크롤 바디 ── -->
   <div class="table-body-wrap" id="table-body-wrap">
     <table>
@@ -439,7 +465,7 @@ tbody td{padding:.55rem 1rem;font-size:12px;vertical-align:middle;}
 </div><!-- .layout -->
 
 <script>
-const DD_VER = '15.10.1';
+const DD_VER = '16.14.1';
 const DD_ICON = id => `https://ddragon.leagueoflegends.com/cdn/${DD_VER}/img/champion/${id}.png`;
 const PER_PAGE = 20;
 const urlParams = new URLSearchParams(location.search);
@@ -450,27 +476,7 @@ const SCHEMA_VER   = 1;
 var _currentSeason = 'default';
 const UPDATE_COOLDOWN_MS = 60 * 1000;
 
-const DEFAULT_RATING_CONFIG = {
-  weights: { wr: 0.7, ai: 0.2, kda: 0.1 },
-  tierBase: {
-    IRON:     [0,100,200,300], BRONZE:  [400,500,600,700],
-    SILVER:   [800,900,1000,1100], GOLD: [1200,1300,1400,1500],
-    PLATINUM: [1600,1700,1800,1900], EMERALD: [2000,2100,2200,2300],
-    DIAMOND:  [2400,2500,2600,2700], MASTER: [2800]
-  },
-  wrMult: 8,
-  aiScore: { 5:40, 4:20, 3:0, 2:-20, 1:-40 },
-  kdaScore: { 4:20, 3:10, 2:0, 1:-30 },
-  posCorr: {
-    Top:[1.05,0.95,0.95], Jungle:[0.90,1.05,1.10],
-    Middle:[1.00,1.10,1.00], Bottom:[0.95,1.00,1.05], Support:[1.10,0.90,0.90]
-  },
-  gamesBase: 50
-};
-// 관리자 인증 (index.html에서 넘어올 때 URL 파라미터로 전달)
-const _sessionToken = urlParams.get('token') || '';
-const _userRole     = urlParams.get('role') || '';
-const _isMaster     = _userRole === 'master';
+
 
 const POS_COLOR = {Top:'#C8AA6E',Jungle:'#3CB371',Middle:'#5B9BD5',Bottom:'#E84057',Support:'#9E5CC8'};
 const POS_SHORT = {Top:'TOP',Jungle:'JUG',Middle:'MID',Bottom:'AD',Support:'SUP'};
@@ -503,6 +509,12 @@ function tierOrder(s){
   const ti=TIER_ORDER.indexOf(p.tier);
   return ti<0?99:ti*10;
 }
+function peakTierOrder(m) {
+  var t = (m._peakTier || '').toUpperCase().split(' ')[0];
+  var ORDER = {CHALLENGER:1,GRANDMASTER:2,MASTER:3,DIAMOND:4,EMERALD:5,PLATINUM:6,GOLD:7,SILVER:8,BRONZE:9,IRON:10};
+  return ORDER[t] || 99;
+}
+
 function renderTierBadge(tierStr, lp) {
   // 객체로 들어오면 tier/lp 추출
   if (tierStr && typeof tierStr === 'object') {
@@ -682,6 +694,8 @@ function applyAll(){
       case 'winrate': va=a.cnt?a.win/a.cnt:0;vb=b.cnt?b.win/b.cnt:0;break;
       case 'games': va=a.cnt||0;vb=b.cnt||0;break;
       case 'recent': va=a.creation_timestamp||0;vb=b.creation_timestamp||0;break;
+      case 'rating': va=(a.cnt>=10&&a._rating)?a._rating:-Infinity;vb=(b.cnt>=10&&b._rating)?b._rating:-Infinity;break;
+      case 'peakTier': return (peakTierOrder(a)-peakTierOrder(b))*sortDir;
       default: va=0;vb=0;
     }
     return va<vb?sortDir:va>vb?-sortDir:0;
@@ -778,48 +792,63 @@ function scrollTop(){document.getElementById('table-body-wrap').scrollTop=0;}
 // 전체 멤버 레이팅 Firebase에서 일괄 로드 (API 1번 호출)
 async function loadAllRatings(season) {
   if (!COMMUNITY_ID || !allData.length) return;
-  season = season || 'default';
+  season = season || _currentSeason || 'default';
   try {
-    // v2 레이팅 시스템
     const res = await fetch(WORKER_URL + '/rating-read', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ communityId: COMMUNITY_ID, season: season })
     });
     const json = await res.json();
-    if (json.ok && json.data && Object.keys(json.data).length > 0) {
+    if (json.ok && json.data) {
       const ratings = json.data;
       allData.forEach(function(m) {
-        if (ratings[m.puu_id]) {
-          m._rating = ratings[m.puu_id].current;
-          m._ratingWins = ratings[m.puu_id].wins || 0;
-          m._ratingLosses = ratings[m.puu_id].losses || 0;
-          m._ratingStreak = ratings[m.puu_id].streak || 0;
+        const r = ratings[m.puu_id];
+        if (r) {
+          m._rating    = r.current;
+          m._ratingWins    = r.wins    || 0;
+          m._ratingLosses  = r.losses  || 0;
+          m._ratingStreak  = r.streak  || 0;
         }
       });
       renderPage();
-      return;
+      loadAllPeakTiers();
     }
-    // 구 시스템 폴백 (member_analysis/rating)
-    const res2 = await fetch(WORKER_URL + '/member-ratings-read', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ communityId: COMMUNITY_ID })
-    });
-    const json2 = await res2.json();
-    if (!json2.ok || !json2.data) return;
-    const ratings2 = json2.data;
-    allData.forEach(function(m) {
-      if (ratings2[m.puu_id]) {
-        m._rating = ratings2[m.puu_id].rating;
-        m._ratingBreakdown = ratings2[m.puu_id].breakdown || {};
-        var bd = m._ratingBreakdown;
-        if (bd && bd.peakTier) { m._peakTier = bd.peakTier; m._peakLp = bd.peakLp !== undefined ? bd.peakLp : null; }
-      }
-    });
-    renderPage();
   } catch(e) {}
 }
+// 전체 멤버 peakTier Firebase에서 일괄 로드
+async function loadAllPeakTiers() {
+  if (!COMMUNITY_ID || !allData.length) return;
+  try {
+    const res = await fetch(WORKER_URL + '/db-public-read', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path: 'communities/' + COMMUNITY_ID + '/member_analysis' })
+    });
+    const json = await res.json();
+    if (!json.ok || !json.data) return;
+    const analysisMap = json.data;
+    console.log('[peakTier] analysisMap keys:', Object.keys(analysisMap).length);
+    const sampleKey = Object.keys(analysisMap)[0];
+    console.log('[peakTier] sample:', sampleKey, JSON.stringify(analysisMap[sampleKey]).slice(0,100));
+    console.log('[peakTier] allData[0].puu_id:', allData[0]?.puu_id);
+    let updated = false;
+    allData.forEach(function(m) {
+      const d = analysisMap[m.puu_id];
+      if (!d) return;
+      const peakTier = d.peakTier || (d.custom && d.custom.peakTier) || null;
+      const peakLp   = d.peakLp !== undefined ? d.peakLp : (d.custom && d.custom.peakLp !== undefined ? d.custom.peakLp : null);
+      if (peakTier) {
+        m._peakTier = peakTier;
+        m._peakLp   = peakLp;
+        updated = true;
+      }
+    });
+    console.log('[peakTier] updated:', updated);
+    if (updated) renderPage();
+  } catch(e) {}
+}
+
 
 // 정렬
 document.querySelectorAll('#table-head th.sortable').forEach(th=>{
@@ -1035,25 +1064,7 @@ async function fetchPeakTier(puuId, platform) {
   } catch(e) { return null; }
 }
 
-async function loadRatingConfig() {
-  if (_ratingConfig) return _ratingConfig;
-  if (!COMMUNITY_ID) return DEFAULT_RATING_CONFIG;
-  try {
-    const res = await fetch(WORKER_URL + '/db-public-read', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ path: 'communities/' + COMMUNITY_ID + '/rating_config' })
-    });
-    const json = await res.json();
-    // Firebase 설정 없으면 DEFAULT 사용
-    _ratingConfig = (json.ok && json.data)
-      ? Object.assign(JSON.parse(JSON.stringify(DEFAULT_RATING_CONFIG)), json.data)
-      : DEFAULT_RATING_CONFIG;
-  } catch(e) {
-    _ratingConfig = DEFAULT_RATING_CONFIG;
-  }
-  return _ratingConfig;
-}
+
 
 
 // ══════════════════════════════════════
@@ -1114,29 +1125,7 @@ function calcRatingDelta(S, aiScore, kda, streak) {
 
 
 
-async function saveRatingToFirebase(puuId, ratingResult) {
-  if (!COMMUNITY_ID || !ratingResult) {
-    return;
-  }
-  try {
-    const saveRes = await fetch(WORKER_URL + '/member-analysis-write', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        communityId: COMMUNITY_ID,
-        serverId: SERVER_ID,
-        puuId,
-        mode: 'rating',
-        data: {
-          meta: { updatedAt: Date.now(), version: SCHEMA_VER },
-          rating: ratingResult.rating,
-          breakdown: ratingResult.breakdown
-        }
-      })
-    });
-    const saveJson = await saveRes.json();
-  } catch(e) {}
-}
+
 
 async function saveToFirebase(puuId, mode, analysis, matchIds, memberData) {
   memberData = memberData || {};
@@ -1174,7 +1163,8 @@ async function saveToFirebase(puuId, mode, analysis, matchIds, memberData) {
       body: JSON.stringify(saveBody)
     });
     const json = await res.json();
-  } catch(e) {}
+    console.log('[saveToFirebase] peakTier:', payload.peakTier, 'result:', json.ok);
+  } catch(e) { console.error('[saveToFirebase] 오류:', e.message); }
 }
 
 function setQueueMode(mode) {
@@ -1406,6 +1396,7 @@ async function openDetail(memberData) {
     'https://ddragon.leagueoflegends.com/cdn/' + DD_VER + '/img/profileicon/' + (memberData.profile_icon||1) + '.png';
   document.getElementById('dm-name').textContent = memberData.riot_name;
   document.getElementById('dm-tag').textContent = '#' + memberData.riot_tag;
+  _detailCurrentMemberForLog = memberData;
   document.getElementById('dm-tier').textContent = tp.short;
   document.getElementById('dm-tier').style.cssText = 'color:'+tc+';background:'+tc+'18;border:1px solid '+tc+'30';
   // 최고 티어 표시
@@ -1460,13 +1451,12 @@ async function openDetail(memberData) {
     return;
   }
   const fbData = await loadFromFirebase(memberData.puu_id, _queueMode);
-  if (fbData && fbData.analysis && fbData.meta) {
-    // Firebase matchIds를 knownIds로 설정하고 loadDetailData로 넘겨 새 게임만 fetch
-    // (Firebase의 분석 결과를 바로 쓰지 않고 항상 최신 데이터로 재분석)
+  if (fbData && fbData.matchIds && fbData.matchIds.length > 0) {
+    // Firebase matchIds만 knownIds로 사용 - analysis는 쓰지 않고 항상 재분석
     detailCache[_queueMode][memberData.puu_id] = {
       matchIds: new Set(fbData.matchIds || []),
       matches: [],
-      analysis: fbData.analysis // 임시 보관 (새 분석 완료 전까지 표시용)
+      analysis: null
     };
     // peakTier 복원
     if (fbData.peakTier) {
@@ -1475,18 +1465,9 @@ async function openDetail(memberData) {
       var mFbRestore = allData.find(function(x){ return x.puu_id === memberData.puu_id; });
       if (mFbRestore) { mFbRestore._peakTier = fbData.peakTier; mFbRestore._peakLp = memberData._peakLp; }
     }
-    // 레이팅도 Firebase에서 로드 시도
-    var fbRating = null;
-    if (_queueMode === 'custom') {
-      var rFb = await loadFromFirebase(memberData.puu_id, 'rating');
-      if (rFb && rFb.rating) {
-        fbRating = { rating: rFb.rating, breakdown: rFb.breakdown };
-        memberData._rating = rFb.rating;
-        memberData._ratingBreakdown = rFb.breakdown || {};
-        var mFb = allData.find(function(x){ return x.puu_id === memberData.puu_id; });
-        if (mFb) { mFb._rating = rFb.rating; mFb._ratingBreakdown = rFb.breakdown || {}; }
-      }
-    }
+    // v2: 레이팅은 loadAllRatings에서 이미 _rating에 세팅됨 - 구 경로 로드 안 함
+    var fbRating = memberData._rating !== undefined
+      ? { rating: memberData._rating, breakdown: {} } : null;
     // Firebase 분석 결과를 임시 표시 (로딩 중 보여주기)
     renderDetail(fbData.analysis, memberData,
       fbData.meta.matchCount || (fbData.matchIds && fbData.matchIds.length) || 0,
@@ -1514,25 +1495,26 @@ async function loadDetailData(memberData, isUpdate) {
     const newIds = await fetchAllMatchIds(puuId, platform, knownIds);
 
     if (!newIds.length) {
-      if (cache && cache.analysis) {
-        // 업데이트 버튼 클릭 시 새 게임 없어도 레이팅 재계산
-        if (isUpdate) {
-          // v2: 레이팅은 내전 결과로 가감 - 업데이트 시 재계산 없음
-          var rr2 = memberData._rating !== undefined
-            ? { rating: memberData._rating, breakdown: memberData._ratingBreakdown || {} }
-            : null;
-          renderDetail(cache.analysis, memberData, cache.matchIds.size, null, rr2);
-          renderPage();
-          return;
-        }
+      // 새 게임 없음 - matches가 비어있으면 기존 matchIds로 재fetch
+      if (cache && cache.matchIds.size > 0 && cache.matches.length === 0) {
+        const existingIds = Array.from(cache.matchIds);
+        document.getElementById('dm-content').innerHTML =
+          '<div class="dm-loading"><div class="spinner"></div> 데이터 로드 중... (' + existingIds.length + '게임)</div>';
+        const existingMatches = await fetchMatchesBatch(existingIds, platform, '분석');
+        cache.matches = existingMatches;
+        // 아래 analyzeMatches 블록으로 계속 진행
+      } else if (cache && cache.analysis) {
         var rrRating = memberData._rating !== undefined
-          ? { rating: memberData._rating, breakdown: memberData._ratingBreakdown || {} } : null;
+          ? { rating: memberData._rating, breakdown: memberData._ratingBreakdown || {} }
+          : null;
         renderDetail(cache.analysis, memberData, cache.matchIds.size, null, rrRating);
+        renderPage();
+        return;
+      } else {
+        document.getElementById('dm-content').innerHTML =
+          '<div class="dm-loading" style="color:var(--muted);">최신 데이터입니다</div>';
         return;
       }
-      document.getElementById('dm-content').innerHTML =
-        '<div class="dm-loading" style="color:var(--muted);">최신 데이터입니다</div>';
-      return;
     }
 
     const newMatches = await fetchMatchesBatch(newIds, platform, label);
@@ -1649,6 +1631,7 @@ function analyzeMatches(matches, myPuuId) {
   // 커뮤니티 멤버 puuId Set (필터링용)
   const communityPuuIds = new Set(allData.map(function(m){ return m.puu_id; }));
 
+  console.log('[analyze] 전체 matches:', matches.length, 'communityPuuIds:', communityPuuIds.size);
   const matchList=[], allies={}, enemies={}, laneEnemies={}, enemyChamps={};
   for (const matchData of matches) {
     if (!matchData||!matchData.participants_list) continue;
@@ -1658,7 +1641,11 @@ function analyzeMatches(matches, myPuuId) {
     // 커뮤니티 필터: puu_id_list에 커뮤니티 멤버가 4명 이상 포함된 게임만
     if (_queueMode === 'custom' && communityPuuIds.size > 0 && basic0.puu_id_list) {
       const overlap = basic0.puu_id_list.filter(function(id){ return communityPuuIds.has(id); }).length;
-      if (overlap < 4) continue;
+      if (overlap < 4) {
+        // 디버그: 필터링된 게임 수 확인용
+        // console.log('[filter] 제외:', basic0.match_id, 'overlap:', overlap);
+        continue;
+      }
     }
     const participants = matchData.participants_list;
     const me = participants.find(function(p){return p.puu_id===myPuuId;});
@@ -1737,46 +1724,19 @@ function renderDetail(analysis, member, totalLoaded, updatedAt, ratingResult) {
   // 헤더 레이팅 슬롯 업데이트
   var ratingSlot = document.getElementById('dm-rating-slot');
   if (ratingSlot) {
+    var totalGamesForRating = member && member.cnt !== undefined ? member.cnt : undefined;
     if (ratingResult && ratingResult.rating !== undefined) {
-      var bd2 = ratingResult.breakdown || {};
-      var tip2 = '';
-      try {
-        var wr2 = bd2.wr !== undefined ? bd2.wr.toFixed(1)+'%' : '—';
-        var kda2 = bd2.avgKda !== undefined ? bd2.avgKda.toFixed(2) : '—';
-        var games2 = bd2.games !== undefined ? bd2.games+'판' : '—';
-        var gCorr2 = (bd2.gamesCorr||1).toFixed ? (bd2.gamesCorr||1).toFixed(2) : (bd2.gamesCorr||1);
-        var wrS2=bd2.wrScore||0, aiS2=bd2.aiScore||0, kdaS2=bd2.kdaScore||0;
-        function vc2(v){return v>0?'pos':v<0?'neg':'';}
-        function sg2(v){return v>0?'+'+v:String(v);}
-        var tierLabel2 = bd2.usedTier
-          ? (bd2.peakTier ? '기본 레이팅 (최고티어: '+bd2.usedTier+')' : '기본 레이팅 ('+bd2.usedTier+')')
-          : '기본 레이팅';
-        tip2='<div class="rt-row"><span class="rt-lbl">'+tierLabel2+'</span><span class="rt-val gold">'+(bd2.baseRating||0)+'</span></div>'+
-          '<hr class="rt-divider">'+
-          '<div class="rt-row"><span class="rt-lbl">승률 점수</span><span class="rt-val '+vc2(wrS2)+'">'+sg2(wrS2)+'</span></div>'+
-          '<div class="rt-row"><span class="rt-lbl">승률</span><span class="rt-val">'+wr2+'</span></div>'+
-          '<div class="rt-row"><span class="rt-lbl">AI 점수</span><span class="rt-val '+vc2(aiS2)+'">'+sg2(aiS2)+'</span></div>'+
-          '<div class="rt-row"><span class="rt-lbl">KDA 점수</span><span class="rt-val '+vc2(kdaS2)+'">'+sg2(kdaS2)+'</span></div>'+
-          '<div class="rt-row"><span class="rt-lbl">평균 KDA</span><span class="rt-val">'+kda2+'</span></div>'+
-          '<div class="rt-row"><span class="rt-lbl">포지션 보정</span><span class="rt-val">×'+(bd2.posCorr||1)+'</span></div>'+
-          '<div class="rt-row"><span class="rt-lbl">경기수 보정</span><span class="rt-val">×'+gCorr2+'</span></div>'+
-          '<div class="rt-row"><span class="rt-lbl">경기수</span><span class="rt-val">'+games2+'</span></div>'+
-          '<hr class="rt-divider">'+
-          '<div class="rt-total"><span class="rt-total-lbl">최종 레이팅</span><span class="rt-total-val">'+Math.round(ratingResult.rating)+'</span></div>';
-      } catch(e) {}
+      var totalGamesForRating2 = member && member.cnt !== undefined ? member.cnt : undefined;
       ratingSlot.innerHTML =
-        '<div class="dm-stat" style="position:relative;">'+
-          '<div class="rating-tip-wrap">'+
-            '<div class="dm-stat-val" style="color:var(--gold);cursor:help;">'+Math.round(ratingResult.rating)+'</div>'+
-            (tip2 ? '<div class="rating-tip-box" style="bottom:calc(100% + 4px);right:auto;left:50%;transform:translateX(-50%);">'+tip2+'</div>' : '')+
-          '</div>'+
-          '<div class="dm-stat-lbl" style="margin-top:2px;">레이팅</div>'+
+        '<div class="dm-stat" style="position:relative;">' +
+          buildRatingCell(ratingResult.rating, {}, totalGamesForRating2) +
+          '<div class="dm-stat-lbl" style="margin-top:2px;">레이팅</div>' +
         '</div>';
     } else {
       ratingSlot.innerHTML = '';
     }
   }
-  const champStats={};
+    const champStats={};
   for (const m of matchList) {
     if(m.is_remake) continue;
     const cid=String(m.champion_id);
@@ -2009,6 +1969,7 @@ async function doMasterAuth() {
     _masterAuthed = true;
     _masterAuthId = id;
     _masterAuthPw = pw;
+    scheduleAutoRating(); // 3시간마다 자동 계산 스케줄
     document.getElementById('master-overlay').classList.remove('open');
     openBatchModal();
   } catch(e) {
@@ -2089,6 +2050,17 @@ async function startBatchRating() {
   document.getElementById('batch-status-text').textContent = 'Firebase 저장 중...';
   document.getElementById('batch-bar').style.width = '90%';
   try {
+    // 기존 레이팅 읽기 (변화량 계산용)
+    var prevRatings = {};
+    try {
+      var prevRes = await fetch(WORKER_URL + '/rating-read', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ communityId: COMMUNITY_ID, season: season })
+      });
+      var prevJson = await prevRes.json();
+      if (prevJson.ok && prevJson.data) prevRatings = prevJson.data;
+    } catch(e) {}
+
     var saveRes = await fetch(WORKER_URL + '/rating-batch-write', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -2106,6 +2078,39 @@ async function startBatchRating() {
       addBatchLog('⚠ Firebase 저장 실패: ' + (saveJson.error || ''), 'err');
     } else {
       addBatchLog('✅ Firebase 저장 완료 (' + (saveJson.count || ok) + '명)', 'ok');
+
+      // 히스토리 저장 (변화 있는 유저만)
+      var today = new Date().toISOString().slice(0, 10);
+      var historyMap = {};
+      Object.entries(ratingsMap).forEach(function(kv) {
+        var puuId = kv[0], newData = kv[1];
+        var prev = prevRatings[puuId];
+        var prevRating = prev ? prev.current : null;
+        var delta = prevRating !== null ? newData.current - prevRating : null;
+        if (delta === null || delta !== 0) {
+          historyMap[puuId] = { rating: newData.current, delta: delta, timestamp: Date.now() };
+        }
+      });
+
+      if (Object.keys(historyMap).length > 0) {
+        try {
+
+          var hRes2 = await fetch(WORKER_URL + '/rating-batch-write', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              communityId: COMMUNITY_ID,
+              season: 'history_' + today,
+              token: _masterSessionToken,
+              adminId: _masterAuthId,
+              adminPw: _masterAuthPw,
+              ratings: historyMap
+            })
+          });
+          var hJson = await hRes2.json();
+          if (hJson.ok) addBatchLog('📈 히스토리 저장 완료 (' + Object.keys(historyMap).length + '명 변화)', 'ok');
+        } catch(e) {}
+      }
     }
   } catch(e) {
     addBatchLog('⚠ 저장 오류: ' + e.message, 'err');
@@ -2431,42 +2436,305 @@ async function loadRatingLog(member) {
   logEl.innerHTML = '<div class="dm-loading" style="color:var(--muted);">로딩 중...</div>';
 
   try {
-    var res = await fetch(WORKER_URL + '/rating-log-read', {
+    // rating_history에서 해당 유저 기록 조회
+    var res = await fetch(WORKER_URL + '/db-public-read', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        communityId: COMMUNITY_ID,
-        puuId: member.puu_id,
-        season: _currentSeason || 'default',
-        limit: 50
-      })
+      body: JSON.stringify({ path: 'communities/' + COMMUNITY_ID + '/rating_history' })
     });
     var json = await res.json();
-    if (!json.ok || !json.data || !json.data.length) {
-      logEl.innerHTML = '<div class="dm-loading" style="color:var(--muted);">레이팅 로그가 없습니다</div>';
+    console.log('[ratingLog] ok:', json.ok, 'data keys:', json.data ? Object.keys(json.data).length : 0, 'error:', json.error);
+    if (!json.ok || !json.data) {
+      logEl.innerHTML = '<div class="dm-loading" style="color:var(--muted);">레이팅 기록이 없습니다</div>';
       return;
     }
-    var logs = json.data;
-    var html = '<div class="rl-header"><span style="flex:1;">대진</span><span style="min-width:50px;text-align:right;">변화</span><span style="min-width:50px;text-align:right;">레이팅</span><span style="min-width:70px;text-align:right;">날짜</span></div>';
-    logs.forEach(function(log) {
-      var sign = log.delta >= 0 ? '+' : '';
-      var cls = log.delta >= 0 ? 'pos' : 'neg';
-      var date = log.timestamp ? new Date(log.timestamp).toLocaleDateString('ko-KR', {month:'2-digit',day:'2-digit'}) : '—';
-      var aiStr = log.aiScore ? ' AI ' + Math.round(log.aiScore) : '';
-      var kdaStr = log.kda ? ' KDA ' + log.kda.toFixed(1) : '';
-      var winStr = log.isWin ? '🔵 승' : '🔴 패';
-      html += '<div class="rl-row">' +
-        '<div class="rl-label"><span style="font-size:10px;">' + winStr + '</span> ' +
-        esc(log.matchLabel || log.matchId || '—') +
-        '<span style="color:var(--muted);font-size:9px;">' + aiStr + kdaStr + '</span></div>' +
-        '<div class="rl-delta ' + cls + '">' + sign + log.delta + '</div>' +
-        '<div class="rl-rating">' + (log.newRating || '—') + '</div>' +
-        '<div class="rl-date">' + date + '</div>' +
-        '</div>';
+
+    // 히스토리 키별로 해당 유저 데이터 수집 (키: YYYY-MM-DD 또는 YYYY-MM-DD_HHMM)
+    var entries = [];
+    var puuId = member.puu_id;
+    Object.entries(json.data).forEach(function(kv) {
+      var key = kv[0]; // YYYY-MM-DD 또는 YYYY-MM-DD_HHMM
+      var dayData = kv[1];
+      if (dayData && dayData[puuId]) {
+        var dateStr = key.slice(0, 10); // YYYY-MM-DD
+        entries.push({
+          date: dateStr,
+          key: key,
+          rating: dayData[puuId].rating,
+          delta: dayData[puuId].delta,
+          timestamp: dayData[puuId].timestamp || 0
+        });
+      }
+    });
+
+    // 최신순 정렬
+    entries.sort(function(a, b) { return b.timestamp - a.timestamp; });
+
+    if (!entries.length) {
+      logEl.innerHTML = '<div class="dm-loading" style="color:var(--muted);">레이팅 기록이 없습니다</div>';
+      return;
+    }
+
+    // 그래프용 데이터 (오래된순)
+    var chartData = entries.slice().reverse();
+    var ratings = chartData.map(function(e){ return Math.round(e.rating); });
+    var minR = Math.min.apply(null, ratings);
+    var maxR = Math.max.apply(null, ratings);
+    var rangeR = maxR - minR || 1;
+    var W = 460, H = 110, PL = 48, PR = 10, PT = 10, PB = 22;
+    var gW = W-PL-PR, gH = H-PT-PB;
+    var n = chartData.length;
+    var points = chartData.map(function(e, i) {
+      return {
+        x: PL + (n===1 ? gW/2 : i/(n-1)*gW),
+        y: PT + gH - (Math.round(e.rating)-minR)/rangeR*gH,
+        r: Math.round(e.rating), e: e
+      };
+    });
+    var polyline = points.map(function(p){ return p.x+','+p.y; }).join(' ');
+    var areaD = 'M '+points[0].x+' '+(PT+gH)+' L '+points.map(function(p){return p.x+' '+p.y;}).join(' L ')+' L '+points[points.length-1].x+' '+(PT+gH)+' Z';
+    var yLabels = [minR, Math.round((minR+maxR)/2), maxR];
+    var yHtml = yLabels.map(function(v){
+      var y = PT+gH-(v-minR)/rangeR*gH;
+      return '<text x="'+(PL-4)+'" y="'+(y+4)+'" text-anchor="end" fill="rgba(255,255,255,.4)" font-size="9" font-family="Rajdhani,sans-serif">'+v+'</text>'+
+        '<line x1="'+PL+'" y1="'+y+'" x2="'+(W-PR)+'" y2="'+y+'" stroke="rgba(255,255,255,.06)" stroke-width="1"/>';
+    }).join('');
+    var step = Math.max(1, Math.floor(n/5));
+    var xHtml = '';
+    for(var xi=0;xi<n;xi+=step){
+      var p=points[xi], ts=chartData[xi].timestamp?new Date(chartData[xi].timestamp):null;
+      xHtml+='<text x="'+p.x+'" y="'+(H-4)+'" text-anchor="middle" fill="rgba(255,255,255,.4)" font-size="9" font-family="Rajdhani,sans-serif">'+(ts?(ts.getMonth()+1)+'/'+(ts.getDate()):chartData[xi].date)+'</text>';
+    }
+    var svgHtml = '<div style="padding:.5rem .5rem 0;"><svg viewBox="0 0 '+W+' '+H+'" width="100%" style="display:block;">'+
+      '<defs><linearGradient id="rg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="var(--blue)" stop-opacity=".2"/><stop offset="100%" stop-color="var(--blue)" stop-opacity="0"/></linearGradient></defs>'+
+      yHtml+xHtml+
+      '<path d="'+areaD+'" fill="url(#rg)"/>'+
+      '<polyline points="'+polyline+'" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>'+
+      points.map(function(p){return '<circle cx="'+p.x+'" cy="'+p.y+'" r="3" fill="var(--blue)" stroke="var(--bg-panel)" stroke-width="1.5"><title>'+p.r+'</title></circle>';}).join('')+
+      '</svg></div>';
+
+    var html = svgHtml + '<div class="rl-header" style="margin-top:.25rem;"><span style="flex:1;">날짜</span><span style="min-width:60px;text-align:right;">변화</span><span style="min-width:60px;text-align:right;">레이팅</span></div>';
+    entries.forEach(function(e) {
+      var ts = e.timestamp ? new Date(e.timestamp) : null;
+      var dateStr = ts ? e.date+' '+ts.getHours().toString().padStart(2,'0')+':'+ts.getMinutes().toString().padStart(2,'0') : (e.date||'—');
+      var deltaStr = e.delta!==null&&e.delta!==undefined ? (e.delta>=0?'+'+Math.round(e.delta):Math.round(e.delta)) : '최초';
+      var cls = !e.delta?'':e.delta>0?'pos':'neg';
+      html += '<div class="rl-row"><div class="rl-label">'+dateStr+'</div><div class="rl-delta '+cls+'">'+deltaStr+'</div><div class="rl-rating">'+Math.round(e.rating)+'</div></div>';
     });
     logEl.innerHTML = html;
   } catch(e) {
     logEl.innerHTML = '<div class="dm-loading" style="color:var(--red);">오류: ' + esc(e.message) + '</div>';
   }
+}
+
+
+// ── 자동 초기 레이팅 계산 (3시간마다) ──
+var _autoRatingTimer = null;
+var _AUTO_RATING_INTERVAL = 3 * 60 * 60 * 1000; // 3시간 ms
+var _RATING_LS_KEY = 'roonging_last_auto_rating';
+
+async function autoCalcInitialRatings() {
+  if (!COMMUNITY_ID || !allData.length) return;
+  var season = _currentSeason || 'default';
+
+  // masterAuth 없으면 실행 불가
+  if (!_masterAuthed || !_masterAuthId || !_masterAuthPw) return;
+
+  console.log('[autoRating] 자동 초기 레이팅 계산 시작');
+  var ratingsMap = {};
+  allData.forEach(function(member) {
+    try {
+      var R0 = calcInitialRating(member);
+      ratingsMap[member.puu_id] = {
+        current: R0, initial: R0,
+        wins: 0, losses: 0, streak: 0,
+        updatedAt: Date.now()
+      };
+      member._rating = R0;
+    } catch(e) {}
+  });
+
+  try {
+    var res = await fetch(WORKER_URL + '/rating-batch-write', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        communityId: COMMUNITY_ID, season: season,
+        token: _masterSessionToken,
+        adminId: _masterAuthId, adminPw: _masterAuthPw,
+        ratings: ratingsMap
+      })
+    });
+    var j = await res.json();
+    if (j.ok) {
+      localStorage.setItem(_RATING_LS_KEY, Date.now().toString());
+      console.log('[autoRating] 저장 완료', Object.keys(ratingsMap).length, '명');
+      renderPage();
+    }
+  } catch(e) { console.warn('[autoRating] 실패:', e.message); }
+}
+
+function scheduleAutoRating() {
+  if (_autoRatingTimer) clearInterval(_autoRatingTimer);
+  _autoRatingTimer = setInterval(function() {
+    autoCalcInitialRatings();
+  }, _AUTO_RATING_INTERVAL);
+
+  // 마지막 실행 이후 3시간이 지났으면 즉시 실행
+  var last = parseInt(localStorage.getItem(_RATING_LS_KEY) || '0');
+  if (Date.now() - last > _AUTO_RATING_INTERVAL) {
+    // 페이지 로드 후 30초 뒤 실행 (데이터 로드 완료 대기)
+    setTimeout(function() { autoCalcInitialRatings(); }, 30000);
+  }
+}
+
+
+// ── 메인 탭 전환 ──
+function switchMainTab(tab) {
+  var statsTab  = document.getElementById('main-tab-stats');
+  var ratingTab = document.getElementById('main-tab-rating');
+  var tableWrap = document.getElementById('table-body-wrap');
+  var rankView  = document.getElementById('rating-rank-view');
+  var filterBar = document.querySelector('.filter-bar');
+
+  if (tab === 'stats') {
+    statsTab.style.borderBottom  = '2px solid var(--blue)';
+    statsTab.style.background    = 'rgba(10,200,185,.08)';
+    statsTab.style.color         = 'var(--blue)';
+    ratingTab.style.borderBottom = 'none';
+    ratingTab.style.background   = 'transparent';
+    ratingTab.style.color        = 'var(--muted)';
+    if (tableWrap) tableWrap.style.display = '';
+    if (rankView)  rankView.style.display  = 'none';
+    if (filterBar) filterBar.style.display = '';
+  } else {
+    ratingTab.style.borderBottom = '2px solid var(--gold)';
+    ratingTab.style.background   = 'rgba(200,170,110,.08)';
+    ratingTab.style.color        = 'var(--gold)';
+    statsTab.style.borderBottom  = 'none';
+    statsTab.style.background    = 'transparent';
+    statsTab.style.color         = 'var(--muted)';
+    if (tableWrap) tableWrap.style.display = 'none';
+    if (rankView)  rankView.style.display  = '';
+    if (filterBar) filterBar.style.display = 'none';
+    // 기본 기간: 최근 30일
+    var today = new Date();
+    var from30 = new Date(today); from30.setDate(from30.getDate() - 30);
+    var toStr   = today.toISOString().slice(0, 10);
+    var fromStr = from30.toISOString().slice(0, 10);
+    var fromEl = document.getElementById('rating-rank-from');
+    var toEl   = document.getElementById('rating-rank-to');
+    if (fromEl && !fromEl.value) fromEl.value = fromStr;
+    if (toEl   && !toEl.value)   toEl.value   = toStr;
+    loadRatingRank();
+  }
+}
+
+// ── 레이팅 변화 랭킹 조회 ──
+async function loadRatingRank() {
+  if (!COMMUNITY_ID) return;
+  var body = document.getElementById('rating-rank-body');
+  if (!body) return;
+  body.innerHTML = '<div style="text-align:center;color:var(--muted);font-family:Rajdhani,sans-serif;font-size:12px;padding:2rem;"><div class="spinner" style="margin:0 auto 8px;"></div>조회 중...</div>';
+
+  var fromDate = (document.getElementById('rating-rank-from') || {}).value || '';
+  var toDate   = (document.getElementById('rating-rank-to')   || {}).value || '';
+
+  try {
+    var res = await fetch(WORKER_URL + '/db-public-read', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path: 'communities/' + COMMUNITY_ID + '/rating_history' })
+    });
+    var json = await res.json();
+    if (!json.ok || !json.data) {
+      body.innerHTML = '<div style="text-align:center;color:var(--muted);padding:2rem;">데이터가 없습니다</div>';
+      return;
+    }
+
+    // 날짜 필터링
+    var history = json.data;
+    var dates = Object.keys(history).filter(function(d) {
+      var dateOnly = d.slice(0, 10); // YYYY-MM-DD
+      if (fromDate && dateOnly < fromDate) return false;
+      if (toDate   && dateOnly > toDate)   return false;
+      return true;
+    });
+
+    if (!dates.length) {
+      body.innerHTML = '<div style="text-align:center;color:var(--muted);padding:2rem;">해당 기간에 데이터가 없습니다</div>';
+      return;
+    }
+
+    // 유저별 기간 내 레이팅 변화 합산
+    var puuMap = {}; // { puuId: { start, end, total_delta } }
+    dates.sort();
+    dates.sort();
+    dates.forEach(function(date) {
+      var dayData = history[date];
+      Object.entries(dayData).forEach(function(kv) {
+        var puuId = kv[0], d = kv[1];
+        if (!puuMap[puuId]) {
+          puuMap[puuId] = { startRating: d.rating - (d.delta || 0), endRating: d.rating, totalDelta: 0 };
+        }
+        puuMap[puuId].endRating = d.rating;
+        puuMap[puuId].totalDelta += (d.delta || 0);
+      });
+    });
+
+    // allData에서 이름 매핑
+    var nameMap = {};
+    allData.forEach(function(m) { nameMap[m.puu_id] = m.riot_name; });
+
+    // 정렬: 상승폭 기준
+    var entries = Object.entries(puuMap).map(function(kv) {
+      return { puuId: kv[0], name: nameMap[kv[0]] || kv[0].slice(0,8), data: kv[1] };
+    }).sort(function(a, b) { return b.data.totalDelta - a.data.totalDelta; });
+
+    // 상위/하위 표시
+    var top = entries.slice(0, 20);
+    var bot = entries.slice(-10).reverse();
+
+    var html = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">';
+
+    // 상승 랭킹
+    html += '<div>';
+    html += '<div style="font-family:Rajdhani,sans-serif;font-size:12px;font-weight:700;color:var(--blue);letter-spacing:1px;margin-bottom:.5rem;">🔺 상승 TOP 20</div>';
+    html += _buildRankTable(top, true);
+    html += '</div>';
+
+    // 하락 랭킹
+    html += '<div>';
+    html += '<div style="font-family:Rajdhani,sans-serif;font-size:12px;font-weight:700;color:var(--red);letter-spacing:1px;margin-bottom:.5rem;">🔻 하락 TOP 10</div>';
+    html += _buildRankTable(bot, false);
+    html += '</div>';
+
+    html += '</div>';
+    body.innerHTML = html;
+  } catch(e) {
+    body.innerHTML = '<div style="text-align:center;color:var(--red);padding:2rem;">오류: ' + esc(e.message) + '</div>';
+  }
+}
+
+function _buildRankTable(entries, isRise) {
+  if (!entries.length) return '<div style="color:var(--muted);font-size:11px;">데이터 없음</div>';
+  var html = '<table style="width:100%;border-collapse:collapse;font-family:Rajdhani,sans-serif;font-size:12px;">';
+  html += '<thead><tr style="color:var(--muted);font-size:10px;letter-spacing:1px;">' +
+    '<th style="text-align:left;padding:4px 6px;border-bottom:1px solid var(--border);">#</th>' +
+    '<th style="text-align:left;padding:4px 6px;border-bottom:1px solid var(--border);">소환사</th>' +
+    '<th style="text-align:right;padding:4px 6px;border-bottom:1px solid var(--border);">변화</th>' +
+    '<th style="text-align:right;padding:4px 6px;border-bottom:1px solid var(--border);">현재</th>' +
+    '</tr></thead><tbody>';
+  entries.forEach(function(e, i) {
+    var delta = Math.round(e.data.totalDelta);
+    var sign  = delta >= 0 ? '+' : '';
+    var color = delta > 0 ? 'var(--blue)' : delta < 0 ? 'var(--red)' : 'var(--muted)';
+    html += '<tr style="border-bottom:1px solid rgba(255,255,255,.03);">' +
+      '<td style="padding:5px 6px;color:var(--muted);">' + (i+1) + '</td>' +
+      '<td style="padding:5px 6px;color:var(--white);">' + esc(e.name) + '</td>' +
+      '<td style="padding:5px 6px;text-align:right;font-weight:700;color:' + color + ';">' + sign + delta + '</td>' +
+      '<td style="padding:5px 6px;text-align:right;color:var(--gold);">' + Math.round(e.data.endRating) + '</td>' +
+      '</tr>';
+  });
+  html += '</tbody></table>';
+  return html;
 }
 
 </script>
