@@ -3132,9 +3132,27 @@ function sortByCol(col) {
   }
 }
 function _tempTierSortOrder(m) {
-  var t = _tempTiers && m.puu_id && _tempTiers[m.puu_id] ? _tempTiers[m.puu_id].tier : null;
-  if (!t) return _tempTierSortDir === 1 ? 9999 : -9999;
-  return -peakTierOrder({ _peakTier: t });
+  var hasTier = _tempTiers && m.puu_id && _tempTiers[m.puu_id] && _tempTiers[m.puu_id].tier;
+  if (!hasTier) return 999999; // 임시티어 없는 사람은 항상 뒤
+
+  var tierData = _tempTiers[m.puu_id];
+  var tier = (tierData.tier || '').toUpperCase().split(' ')[0];
+  var lp = tierData.lp || 0;
+
+  // 티어 기본 점수 (낮을수록 높은 티어)
+  var TIER_RANK = {CHALLENGER:1,GRANDMASTER:2,MASTER:3,DIAMOND:4,EMERALD:5,PLATINUM:6,GOLD:7,SILVER:8,BRONZE:9,IRON:10};
+  var tierRank = (TIER_RANK[tier] || 99) * 100000;
+
+  // 마스터 이상은 LP로 세분화 (LP 높을수록 score 낮게 = 더 높은 순위)
+  var lpScore = ['MASTER','GRANDMASTER','CHALLENGER'].includes(tier) ? (100000 - lp) : 0;
+
+  // DIV도 반영 (I=0, II=1, III=2, IV=3)
+  var div = (tierData.division || tierData.div || '').toUpperCase();
+  var divScore = { 'I': 0, 'II': 1, 'III': 2, 'IV': 3 }[div] || 0;
+
+  var score = tierRank + lpScore + divScore;
+  // ▲(1)=높은사람부터=score 오름차순, ▼(-1)=낮은사람부터=score 내림차순
+  return _tempTierSortDir === 1 ? score : -score;
 }
 
 </script>
