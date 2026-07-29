@@ -258,6 +258,23 @@ export default {
       return handleRatingMatchApply(request, env);
     }
     // 마스터 전용 Cron 수동 실행 테스트
+    // Discord OAuth
+    if (path === '/discord-oauth-url' && request.method === 'POST') {
+      return handleDiscordOAuthUrl(request, env);
+    }
+    if (path === '/discord-oauth-callback' && request.method === 'POST') {
+      return handleDiscordOAuthCallback(request, env);
+    }
+    // 코멘트
+    if (path === '/comment-write' && request.method === 'POST') {
+      return handleCommentWrite(request, env);
+    }
+    if (path === '/comment-read' && request.method === 'POST') {
+      return handleCommentRead(request, env);
+    }
+    if (path === '/comment-delete' && request.method === 'POST') {
+      return handleCommentDelete(request, env);
+    }
     if (path === '/cron-rating-test' && request.method === 'POST') {
       let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
       let session = getSession(body.token);
@@ -577,11 +594,14 @@ async function sendDiscordToChannel(env, data) {
       const err = await res.text();
       throw new Error(`Discord API ${res.status}: ${err}`);
     }
-  } else if (message) {
+  } else if (data.embeds || message) {
+    const body = {};
+    if (message) body.content = message;
+    if (data.embeds) body.embeds = data.embeds;
     const res = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
       method: 'POST',
       headers: { 'Authorization': `Bot ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content: message }),
+      body: JSON.stringify(body),
     });
     if (!res.ok) {
       const err = await res.text();
@@ -1832,7 +1852,13 @@ async function runScheduledRatingCalc(env) {
         console.log(`[cron] ${cid} serverId:`, serverId);
         if (!serverId) continue;
 
-        const statsRes = await fetch(`https://b2c-api-cdn.deeplol.gg/tournament/server_info?server_id=${serverId}`);
+        const statsRes = await fetch(`https://b2c-api-cdn.deeplol.gg/tournament/server_info?server_id=${serverId}`, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Referer': 'https://www.deeplol.gg/',
+            'Origin': 'https://www.deeplol.gg'
+          }
+        });
         if (!statsRes.ok) { console.error(`[cron] ${cid} 딥롤 API 실패:`, statsRes.status); continue; }
         const statsJson = await statsRes.json();
         const members = (statsJson.tournament_stats && statsJson.tournament_stats.tournament_stats_all_list) || [];
@@ -1858,8 +1884,11 @@ async function runScheduledRatingCalc(env) {
 
         // 변화 있는 유저 히스토리
         const now = new Date();
-        const today = now.toISOString().slice(0, 10);
-        const hhmm = now.getUTCHours().toString().padStart(2,'0') + now.getUTCMinutes().toString().padStart(2,'0');
+        // KST(UTC+9) 기준으로 날짜/시각 계산
+        const kstOffset = 9 * 60 * 60 * 1000;
+        const kstNow = new Date(now.getTime() + kstOffset);
+        const today = kstNow.toISOString().slice(0, 10);
+        const hhmm = kstNow.getUTCHours().toString().padStart(2,'0') + kstNow.getUTCMinutes().toString().padStart(2,'0');
         const histKey = today + '_' + hhmm;
         const historyMap = {};
         for (const [puuId, newData] of Object.entries(ratingsMap)) {
@@ -1891,4 +1920,127 @@ async function runScheduledRatingCalc(env) {
   } catch(e) {
     console.error('[cron] 전체 오류:', e.message, e.stack?.slice(0,200));
   }
+}
+
+// ── Discord OAuth + 코멘트 ──
+
+// Discord OAuth URL 생성
+async function handleDiscordOAuthUrl(request, env) {
+  let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
+  const { communityId, puuId, redirectUri } = body;
+  if (!env.DISCORD_CLIENT_ID) return json({ok:false,error:'DISCORD_CLIENT_ID 없음'},500);
+
+  const state = btoa(JSON.stringify({ communityId, puuId, ts: Date.now() }));
+  const params = new URLSearchParams({
+    client_id: env.DISCORD_CLIENT_ID,
+    redirect_uri: redirectUri,
+    response_type: 'code',
+    scope: 'identify',
+    state
+  });
+  return json({ ok: true, url: 'https://discord.com/oauth2/authorize?' + params.toString() });
+}
+
+// Discord OAuth 콜백 - code → token → user info
+async function handleDiscordOAuthCallback(request, env) {
+  let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
+  const { code, redirectUri, state, communityId, puuId, text } = body;
+  if (!code) return json({ok:false,error:'code 없음'},400);
+  if (!env.DISCORD_CLIENT_ID || !env.DISCORD_CLIENT_SECRET) return json({ok:false,error:'Discord 설정 없음'},500);
+
+  // code → access_token
+  const tokenRes = await fetch('https://discord.com/api/v10/oauth2/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      client_id: env.DISCORD_CLIENT_ID,
+      client_secret: env.DISCORD_CLIENT_SECRET,
+      grant_type: 'authorization_code',
+      code,
+      redirect_uri: redirectUri
+    })
+  });
+  if (!tokenRes.ok) {
+    const err = await tokenRes.text();
+    return json({ok:false,error:'토큰 교환 실패: '+err.slice(0,100)},400);
+  }
+  const tokenData = await tokenRes.json();
+  const accessToken = tokenData.access_token;
+
+  // 유저 정보 조회
+  const userRes = await fetch('https://discord.com/api/v10/users/@me', {
+    headers: { Authorization: 'Bearer ' + accessToken }
+  });
+  if (!userRes.ok) return json({ok:false,error:'유저 정보 조회 실패'},400);
+  const user = await userRes.json();
+
+  // 코멘트 저장
+  if (communityId && puuId && text && text.trim()) {
+    const dbUrl = env.FB_DATABASE_URL;
+    const secret = env.FB_DB_SECRET;
+    const authQ = secret ? '?auth=' + secret : '';
+    const commentId = 'dc_' + user.id + '_' + Date.now();
+    const comment = {
+      discordId: user.id,
+      username: user.username,
+      displayName: user.global_name || user.username,
+      avatar: user.avatar ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png` : null,
+      text: text.trim().slice(0, 500),
+      createdAt: Date.now()
+    };
+    await fetch(`${dbUrl}/communities/${communityId}/comments/${puuId}/${commentId}.json${authQ}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(comment)
+    });
+    return json({ ok: true, user: { id: user.id, username: user.username, displayName: comment.displayName, avatar: comment.avatar }, comment: { id: commentId, ...comment } });
+  }
+
+  // 텍스트 없이 인증만 한 경우 - 유저 정보만 반환
+  return json({ ok: true, user: { id: user.id, username: user.username, displayName: user.global_name || user.username, avatar: user.avatar ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png` : null } });
+}
+
+// 코멘트 읽기
+async function handleCommentRead(request, env) {
+  let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
+  const { communityId, puuId } = body;
+  if (!communityId || !puuId) return json({ok:false,error:'필수 파라미터 누락'},400);
+  const dbUrl = env.FB_DATABASE_URL;
+  const secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth=' + secret : '';
+  const res = await fetch(`${dbUrl}/communities/${communityId}/comments/${puuId}.json${authQ}`);
+  if (!res.ok) return json({ok:false,error:'조회 실패'},500);
+  const data = await res.json();
+  return json({ ok: true, data: data || {} });
+}
+
+// 코멘트 작성 (이미 인증된 유저 - discordId 검증)
+async function handleCommentWrite(request, env) {
+  let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
+  const { communityId, puuId, text, discordId, username, displayName, avatar } = body;
+  if (!communityId || !puuId || !text || !discordId) return json({ok:false,error:'필수 파라미터 누락'},400);
+  const dbUrl = env.FB_DATABASE_URL;
+  const secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth=' + secret : '';
+  const commentId = 'dc_' + discordId + '_' + Date.now();
+  const comment = { discordId, username: username||'', displayName: displayName||username||'', avatar: avatar||null, text: text.trim().slice(0,500), createdAt: Date.now() };
+  const res = await fetch(`${dbUrl}/communities/${communityId}/comments/${puuId}/${commentId}.json${authQ}`, {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(comment)
+  });
+  if (!res.ok) return json({ok:false,error:'저장 실패'},500);
+  return json({ ok: true, comment: { id: commentId, ...comment } });
+}
+
+// 코멘트 삭제 (본인만)
+async function handleCommentDelete(request, env) {
+  let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
+  const { communityId, puuId, commentId, discordId } = body;
+  if (!communityId || !puuId || !commentId || !discordId) return json({ok:false,error:'필수 파라미터 누락'},400);
+  // commentId가 본인 것인지 확인 (dc_{discordId}_ 로 시작)
+  if (!commentId.startsWith('dc_' + discordId + '_')) return json({ok:false,error:'권한 없음'},403);
+  const dbUrl = env.FB_DATABASE_URL;
+  const secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth=' + secret : '';
+  await fetch(`${dbUrl}/communities/${communityId}/comments/${puuId}/${commentId}.json${authQ}`, { method: 'DELETE' });
+  return json({ ok: true });
 }

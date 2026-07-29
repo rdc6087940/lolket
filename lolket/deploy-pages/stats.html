@@ -348,6 +348,18 @@ tbody td{padding:.55rem 1rem;font-size:12px;vertical-align:middle;}
           style="padding:5px 12px;border-radius:3px;border:1px solid rgba(200,100,100,.3);background:rgba(200,100,100,.06);color:#e88;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:.5px;cursor:pointer;display:none;">
           🔄 Cron 수동실행
         </button>
+        <button id="discord-login-btn" onclick="discordHeaderLogin()"
+          style="padding:5px 10px;border-radius:3px;border:1px solid rgba(114,137,218,.4);background:rgba(114,137,218,.08);color:#7289da;font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;">
+          <img src="https://cdn.prod.website-files.com/6257adef93867e50d84d30e2/636e0a69f118df70ad7828d4_icon_clyde_blurple_RGB.png" style="width:12px;height:12px;">Discord 로그인
+        </button>
+        <div id="discord-status" style="display:none;align-items:center;gap:6px;">
+          <img id="discord-avatar" src="" style="width:22px;height:22px;border-radius:50%;border:1px solid rgba(114,137,218,.3);">
+          <span id="discord-name" style="font-family:'Rajdhani',sans-serif;font-size:11px;color:#7289da;font-weight:700;"></span>
+          <button onclick="discordLogout()" style="padding:3px 8px;border-radius:2px;border:1px solid rgba(114,137,218,.2);background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;">로그아웃</button>
+        </div>
+        <button id="discord-login-btn" onclick="discordHeaderLogin()" style="display:none;padding:4px 10px;border-radius:3px;border:1px solid rgba(114,137,218,.4);background:rgba(114,137,218,.08);color:#7289da;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;align-items:center;gap:5px;">
+          <span style="font-size:13px;">🎮</span> Discord 로그인
+        </button>
         <div id="admin-status" style="display:none;align-items:center;gap:6px;">
           <span id="admin-status-text" style="font-family:'Rajdhani',sans-serif;font-size:11px;color:var(--blue);"></span>
           <button onclick="statsAdminLogout()" style="padding:3px 8px;border-radius:2px;border:1px solid rgba(255,255,255,.1);background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;">로그아웃</button>
@@ -472,6 +484,22 @@ tbody td{padding:.55rem 1rem;font-size:12px;vertical-align:middle;}
 const DD_VER = '16.14.1';
 const DD_ICON = id => `https://ddragon.leagueoflegends.com/cdn/${DD_VER}/img/champion/${id}.png`;
 const PER_PAGE = 20;
+// Discord OAuth 콜백으로 돌아온 경우 sessionStorage에서 파라미터 복원
+(function() {
+  var sp = new URLSearchParams(location.search);
+  var rawCode = sp.get('code');
+  // code= 있고 dc_code= 없을 때만 리다이렉트 (무한루프 방지)
+  if (rawCode && !sp.get('dc_code')) {
+    var pending = null;
+    try { pending = JSON.parse(sessionStorage.getItem('discord_oauth_pending') || 'null'); } catch(e) {}
+    if (pending && pending.returnSearch) {
+      var sep = pending.returnSearch.includes('?') ? '&' : '?';
+      var rawState = sp.get('state') || '';
+      var newUrl = location.pathname + pending.returnSearch + sep + 'dc_code=' + encodeURIComponent(rawCode) + (rawState ? '&dc_state=' + encodeURIComponent(rawState) : '');
+      location.replace(newUrl);
+    }
+  }
+})();
 const urlParams = new URLSearchParams(location.search);
 const SERVER_ID    = urlParams.get('server_id') || '';
 const COMMUNITY_ID = urlParams.get('cid') || '';
@@ -999,11 +1027,16 @@ function syncTableWidth(){} // 단일 테이블 구조에서 불필요
         style="padding:4px 10px;border-radius:2px 2px 0 0;border:1px solid var(--border);border-bottom:2px solid var(--blue);background:rgba(10,200,185,.08);color:var(--blue);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:.5px;">📊 분석</button>
       <button id="dm-tab-rating-log" onclick="switchDetailTab('rating-log')"
         style="padding:4px 10px;border-radius:2px 2px 0 0;border:1px solid var(--border);border-bottom:none;background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:.5px;">📈 레이팅 로그</button>
+      <button id="dm-tab-comments" onclick="switchDetailTab('comments')"
+        style="padding:4px 10px;border-radius:2px 2px 0 0;border:1px solid var(--border);border-bottom:none;background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:.5px;">💬 코멘트</button>
     </div>
     <div id="dm-content">
       <div class="dm-loading"><div class="spinner"></div> 분석 중...</div>
     </div>
     <div id="dm-rating-log" style="display:none;overflow-y:auto;max-height:500px;padding:.5rem 0;">
+      <div style="padding:2rem;text-align:center;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:12px;">로딩 중...</div>
+    </div>
+    <div id="dm-comments" style="display:none;overflow-y:auto;max-height:500px;">
       <div style="padding:2rem;text-align:center;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:12px;">로딩 중...</div>
     </div>
   </div>
@@ -1403,6 +1436,16 @@ async function openDetail(memberData) {
   document.getElementById('dm-name').textContent = memberData.riot_name;
   document.getElementById('dm-tag').textContent = '#' + memberData.riot_tag;
   _detailCurrentMemberForLog = memberData;
+  // 탭/패널 항상 분석으로 초기화
+  switchDetailTab('analysis');
+  // 최고 티어 슬롯 초기화
+  var peakEl = document.getElementById('dm-peak-tier');
+  if (peakEl) {
+    peakEl.textContent = '';
+    peakEl.style.color = '';
+    var peakParent = peakEl.parentElement;
+    if (peakParent) peakParent.style.display = 'none';
+  }
   document.getElementById('dm-tier').textContent = tp.short;
   document.getElementById('dm-tier').style.cssText = 'color:'+tc+';background:'+tc+'18;border:1px solid '+tc+'30';
   // 최고 티어 표시
@@ -1417,13 +1460,14 @@ async function openDetail(memberData) {
         (ptLp !== undefined && ptLp !== null ? '<div class="rt-row"><span class="rt-lbl">최고 LP</span><span class="rt-val gold">'+ptLp+' LP</span></div>' : '');
       var peakParent = peakTierEl.parentElement;
       peakParent.innerHTML =
-        '<div class="tier-tip-wrap">'+
-          '<span class="tier-badge" style="color:'+ptc+';background:'+ptc+'18;border:1px solid '+ptc+'30;cursor:help;">'+esc(ptp.short)+'</span>'+
-          '<div class="tier-tip-box">'+tipInner+'</div>'+
-        '</div>';
+        '<span style="font-family:\'Rajdhani\',sans-serif;font-size:9px;color:var(--muted);margin-right:2px;">최고</span>' +
+        '<span class="dm-tier" id="dm-peak-tier" style="color:'+ptc+';background:'+ptc+'18;border:1px solid '+ptc+'30;">'+esc(ptp.short)+'</span>';
       peakParent.style.display = '';
     } else {
-      if (peakTierEl && peakTierEl.parentElement) peakTierEl.parentElement.style.display = 'none';
+      if (peakTierEl && peakTierEl.parentElement) {
+        peakTierEl.parentElement.style.display = 'none';
+        peakTierEl.textContent = '';
+      }
     }
   }
   const w = memberData.win||0, t = memberData.cnt||0;
@@ -1458,12 +1502,15 @@ async function openDetail(memberData) {
   }
   const fbData = await loadFromFirebase(memberData.puu_id, _queueMode);
   if (fbData && fbData.matchIds && fbData.matchIds.length > 0) {
-    // Firebase matchIds만 knownIds로 사용 - analysis는 쓰지 않고 항상 재분석
-    detailCache[_queueMode][memberData.puu_id] = {
-      matchIds: new Set(fbData.matchIds || []),
-      matches: [],
-      analysis: null
-    };
+    // Firebase 캐시는 사용하지 않고 항상 전체 재분석
+    // (버전/커뮤니티 필터 변경에 대응)
+    if (!detailCache[_queueMode][memberData.puu_id]) {
+      detailCache[_queueMode][memberData.puu_id] = {
+        matchIds: new Set(),
+        matches: [],
+        analysis: null
+      };
+    }
     // peakTier 복원
     if (fbData.peakTier) {
       memberData._peakTier = fbData.peakTier;
@@ -1493,7 +1540,9 @@ async function loadDetailData(memberData, isUpdate) {
   const puuId = memberData.puu_id;
   const platform = memberData.platform_id || 'KR';
   const cache = detailCache[_queueMode][puuId];
-  const knownIds = (isUpdate && cache) ? cache.matchIds : null;
+  // isUpdate=true여도 knownIds=null로 설정해서 전체 재분석
+  // (버전 변경, 커뮤니티 필터 변경 등에 대응)
+  const knownIds = null;
   const label = '분석 중';
 
   try {
@@ -2415,28 +2464,37 @@ var _detailCurrentMemberForLog = null;
 
 function switchDetailTab(tab) {
   var analysisTab = document.getElementById('dm-tab-analysis');
-  var logTab = document.getElementById('dm-tab-rating-log');
-  var contentEl = document.getElementById('dm-content');
-  var logEl = document.getElementById('dm-rating-log');
-  if (!analysisTab || !logTab) return;
+  var logTab      = document.getElementById('dm-tab-rating-log');
+  var commTab     = document.getElementById('dm-tab-comments');
+  var contentEl   = document.getElementById('dm-content');
+  var logEl       = document.getElementById('dm-rating-log');
+  var commEl      = document.getElementById('dm-comments');
+  if (!analysisTab) return;
+
+  // 모든 탭 비활성화
+  [analysisTab, logTab, commTab].forEach(function(t) {
+    if (t) { t.style.borderBottom='none'; t.style.background='transparent'; t.style.color='var(--muted)'; }
+  });
+  // 모든 패널 숨김
+  if (contentEl) contentEl.style.display = 'none';
+  if (logEl)     logEl.style.display     = 'none';
+  if (commEl)    commEl.style.display    = 'none';
 
   if (tab === 'analysis') {
-    analysisTab.style.background = 'var(--panel)';
-    analysisTab.style.color = 'var(--white)';
-    logTab.style.background = 'transparent';
-    logTab.style.color = 'var(--muted)';
+    analysisTab.style.borderBottom = '2px solid var(--blue)';
+    analysisTab.style.background   = 'rgba(10,200,185,.08)';
+    analysisTab.style.color        = 'var(--blue)';
     if (contentEl) contentEl.style.display = '';
-    if (logEl) logEl.style.display = 'none';
-  } else {
-    logTab.style.background = 'var(--panel)';
-    logTab.style.color = 'var(--white)';
-    analysisTab.style.background = 'transparent';
-    analysisTab.style.color = 'var(--muted)';
-    if (contentEl) contentEl.style.display = 'none';
-    if (logEl) {
-      logEl.style.display = '';
-      loadRatingLog(_detailCurrentMemberForLog);
-    }
+  } else if (tab === 'rating-log') {
+    logTab.style.borderBottom = '2px solid var(--gold)';
+    logTab.style.background   = 'rgba(200,170,110,.08)';
+    logTab.style.color        = 'var(--gold)';
+    if (logEl) { logEl.style.display = ''; loadRatingLog(_detailCurrentMemberForLog); }
+  } else if (tab === 'comments') {
+    commTab.style.borderBottom = '2px solid #7289da';
+    commTab.style.background   = 'rgba(114,137,218,.08)';
+    commTab.style.color        = '#7289da';
+    if (commEl) { commEl.style.display = ''; loadComments(_detailCurrentMemberForLog); }
   }
 }
 window.switchDetailTab = switchDetailTab;
@@ -2772,6 +2830,283 @@ async function runCronTest() {
     alert('오류: ' + e.message);
   }
 }
+
+
+// ── 디스코드 코멘트 ──
+var _discordUser = (function() {
+  try { return JSON.parse(sessionStorage.getItem('discord_user') || 'null'); } catch(e) { return null; }
+})();
+var _commentDraftText = '';
+var _REDIRECT_URI = window.location.origin + window.location.pathname;
+
+// Discord 로그인 → 코멘트 작성 플로우
+async function loginDiscordAndComment(puuId, communityId) {
+  // 이미 로그인된 경우 텍스트 체크 후 저장
+  if (_discordUser) {
+    _commentDraftText = document.getElementById('comment-input-' + puuId)?.value?.trim() || '';
+    if (!_commentDraftText) { alert('코멘트를 입력하세요'); return; }
+    await submitComment(puuId, communityId, _commentDraftText);
+    return;
+  }
+  // 미로그인 - 텍스트 저장 후 OAuth 진행
+  _commentDraftText = document.getElementById('comment-input-' + puuId)?.value?.trim() || '';
+  // 현재 페이지 파라미터 저장 (콜백 후 복원용)
+  _REDIRECT_URI = window.location.origin + window.location.pathname;
+
+  // OAuth URL 생성 후 팝업
+  try {
+    const res = await fetch(WORKER_URL + '/discord-oauth-url', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ communityId, puuId, redirectUri: _REDIRECT_URI })
+    });
+    const j = await res.json();
+    if (!j.ok) { alert('Discord 연결 실패: ' + j.error); return; }
+
+    // 현재 페이지 정보 저장 (콜백 후 복원용)
+    sessionStorage.setItem('discord_oauth_pending', JSON.stringify({
+      puuId, communityId, text: _commentDraftText,
+      returnSearch: window.location.search  // ?server_id=156&cid=c_xxx 보존
+    }));
+    window.location.href = j.url;
+  } catch(e) { alert('오류: ' + e.message); }
+}
+
+// OAuth 콜백 처리 (페이지 로드 시)
+async function handleDiscordCallback() {
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get('code') || params.get('dc_code');
+  const state = params.get('state') || params.get('dc_state');
+  if (!code) return;
+
+  // URL 복원 - pending의 returnSearch 사용 (server_id, cid 파라미터 보존)
+  const pendingRaw = sessionStorage.getItem('discord_oauth_pending');
+  const pendingPreview = pendingRaw ? JSON.parse(pendingRaw) : null;
+  const returnSearch = pendingPreview?.returnSearch || '';
+  // dc_code, dc_state 제거하고 원래 파라미터만 유지
+  history.replaceState({}, '', window.location.pathname + returnSearch);
+
+  const pending = JSON.parse(sessionStorage.getItem('discord_oauth_pending') || 'null');
+  sessionStorage.removeItem('discord_oauth_pending');
+
+  try {
+    const res = await fetch(WORKER_URL + '/discord-oauth-callback', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        code, redirectUri: _REDIRECT_URI,
+        communityId: pending?.communityId,
+        puuId: pending?.puuId,
+        text: pending?.text
+      })
+    });
+    const j = await res.json();
+    if (!j.ok) { alert('Discord 인증 실패: ' + j.error); return; }
+
+    _discordUser = j.user;
+    try { sessionStorage.setItem('discord_user', JSON.stringify(j.user)); } catch(e) {}
+    updateDiscordHeader();
+    // 댓글 저장됐으면 현재 멤버 코멘트 새로고침
+    if (j.comment && pending?.puuId) {
+      setTimeout(function() {
+        // 해당 유저 상세 팝업으로 이동하기 어려우므로 알림만
+        alert('✅ ' + (_discordUser.displayName || _discordUser.username) + ' 님의 코멘트가 저장됐습니다!');
+      }, 500);
+    }
+  } catch(e) { alert('인증 오류: ' + e.message); }
+}
+
+// 코멘트 제출 (이미 로그인된 경우)
+async function submitComment(puuId, communityId, text) {
+  if (!_discordUser || !text) return;
+  // 닉네임 입력창 값 읽기
+  var nickEl = document.getElementById('comment-nick-' + puuId);
+  var customNick = nickEl ? (nickEl.value.trim() || _discordUser.displayName || _discordUser.username) : (_discordUser.displayName || _discordUser.username);
+  try {
+    const res = await fetch(WORKER_URL + '/comment-write', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        communityId, puuId, text,
+        discordId: _discordUser.id,
+        username: _discordUser.username,
+        displayName: customNick,
+        avatar: _discordUser.avatar
+      })
+    });
+    const j = await res.json();
+    if (j.ok) {
+      // 입력창 비우고 목록 새로고침
+      var inp = document.getElementById('comment-input-' + puuId);
+      if (inp) inp.value = '';
+      loadComments(_detailCurrentMemberForLog);
+    }
+  } catch(e) {}
+}
+
+// 코멘트 삭제
+async function deleteComment(puuId, communityId, commentId) {
+  if (!_discordUser) return;
+  if (!confirm('코멘트를 삭제할까요?')) return;
+  try {
+    await fetch(WORKER_URL + '/comment-delete', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ communityId, puuId, commentId, discordId: _discordUser.id })
+    });
+    loadComments(_detailCurrentMemberForLog);
+  } catch(e) {}
+}
+
+// 코멘트 목록 로드
+async function loadComments(member) {
+  var el = document.getElementById('dm-comments');
+  if (!el || !member || !COMMUNITY_ID) return;
+  el.innerHTML = '<div style="padding:1.5rem;text-align:center;color:var(--muted);font-size:12px;font-family:Rajdhani,sans-serif;">로딩 중...</div>';
+
+  try {
+    const res = await fetch(WORKER_URL + '/comment-read', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ communityId: COMMUNITY_ID, puuId: member.puu_id })
+    });
+    const j = await res.json();
+    const comments = j.ok && j.data ? Object.entries(j.data).map(function(kv){ return Object.assign({id:kv[0]},kv[1]); }) : [];
+    comments.sort(function(a,b){ return (b.createdAt||0)-(a.createdAt||0); });
+
+    var puuId = member.puu_id;
+    var html = '<div style="padding:.75rem;">';
+
+    // 코멘트 입력
+    html += '<div style="display:flex;gap:8px;margin-bottom:1rem;align-items:flex-start;">';
+    if (_discordUser) {
+      var avUrl = _discordUser.avatar || '';
+      html += '<img src="' + avUrl + '" style="width:28px;height:28px;border-radius:50%;flex-shrink:0;" onerror="this.style.display=\'none\'">';
+    }
+    var phText = _discordUser ? '코멘트를 입력하세요...' : 'Discord로 로그인 후 코멘트를 남길 수 있습니다';
+    if (_discordUser) {
+      html += '<div style="flex:1;display:flex;flex-direction:column;gap:4px;">';
+      html += '<input id="comment-nick-' + puuId + '" type="text" placeholder="닉네임 (직접 입력)" maxlength="30" ' +
+        'value="' + esc(_discordUser.displayName || _discordUser.username) + '" ' +
+        'style="background:var(--bg-dark);border:1px solid var(--border-subtle);border-radius:3px;padding:5px 8px;color:var(--white);font-size:11px;outline:none;">';
+      html += '<textarea id="comment-input-' + puuId + '" placeholder="' + phText + '" ' +
+        'style="background:var(--bg-dark);border:1px solid var(--border-subtle);border-radius:3px;padding:8px;color:var(--white);font-size:12px;resize:none;height:55px;outline:none;"></textarea>';
+      html += '</div>';
+    } else {
+      html += '<textarea id="comment-input-' + puuId + '" placeholder="' + phText + '" ' +
+        'style="flex:1;background:var(--bg-dark);border:1px solid var(--border-subtle);border-radius:3px;padding:8px;color:var(--white);font-size:12px;resize:none;height:60px;outline:none;"></textarea>';
+    }
+    var btnLabel = _discordUser ? '등록' : 'Discord 로그인';
+    var submitBtn = document.createElement('button');
+    submitBtn.style.cssText = 'padding:6px 12px;border-radius:3px;border:1px solid #7289da;background:rgba(114,137,218,.1);color:#7289da;font-family:Rajdhani,sans-serif;font-size:10px;font-weight:700;cursor:pointer;flex-shrink:0;';
+    submitBtn.textContent = btnLabel;
+    submitBtn.setAttribute('data-puuid', puuId);
+    submitBtn.setAttribute('data-cid', COMMUNITY_ID);
+    submitBtn.onclick = function() { loginDiscordAndComment(this.getAttribute('data-puuid'), this.getAttribute('data-cid')); };
+    // 임시로 html에 플레이스홀더 추가
+    html += '<span id="comment-submit-btn-' + puuId + '"></span>';
+    html += '</div>';
+
+    // 코멘트 목록
+    if (!comments.length) {
+      html += '<div style="text-align:center;color:var(--muted);font-size:12px;padding:1rem;font-family:Rajdhani,sans-serif;">아직 코멘트가 없습니다</div>';
+    } else {
+      comments.forEach(function(c) {
+        var isOwn = _discordUser && _discordUser.id === c.discordId;
+        var date = new Date(c.createdAt).toLocaleDateString('ko-KR', {month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+        html += '<div style="display:flex;gap:8px;padding:.6rem 0;border-bottom:1px solid rgba(255,255,255,.04);">';
+        if (c.avatar) {
+          html += '<img src="' + esc(c.avatar) + '" style="width:28px;height:28px;border-radius:50%;flex-shrink:0;">';
+        } else {
+          html += '<div style="width:28px;height:28px;border-radius:50%;background:#7289da22;flex-shrink:0;"></div>';
+        }
+        html += '<div style="flex:1;min-width:0;">';
+        html += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">';
+        html += '<span style="font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;color:#7289da;">' + esc(c.displayName||c.username) + '</span>';
+        html += '<span style="font-size:9px;color:rgba(114,137,218,.5);">@' + esc(c.username) + '</span>';
+        html += '<span style="font-size:9px;color:var(--muted);">' + date + '</span>';
+        if (isOwn) {
+          html += '<button data-puuid="' + puuId + '" data-cid="' + COMMUNITY_ID + '" data-comment-id="' + esc(c.id) + '" ' +
+            'class="dc-del-btn" style="margin-left:auto;background:transparent;border:none;color:var(--muted);font-size:10px;cursor:pointer;">✕</button>';
+        }
+        html += '</div>';
+        html += '<div style="font-size:12px;color:var(--white);line-height:1.5;word-break:break-all;">' + esc(c.text) + '</div>';
+        html += '</div></div>';
+      });
+    }
+    html += '</div>';
+    el.innerHTML = html;
+    // 제출 버튼 DOM으로 삽입
+    var btnSlot = document.getElementById('comment-submit-btn-' + puuId);
+    if (btnSlot) btnSlot.replaceWith(submitBtn);
+    // 삭제 버튼 이벤트
+    el.querySelectorAll('.dc-del-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        deleteComment(this.getAttribute('data-puuid'), this.getAttribute('data-cid'), this.getAttribute('data-comment-id'));
+      });
+    });
+  } catch(e) {
+    el.innerHTML = '<div style="padding:1.5rem;text-align:center;color:var(--red);font-size:12px;">오류: ' + esc(e.message) + '</div>';
+  }
+}
+
+// 페이지 로드 시 Discord 콜백 처리
+if (window.location.search.includes('code=') || window.location.search.includes('dc_code=')) {
+  handleDiscordCallback();
+}
+
+
+// Discord 헤더 상태 업데이트
+function updateDiscordHeader() {
+  var el = document.getElementById('discord-status');
+  var loginBtn = document.getElementById('discord-login-btn');
+  if (!el) return;
+  if (_discordUser) {
+    el.style.display = 'flex';
+    if (loginBtn) loginBtn.style.display = 'none';
+    var nameEl = document.getElementById('discord-name');
+    var avatarEl = document.getElementById('discord-avatar');
+    if (nameEl) nameEl.textContent = _discordUser.displayName || _discordUser.username;
+    if (avatarEl && _discordUser.avatar) {
+      avatarEl.src = _discordUser.avatar;
+      avatarEl.style.display = '';
+    } else if (avatarEl) {
+      avatarEl.style.display = 'none';
+    }
+  } else {
+    el.style.display = 'none';
+    if (loginBtn) loginBtn.style.display = 'flex';
+  }
+}
+
+async function discordHeaderLogin() {
+  if (!COMMUNITY_ID) return;
+  try {
+    _REDIRECT_URI = window.location.origin + window.location.pathname;
+    var res = await fetch(WORKER_URL + '/discord-oauth-url', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ communityId: COMMUNITY_ID, puuId: '', redirectUri: _REDIRECT_URI })
+    });
+    var j = await res.json();
+    if (!j.ok) { alert('Discord 연결 실패'); return; }
+    sessionStorage.setItem('discord_oauth_pending', JSON.stringify({
+      puuId: '', communityId: COMMUNITY_ID, text: '',
+      returnSearch: window.location.search
+    }));
+    window.location.href = j.url;
+  } catch(e) { alert('오류: ' + e.message); }
+}
+
+function discordLogout() {
+  _discordUser = null;
+  try { sessionStorage.removeItem('discord_user'); } catch(e) {}
+  updateDiscordHeader();
+  // 열려있는 코멘트 탭 새로고침
+  var commEl = document.getElementById('dm-comments');
+  if (commEl && commEl.style.display !== 'none') {
+    loadComments(_detailCurrentMemberForLog);
+  }
+}
+
+// 페이지 로드 시 Discord 상태 헤더 반영
+document.addEventListener('DOMContentLoaded', function() {
+  updateDiscordHeader();
+});
 
 </script>
 

@@ -44,8 +44,8 @@
 .bid-leader-team{font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;color:var(--text-white);}
 .bid-leader-price{font-family:'Bebas Neue',sans-serif;font-size:36px;letter-spacing:2px;color:var(--blue-bright);}
 .bid-leader-suffix{font-family:'Rajdhani',sans-serif;font-size:14px;color:var(--text-muted);}
-.bid-locked-badge{display:inline-block;padding:2px 10px;border-radius:2px;background:rgba(192,48,48,.15);border:1px solid rgba(192,48,48,.4);color:#E05050;font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;}
-.btn-lock-bid{width:100%;padding:9px;border-radius:2px;border:1px solid rgba(192,48,48,.4);background:rgba(192,48,48,.06);color:#E05050;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all .15s;}
+.bid-locked-badge{display:inline-block;padding:2px 10px;border-radius:2px;background:rgba(192,48,48,.15);border:1px solid rgba(10,200,185,.4);color:#E05050;font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;}
+.btn-lock-bid{width:100%;padding:9px;border-radius:2px;border:1px solid rgba(10,200,185,.4);background:rgba(10,200,185,.06);color:var(--blue-bright);font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all .15s;}
 .btn-lock-bid:hover{background:rgba(192,48,48,.15);}
 .btn-lock-bid.locked{border-color:rgba(10,200,185,.4);background:rgba(10,200,185,.06);color:var(--blue-bright);}
 
@@ -1595,7 +1595,32 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
 </div> </div> </div> </div> </div>
 <div id="screen-invite" class="screen"> <div style="max-width:400px;margin:4rem auto;padding:2rem;"> <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:3px;color:var(--gold);margin-bottom:.5rem;">관리자 계정 등록</div> <div style="font-size:12px;color:var(--text-muted);margin-bottom:1.5rem;line-height:1.6;" id="invite-community-label">
  커뮤니티: <span style="color:var(--text-white);" id="invite-community-name">—</span> </div> <div style="display:flex;flex-direction:column;gap:1rem;margin-bottom:1rem;"> <div style="display:flex;flex-direction:column;gap:6px;"> <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;text-transform:uppercase;">아이디</label> <input class="form-input" type="text" id="invite-id" placeholder="사용할 아이디 입력" style="font-size:14px;"> </div> <div style="display:flex;flex-direction:column;gap:6px;"> <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;text-transform:uppercase;">비밀번호</label> <input class="form-input" type="password" id="invite-pw" placeholder="비밀번호 입력" style="font-size:14px;"> </div> <div style="display:flex;flex-direction:column;gap:6px;"> <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;text-transform:uppercase;">비밀번호 확인</label> <input class="form-input" type="password" id="invite-pw2" placeholder="비밀번호 재입력" style="font-size:14px;" onkeydown="if(event.key==='Enter')registerInviteAdmin()"> </div> </div> <div id="invite-err" style="font-size:12px;color:#E05050;min-height:18px;margin-bottom:.75rem;"></div> <button class="btn-primary" style="width:100%;padding:11px;font-size:14px;letter-spacing:2px;" onclick="registerInviteAdmin()">계정 생성</button> </div>
-</div> <div class="modal-overlay" id="community-modal" style="display:none;"> <div class="modal" style="max-width:400px;display:flex;flex-direction:column;max-height:90vh;padding:0;overflow:hidden;"> <div class="modal-title" id="community-modal-title" style="padding:1.25rem 1.5rem 1rem;margin-bottom:0;flex-shrink:0;">커뮤니티 생성</div> <div style="display:flex;flex-direction:column;gap:1rem;overflow-y:auto;padding:0 1.5rem 1rem;flex:1;"> <div style="display:flex;flex-direction:column;gap:6px;"> <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;text-transform:uppercase;">커뮤니티 이름</label> <input class="form-input" type="text" id="cm-name" placeholder="예) 룽잉 내전"> </div> <div style="display:flex;flex-direction:column;gap:6px;"> <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;text-transform:uppercase;">설명 (선택)</label> <input class="form-input" type="text" id="cm-desc" placeholder="커뮤니티 간단 설명"> </div>
+</div> 
+<!-- ── 하이퍼 피어리스 밴 모달 ── -->
+<div class="modal-overlay" id="hyperfearless-modal" onclick="if(event.target===this)closeHyperFearlessBan()">
+  <div style="background:var(--bg-panel);border:1px solid var(--border-gold);border-radius:4px;padding:1.5rem;width:90%;max-width:640px;max-height:85vh;display:flex;flex-direction:column;gap:1rem;">
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <span style="font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;letter-spacing:2px;color:#E05050;">🎯 챔피언 추첨</span>
+      <button onclick="closeHyperFearlessBan()" style="background:transparent;border:none;color:var(--text-muted);font-size:18px;cursor:pointer;">✕</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <label style="font-family:'Rajdhani',sans-serif;font-size:11px;color:var(--text-muted);">추첨 챔피언 수:</label>
+      <input type="number" id="hfb-count" value="50" min="1" max="165"
+        style="width:70px;background:var(--bg-dark);border:1px solid var(--border-subtle);border-radius:2px;padding:5px 8px;color:var(--white);font-family:'Rajdhani',sans-serif;font-size:12px;outline:none;text-align:center;">
+      <button onclick="drawHyperFearlessBan()"
+        style="padding:6px 16px;border-radius:2px;border:1px solid rgba(10,200,185,.4);background:rgba(10,200,185,.1);color:var(--blue-bright);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:1px;">
+        🎲 추첨
+      </button>
+      <button id="hfb-copy-btn" onclick="copyHyperFearlessBan()" style="display:none;padding:6px 16px;border-radius:2px;border:1px solid rgba(200,170,110,.4);background:rgba(200,170,110,.06);color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:1px;">
+        📋 복사
+      </button>
+    </div>
+    <div id="hfb-result" style="display:none;background:var(--bg-dark);border:1px solid var(--border-subtle);border-radius:3px;padding:1rem;overflow-y:auto;max-height:400px;">
+      <pre id="hfb-text" style="font-family:'Noto Sans KR',sans-serif;font-size:12px;color:var(--text-white);white-space:pre-wrap;line-height:1.8;margin:0;"></pre>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="community-modal" style="display:none;"> <div class="modal" style="max-width:400px;display:flex;flex-direction:column;max-height:90vh;padding:0;overflow:hidden;"> <div class="modal-title" id="community-modal-title" style="padding:1.25rem 1.5rem 1rem;margin-bottom:0;flex-shrink:0;">커뮤니티 생성</div> <div style="display:flex;flex-direction:column;gap:1rem;overflow-y:auto;padding:0 1.5rem 1rem;flex:1;"> <div style="display:flex;flex-direction:column;gap:6px;"> <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;text-transform:uppercase;">커뮤니티 이름</label> <input class="form-input" type="text" id="cm-name" placeholder="예) 룽잉 내전"> </div> <div style="display:flex;flex-direction:column;gap:6px;"> <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;text-transform:uppercase;">설명 (선택)</label> <input class="form-input" type="text" id="cm-desc" placeholder="커뮤니티 간단 설명"> </div>
 <div style="display:flex;flex-direction:column;gap:6px;">
   <label style="font-size:10px;letter-spacing:1.5px;color:#7289DA;font-family:'Rajdhani',sans-serif;text-transform:uppercase;">🎮 디스코드 내전 기록 채널 ID <span style="color:var(--text-muted);font-size:9px;">(내전 결과 자동 공유)</span> <button type="button" onclick="openDiscordGuideModal()" style="width:16px;height:16px;border-radius:50%;border:1px solid #7289DA;background:rgba(88,101,242,.15);color:#7289DA;font-size:9px;font-weight:700;cursor:pointer;line-height:1;padding:0;vertical-align:middle;flex-shrink:0;">?</button></label>
   <input class="form-input" type="text" id="cm-discord-channel" placeholder="예) 1234567890123456789" style="border-color:rgba(88,101,242,.3);">
@@ -1603,6 +1628,10 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
 <div style="display:flex;flex-direction:column;gap:6px;">
   <label style="font-size:10px;letter-spacing:1.5px;color:#7289DA;font-family:'Rajdhani',sans-serif;text-transform:uppercase;">🔔 디스코드 내전 알림 채널 ID <span style="color:var(--text-muted);font-size:9px;">(시작 1시간 전 자동 알림)</span></label>
   <input class="form-input" type="text" id="cm-discord-alarm-channel" placeholder="예) 1234567890123456789" style="border-color:rgba(88,101,242,.3);">
+</div>
+<div style="display:flex;flex-direction:column;gap:6px;">
+  <label style="font-size:10px;letter-spacing:1.5px;color:#7289DA;font-family:'Rajdhani',sans-serif;text-transform:uppercase;">🔨 경매 어시스트 채널 ID <span style="color:var(--text-muted);font-size:9px;">(낙찰 시 자동 전송)</span></label>
+  <input class="form-input" type="text" id="cm-auction-assist-channel" placeholder="예) 1234567890123456789" style="border-color:rgba(88,101,242,.3);">
   <div style="display:flex;flex-direction:column;gap:6px;background:rgba(88,101,242,.04);border:1px solid rgba(88,101,242,.12);border-radius:4px;padding:.6rem .75rem;">
     <div style="display:flex;align-items:center;gap:8px;">
       <input type="checkbox" id="cm-alarm-everyone" style="width:14px;height:14px;accent-color:#7289DA;cursor:pointer;">
@@ -1758,13 +1787,13 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
  </div> </div> <div class="panel-body search-section"> <div class="search-box-wrap"> <input type="text" id="search-input" placeholder="닉네임#KR1" onkeydown="onSearchKey(event)" /> <button class="search-btn" id="search-btn" onclick="searchSummoner()"> <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="5" cy="5" r="4" stroke="currentColor" stroke-width="1.5"/><line x1="8.5" y1="8.5" x2="12" y2="12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> </button> </div> <div class="search-hint"> <span>닉네임#태그</span> 형식으로 입력. 확장: <span style="color:var(--blue-bright);">닉네임#태그 최고티어/현티어 주라인/부라인</span><br>
  예) 페이커#KR1 · Hide on bush#KR1
  </div> <div id="search-loading" style="display:none;justify-content:center;padding:1.5rem;"> <div class="spinner"></div> </div> <div id="search-result" style="display:none;"> <div class="search-result"> <div class="result-profile"> <div class="result-avatar" id="r-avatar">?</div> <div> <div class="result-name" id="r-name">—</div> <div class="result-tag" id="r-tag">—</div> </div> </div> <div class="result-tiers"> <div class="tier-row"> <span class="tier-row-label">SOLO/DUO</span> <span class="tier-row-val" id="r-solo">—</span> </div> <div class="tier-row"> <span class="tier-row-label">FLEX</span> <span class="tier-row-val" id="r-flex">—</span> </div>
- <div class="tier-row"> <span class="tier-row-label">솔랭 판수</span> <span class="tier-row-val" id="r-solo-games" style="font-family:'Rajdhani',sans-serif;">—</span> </div> <div class="tier-row"> <span class="tier-row-label">LEVEL</span> <span class="tier-row-val" id="r-level">—</span> </div> <div class="tier-row" id="r-prev-row" style="display:none;background:rgba(200,170,110,0.04);border-radius:2px;padding:3px 6px;margin-top:2px;"> <span class="tier-row-label" style="display:flex;align-items:center;gap:4px;"><span style="font-size:9px;">🏆</span>전 시즌 최고</span> <span class="tier-row-val" id="r-prev-season" style="font-size:11px;">—</span> </div> </div> <div style="padding:.6rem 1rem;border-top:1px solid var(--border-subtle);background:rgba(200,170,110,0.03);"> <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;"> <span style="font-size:10px;font-family:'Rajdhani',sans-serif;font-weight:700;letter-spacing:1px;color:var(--gold);">✏ 티어 직접 설정</span> <button onclick="applyTierOverride('')" style="font-size:9px;font-family:'Rajdhani',sans-serif;font-weight:700;color:var(--text-muted);background:transparent;border:1px solid var(--border-subtle);border-radius:2px;padding:1px 7px;cursor:pointer;letter-spacing:.5px;" id="r-tier-reset">API 값으로 초기화</button> </div> <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;" id="r-tier-btns"> <button class="tier-override-btn" data-tier="UNRANKED" onclick="applyTierOverride('UNRANKED')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-iron);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;letter-spacing:.3px;">UNRANK</button> <button class="tier-override-btn" data-tier="IRON" onclick="applyTierOverride('IRON')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-iron);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">IRON</button> <button class="tier-override-btn" data-tier="BRONZE" onclick="applyTierOverride('BRONZE')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-bronze);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">BRONZE</button> <button class="tier-override-btn" data-tier="SILVER" onclick="applyTierOverride('SILVER')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-silver);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">SILVER</button> <button class="tier-override-btn" data-tier="GOLD" onclick="applyTierOverride('GOLD')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-gold);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">GOLD</button> <button class="tier-override-btn" data-tier="PLATINUM" onclick="applyTierOverride('PLATINUM')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-plat);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">PLAT</button> <button class="tier-override-btn" data-tier="EMERALD" onclick="applyTierOverride('EMERALD')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-emerald);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">EMERALD</button> <button class="tier-override-btn" data-tier="DIAMOND" onclick="applyTierOverride('DIAMOND')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-diamond);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">DIAMOND</button> <button class="tier-override-btn" data-tier="MASTER" onclick="applyTierOverride('MASTER')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-master);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">MASTER</button> <button class="tier-override-btn" data-tier="GRANDMASTER" onclick="applyTierOverride('GRANDMASTER')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-grandmaster);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">GM</button> <button class="tier-override-btn" data-tier="CHALLENGER" onclick="applyTierOverride('CHALLENGER')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-challenger);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">CHALL</button> </div> </div> <div class="lane-select"> <div class="lane-select-label">주 포지션</div> <div class="lane-buttons" id="main-lanes"> <button class="lane-btn" data-lane="top" onclick="selectLane('main','top')">TOP</button> <button class="lane-btn" data-lane="jg" onclick="selectLane('main','jg')">JG</button> <button class="lane-btn" data-lane="mid" onclick="selectLane('main','mid')">MID</button> <button class="lane-btn" data-lane="bot" onclick="selectLane('main','bot')">BOT</button> <button class="lane-btn" data-lane="sup" onclick="selectLane('main','sup')">SUP</button> </div> <div class="lane-select-label" style="margin-top:4px;">보조 포지션</div> <div class="lane-buttons" id="sub-lanes"> <button class="lane-btn" data-lane="top" onclick="selectLane('sub','top')">TOP</button> <button class="lane-btn" data-lane="jg" onclick="selectLane('sub','jg')">JG</button> <button class="lane-btn" data-lane="mid" onclick="selectLane('sub','mid')">MID</button> <button class="lane-btn" data-lane="bot" onclick="selectLane('sub','bot')">BOT</button> <button class="lane-btn" data-lane="sup" onclick="selectLane('sub','sup')">SUP</button> </div> </div> <div style="padding:.75rem 1rem;border-top:1px solid var(--border-subtle);"> <button class="btn-add-member" id="btn-add" onclick="addMember()" disabled>멤버 추가</button> </div> </div> </div> </div> </div></div> <div class="next-wrap"> <div class="next-condition"> <div class="cond-item"> <div class="cond-dot" id="cond-count"></div> <span id="cond-count-text" style="font-size:12px;color:var(--text-muted);">인원 10의 배수</span> </div> <div class="cond-item"> <div class="cond-dot" id="cond-attend"></div> <span id="cond-attend-text" style="font-size:12px;color:var(--text-muted);">전원 출석</span> </div> </div> <button onclick="copyMatchLink()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(10,200,185,.4);background:rgba(10,200,185,.06);color:var(--blue-bright);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="내전 상세 링크 복사">🔗 링크 복사</button> <button onclick="copyTeamText()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(200,170,110,.4);background:rgba(200,170,110,.06);color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="팀 정보 텍스트 복사">📋 팀 정보 복사</button> <button id="btn-attend-all" onclick="toggleAttendAll()" style="padding:7px 16px;border-radius:2px;border:1px solid rgba(10,200,185,0.4);background:rgba(10,200,185,0.08);color:var(--blue-bright);font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;cursor:pointer;transition:all .15s;">전체 출석</button> <button id="btn-discord-notify" onclick="sendDiscordNotify()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(114,137,218,0.4);background:rgba(114,137,218,0.08);color:#7289DA;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;cursor:pointer;transition:all .15s;"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;margin-right:4px;"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>알림 전송</button> <button class="btn-next" id="btn-next" disabled onclick="goNextStage()">다음 단계 →</button> </div>
+ <div class="tier-row"> <span class="tier-row-label">솔랭 판수</span> <span class="tier-row-val" id="r-solo-games" style="font-family:'Rajdhani',sans-serif;">—</span> </div> <div class="tier-row"> <span class="tier-row-label">LEVEL</span> <span class="tier-row-val" id="r-level">—</span> </div> <div class="tier-row" id="r-prev-row" style="display:none;background:rgba(200,170,110,0.04);border-radius:2px;padding:3px 6px;margin-top:2px;"> <span class="tier-row-label" style="display:flex;align-items:center;gap:4px;"><span style="font-size:9px;">🏆</span>전 시즌 최고</span> <span class="tier-row-val" id="r-prev-season" style="font-size:11px;">—</span> </div> </div> <div style="padding:.6rem 1rem;border-top:1px solid var(--border-subtle);background:rgba(200,170,110,0.03);"> <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;"> <span style="font-size:10px;font-family:'Rajdhani',sans-serif;font-weight:700;letter-spacing:1px;color:var(--gold);">✏ 티어 직접 설정</span> <button onclick="applyTierOverride('')" style="font-size:9px;font-family:'Rajdhani',sans-serif;font-weight:700;color:var(--text-muted);background:transparent;border:1px solid var(--border-subtle);border-radius:2px;padding:1px 7px;cursor:pointer;letter-spacing:.5px;" id="r-tier-reset">API 값으로 초기화</button> </div> <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;" id="r-tier-btns"> <button class="tier-override-btn" data-tier="UNRANKED" onclick="applyTierOverride('UNRANKED')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-iron);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;letter-spacing:.3px;">UNRANK</button> <button class="tier-override-btn" data-tier="IRON" onclick="applyTierOverride('IRON')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-iron);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">IRON</button> <button class="tier-override-btn" data-tier="BRONZE" onclick="applyTierOverride('BRONZE')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-bronze);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">BRONZE</button> <button class="tier-override-btn" data-tier="SILVER" onclick="applyTierOverride('SILVER')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-silver);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">SILVER</button> <button class="tier-override-btn" data-tier="GOLD" onclick="applyTierOverride('GOLD')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-gold);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">GOLD</button> <button class="tier-override-btn" data-tier="PLATINUM" onclick="applyTierOverride('PLATINUM')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-plat);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">PLAT</button> <button class="tier-override-btn" data-tier="EMERALD" onclick="applyTierOverride('EMERALD')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-emerald);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">EMERALD</button> <button class="tier-override-btn" data-tier="DIAMOND" onclick="applyTierOverride('DIAMOND')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-diamond);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">DIAMOND</button> <button class="tier-override-btn" data-tier="MASTER" onclick="applyTierOverride('MASTER')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-master);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">MASTER</button> <button class="tier-override-btn" data-tier="GRANDMASTER" onclick="applyTierOverride('GRANDMASTER')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-grandmaster);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">GM</button> <button class="tier-override-btn" data-tier="CHALLENGER" onclick="applyTierOverride('CHALLENGER')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-challenger);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">CHALL</button> </div> </div> <div class="lane-select"> <div class="lane-select-label">주 포지션</div> <div class="lane-buttons" id="main-lanes"> <button class="lane-btn" data-lane="top" onclick="selectLane('main','top')">TOP</button> <button class="lane-btn" data-lane="jg" onclick="selectLane('main','jg')">JG</button> <button class="lane-btn" data-lane="mid" onclick="selectLane('main','mid')">MID</button> <button class="lane-btn" data-lane="bot" onclick="selectLane('main','bot')">BOT</button> <button class="lane-btn" data-lane="sup" onclick="selectLane('main','sup')">SUP</button> </div> <div class="lane-select-label" style="margin-top:4px;">보조 포지션</div> <div class="lane-buttons" id="sub-lanes"> <button class="lane-btn" data-lane="top" onclick="selectLane('sub','top')">TOP</button> <button class="lane-btn" data-lane="jg" onclick="selectLane('sub','jg')">JG</button> <button class="lane-btn" data-lane="mid" onclick="selectLane('sub','mid')">MID</button> <button class="lane-btn" data-lane="bot" onclick="selectLane('sub','bot')">BOT</button> <button class="lane-btn" data-lane="sup" onclick="selectLane('sub','sup')">SUP</button> </div> </div> <div style="padding:.75rem 1rem;border-top:1px solid var(--border-subtle);"> <button class="btn-add-member" id="btn-add" onclick="addMember()" disabled>멤버 추가</button> </div> </div> </div> </div> </div></div> <div class="next-wrap"> <div class="next-condition"> <div class="cond-item"> <div class="cond-dot" id="cond-count"></div> <span id="cond-count-text" style="font-size:12px;color:var(--text-muted);">인원 10의 배수</span> </div> <div class="cond-item"> <div class="cond-dot" id="cond-attend"></div> <span id="cond-attend-text" style="font-size:12px;color:var(--text-muted);">전원 출석</span> </div> </div> <button onclick="copyMatchLink()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(10,200,185,.4);background:rgba(10,200,185,.06);color:var(--blue-bright);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="내전 상세 링크 복사">🔗 링크 복사</button> <button onclick="copyTeamText()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(200,170,110,.4);background:rgba(200,170,110,.06);color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="팀 정보 텍스트 복사">📋 팀 정보 복사</button> <button onclick="copyMemberMentions()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(100,150,255,.4);background:rgba(100,150,255,.06);color:#7EB2FF;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="참여 멤버 @멘션 복사">@ 멘션 복사</button> <button id="btn-attend-all" onclick="toggleAttendAll()" style="padding:7px 16px;border-radius:2px;border:1px solid rgba(10,200,185,0.4);background:rgba(10,200,185,0.08);color:var(--blue-bright);font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;cursor:pointer;transition:all .15s;">전체 출석</button> <button id="btn-discord-notify" onclick="sendDiscordNotify()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(114,137,218,0.4);background:rgba(114,137,218,0.08);color:#7289DA;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;cursor:pointer;transition:all .15s;"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;margin-right:4px;"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>알림 전송</button> <button class="btn-next" id="btn-next" disabled onclick="goNextStage()">다음 단계 →</button> </div>
 </div>
 </div> <div class="modal-overlay" id="edit-time-modal" style="display:none;"> <div class="modal" style="max-width:360px;"> <div class="modal-title">시작 시간 수정</div> <div class="form-row"> <div class="form-label">새 시작 시간</div> <input class="form-input" type="datetime-local" id="et-time"> </div> <div class="modal-actions"> <button class="btn-secondary" onclick="closeEditTimeModal()">취소</button> <button class="btn-primary" onclick="saveEditTime()">저장</button> </div> </div>
 </div> <div class="modal-overlay" id="em-modal" style="display:none;" data-id=""> <div class="modal" style="max-width:420px;"> <div class="modal-title">내전 정보 수정</div> <div class="form-row"> <div class="form-label">내전 이름</div> <input class="form-input" type="text" id="em-name"> </div> <div class="form-row"> <div class="form-label">시작 시간</div> <input class="form-input" type="datetime-local" id="em-time"> </div> <div class="form-row"> <div class="form-label">진행 관리자 (선택)</div> <input class="form-input" type="text" id="em-admin" placeholder="공란 가능"> </div> <div class="modal-actions"> <button class="btn-secondary" onclick="closeEditMatchModal()">취소</button> <button class="btn-secondary" onclick="saveEditMatch()">저장</button> <button class="btn-primary" onclick="(function(){saveEditMatch();setTimeout(()=>{const list=dbLoad();const snap=list.find(m=>m.name===document.getElementById('em-name').value.trim());if(snap)proceedToStage1(snap);},100)})()">진행하기 →</button> </div> </div>
 </div> <div class="modal-overlay" id="create-modal" style="display:none;"> <div class="modal"> <div class="modal-title">새 내전 생성</div> <div class="form-row"> <div class="form-label">내전 이름</div> <input class="form-input" type="text" id="m-name" placeholder="예) 금요 정기 내전 시즌 1"> </div> <div class="form-row"> <div class="form-label">시작 시간</div> <input class="form-input" type="datetime-local" id="m-time"> </div> <div class="form-row"> <div class="form-label">진행 관리자 (선택)</div> <input class="form-input" type="text" id="m-admin" placeholder="관리자 닉네임 (공란 가능)"> </div> <div class="form-row" id="m-cat-row" style="display:none;"> <div class="form-label">카테고리 (선택)</div> <select class="form-input" id="m-cat" style="cursor:pointer;font-family:'Rajdhani',sans-serif;font-size:12px;"><option value="">없음 (미분류)</option></select> </div> <div class="modal-actions"> <button class="btn-secondary" onclick="closeCreateModal()">취소</button> <button class="btn-primary" onclick="createMatch()">생성</button> </div> </div>
 </div> <div id="screen-2" class="screen"> <div class="type-select-wrap"> <div style="text-align:center;"> <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:4px;color:var(--gold);margin-bottom:6px;">내전 종류 선택</div> <div style="font-size:13px;color:var(--text-muted);">진행 방식을 선택하면 팀 짜기 단계로 넘어갑니다</div> </div> <div class="type-cards"> <div class="type-card" id="type-normal" onclick="selectType('normal')"> <div class="type-card-icon">⚔️</div> <div class="type-card-title">일반 내전</div> <div class="type-card-desc">관리자가 멤버를 직접 드래그해서 팀을 구성합니다. 빠르고 간단한 팀 배정에 적합합니다.</div> <div class="type-card-tags"> <span class="type-tag">드래그 앤 드롭</span> <span class="type-tag">빠른 배정</span> </div> </div> <div class="type-card" id="type-auction" onclick="selectType('auction')"> <div class="type-card-icon">🏆</div> <div class="type-card-title">경매 내전</div> <div class="type-card-desc">팀장들이 포인트를 가지고 멤버를 입찰해 영입합니다. 전략적이고 긴장감 있는 팀 구성이 가능합니다.</div> <div class="type-card-tags"> <span class="type-tag">포인트 입찰</span> <span class="type-tag">랜덤 경매</span> <span class="type-tag">카운트다운</span> </div> </div> </div> <div class="type-select-footer" style="justify-content:space-between;"> <button class="btn-secondary" onclick="goBackToStage1()">← 이전 단계</button> <button class="btn-next" id="btn-type-next" disabled onclick="goToStage3()">다음 단계 →</button> </div> </div>
-</div> <div id="screen-3-normal" class="screen"> <div class="builder-wrap"> <div class="builder-topbar-row" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;"> <div class="builder-topbar-title" style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;color:var(--gold);">일반 내전 — 팀 구성</div> <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;"> <button class="btn-secondary" onclick="goBackToStage2()">← 이전 단계</button> <button onclick="copyMatchLink()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(10,200,185,.4);background:rgba(10,200,185,.06);color:var(--blue-bright);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="내전 상세 링크 복사">🔗 링크 복사</button> <button onclick="copyTeamText()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(200,170,110,.4);background:rgba(200,170,110,.06);color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="팀 정보 텍스트 복사">📋 팀 정보 복사</button> <button class="btn-secondary" onclick="addTeamModal('normal')">+ 팀 추가</button> <button class="btn-secondary" onclick="openSwapModal()" style="font-size:11px;padding:7px 14px;border-color:rgba(157,72,224,.4);color:#B97EEA;background:rgba(157,72,224,.06);">🔄 선수 교체</button> <button class="btn-secondary" onclick="openDraftOrderModal()" style="font-size:11px;padding:7px 14px;border-color:rgba(200,170,110,.4);color:var(--gold);background:rgba(200,170,110,.06);">🎲 팀뽑기 순서</button> <button class="btn-copy-img" onclick="copyTeamBuilderImage()" style="font-size:11px;padding:7px 14px;"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="1" y="3" width="8" height="9" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M4 3V2a1 1 0 011-1h5a1 1 0 011 1v7a1 1 0 01-1 1h-1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg> 이미지 복사</button> <button class="btn-next" id="btn-normal-next" disabled onclick="goToStage4()">다음 단계 →</button> </div> </div> <div class="builder-cond" style="margin-bottom:.75rem;"> <div class="cond-item"><div class="cond-dot" id="n-cond-pool"></div><span id="n-cond-pool-text" style="font-size:12px;color:var(--text-muted);">대기칸 비어있음</span></div> <div class="cond-item"><div class="cond-dot" id="n-cond-teams"></div><span id="n-cond-teams-text" style="font-size:12px;color:var(--text-muted);">팀 조건 충족</span></div> </div>  <div class="builder-layout"> <div class="pool-panel"> <div class="balance-ctrl-section">
+</div> <div id="screen-3-normal" class="screen"> <div class="builder-wrap"> <div class="builder-topbar-row" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;"> <div class="builder-topbar-title" style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;color:var(--gold);">일반 내전 — 팀 구성</div> <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;"> <button class="btn-secondary" onclick="goBackToStage2()">← 이전 단계</button> <button onclick="copyMatchLink()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(10,200,185,.4);background:rgba(10,200,185,.06);color:var(--blue-bright);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="내전 상세 링크 복사">🔗 링크 복사</button> <button onclick="copyTeamText()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(200,170,110,.4);background:rgba(200,170,110,.06);color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="팀 정보 텍스트 복사">📋 팀 정보 복사</button> <button onclick="copyTeamMentions('captain')" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(100,150,255,.4);background:rgba(100,150,255,.06);color:#7EB2FF;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="팀장만 멘션 복사">@ 팀장</button> <button onclick="copyTeamMentions('members')" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(100,150,255,.4);background:rgba(100,150,255,.06);color:#7EB2FF;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="팀장 제외 멘션 복사">@ 팀장 제외</button> <button class="btn-secondary" onclick="addTeamModal('normal')">+ 팀 추가</button> <button class="btn-secondary" onclick="openSwapModal()" style="font-size:11px;padding:7px 14px;border-color:rgba(157,72,224,.4);color:#B97EEA;background:rgba(157,72,224,.06);">🔄 선수 교체</button> <button class="btn-secondary" onclick="openDraftOrderModal()" style="font-size:11px;padding:7px 14px;border-color:rgba(200,170,110,.4);color:var(--gold);background:rgba(200,170,110,.06);">🎲 팀뽑기 순서</button> <button onclick="openHyperFearlessBan()" style="font-size:11px;padding:7px 14px;border-radius:2px;border:1px solid rgba(10,200,185,.4);background:rgba(10,200,185,.06);color:var(--blue-bright);font-family:'Rajdhani',sans-serif;font-weight:700;letter-spacing:1px;cursor:pointer;">🎯 챔피언 추첨</button> <button class="btn-copy-img" onclick="copyTeamBuilderImage()" style="font-size:11px;padding:7px 14px;"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="1" y="3" width="8" height="9" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M4 3V2a1 1 0 011-1h5a1 1 0 011 1v7a1 1 0 01-1 1h-1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg> 이미지 복사</button> <button class="btn-next" id="btn-normal-next" disabled onclick="goToStage4()">다음 단계 →</button> </div> </div> <div class="builder-cond" style="margin-bottom:.75rem;"> <div class="cond-item"><div class="cond-dot" id="n-cond-pool"></div><span id="n-cond-pool-text" style="font-size:12px;color:var(--text-muted);">대기칸 비어있음</span></div> <div class="cond-item"><div class="cond-dot" id="n-cond-teams"></div><span id="n-cond-teams-text" style="font-size:12px;color:var(--text-muted);">팀 조건 충족</span></div> </div>  <div class="builder-layout"> <div class="pool-panel"> <div class="balance-ctrl-section">
   <span class="balance-ctrl-label">⚖️ 밸런스 점수</span>
   <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
     <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;font-size:12px;color:var(--text-muted);">
@@ -1787,7 +1816,7 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
  ondragover="onDragOver(event,'n-pool')"
  ondragleave="onDragLeave(event,'n-pool')"
  ondrop="onDrop(event,'n-pool','normal')" onclick="if(_isMobile()&&_mobileSelMid)mobileTapZone('n-pool','normal')"> </div> </div> <div class="teams-area"> <div class="teams-grid" id="n-teams-grid"></div> <button class="add-team-btn" onclick="addTeamModal('normal')">+ 팀 추가</button> </div> </div> </div>
-</div> <div id="screen-3-auction" class="screen"> <div class="builder-wrap"> <div class="builder-topbar-row" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;"> <div class="builder-topbar-title" style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;color:var(--gold);">경매 내전 — 팀 구성</div> <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;"> <button class="btn-secondary" onclick="goBackToStage2()">← 이전 단계</button> <button onclick="showCaptainCodes()" style="padding:7px 14px;border-radius:2px;border:1px solid var(--gold);background:rgba(200,170,110,.06);color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;">🔑 팀장 코드</button> <button onclick="window.openAuctionLogModal()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(10,200,185,.4);background:rgba(10,200,185,.06);color:var(--blue-bright);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;">📋 경매 로그</button> <button onclick="copyMatchLink()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(10,200,185,.4);background:rgba(10,200,185,.06);color:var(--blue-bright);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="내전 상세 링크 복사">🔗 링크 복사</button> <button onclick="copyTeamText()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(200,170,110,.4);background:rgba(200,170,110,.06);color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="팀 정보 텍스트 복사">📋 팀 정보 복사</button> <button class="btn-secondary" onclick="addTeamModal('auction')">+ 팀 추가</button> <button class="btn-secondary" onclick="openPointsModal()">포인트 설정</button> <button class="btn-secondary" onclick="openSwapModal()" style="font-size:11px;padding:7px 14px;border-color:rgba(157,72,224,.4);color:#B97EEA;background:rgba(157,72,224,.06);">🔄 선수 교체</button> <button class="btn-secondary" onclick="openDraftOrderModal()" style="font-size:11px;padding:7px 14px;border-color:rgba(200,170,110,.4);color:var(--gold);background:rgba(200,170,110,.06);">🎲 팀뽑기 순서</button> <button class="btn-copy-img" onclick="copyTeamBuilderImage()" style="font-size:11px;padding:7px 14px;"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="1" y="3" width="8" height="9" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M4 3V2a1 1 0 011-1h5a1 1 0 011 1v7a1 1 0 01-1 1h-1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg> 이미지 복사</button> <button class="btn-next" id="btn-auction-next" disabled onclick="goToStage4()">다음 단계 →</button> </div> </div> <div class="builder-cond" style="margin-bottom:.75rem;"> <div class="cond-item"><div class="cond-dot" id="a-cond-pool"></div><span id="a-cond-pool-text" style="font-size:12px;color:var(--text-muted);">대기칸 비어있음</span></div> <div class="cond-item"><div class="cond-dot" id="a-cond-teams"></div><span id="a-cond-teams-text" style="font-size:12px;color:var(--text-muted);">팀 조건 충족</span></div> </div>  <div class="builder-layout auction-layout"> <div class="pool-panel"> <div class="balance-ctrl-section">
+</div> <div id="screen-3-auction" class="screen"> <div class="builder-wrap"> <div class="builder-topbar-row" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;"> <div class="builder-topbar-title" style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;color:var(--gold);">경매 내전 — 팀 구성</div> <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;"> <button class="btn-secondary" onclick="goBackToStage2()">← 이전 단계</button> <button onclick="showCaptainCodes()" style="padding:7px 14px;border-radius:2px;border:1px solid var(--gold);background:rgba(200,170,110,.06);color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;">🔑 팀장 코드</button> <button onclick="window.openAuctionLogModal()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(10,200,185,.4);background:rgba(10,200,185,.06);color:var(--blue-bright);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;">📋 경매 로그</button> <button onclick="copyMatchLink()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(10,200,185,.4);background:rgba(10,200,185,.06);color:var(--blue-bright);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="내전 상세 링크 복사">🔗 링크 복사</button> <button onclick="copyTeamText()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(200,170,110,.4);background:rgba(200,170,110,.06);color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="팀 정보 텍스트 복사">📋 팀 정보 복사</button> <button onclick="copyTeamMentions('captain')" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(100,150,255,.4);background:rgba(100,150,255,.06);color:#7EB2FF;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="팀장만 멘션 복사">@ 팀장</button> <button onclick="copyTeamMentions('members')" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(100,150,255,.4);background:rgba(100,150,255,.06);color:#7EB2FF;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="팀장 제외 멘션 복사">@ 팀장 제외</button> <button class="btn-secondary" onclick="addTeamModal('auction')">+ 팀 추가</button> <button class="btn-secondary" onclick="openPointsModal()">포인트 설정</button> <button class="btn-secondary" onclick="openSwapModal()" style="font-size:11px;padding:7px 14px;border-color:rgba(157,72,224,.4);color:#B97EEA;background:rgba(157,72,224,.06);">🔄 선수 교체</button> <button class="btn-secondary" onclick="openDraftOrderModal()" style="font-size:11px;padding:7px 14px;border-color:rgba(200,170,110,.4);color:var(--gold);background:rgba(200,170,110,.06);">🎲 팀뽑기 순서</button> <button onclick="openHyperFearlessBan()" style="font-size:11px;padding:7px 14px;border-radius:2px;border:1px solid rgba(10,200,185,.4);background:rgba(10,200,185,.06);color:var(--blue-bright);font-family:'Rajdhani',sans-serif;font-weight:700;letter-spacing:1px;cursor:pointer;">🎯 챔피언 추첨</button> <button class="btn-copy-img" onclick="copyTeamBuilderImage()" style="font-size:11px;padding:7px 14px;"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="1" y="3" width="8" height="9" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M4 3V2a1 1 0 011-1h5a1 1 0 011 1v7a1 1 0 01-1 1h-1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg> 이미지 복사</button> <button class="btn-next" id="btn-auction-next" disabled onclick="goToStage4()">다음 단계 →</button> </div> </div> <div class="builder-cond" style="margin-bottom:.75rem;"> <div class="cond-item"><div class="cond-dot" id="a-cond-pool"></div><span id="a-cond-pool-text" style="font-size:12px;color:var(--text-muted);">대기칸 비어있음</span></div> <div class="cond-item"><div class="cond-dot" id="a-cond-teams"></div><span id="a-cond-teams-text" style="font-size:12px;color:var(--text-muted);">팀 조건 충족</span></div> </div>  <div class="builder-layout auction-layout"> <div class="pool-panel"> <div class="balance-ctrl-section">
   <span class="balance-ctrl-label">⚖️ 밸런스 점수</span>
   <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
     <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;font-size:12px;color:var(--text-muted);">
@@ -1811,7 +1840,12 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
  ondrop="onDrop(event,'a-pool','auction')" onclick="if(_isMobile()&&_mobileSelMid)mobileTapZone('a-pool','auction')"> </div> <div style="padding:.5rem;border-top:1px solid var(--border-subtle);"> <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;"> <div class="fail-label">유찰</div> <button onclick="moveAllFailToPool()" style="font-size:9px;font-family:'Rajdhani',sans-serif;font-weight:700;letter-spacing:.5px;padding:2px 7px;border-radius:2px;border:1px solid rgba(192,48,48,.35);background:transparent;color:#E05050;cursor:pointer;transition:all .12s;" onmouseover="this.style.background='rgba(192,48,48,.1)'" onmouseout="this.style.background='transparent'" title="유찰 전체 대기로">↑ 전체 대기로</button> </div> <div class="fail-zone" id="a-fail-zone"
  ondragover="onDragOver(event,'a-fail-zone')"
  ondragleave="onDragLeave(event,'a-fail-zone')"
- ondrop="onDrop(event,'a-fail-zone','auction')" onclick="if(_isMobile()&&_mobileSelMid)mobileTapZone('a-fail-zone','auction')"> </div> </div> </div> <div class="teams-area"> <div class="teams-grid" id="a-teams-grid"></div> <button class="add-team-btn" onclick="addTeamModal('auction')">+ 팀 추가</button> </div> <div class="auction-panel"> <div class="auction-header"> <div class="auction-title"><div class="panel-title-dot"></div>경매 진행</div> </div> <div class="auction-body"> <div style="font-size:10px;color:var(--text-muted);letter-spacing:1px;font-family:'Rajdhani',sans-serif;">현재 매물</div> <div class="on-sale-card" id="on-sale-card"> <div class="on-sale-empty">랜덤 선출 버튼을 눌러<br>경매를 시작하세요</div> </div> <div class="countdown-ring-wrap"> <div class="countdown-ring"> <svg width="64" height="64" viewBox="0 0 64 64"> <circle cx="32" cy="32" r="28"/> <circle cx="32" cy="32" r="28" class="progress-arc" id="cd-arc"/> </svg> <div class="countdown-num" id="cd-num">5</div> </div> <div style="display:flex;align-items:center;gap:6px;"> <div style="display:flex;flex-direction:column;align-items:center;gap:2px;"> <input type="number" id="cd-max-input" min="1" max="5" value="5" oninput="setCdMax(this.value)" style="width:36px;height:100%;background:var(--bg-dark);border:1px solid var(--border-subtle);border-radius:2px;padding:4px 6px;font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--gold);text-align:center;outline:none;"> <span style="font-size:8px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;letter-spacing:.5px;">MAX초</span> </div> <button class="btn-countdown" id="btn-cd" onclick="toggleCountdown()" disabled>카운트다운 <span style="font-size:9px;opacity:.6;letter-spacing:.5px;">(SPACE)</span></button> </div> </div> <button class="btn-pick-random" id="btn-pick" onclick="pickRandom()">랜덤 선출</button> <div style="border-top:1px solid var(--border-subtle);padding-top:.5rem;display:flex;flex-direction:column;gap:6px;"> <button class="btn-primary" id="btn-bid-open" style="width:100%;font-size:12px;letter-spacing:2px;" disabled>낙찰 처리</button> <button class="btn-secondary" style="width:100%;font-size:11px;" onclick="sendToFail()">현재 매물 유찰 →</button> </div>
+ ondrop="onDrop(event,'a-fail-zone','auction')" onclick="if(_isMobile()&&_mobileSelMid)mobileTapZone('a-fail-zone','auction')"> </div> </div> </div> <div class="teams-area"> <div class="teams-grid" id="a-teams-grid"></div> <button class="add-team-btn" onclick="addTeamModal('auction')">+ 팀 추가</button> </div> <div class="auction-panel"> <div class="auction-header"> <div class="auction-title"><div class="panel-title-dot"></div>경매 진행</div>
+  <label style="display:flex;align-items:center;gap:6px;cursor:pointer;margin-left:auto;">
+    <span style="font-family:'Rajdhani',sans-serif;font-size:10px;color:var(--muted);letter-spacing:1px;">Discord 전송</span>
+    <input type="checkbox" id="auction-discord-toggle" style="accent-color:#7289da;width:14px;height:14px;cursor:pointer;">
+  </label>
+ </div> <div class="auction-body"> <div style="font-size:10px;color:var(--text-muted);letter-spacing:1px;font-family:'Rajdhani',sans-serif;">현재 매물</div> <div class="on-sale-card" id="on-sale-card"> <div class="on-sale-empty">랜덤 선출 버튼을 눌러<br>경매를 시작하세요</div> </div> <div class="countdown-ring-wrap"> <div class="countdown-ring"> <svg width="64" height="64" viewBox="0 0 64 64"> <circle cx="32" cy="32" r="28"/> <circle cx="32" cy="32" r="28" class="progress-arc" id="cd-arc"/> </svg> <div class="countdown-num" id="cd-num">5</div> </div> <div style="display:flex;align-items:center;gap:6px;"> <div style="display:flex;flex-direction:column;align-items:center;gap:2px;"> <input type="number" id="cd-max-input" min="1" max="5" value="5" oninput="setCdMax(this.value)" style="width:36px;height:100%;background:var(--bg-dark);border:1px solid var(--border-subtle);border-radius:2px;padding:4px 6px;font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--gold);text-align:center;outline:none;"> <span style="font-size:8px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;letter-spacing:.5px;">MAX초</span> </div> <button class="btn-countdown" id="btn-cd" onclick="toggleCountdown()" disabled>카운트다운 <span style="font-size:9px;opacity:.6;letter-spacing:.5px;">(SPACE)</span></button> </div> </div> <button class="btn-pick-random" id="btn-pick" onclick="pickRandom()">랜덤 선출</button> <div style="border-top:1px solid var(--border-subtle);padding-top:.5rem;display:flex;flex-direction:column;gap:6px;"> <button class="btn-primary" id="btn-bid-open" style="width:100%;font-size:12px;letter-spacing:2px;" disabled>낙찰 처리</button> <button class="btn-secondary" style="width:100%;font-size:11px;" onclick="sendToFail()">현재 매물 유찰 →</button> </div>
 <div style="border-top:1px solid var(--border-subtle);padding:.75rem 1rem 1rem;">
   <div style="margin-bottom:.5rem;display:flex;align-items:center;justify-content:space-between;">
     <span style="font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:2px;color:var(--gold);">🏆 현재 매물 호가</span>
@@ -1827,7 +1861,7 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
       <span id="bid-leader-team" style="font-weight:700;color:var(--text-white);"></span> 팀 호가
     </div>
   </div>
-  <button id="btn-lock-bid" onclick="toggleBidLock()" style="width:100%;margin-top:.6rem;padding:7px;border-radius:2px;border:1px solid rgba(192,48,48,.4);background:rgba(192,48,48,.06);color:#E05050;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all .15s;">🔒 호가 종료</button>
+  <button id="btn-lock-bid" onclick="toggleBidLock()" style="width:100%;margin-top:.6rem;padding:7px;border-radius:2px;border:1px solid rgba(10,200,185,.4);background:rgba(10,200,185,.06);color:var(--blue-bright);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all .15s;">🔒 호가 종료</button>
 </div>
  </div> </div> </div> </div>
 </div>
@@ -1836,7 +1870,13 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
  팀장은 나중에 대기칸에서 드래그해 팀에 추가한 뒤 지정할 수 있습니다.
  </div> <div class="form-row"> <div class="form-label">팀장 선택 (선택사항)</div> <input type="text" id="captain-search" class="form-input" placeholder="닉네임 검색..." oninput="filterCaptainList('captain-list','captain-search')" style="margin-bottom:6px;font-size:12px;padding:6px 10px;"> <div class="captain-list" id="captain-list"></div> </div> <div class="modal-actions"> <button class="btn-secondary" onclick="closeAddTeamModal()">취소</button> <button class="btn-primary" onclick="confirmAddTeam()">팀 생성</button> </div> </div>
 </div> <div class="modal-overlay" id="set-captain-modal" style="display:none;"> <div class="modal modal-sm"> <div class="modal-title">팀장 지정</div> <input type="text" id="set-captain-search" class="form-input" placeholder="닉네임 검색..." oninput="filterCaptainList('set-captain-list','set-captain-search')" style="margin-bottom:8px;font-size:12px;padding:6px 10px;"> <div class="captain-list" id="set-captain-list"></div> <div class="modal-actions"> <button class="btn-secondary" onclick="document.getElementById('set-captain-modal').style.display='none'">취소</button> </div> </div>
-</div> <div class="modal-overlay" id="points-modal" style="display:none;"> <div class="modal" style="max-width:400px;"> <div class="modal-title">팀장 포인트 설정</div> <div class="points-form" id="points-form"></div> <div class="modal-actions"> <button class="btn-secondary" onclick="document.getElementById('points-modal').style.display='none'">취소</button> <button class="btn-primary" onclick="savePoints()">저장</button> </div> </div>>
+</div> <div class="modal-overlay" id="points-modal" style="display:none;"> <div class="modal" style="max-width:400px;"> <div class="modal-title">팀장 포인트 설정</div> <div class="points-form" id="points-form"></div> <div id="points-auto-notice" style="display:none;margin:8px 0;padding:8px;background:rgba(200,170,110,.08);border:1px solid rgba(200,170,110,.3);border-radius:3px;font-family:'Noto Sans KR',sans-serif;font-size:11px;color:var(--gold);line-height:1.6;"></div>
+<div class="modal-actions" style="flex-wrap:wrap;gap:6px;">
+  <button onclick="calcAutoPoints()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(10,200,185,.4);background:rgba(10,200,185,.06);color:var(--blue-bright);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">⚡ 잔여포인트 자동계산</button>
+  <div style="flex:1;"></div>
+  <button class="btn-secondary" onclick="document.getElementById('points-modal').style.display='none'">취소</button>
+  <button class="btn-primary" onclick="savePoints()">저장</button>
+</div> </div>>
 </div> 
 
 <!-- 블랙리스트 추가 모달 -->
@@ -2318,7 +2358,7 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
       <div style="display:flex;gap:8px;">
         <button onclick="changeApplyStatus('신청요청')" class="btn-secondary" style="font-size:12px;flex:1;" id="ad-btn-req">신청요청</button>
         <button onclick="changeApplyStatus('완료')" class="btn-primary" style="font-size:12px;flex:1;" id="ad-btn-done">완료</button>
-        <button onclick="changeApplyStatus('거절')" style="flex:1;font-size:12px;padding:8px;border-radius:2px;border:1px solid rgba(192,48,48,.4);background:rgba(192,48,48,.08);color:#E05050;cursor:pointer;font-family:'Rajdhani',sans-serif;font-weight:700;letter-spacing:1px;" id="ad-btn-reject">거절</button>
+        <button onclick="changeApplyStatus('거절')" style="flex:1;font-size:12px;padding:8px;border-radius:2px;border:1px solid rgba(10,200,185,.4);background:rgba(192,48,48,.08);color:#E05050;cursor:pointer;font-family:'Rajdhani',sans-serif;font-weight:700;letter-spacing:1px;" id="ad-btn-reject">거절</button>
       </div>
     </div>
     <div class="modal-actions" style="margin-top:1rem;">
@@ -3723,6 +3763,8 @@ b.disabled=false; b.style.opacity=''; b.style.cursor='';
 });
 document.getElementById('btn-add').disabled=true;
 document.getElementById('search-result').style.display='block';
+// 임시티어 자동 적용 (비동기)
+_applyTempTierFromCommunity();
 // 티어 오버라이드 버튼 초기화
 document.querySelectorAll('.tier-override-btn').forEach(b => {
 b.style.background='transparent';
@@ -3799,6 +3841,46 @@ b.classList.toggle('selected', selectedSubLanes.has(b.dataset.lane));
 document.getElementById('btn-add').disabled = !selectedMainLane;
 }
 let _tierOverride = null;
+
+
+// 검색 완료 후 커뮤니티 임시티어 자동 적용
+async function _applyTempTierFromCommunity() {
+  var cid = window._currentCommunityId;
+  if (!cid || !searchResult) return;
+  try {
+    var sName = (searchResult.name || '').toLowerCase();
+    var sTag = (searchResult.tag || '').toLowerCase();
+    var mapKey = sName + '#' + sTag;
+    var deeplolPuuId = _communityPuuMap[mapKey] || null;
+    if (!deeplolPuuId) {
+      console.log('[tempTier] puuMap 미스:', mapKey, 'mapSize:', Object.keys(_communityPuuMap).length);
+      return;
+    }
+    var ttRes = await fetch(RIOT_PROXY_URL + '/temp-tiers-read', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ communityId: cid })
+    });
+    var ttJson = await ttRes.json();
+    if (!ttJson.ok || !ttJson.data) return;
+    var tempTierData = ttJson.data[deeplolPuuId];
+    if (!tempTierData || !tempTierData.tier) return;
+
+    // 임시티어 적용
+    var tierKey = tempTierData.tier.toUpperCase().split(' ')[0];
+    console.log('[tempTier] 적용:', tierKey);
+    if (typeof applyTierOverride === 'function') {
+      applyTierOverride(tierKey);
+    }
+    // LP 설정
+    setTimeout(function() {
+      var di = document.getElementById('r-tier-detail-input');
+      if (di && tempTierData.lp !== undefined) {
+        di.value = tempTierData.lp;
+        if (typeof updateTierDetailPreview === 'function') updateTierDetailPreview();
+      }
+    }, 80);
+  } catch(e) { console.error('[tempTier] 오류:', e.message); }
+}
 
 function applyTierOverride(val) {
 _tierOverride = val || null;
@@ -5238,6 +5320,7 @@ onSaleMember.bidPrice=amount;
 onSaleMember.bidTeamId=team.id;
 team.members.push(onSaleMember);
 const memberName=onSaleMember.name;
+const onSaleMemberTier = _formatMemberTier(onSaleMember);
 const cap=team.captainId?members.find(m => m.id === team.captainId):null;
 const teamName=cap?cap.name+'팀':'팀 '+team.id;
 onSaleMember=null;
@@ -5250,6 +5333,17 @@ if (typeof resetBidLeader === 'function') resetBidLeader();
 saveCurrentMatch();
 _saveLog('sold', memberName + ' → ' + teamName + ' (' + amount + 'pt)');
 toast(`${memberName} → ${teamName} 낙찰! (${amount}pt)`, 'ok');
+// Discord 전송
+var toggle = document.getElementById('auction-discord-toggle');
+if (toggle && toggle.checked) {
+  _sendAuctionBidToDiscord({
+    memberName: memberName,
+    memberTier: onSaleMemberTier,
+    amount: amount,
+    teamName: teamName,
+    team: team
+  });
+}
 }
 window.confirmBid = confirmBid;
 let bracketRounds=[];
@@ -7635,6 +7729,8 @@ const dcInput = document.getElementById('cm-discord-channel');
 if (dcInput) dcInput.value = c.discordChannelId || '';
 const alarmInput = document.getElementById('cm-discord-alarm-channel');
 if (alarmInput) alarmInput.value = c.alarmChannelId || '';
+const auctionAssistInput = document.getElementById('cm-auction-assist-channel');
+if (auctionAssistInput) auctionAssistInput.value = c.auctionAssistChannelId || '';
 const everyoneChk = document.getElementById('cm-alarm-everyone');
 if (everyoneChk) everyoneChk.checked = !!(c.alarmEveryone);
 const autoChk = document.getElementById('cm-alarm-auto');
@@ -7708,6 +7804,7 @@ try {
     createdAt: existingCreatedAt,
     official,
     discordChannelId: discordChannelId || null,
+  auctionAssistChannelId: (document.getElementById('cm-auction-assist-channel')?.value || '').trim() || null,
   deeplolServerId: deeplolServerId || null,
     alarmChannelId: alarmChannelId || null,
     alarmEveryone: alarmEveryone || false,
@@ -8932,7 +9029,7 @@ function openBlDetail(puuid) {
     <button class="btn-secondary" onclick="refreshBlEntry('${puuid}')" style="font-size:11px;">🔄 정보 업데이트</button>
     ${!myHide ? `<button onclick="toggleBlHide('${puuid}', true, '${_escHtml(myCommunity)}')" style="padding:8px 14px;border-radius:2px;border:1px solid rgba(91,100,116,.4);background:transparent;color:var(--text-muted);cursor:pointer;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:.5px;">비공개 전환</button>` :
     `<button onclick="toggleBlHide('${puuid}', false, '')" style="padding:8px 14px;border-radius:2px;border:1px solid rgba(200,170,110,.4);background:rgba(200,170,110,.08);color:var(--gold);cursor:pointer;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:.5px;">공개 전환</button>`}
-    ${(isOwner || isMaster) ? `<button onclick="deleteBlEntry('${puuid}')" style="padding:8px 14px;border-radius:2px;border:1px solid rgba(192,48,48,.4);background:rgba(192,48,48,.08);color:#E05050;cursor:pointer;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:.5px;">삭제</button>` : ''}
+    ${(isOwner || isMaster) ? `<button onclick="deleteBlEntry('${puuid}')" style="padding:8px 14px;border-radius:2px;border:1px solid rgba(10,200,185,.4);background:rgba(192,48,48,.08);color:#E05050;cursor:pointer;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:.5px;">삭제</button>` : ''}
   `;
   document.getElementById('bl-detail-modal').style.display = 'flex';
 }
@@ -10889,7 +10986,7 @@ if (!banner) {
 banner = document.createElement('div');
 banner.id = 'conflict-banner';
 banner.style.cssText = 'position:fixed;top:60px;left:50%;transform:translateX(-50%);background:rgba(192,48,48,0.15);border:1px solid rgba(192,48,48,0.4);border-radius:3px;padding:8px 16px;font-family:Rajdhani,sans-serif;font-size:12px;color:#E05050;z-index:200;white-space:nowrap;';
-banner.innerHTML = '<span>⚠ 원격 업데이트 충돌</span><button onclick="applyRemoteConflict()" style="background:transparent;border:1px solid rgba(192,48,48,.4);color:#E05050;padding:2px 8px;border-radius:2px;font-family:Rajdhani,sans-serif;font-size:11px;cursor:pointer;margin-left:8px;">반영</button><button onclick="this.parentNode.style.display=\'none\'" style="background:transparent;border:none;color:#E05050;cursor:pointer;margin-left:4px;font-size:14px;">✕</button>';
+banner.innerHTML = '<span>⚠ 원격 업데이트 충돌</span><button onclick="applyRemoteConflict()" style="background:transparent;border:1px solid rgba(10,200,185,.4);color:#E05050;padding:2px 8px;border-radius:2px;font-family:Rajdhani,sans-serif;font-size:11px;cursor:pointer;margin-left:8px;">반영</button><button onclick="this.parentNode.style.display=\'none\'" style="background:transparent;border:none;color:#E05050;cursor:pointer;margin-left:4px;font-size:14px;">✕</button>';
 document.body.appendChild(banner);
 }
 banner.style.display = 'flex';
@@ -13494,7 +13591,7 @@ window.addEventListener('fb-ready', function() {
       </div>
     </div>
     <div style="padding:.75rem 1.5rem;border-top:1px solid var(--border-subtle);display:flex;justify-content:space-between;align-items:center;">
-      <button id="rules-editor-delete-btn" onclick="deleteCurrentRule()" style="display:none;padding:7px 16px;border-radius:2px;border:1px solid rgba(192,48,48,.4);background:rgba(192,48,48,.07);color:#E05050;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;cursor:pointer;">삭제</button>
+      <button id="rules-editor-delete-btn" onclick="deleteCurrentRule()" style="display:none;padding:7px 16px;border-radius:2px;border:1px solid rgba(10,200,185,.4);background:rgba(192,48,48,.07);color:#E05050;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;cursor:pointer;">삭제</button>
       <div style="display:flex;gap:8px;margin-left:auto;">
         <button onclick="closeRulesEditor()" style="padding:7px 18px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--text-muted);font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;cursor:pointer;">취소</button>
         <button onclick="saveCurrentRule()" style="padding:7px 22px;border-radius:2px;border:1px solid var(--border-gold);background:rgba(200,170,110,.15);color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;cursor:pointer;">저장</button>
@@ -13588,7 +13685,7 @@ function renderRulesListModal() {
       '</div>' +
       '<div class="rules-list-item-actions">' +
         '<button onclick="event.stopPropagation();_rulesEdit(' + i + ')" style="padding:4px 10px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--text-muted);font-family:Rajdhani,sans-serif;font-size:11px;cursor:pointer;">수정</button>' +
-        '<button onclick="event.stopPropagation();_rulesDel(' + i + ')" style="padding:4px 10px;border-radius:2px;border:1px solid rgba(192,48,48,.4);background:transparent;color:#E05050;font-family:Rajdhani,sans-serif;font-size:11px;cursor:pointer;">삭제</button>' +
+        '<button onclick="event.stopPropagation();_rulesDel(' + i + ')" style="padding:4px 10px;border-radius:2px;border:1px solid rgba(10,200,185,.4);background:transparent;color:#E05050;font-family:Rajdhani,sans-serif;font-size:11px;cursor:pointer;">삭제</button>' +
       '</div>' +
     '</div>';
   }).join('');
@@ -15061,8 +15158,42 @@ function _parseFullInput(raw) {
 }
 
 // ── 파싱 결과를 UI 필드에 자동 적용 ──
-function _applyParsedInput(parsed) {
+async function _applyParsedInput(parsed) {
   if (!parsed) return;
+  console.log('[applyParsed] called, tierHigh:', parsed.tierHigh, 'tierCur:', parsed.tierCur, 'mainLane:', parsed.mainLane);
+
+  // 티어/라인 정보가 없으면 커뮤니티 임시티어 조회
+  if (!parsed.tierHigh && !parsed.tierCur) {
+    var cid = window._currentCommunityId;
+    if (cid && searchResult) {
+      try {
+        var sName = (searchResult.name || '').toLowerCase();
+        var sTag = (searchResult.tag || '').toLowerCase();
+        var mapKey = sName + '#' + sTag;
+        var deeplolPuuId = _communityPuuMap[mapKey] || null;
+        console.log('[tempTier] name:', sName, 'tag:', sTag, 'mapKey:', mapKey, 'deeplolPuuId:', deeplolPuuId);
+        console.log('[tempTier] puuMap size:', Object.keys(_communityPuuMap).length);
+
+        if (deeplolPuuId) {
+          var ttRes = await fetch(RIOT_PROXY_URL + '/temp-tiers-read', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ communityId: cid })
+          });
+          var ttJson = await ttRes.json();
+          console.log('[tempTier] ttJson ok:', ttJson.ok, 'keys:', ttJson.data ? Object.keys(ttJson.data).length : 0, 'match:', ttJson.data ? !!ttJson.data[deeplolPuuId] : false);
+          if (ttJson.ok && ttJson.data && ttJson.data[deeplolPuuId]) {
+            var tempTierData = ttJson.data[deeplolPuuId];
+            if (tempTierData && tempTierData.tier) {
+              parsed.tierHigh = tempTierData.tier;
+              parsed.tierCur  = tempTierData.tier;
+              console.log('[tempTier] 적용:', tempTierData.tier);
+            }
+          }
+        }
+      } catch(e) { console.error('[tempTier] 오류:', e.message); }
+    }
+  }
+
   if (!parsed.tierHigh && !parsed.tierCur && !parsed.mainLane) return;
 
   var best = _higherTier(parsed.tierHigh, parsed.tierCur);
@@ -15148,8 +15279,8 @@ function _connectSearchIntercept() {
         var p = _pendingParsed;
         _pendingParsed = null;
         requestAnimationFrame(function() {
-          requestAnimationFrame(function() {
-            _applyParsedInput(p);
+          requestAnimationFrame(async function() {
+            await _applyParsedInput(p);
           });
         });
       }
@@ -15164,8 +15295,8 @@ function _hookRenderForParsed() {
     var p = _pendingParsed;
     _pendingParsed = null;
     requestAnimationFrame(function() {
-      requestAnimationFrame(function() {
-        _applyParsedInput(p);
+      requestAnimationFrame(async function() {
+        await _applyParsedInput(p);
       });
     });
   }
@@ -16398,6 +16529,344 @@ window.applyMatchRating = applyMatchRating;
 
 // 현재 시즌 설정
 window._currentRatingSeason = 'default';
+
+
+// ── 하이퍼 피어리스 밴 ──
+// 한글 초성 매핑
+var _HFB_CHAMP_KO = null; // 챔피언 영어→한글 매핑 (ddragon에서 로드)
+
+var _HFB_CHOSUNG = ['ㄱ','ㄴ','ㄷ','ㄹ','ㅁ','ㅂ','ㅅ','ㅇ','ㅈ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+
+function _hfbGetChosung(str) {
+  if (!str || !str.length) return null;
+  var code = str.charCodeAt(0);
+  // 한글 음절 범위: 0xAC00 ~ 0xD7A3
+  if (code < 0xAC00 || code > 0xD7A3) return null;
+  // 초성 인덱스 = (코드 - 0xAC00) / (21 * 28)
+  var chosungIdx = Math.floor((code - 0xAC00) / (21 * 28));
+  // 초성 순서: ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ (19개)
+  var ALL_CHOSUNG = ['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+  // 쌍자음은 기본 자음으로 매핑
+  var CHOSUNG_MAP = {'ㄲ':'ㄱ','ㄸ':'ㄷ','ㅃ':'ㅂ','ㅆ':'ㅅ','ㅉ':'ㅈ'};
+  var cs = ALL_CHOSUNG[chosungIdx];
+  return CHOSUNG_MAP[cs] || cs;
+}
+
+function openHyperFearlessBan() {
+  document.getElementById('hyperfearless-modal').style.display = 'flex';
+}
+function closeHyperFearlessBan() {
+  document.getElementById('hyperfearless-modal').style.display = 'none';
+}
+
+async function _loadChampKo() {
+  if (_HFB_CHAMP_KO) return _HFB_CHAMP_KO;
+  try {
+    var res = await fetch('https://ddragon.leagueoflegends.com/cdn/16.14.1/data/ko_KR/champion.json');
+    var json = await res.json();
+    _HFB_CHAMP_KO = {};
+    Object.values(json.data).forEach(function(c) {
+      _HFB_CHAMP_KO[c.id] = c.name; // 영어ID → 한글이름
+    });
+    return _HFB_CHAMP_KO;
+  } catch(e) { return {}; }
+}
+
+async function drawHyperFearlessBan() {
+  var countEl = document.getElementById('hfb-count');
+  var count = parseInt(countEl.value) || 50;
+  var resultEl = document.getElementById('hfb-result');
+  var textEl = document.getElementById('hfb-text');
+  var copyBtn = document.getElementById('hfb-copy-btn');
+
+  textEl.textContent = '로딩 중...';
+  resultEl.style.display = '';
+  copyBtn.style.display = 'none';
+
+  var champKo = await _loadChampKo();
+  var allChamps = Object.values(champKo);
+  if (!allChamps.length) { textEl.textContent = '챔피언 데이터 로드 실패'; return; }
+
+  // 랜덤 추첨
+  var shuffled = allChamps.slice().sort(function() { return Math.random() - 0.5; });
+  var picked = shuffled.slice(0, Math.min(count, shuffled.length));
+
+  // 초성별 분류
+  var grouped = {};
+  _HFB_CHOSUNG.forEach(function(cs) { grouped[cs] = []; });
+  picked.forEach(function(name) {
+    var cs = _hfbGetChosung(name);
+    if (cs && grouped[cs]) grouped[cs].push(name);
+    else if (grouped['ㅎ']) grouped['ㅎ'].push(name); // fallback
+  });
+
+  // 각 그룹 가나다순 정렬
+  _HFB_CHOSUNG.forEach(function(cs) { grouped[cs].sort(); });
+
+  // 텍스트 생성
+  var lines = [];
+  _HFB_CHOSUNG.forEach(function(cs) {
+    lines.push(cs + ': ' + grouped[cs].join(' '));
+  });
+
+  var resultText = lines.join('\n');
+  textEl.textContent = resultText;
+  copyBtn.style.display = '';
+  copyBtn.dataset.text = resultText;
+}
+
+function copyHyperFearlessBan() {
+  var text = document.getElementById('hfb-copy-btn').dataset.text || document.getElementById('hfb-text').textContent;
+  navigator.clipboard.writeText(text).then(function() {
+    toast('챔피언 목록이 복사되었습니다', 'ok');
+  }).catch(function() {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    toast('챔피언 목록이 복사되었습니다', 'ok');
+  });
+}
+
+
+function copyMemberMentions() {
+  if (!members || !members.length) {
+    toast('등록된 멤버가 없습니다', 'err');
+    return;
+  }
+  var text = members
+    .filter(function(m){ return m.present !== false; })
+    .map(function(m){ return '@' + (m.name || ''); })
+    .join('');
+  if (!text) {
+    toast('출석 멤버가 없습니다', 'err');
+    return;
+  }
+  navigator.clipboard.writeText(text).then(function() {
+    toast('멘션 복사 완료: ' + text.split('@').filter(Boolean).length + '명', 'ok');
+  }).catch(function() {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    toast('멘션 복사 완료: ' + text.split('@').filter(Boolean).length + '명', 'ok');
+  });
+}
+
+
+function copyTeamMentions(mode) {
+  var mentions = [];
+  if (mode === 'captain') {
+    // 팀장만
+    if (!teams || !teams.length) { toast('팀이 없습니다', 'err'); return; }
+    teams.forEach(function(t) {
+      t.members.forEach(function(m) {
+        if (m.id === t.captainId) mentions.push('@' + (m.name || ''));
+      });
+    });
+  } else {
+    // 팀장 제외 전체 멤버 (팀원 + 대기 + 유찰 등)
+    var captainIds = new Set();
+    (teams || []).forEach(function(t) { if (t.captainId) captainIds.add(t.captainId); });
+    (members || []).forEach(function(m) {
+      if (!captainIds.has(m.id)) mentions.push('@' + (m.name || ''));
+    });
+  }
+  if (!mentions.length) { toast('해당하는 멤버가 없습니다', 'err'); return; }
+  var text = mentions.join('');
+  navigator.clipboard.writeText(text).then(function() {
+    toast((mode === 'captain' ? '팀장' : '팀장 제외') + ' 멘션 복사: ' + mentions.length + '명', 'ok');
+  }).catch(function() {
+    var ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+    toast((mode === 'captain' ? '팀장' : '팀장 제외') + ' 멘션 복사: ' + mentions.length + '명', 'ok');
+  });
+}
+
+
+// ── 잔여포인트 자동계산 ──
+function _tierScore(tier, division, lp) {
+  // tier: 'GOLD', 'PLATINUM' 등 / division: 'I','II','III','IV' / lp: 마스터 이상
+  var TIER_BASE = {
+    'IRON': 0, 'BRONZE': 0, 'SILVER': 0,
+    'GOLD': 0,       // GOLD IV=0, III=0, II=0 → I=100
+    'PLATINUM': 200, // PLAT IV=200
+    'EMERALD': 600,  // EMER IV=600
+    'DIAMOND': 1000, // DIA IV=1000
+  };
+  var DIV_ADD = { 'IV': 0, 'III': 100, 'II': 200, 'I': 300 };
+
+  tier = (tier || '').toUpperCase();
+  division = (division || '').toUpperCase();
+
+  // 마스터 이상: 1400 + floor(LP/100)*100
+  if (tier === 'MASTER' || tier === 'GRANDMASTER' || tier === 'CHALLENGER') {
+    return 1400 + Math.floor((lp || 0) / 100) * 100;
+  }
+
+  // 골드2 이하 0점
+  if (tier === 'GOLD' && (division === 'IV' || division === 'III' || division === 'II')) return 0;
+  if (tier === 'IRON' || tier === 'BRONZE' || tier === 'SILVER') return 0;
+
+  var base = TIER_BASE[tier];
+  if (base === undefined) return 0;
+  var divAdd = DIV_ADD[division] || 0;
+  return base + divAdd;
+}
+
+function _getMemberScore(m) {
+  // m.tier: 'GOLD', m.division: 'II', m.lp: 숫자
+  var tier = (m.tier || '').toUpperCase();
+  var div = (m.division || '').toUpperCase();
+  var lp = m.lp || 0;
+
+  // 마스터 이상은 tier에 LP가 포함될 수 있음 ex) "MASTER 500LP"
+  var masterMatch = tier.match(/^(MASTER|GRANDMASTER|CHALLENGER)/);
+  if (masterMatch) {
+    var lpMatch = (m.tier || '').match(/(\d+)/);
+    lp = lpMatch ? parseInt(lpMatch[1]) : lp;
+    return _tierScore(masterMatch[1], '', lp);
+  }
+  return _tierScore(tier, div, lp);
+}
+
+function calcAutoPoints() {
+  var notice = document.getElementById('points-auto-notice');
+  notice.style.display = 'none';
+
+  if (!teams || teams.length === 0) { alert('팀이 없습니다'); return; }
+
+  // 참여 멤버 전체 점수 합산 (teams 소속 + pool)
+  var allInTeams = [];
+  teams.forEach(function(t) { allInTeams = allInTeams.concat(t.members || []); });
+  // 대기 풀 포함
+  var poolMembers = (members || []).filter(function(m) {
+    return !allInTeams.find(function(tm) { return tm.id === m.id; });
+  });
+  var allMembers = allInTeams.concat(poolMembers);
+
+  var totalScore = allMembers.reduce(function(sum, m) { return sum + _getMemberScore(m); }, 0);
+  var teamCount = teams.length;
+
+  // 기준값: 전체 합 / 팀 수, 100단위 반올림
+  var rawBase = totalScore / teamCount;
+  var baseValue = Math.round(rawBase / 100) * 100;
+
+  var notices = [];
+  var inputs = document.querySelectorAll('#points-form input[data-tid]');
+  var inputMap = {};
+  inputs.forEach(function(inp) { inputMap[inp.getAttribute('data-tid')] = inp; });
+
+  teams.forEach(function(t) {
+    var captain = findMemberById(t.captainId);
+    if (!captain) return;
+
+    var captainScore = _getMemberScore(captain);
+    var startPoints = baseValue - captainScore;
+
+    if (startPoints < 0) {
+      // 보정: 마이너스만큼 팀원들에게 균등 분배
+      var deficit = -startPoints;
+      var nonCaptains = (t.members || []).filter(function(m) { return m.id !== t.captainId; });
+      var perMember = nonCaptains.length > 0 ? Math.ceil(deficit / nonCaptains.length) : 0;
+      notices.push(
+        '⚠ ' + captain.name + '팀: 팀장(' + captainScore + '점)이 기준값(' + baseValue + '점) 초과 → 0점 보정 ' +
+        (nonCaptains.length > 0 ? '(팀원 1인당 +' + perMember + '점 추가 적용)' : '')
+      );
+      startPoints = 0;
+    }
+
+    var inp = inputMap[t.id];
+    if (inp) inp.value = startPoints;
+  });
+
+  if (notices.length > 0) {
+    notice.innerHTML = notices.join('<br>');
+    notice.style.display = '';
+  }
+
+  // 계산 요약 표시
+  var summary = '기준값: ' + baseValue + '점 (전체 합계 ' + totalScore + '점 ÷ ' + teamCount + '팀)';
+  if (notices.length === 0) {
+    notice.innerHTML = '✅ ' + summary;
+    notice.style.display = '';
+  } else {
+    notice.innerHTML = summary + '<br>' + notice.innerHTML;
+  }
+}
+
+
+// ── 경매 낙찰 Discord 전송 ──
+function _formatMemberTier(m) {
+  if (!m) return '';
+  var tier = (m.tier || '').toUpperCase();
+  var div = m.division || '';
+  var lp = m.lp ? m.lp + 'LP' : '';
+  if (!tier || tier === 'UNRANKED') return '언랭';
+  var KO = { IRON:'아이언', BRONZE:'브론즈', SILVER:'실버', GOLD:'골드',
+    PLATINUM:'플래티넘', EMERALD:'에메랄드', DIAMOND:'다이아',
+    MASTER:'마스터', GRANDMASTER:'그랜드마스터', CHALLENGER:'챌린저' };
+  var ko = KO[tier] || tier;
+  if (['MASTER','GRANDMASTER','CHALLENGER'].includes(tier)) return ko + (lp ? ' ' + lp : '');
+  return ko + (div ? ' ' + div : '');
+}
+
+async function _sendAuctionBidToDiscord(info) {
+  try {
+    var comm = currentCommunity || {};
+    var channelId = comm.auctionAssistChannelId;
+    if (!channelId) return;
+
+    var amount = info.amount;
+    var team = info.team;
+    var memberCount = team.members ? team.members.length : 0;
+    var remaining = team.points !== null && team.points !== undefined ? team.points : null;
+
+    // 낙찰가 강조 색상
+    var embedColor;
+    if (amount >= 2000) embedColor = 0xED4245;       // 빨강
+    else if (amount >= 1500) embedColor = 0xA855F7;  // 보라
+    else if (amount >= 1000) embedColor = 0x5865F2;  // 파랑
+    else if (amount >= 500)  embedColor = 0x57F287;  // 초록
+    else                     embedColor = 0x95A5A6;  // 회색
+
+    var priceStr = amount.toLocaleString() + 'P';
+    if (amount >= 2000)      priceStr = '🔴 **' + amount.toLocaleString() + 'P**';
+    else if (amount >= 1500) priceStr = '🟣 **' + amount.toLocaleString() + 'P**';
+    else if (amount >= 1000) priceStr = '🔵 ' + amount.toLocaleString() + 'P';
+    else if (amount >= 500)  priceStr = '🟢 ' + amount.toLocaleString() + 'P';
+
+    var embed = {
+      title: '🔨 낙찰 완료',
+      color: embedColor,
+      fields: [
+        { name: '👤 매물',      value: info.memberName + (info.memberTier ? '  ·  ' + info.memberTier : ''), inline: false },
+        { name: '💰 낙찰가',    value: priceStr, inline: true },
+        { name: '🏆 낙찰팀',    value: info.teamName, inline: true },
+        { name: '👥 팀 현황',   value: memberCount + ' / 5명', inline: true },
+      ]
+    };
+    if (remaining !== null) {
+      embed.fields.push({ name: '💵 잔여 포인트', value: remaining.toLocaleString() + 'P', inline: true });
+    }
+    embed.footer = { text: '룽잉닷컴 경매 어시스트' };
+    embed.timestamp = new Date().toISOString();
+
+    await fetch(RIOT_PROXY_URL + '/discord-send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        channelId: channelId,
+        embeds: [embed]
+      })
+    });
+  } catch(e) { console.warn('[auction discord]', e.message); }
+}
 
 </script>
 
