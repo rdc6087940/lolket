@@ -16720,19 +16720,21 @@ function _tierScore(tier, division, lp) {
 }
 
 function _getMemberScore(m) {
-  // m.tier: 'GOLD', m.division: 'II', m.lp: 숫자
-  var tier = (m.tier || '').toUpperCase();
-  var div = (m.division || '').toUpperCase();
-  var lp = m.lp || 0;
+  // tierFull: 'DIAMOND II', 'MASTER 400LP', 'GOLD I' 등
+  var full = (m.tierFull || m.tier || '').toUpperCase().trim();
 
-  // 마스터 이상은 tier에 LP가 포함될 수 있음 ex) "MASTER 500LP"
-  var masterMatch = tier.match(/^(MASTER|GRANDMASTER|CHALLENGER)/);
+  // 마스터 이상: "MASTER 400LP" 또는 "GRANDMASTER 200LP"
+  var masterMatch = full.match(/^(MASTER|GRANDMASTER|CHALLENGER)\s*(\d+)?/);
   if (masterMatch) {
-    var lpMatch = (m.tier || '').match(/(\d+)/);
-    lp = lpMatch ? parseInt(lpMatch[1]) : lp;
+    var lp = masterMatch[2] ? parseInt(masterMatch[2]) : 0;
     return _tierScore(masterMatch[1], '', lp);
   }
-  return _tierScore(tier, div, lp);
+
+  // 일반 티어: "DIAMOND II", "GOLD I", "PLATINUM IV" 등
+  var parts = full.split(/\s+/);
+  var tier = parts[0] || '';
+  var div = parts[1] || '';
+  return _tierScore(tier, div, 0);
 }
 
 function calcAutoPoints() {
