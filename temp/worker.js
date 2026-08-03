@@ -258,13 +258,6 @@ export default {
       return handleRatingMatchApply(request, env);
     }
     // 마스터 전용 Cron 수동 실행 테스트
-    // 개인 메모장
-    if (path === '/memo-write' && request.method === 'POST') {
-      return handleMemoWrite(request, env);
-    }
-    if (path === '/memo-read' && request.method === 'POST') {
-      return handleMemoRead(request, env);
-    }
     // Discord OAuth
     if (path === '/discord-oauth-url' && request.method === 'POST') {
       return handleDiscordOAuthUrl(request, env);
@@ -2050,70 +2043,4 @@ async function handleCommentDelete(request, env) {
   const authQ = secret ? '?auth=' + secret : '';
   await fetch(`${dbUrl}/communities/${communityId}/comments/${puuId}/${commentId}.json${authQ}`, { method: 'DELETE' });
   return json({ ok: true });
-}
-
-// ── 개인 메모장 ──
-
-// publicRead에 memos 경로 추가는 불필요 (discordId 기반 자체 검증)
-
-async function handleMemoWrite(request, env) {
-  let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
-  const { communityId, puuId, discordId, text, isAdmin, adminToken, displayName, username, avatar } = body;
-  if (!communityId || !puuId || !discordId) return json({ok:false,error:'필수 파라미터 누락'},400);
-
-  const dbUrl = env.FB_DATABASE_URL;
-  const secret = env.FB_DB_SECRET;
-  const authQ = secret ? '?auth=' + secret : '';
-
-  // 관리자는 adminToken으로 검증
-  if (isAdmin && adminToken) {
-    const session = getSession(adminToken);
-    if (!session || session.role !== 'master') return json({ok:false,error:'관리자 권한 없음'},403);
-  }
-
-  const path = `communities/${communityId}/memos/${discordId}/${puuId}`;
-  const memo = { text: (text || '').slice(0, 2000), updatedAt: Date.now(), discordId, displayName: displayName || '', username: username || '', avatar: avatar || null };
-  const res = await fetch(`${dbUrl}/${path}.json${authQ}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(memo)
-  });
-  if (!res.ok) return json({ok:false,error:'저장 실패'},500);
-  return json({ ok: true });
-}
-
-async function handleMemoRead(request, env) {
-  let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
-  const { communityId, puuId, discordId, isAdmin, adminToken } = body;
-  if (!communityId || !puuId) return json({ok:false,error:'필수 파라미터 누락'},400);
-
-  const dbUrl = env.FB_DATABASE_URL;
-  const secret = env.FB_DB_SECRET;
-  const authQ = secret ? '?auth=' + secret : '';
-
-  // 관리자: 해당 유저의 모든 메모 조회
-  if (isAdmin && adminToken) {
-    const session = getSession(adminToken);
-    if (session && session.role === 'master') {
-      const res = await fetch(`${dbUrl}/communities/${communityId}/memos.json${authQ}?orderBy="$key"`);
-      if (!res.ok) return json({ok:false,error:'조회 실패'},500);
-      const allMemos = await res.json() || {};
-      // puuId 기준으로 모든 discordId의 메모 수집
-      const result = {};
-      Object.entries(allMemos).forEach(([dcId, memos]) => {
-        if (memos && memos[puuId]) {
-          result[dcId] = memos[puuId];
-        }
-      });
-      return json({ ok: true, data: result, isAdmin: true });
-    }
-  }
-
-  // 일반 유저: 자신의 메모만
-  if (!discordId) return json({ok:false,error:'discordId 없음'},400);
-  const path = `communities/${communityId}/memos/${discordId}/${puuId}`;
-  const res = await fetch(`${dbUrl}/${path}.json${authQ}`);
-  if (!res.ok) return json({ok:false,error:'조회 실패'},500);
-  const data = await res.json();
-  return json({ ok: true, data: data || null });
 }

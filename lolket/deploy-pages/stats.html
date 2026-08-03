@@ -3,6 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta property="og:title" content="룽잉닷컴 — LoL 내전 전적">
+<meta property="og:description" content="내전 전적, 레이팅, 챔피언 통계를 확인하세요">
+<meta property="og:image" content="https://roonging.com/og-banner.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://roonging.com/stats.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://roonging.com/og-banner.jpg">
 <title>커뮤니티 전적</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
@@ -1031,6 +1041,8 @@ function syncTableWidth(){} // 단일 테이블 구조에서 불필요
         style="padding:4px 10px;border-radius:2px 2px 0 0;border:1px solid var(--border);border-bottom:none;background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:.5px;">📈 레이팅 로그</button>
       <button id="dm-tab-comments" onclick="switchDetailTab('comments')"
         style="padding:4px 10px;border-radius:2px 2px 0 0;border:1px solid var(--border);border-bottom:none;background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:.5px;">💬 코멘트</button>
+      <button id="dm-tab-memo" onclick="switchDetailTab('memo')"
+        style="padding:4px 10px;border-radius:2px 2px 0 0;border:1px solid var(--border);border-bottom:none;background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:.5px;">📝 메모</button>
     </div>
     <div id="dm-content">
       <div class="dm-loading"><div class="spinner"></div> 분석 중...</div>
@@ -1040,6 +1052,11 @@ function syncTableWidth(){} // 단일 테이블 구조에서 불필요
     </div>
     <div id="dm-comments" style="display:none;overflow-y:auto;max-height:500px;">
       <div style="padding:2rem;text-align:center;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:12px;">로딩 중...</div>
+    </div>
+    <div id="dm-memo" style="display:none;padding:.75rem;">
+      <div id="dm-memo-content">
+        <div style="padding:2rem;text-align:center;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:12px;">로딩 중...</div>
+      </div>
     </div>
   </div>
 </div>
@@ -2468,19 +2485,22 @@ function switchDetailTab(tab) {
   var analysisTab = document.getElementById('dm-tab-analysis');
   var logTab      = document.getElementById('dm-tab-rating-log');
   var commTab     = document.getElementById('dm-tab-comments');
+  var memoTab     = document.getElementById('dm-tab-memo');
   var contentEl   = document.getElementById('dm-content');
   var logEl       = document.getElementById('dm-rating-log');
   var commEl      = document.getElementById('dm-comments');
+  var memoEl      = document.getElementById('dm-memo');
   if (!analysisTab) return;
 
   // 모든 탭 비활성화
-  [analysisTab, logTab, commTab].forEach(function(t) {
+  [analysisTab, logTab, commTab, memoTab].forEach(function(t) {
     if (t) { t.style.borderBottom='none'; t.style.background='transparent'; t.style.color='var(--muted)'; }
   });
   // 모든 패널 숨김
   if (contentEl) contentEl.style.display = 'none';
   if (logEl)     logEl.style.display     = 'none';
   if (commEl)    commEl.style.display    = 'none';
+  if (memoEl)    memoEl.style.display    = 'none';
 
   if (tab === 'analysis') {
     analysisTab.style.borderBottom = '2px solid var(--blue)';
@@ -2497,6 +2517,11 @@ function switchDetailTab(tab) {
     commTab.style.background   = 'rgba(114,137,218,.08)';
     commTab.style.color        = '#7289da';
     if (commEl) { commEl.style.display = ''; loadComments(_detailCurrentMemberForLog); }
+  } else if (tab === 'memo') {
+    memoTab.style.borderBottom = '2px solid #F59E0B';
+    memoTab.style.background   = 'rgba(245,158,11,.08)';
+    memoTab.style.color        = '#F59E0B';
+    if (memoEl) { memoEl.style.display = ''; loadMemo(_detailCurrentMemberForLog); }
   }
 }
 window.switchDetailTab = switchDetailTab;
@@ -3153,6 +3178,146 @@ function _tempTierSortOrder(m) {
   var score = tierRank + lpScore + divScore;
   // ▲(1)=높은사람부터=score 오름차순, ▼(-1)=낮은사람부터=score 내림차순
   return _tempTierSortDir === 1 ? score : -score;
+}
+
+
+// ── 개인 메모장 ──
+async function loadMemo(member) {
+  var el = document.getElementById('dm-memo-content');
+  if (!el || !member || !COMMUNITY_ID) return;
+  el.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:12px;padding:1rem;">로딩 중...</div>';
+
+  var isAdmin = _masterAuthed;
+  var puuId = member.puu_id;
+
+  try {
+    var res = await fetch(WORKER_URL + '/memo-read', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        communityId: COMMUNITY_ID,
+        puuId: puuId,
+        discordId: _discordUser ? _discordUser.id : null,
+        isAdmin: isAdmin,
+        adminToken: isAdmin ? _masterSessionToken : null
+      })
+    });
+    var j = await res.json();
+
+    var html = '';
+
+    // 관리자: 모든 유저 메모 표시
+    if (isAdmin && j.isAdmin) {
+      html += '<div style="margin-bottom:.75rem;padding:.4rem .6rem;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:3px;font-size:10px;color:#F59E0B;font-family:Rajdhani,sans-serif;">👑 관리자 모드 — 전체 메모 열람</div>';
+      if (j.data && Object.keys(j.data).length > 0) {
+        Object.entries(j.data).forEach(function(kv) {
+          var dcId = kv[0], memo = kv[1];
+          if (!memo || !memo.text) return;
+          var date = memo.updatedAt ? new Date(memo.updatedAt).toLocaleDateString('ko-KR', {month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}) : '';
+          var displayName = memo.displayName || memo.username || dcId;
+          var avatar = memo.avatar || null;
+          html += '<div style="display:flex;gap:8px;padding:.6rem 0;border-bottom:1px solid rgba(255,255,255,.04);">';
+          if (avatar) {
+            html += '<img src="' + esc(avatar) + '" style="width:28px;height:28px;border-radius:50%;flex-shrink:0;">';
+          } else {
+            html += '<div style="width:28px;height:28px;border-radius:50%;background:rgba(245,158,11,.2);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;">📝</div>';
+          }
+          html += '<div style="flex:1;min-width:0;">';
+          html += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">';
+          html += '<span style="font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;color:#F59E0B;">' + esc(displayName) + '</span>';
+          if (memo.username && memo.username !== displayName) {
+            html += '<span style="font-size:9px;color:rgba(245,158,11,.5);">@' + esc(memo.username) + '</span>';
+          }
+          html += '<span style="font-size:9px;color:var(--muted);">' + date + '</span>';
+          html += '</div>';
+          html += '<div style="font-size:12px;color:var(--white);white-space:pre-wrap;word-break:break-all;line-height:1.5;">' + esc(memo.text) + '</div>';
+          html += '</div></div>';
+        });
+      } else {
+        html += '<div style="text-align:center;color:var(--muted);font-size:12px;padding:1rem;">작성된 메모가 없습니다</div>';
+      }
+    }
+
+    // 본인 메모 입력/표시 (Discord 로그인 또는 마스터 관리자)
+    if (_discordUser || isAdmin) {
+      var myMemo = null;
+      if (_discordUser) {
+        myMemo = (!isAdmin && j.data) ? j.data : (j.data && j.data[_discordUser.id] ? j.data[_discordUser.id] : null);
+      }
+      var memoText = myMemo ? (myMemo.text || '') : '';
+      if (_discordUser) {
+        html += '<div style="' + (isAdmin ? 'margin-top:.75rem;padding-top:.75rem;border-top:1px solid var(--border-subtle);' : '') + '">';
+        html += '<div style="font-size:10px;color:var(--muted);margin-bottom:4px;font-family:Rajdhani,sans-serif;">📝 내 메모</div>';
+        html += '<span id="memo-ta-slot-' + puuId + '"></span>';
+        html += '<div style="display:flex;justify-content:flex-end;margin-top:4px;">';
+        html += '<button data-puuid="' + puuId + '" class="memo-save-btn" style="padding:5px 14px;border-radius:2px;border:1px solid rgba(245,158,11,.4);background:rgba(245,158,11,.08);color:#F59E0B;font-family:Rajdhani,sans-serif;font-size:10px;font-weight:700;cursor:pointer;">저장</button>';
+        html += '</div></div>';
+      } else if (isAdmin) {
+        // 관리자인데 Discord 미로그인: 입력창 없이 열람만
+        html += '<div style="margin-top:.75rem;padding-top:.75rem;border-top:1px solid var(--border-subtle);text-align:center;color:var(--muted);font-size:11px;font-family:Rajdhani,sans-serif;padding:.75rem 0;">Discord 로그인 시 직접 메모 작성 가능</div>';
+      }
+    } else {
+      html += '<div style="text-align:center;padding:1.5rem;">';
+      html += '<div style="color:var(--muted);font-size:12px;margin-bottom:.75rem;">Discord 로그인 후 메모를 작성할 수 있습니다</div>';
+      html += '<button onclick="discordHeaderLogin()" style="padding:6px 14px;border-radius:3px;border:1px solid rgba(114,137,218,.4);background:rgba(114,137,218,.08);color:#7289da;font-family:Rajdhani,sans-serif;font-size:10px;font-weight:700;cursor:pointer;">Discord 로그인</button>';
+      html += '</div>';
+    }
+
+    el.innerHTML = html;
+
+    // textarea DOM 삽입 (XSS 안전)
+    var taSlot = el.querySelector('[id^="memo-ta-slot-"]');
+    if (taSlot) {
+      var ta = document.createElement('textarea');
+      ta.id = 'memo-textarea-' + puuId;
+      ta.style.cssText = 'width:100%;box-sizing:border-box;background:var(--bg-dark);border:1px solid var(--border-subtle);border-radius:3px;padding:8px;color:var(--white);font-size:12px;resize:vertical;min-height:100px;outline:none;';
+      var myMemoForTA = (!isAdmin && j.data) ? j.data : (j.data && _discordUser && j.data[_discordUser.id] ? j.data[_discordUser.id] : null);
+      ta.value = myMemoForTA ? (myMemoForTA.text || '') : '';
+      taSlot.replaceWith(ta);
+    }
+    // 저장 버튼 이벤트
+    el.querySelectorAll('.memo-save-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        saveMemo(this.getAttribute('data-puuid'));
+      });
+    });
+
+  } catch(e) {
+    el.innerHTML = '<div style="text-align:center;color:var(--red);font-size:12px;padding:1rem;">오류: ' + esc(e.message) + '</div>';
+  }
+}
+
+async function saveMemo(puuId) {
+  if (!_discordUser || !COMMUNITY_ID) return;
+  var ta = document.getElementById('memo-textarea-' + puuId);
+  if (!ta) return;
+  var text = ta.value;
+  var btn = document.querySelector('.memo-save-btn[data-puuid="' + puuId + '"]');
+  if (btn) { btn.textContent = '저장 중...'; btn.disabled = true; }
+  try {
+    var res = await fetch(WORKER_URL + '/memo-write', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        communityId: COMMUNITY_ID,
+        puuId: puuId,
+        discordId: _discordUser.id,
+        text: text,
+        displayName: _discordUser.displayName || _discordUser.username || '',
+        username: _discordUser.username || '',
+        avatar: _discordUser.avatar || null,
+        isAdmin: _masterAuthed,
+        adminToken: _masterAuthed ? _masterSessionToken : null
+      })
+    });
+    var j = await res.json();
+    if (j.ok) {
+      if (btn) { btn.textContent = '✓ 저장됨'; setTimeout(function(){ if(btn){ btn.textContent='저장'; btn.disabled=false; } }, 2000); }
+    } else {
+      if (btn) { btn.textContent = '저장'; btn.disabled = false; }
+      alert('저장 실패: ' + j.error);
+    }
+  } catch(e) {
+    if (btn) { btn.textContent = '저장'; btn.disabled = false; }
+  }
 }
 
 </script>

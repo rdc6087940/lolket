@@ -3980,7 +3980,14 @@ return toast(`${searchResult.name}#${searchResult.tag}은(는) 이미 추가되�
 }
 const solo = searchResult.solo;
 const overrideTier = _tierOverride;
-const detailVal = _getTierDetailSuffix();
+var detailVal = _getTierDetailSuffix();
+// division이 없으면 solo API 결과에서 자동 추출
+if (!detailVal && !overrideTier) {
+  var _soloParts = solo.toUpperCase().split(' ');
+  if (_soloParts.length >= 2 && ['I','II','III','IV'].includes(_soloParts[1])) {
+    detailVal = _soloParts[1]; // division 자동 적용
+  }
+}
 // 최고 티어 우선, 없으면 현재 솔로랭 티어
 const highTierRaw = searchResult.highTier;
 const tierStr = overrideTier || (highTierRaw ? highTierRaw.split(' ')[0] : solo.split(' ')[0]);
@@ -16721,7 +16728,17 @@ function _tierScore(tier, division, lp) {
 
 function _getMemberScore(m) {
   // tierFull: 'DIAMOND II', 'MASTER 400LP', 'GOLD I' 등
+  // solo: 'EMERALD II 50LP' 형태 (API 원본)
   var full = (m.tierFull || m.tier || '').toUpperCase().trim();
+  // division이 없는 경우 solo 필드에서 보완
+  var parts0 = full.split(/\s+/);
+  var HIGH = ['MASTER','GRANDMASTER','CHALLENGER'];
+  if (parts0.length === 1 && !HIGH.includes(parts0[0]) && m.solo) {
+    var soloParts = (m.solo || '').toUpperCase().split(/\s+/);
+    if (soloParts[0] === parts0[0] && soloParts[1]) {
+      full = parts0[0] + ' ' + soloParts[1];
+    }
+  }
 
   // 마스터 이상: "MASTER 400LP" 또는 "GRANDMASTER 200LP"
   var masterMatch = full.match(/^(MASTER|GRANDMASTER|CHALLENGER)\s*(\d+)?/);
@@ -16730,10 +16747,13 @@ function _getMemberScore(m) {
     return _tierScore(masterMatch[1], '', lp);
   }
 
-  // 일반 티어: "DIAMOND II", "GOLD I", "PLATINUM IV" 등
+  // 일반 티어: "DIAMOND II", "DIAMOND 1", "GOLD I", "PLATINUM 4" 등
   var parts = full.split(/\s+/);
   var tier = parts[0] || '';
-  var div = parts[1] || '';
+  var rawDiv = parts[1] || '';
+  // 숫자 division을 로마자로 변환
+  var numToRoman = {'1':'I','2':'II','3':'III','4':'IV'};
+  var div = numToRoman[rawDiv] || rawDiv;
   return _tierScore(tier, div, 0);
 }
 
