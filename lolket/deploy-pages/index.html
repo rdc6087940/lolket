@@ -984,7 +984,7 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
  import { getDatabase, ref, set, get, onValue, remove, serverTimestamp, runTransaction }
  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
  // Firebase 설정을 Worker에서 동적으로 로드 (키 노출 방지)
- const _workerBase = 'https://delicate-dew-c1bd.rdc6087.workers.dev';
+ const _workerBase = 'https://api.roonging.com';
  let firebaseConfig;
  try {
    const _cfgRes = await fetch(_workerBase + '/firebase-config');
@@ -3426,7 +3426,7 @@ function _saveLog(type, text) {
 let _pwSalt = 'lolket_v1'; // 기본값, Worker에서 덮어씀
 (async function() {
   try {
-    const _workerB = typeof RIOT_PROXY_URL !== 'undefined' ? RIOT_PROXY_URL : 'https://delicate-dew-c1bd.rdc6087.workers.dev';
+    const _workerB = typeof RIOT_PROXY_URL !== 'undefined' ? RIOT_PROXY_URL : 'https://api.roonging.com';
     const res = await fetch(_workerB + '/auth-salt');
     const d = await res.json();
     if (d.salt) _pwSalt = d.salt;
@@ -3670,7 +3670,7 @@ if (lGrid) { loadCategories().then(() => renderMatchList()); }
 }, 10000);
 }
 function onSearchKey(e){if (e.key === 'Enter') searchSummoner();}
-const RIOT_PROXY_URL='https://delicate-dew-c1bd.rdc6087.workers.dev';
+const RIOT_PROXY_URL='https://api.roonging.com';
 async function _workerPublicRead(path) {
   const res = await fetch(RIOT_PROXY_URL + '/db-public-read', {
     method: 'POST',
@@ -9982,7 +9982,7 @@ let APPLY_EMAIL_TO = '';
 // 관리자 이메일을 Worker 환경변수에서 로드
 (async function() {
   try {
-    const _workerB = typeof RIOT_PROXY_URL !== 'undefined' ? RIOT_PROXY_URL : 'https://delicate-dew-c1bd.rdc6087.workers.dev';
+    const _workerB = typeof RIOT_PROXY_URL !== 'undefined' ? RIOT_PROXY_URL : 'https://api.roonging.com';
     const res = await fetch(_workerB + '/contact-info');
     const data = await res.json();
     if (data.email) APPLY_EMAIL_TO = data.email;

@@ -1,3 +1,30 @@
+
+// ── Cloudflare Cache API 헬퍼 ──
+async function cachedFetch(cacheKey, fetchFn, ttlSeconds) {
+  const cache = caches.default;
+  const req = new Request('https://cache.roonging.com/' + cacheKey);
+  const cached = await cache.match(req);
+  if (cached) {
+    const data = await cached.json();
+    return data;
+  }
+  const data = await fetchFn();
+  const res = new Response(JSON.stringify(data), {
+    headers: {
+      'Content-Type': 'application/json',
+      'Cache-Control': `public, max-age=${ttlSeconds}`
+    }
+  });
+  await cache.put(req, res);
+  return data;
+}
+
+async function invalidateCache(cacheKey) {
+  const cache = caches.default;
+  const req = new Request('https://cache.roonging.com/' + cacheKey);
+  await cache.delete(req);
+}
+
 const REGIONS = {
   KR:  { platform: 'kr',   regional: 'asia'     },
   NA:  { platform: 'na1',  regional: 'americas' },
@@ -258,6 +285,22 @@ export default {
       return handleRatingMatchApply(request, env);
     }
     // 마스터 전용 Cron 수동 실행 테스트
+    // 주간 미션
+    if (path === '/weekly-mission-config-read' && request.method === 'POST') {
+      return handleWeeklyMissionConfigRead(request, env);
+    }
+    if (path === '/weekly-mission-config-write' && request.method === 'POST') {
+      return handleWeeklyMissionConfigWrite(request, env);
+    }
+    if (path === '/weekly-mission-count' && request.method === 'POST') {
+      return handleWeeklyMissionCount(request, env);
+    }
+    if (path === '/weekly-mission-reward' && request.method === 'POST') {
+      return handleWeeklyMissionReward(request, env);
+    }
+    if (path === '/weekly-mission-rewards-read' && request.method === 'POST') {
+      return handleWeeklyMissionRewardsRead(request, env);
+    }
     // 개인 메모장
     if (path === '/memo-write' && request.method === 'POST') {
       return handleMemoWrite(request, env);
@@ -496,7 +539,7 @@ async function handleLogin(request, env) {
 async function handleDbPublicRead(request, env) {
   let body;
   try { body = await request.json(); } catch { return json({ ok: false, error: '잘못된 요청' }, 400); }
-  const { path: dbPath } = body;
+  const { path: dbPath, shallow } = body;
   if (!dbPath) return json({ ok: false, error: 'path 누락' }, 400);
 
   // 공개 읽기 허용 경로만
@@ -531,7 +574,19 @@ async function handleDbPublicRead(request, env) {
   const secret = env.FB_DB_SECRET;
   const authQ  = secret ? `?auth=${secret}` : '';
   try {
-    const res = await fetch(`${dbUrl}/${dbPath}.json${authQ}`);
+    const shallowParam = shallow ? (authQ ? '&shallow=true' : '?shallow=true') : '';
+    // rating_history 전체 읽기는 5분 캐시
+    const isRatingHistory = /^communities\/[^/]+\/rating_history$/.test(dbPath) && !shallow;
+    if (isRatingHistory) {
+      const cacheKey = `rating-history-${dbPath.split('/')[1]}`;
+      const data = await cachedFetch(cacheKey, async () => {
+        const res = await fetch(`${dbUrl}/${dbPath}.json${authQ}`);
+        if (!res.ok) return null;
+        return await res.json();
+      }, 300);
+      return json({ ok: true, data });
+    }
+    const res = await fetch(`${dbUrl}/${dbPath}.json${authQ}${shallowParam}`);
     if (!res.ok) return json({ ok: false, error: 'DB 읽기 실패: ' + res.status }, 500);
     const data = await res.json();
     return json({ ok: true, data });
@@ -626,7 +681,7 @@ async function handleDbRead(request, env) {
   let body;
   try { body = await request.json(); } catch { return json({ ok: false, error: '잘못된 요청' }, 400); }
 
-  const { path: dbPath } = body;
+  const { path: dbPath, shallow } = body;
   if (!dbPath) return json({ ok: false, error: 'path 누락' }, 400);
 
   // 관리자가 자신의 커뮤니티 정보 읽기 허용
@@ -663,7 +718,19 @@ async function handleDbRead(request, env) {
   const authQ  = secret ? `?auth=${secret}` : '';
 
   try {
-    const res = await fetch(`${dbUrl}/${dbPath}.json${authQ}`);
+    const shallowParam = shallow ? (authQ ? '&shallow=true' : '?shallow=true') : '';
+    // rating_history 전체 읽기는 5분 캐시
+    const isRatingHistory = /^communities\/[^/]+\/rating_history$/.test(dbPath) && !shallow;
+    if (isRatingHistory) {
+      const cacheKey = `rating-history-${dbPath.split('/')[1]}`;
+      const data = await cachedFetch(cacheKey, async () => {
+        const res = await fetch(`${dbUrl}/${dbPath}.json${authQ}`);
+        if (!res.ok) return null;
+        return await res.json();
+      }, 300);
+      return json({ ok: true, data });
+    }
+    const res = await fetch(`${dbUrl}/${dbPath}.json${authQ}${shallowParam}`);
     if (!res.ok) return json({ ok: false, error: 'DB 읽기 실패: ' + res.status }, 500);
     const data = await res.json();
     return json({ ok: true, data });
@@ -1465,6 +1532,8 @@ async function handleTempTierWrite(request, env) {
       body: JSON.stringify(tier)
     });
   }
+  // 캐시 무효화
+  await invalidateCache(`temp-tiers-${communityId}`);
   return json({ ok: true });
 }
 
@@ -1540,6 +1609,8 @@ async function handleRatingWrite(request, env) {
     body: JSON.stringify(rating)
   });
   if (!res.ok) return json({ ok: false, error: 'DB 저장 실패' }, 500);
+  // 캐시 무효화
+  await invalidateCache(`ratings-${communityId}-${seasonKey}`);
   return json({ ok: true });
 }
 
@@ -1555,9 +1626,15 @@ async function handleRatingRead(request, env) {
   const seasonKey = season || 'default';
   const path = `communities/${communityId}/ratings/${seasonKey}`;
 
-  const res = await fetch(`${dbUrl}/${path}.json${authQ}`);
-  if (!res.ok) return json({ ok: true, data: {} });
-  const data = await res.json();
+  const data = await cachedFetch(
+    `ratings-${communityId}-${seasonKey}`,
+    async () => {
+      const res = await fetch(`${dbUrl}/${path}.json${authQ}`);
+      if (!res.ok) return {};
+      return await res.json();
+    },
+    300 // 5분
+  );
   return json({ ok: true, data: data || {} });
 }
 
@@ -2091,20 +2168,27 @@ async function handleMemoRead(request, env) {
   const secret = env.FB_DB_SECRET;
   const authQ = secret ? '?auth=' + secret : '';
 
-  // 관리자: 해당 유저의 모든 메모 조회
+  // 관리자: 해당 유저의 모든 메모 조회 (shallow로 discordId 목록만 먼저)
   if (isAdmin && adminToken) {
     const session = getSession(adminToken);
-    if (session && session.role === 'master') {
-      const res = await fetch(`${dbUrl}/communities/${communityId}/memos.json${authQ}?orderBy="$key"`);
-      if (!res.ok) return json({ok:false,error:'조회 실패'},500);
-      const allMemos = await res.json() || {};
-      // puuId 기준으로 모든 discordId의 메모 수집
+    if (session && session.role === 'master' || (session && session.role === 'admin')) {
+      // shallow로 discordId 목록만 가져오기
+      const shallowQ2 = authQ ? authQ+'&shallow=true' : '?shallow=true';
+      const keysRes = await fetch(`${dbUrl}/communities/${communityId}/memos.json${shallowQ2}`);
+      if (!keysRes.ok) return json({ ok: true, data: {}, isAdmin: true });
+      const dcIds = await keysRes.json();
+      if (!dcIds) return json({ ok: true, data: {}, isAdmin: true });
+      // 각 discordId의 해당 puuId 메모만 병렬 조회
+      const memoResults = await Promise.all(
+        Object.keys(dcIds).map(dcId =>
+          fetch(`${dbUrl}/communities/${communityId}/memos/${dcId}/${puuId}.json${authQ}`)
+            .then(r => r.json())
+            .then(d => ({ dcId, d }))
+            .catch(() => ({ dcId, d: null }))
+        )
+      );
       const result = {};
-      Object.entries(allMemos).forEach(([dcId, memos]) => {
-        if (memos && memos[puuId]) {
-          result[dcId] = memos[puuId];
-        }
-      });
+      memoResults.forEach(({ dcId, d }) => { if (d && d.text) result[dcId] = d; });
       return json({ ok: true, data: result, isAdmin: true });
     }
   }
@@ -2116,4 +2200,203 @@ async function handleMemoRead(request, env) {
   if (!res.ok) return json({ok:false,error:'조회 실패'},500);
   const data = await res.json();
   return json({ ok: true, data: data || null });
+}
+
+// ── 주간 미션 ──
+
+// 현재 주 키 (KST 기준 YYYY_Www)
+function getWeekKey(date) {
+  const kst = new Date(date.getTime() + 9 * 3600 * 1000);
+  const day = kst.getUTCDay(); // 0=일, 1=월
+  const monday = new Date(kst);
+  monday.setUTCDate(kst.getUTCDate() - ((day + 6) % 7));
+  const y = monday.getUTCFullYear();
+  const start = new Date(Date.UTC(y, 0, 1));
+  const week = Math.ceil(((monday - start) / 86400000 + start.getUTCDay() + 1) / 7);
+  return `${y}_W${String(week).padStart(2,'0')}`;
+}
+
+// 미션 설정 읽기 (공개) - 10분 캐시
+async function handleWeeklyMissionConfigRead(request, env) {
+  let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
+  const { communityId } = body;
+  if (!communityId) return json({ok:false,error:'communityId 없음'},400);
+  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth='+secret : '';
+  const data = await cachedFetch(
+    `wm-config-${communityId}`,
+    async () => {
+      const res = await fetch(`${dbUrl}/communities/${communityId}/weekly_missions/config.json${authQ}`);
+      return await res.json();
+    },
+    600 // 10분
+  );
+  return json({ ok:true, data: data || [] });
+}
+
+// 미션 설정 저장 (마스터만)
+async function handleWeeklyMissionConfigWrite(request, env) {
+  let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
+  const { communityId, missions, token, adminId, adminPw } = body;
+  let session = getSession(token);
+  // master 또는 해당 커뮤니티 admin이면 허용
+  if (!session) return json({ok:false,error:'마스터 권한 필요'},403);
+  if (session.role !== 'master' && session.role !== 'admin') return json({ok:false,error:'관리자 권한 필요'},403);
+  // admin인 경우 해당 커뮤니티 확인
+  if (session.role === 'admin' && session.communityId && communityId && session.communityId !== communityId) {
+    return json({ok:false,error:'이 커뮤니티의 관리자가 아닙니다'},403);
+  }
+  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth='+secret : '';
+  await fetch(`${dbUrl}/communities/${communityId}/weekly_missions/config.json${authQ}`, {
+    method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(missions)
+  });
+  // 캐시 무효화
+  await invalidateCache(`wm-config-${communityId}`);
+  return json({ ok:true });
+}
+
+// 이번 주 내전 게임 수 계산
+async function handleWeeklyMissionCount(request, env) {
+  let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
+  const { communityId, puuId, platform } = body;
+  if (!communityId || !puuId) return json({ok:false,error:'필수 파라미터 없음'},400);
+
+  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth='+secret : '';
+  const weekKey = getWeekKey(new Date());
+
+  // 캐시 확인 (1시간)
+  const cacheRes = await fetch(`${dbUrl}/communities/${communityId}/weekly_missions/counts/${puuId}/${weekKey}.json${authQ}`);
+  const cached = await cacheRes.json();
+  if (cached && cached.updatedAt && Date.now() - cached.updatedAt < 3600000) {
+    return json({ ok:true, count: cached.count, weekKey, cached: true });
+  }
+
+  // KST 이번주 월요일 00:00 타임스탬프
+  const now = new Date();
+  const kst = new Date(now.getTime() + 9 * 3600 * 1000);
+  const day = kst.getUTCDay();
+  const monday = new Date(kst);
+  monday.setUTCDate(kst.getUTCDate() - ((day + 6) % 7));
+  monday.setUTCHours(0, 0, 0, 0);
+  const mondayTs = monday.getTime() - 9 * 3600 * 1000; // UTC로 변환
+
+  // 커뮤니티 멤버 puu_id 목록 (딥롤 server_info)
+  let communityPuuIds = new Set();
+  try {
+    const sidRes = await fetch(`${dbUrl}/communities_info/${communityId}/deeplolServerId.json${authQ}`);
+    const serverId = await sidRes.json();
+    if (serverId) {
+      const sRes = await fetch(`https://b2c-api-cdn.deeplol.gg/tournament/server_info?server_id=${serverId}`, {
+        headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://www.deeplol.gg/' }
+      });
+      if (sRes.ok) {
+        const sData = await sRes.json();
+        const list = sData?.tournament_stats?.tournament_stats_all_list || [];
+        list.forEach(m => { if (m.puu_id) communityPuuIds.add(m.puu_id); });
+      }
+    }
+  } catch(e) {}
+
+  // 딥롤 match-list API로 이번 주 게임 가져오기
+  const plat = (platform || 'KR').toLowerCase();
+  let count = 0;
+  try {
+    let offset = 0;
+    const PAGE = 20;
+    while (true) {
+      const mlRes = await fetch(
+        `https://b2c-api-cdn.deeplol.gg/match/matches?puu_id=${encodeURIComponent(puuId)}&platform_id=${plat}&offset=${offset}&count=${PAGE}&queue_type=CUSTOM&champion_id=0&only_list=1&last_updated_at=1`,
+        { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Referer': 'https://www.deeplol.gg/' } }
+      );
+      if (!mlRes.ok) { console.log('[weekly] match API 실패:', mlRes.status); break; }
+      const mlData = await mlRes.json();
+      const matches = mlData?.match_list || mlData?.matches || [];
+      console.log('[weekly] offset:', offset, 'matches:', matches.length);
+      if (!matches.length) break;
+
+      let shouldStop = false;
+      for (const m of matches) {
+        const ts = (m.creation_timestamp || 0) * 1000;
+        if (ts < mondayTs) { shouldStop = true; break; }
+        // 커스텀 게임이고 커뮤니티 멤버 4명 이상 포함
+        const puuList = m.puu_id_list || [];
+        const overlap = communityPuuIds.size > 0
+          ? puuList.filter(id => communityPuuIds.has(id)).length
+          : 5; // 커뮤니티 멤버 로드 실패 시 커스텀 게임 전체 카운트
+        if (overlap >= 4) count++;
+      }
+      if (shouldStop || matches.length < PAGE) break;
+      offset += PAGE;
+    }
+  } catch(e) {}
+
+  // 캐시 저장
+  await fetch(`${dbUrl}/communities/${communityId}/weekly_missions/counts/${puuId}/${weekKey}.json${authQ}`, {
+    method: 'PUT', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ count, updatedAt: Date.now() })
+  });
+
+  return json({ ok:true, count, weekKey, cached: false });
+}
+
+// 리워드 수령
+async function handleWeeklyMissionReward(request, env) {
+  let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
+  const { communityId, puuId, threshold } = body;
+  if (!communityId || !puuId || threshold === undefined) return json({ok:false,error:'필수 파라미터 없음'},400);
+
+  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth='+secret : '';
+  const weekKey = getWeekKey(new Date());
+  const path = `communities/${communityId}/weekly_missions/rewards/${puuId}/${weekKey}`;
+
+  // 기존 수령 목록 가져와서 추가
+  const existing = await (await fetch(`${dbUrl}/${path}.json${authQ}`)).json() || [];
+  const list = Array.isArray(existing) ? existing : [];
+  if (!list.includes(threshold)) list.push(threshold);
+
+  await fetch(`${dbUrl}/${path}.json${authQ}`, {
+    method: 'PUT', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(list)
+  });
+  return json({ ok:true, collected: list });
+}
+
+// 리워드 현황 읽기 (allData용 배치)
+async function handleWeeklyMissionRewardsRead(request, env) {
+  let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
+  const { communityId } = body;
+  if (!communityId) return json({ok:false,error:'communityId 없음'},400);
+  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth='+secret : '';
+  const weekKey = getWeekKey(new Date());
+  const res = await fetch(`${dbUrl}/communities/${communityId}/weekly_missions/rewards.json${authQ}`);
+  const data = await res.json() || {};
+  // 이번 주 수령 데이터만 추출
+  const result = {};
+  Object.entries(data).forEach(([puuId, weeks]) => {
+    if (weeks && weeks[weekKey]) result[puuId] = weeks[weekKey];
+  });
+  return json({ ok:true, data: result, weekKey });
+}
+
+// 주간 미션 초기화 Cron (매주 월요일 KST = UTC 일요일 15:00)
+async function runWeeklyMissionReset(env) {
+  console.log('[weekly-reset] 주간 미션 초기화 시작');
+  // counts만 초기화 (rewards는 기록 보존)
+  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth='+secret : '';
+  const shallowQ = authQ ? authQ+'&shallow=true' : '?shallow=true';
+  const commRes = await fetch(`${dbUrl}/communities_info.json${shallowQ}`);
+  if (!commRes.ok) return;
+  const commKeys = await commRes.json();
+  if (!commKeys) return;
+  for (const cid of Object.keys(commKeys)) {
+    try {
+      await fetch(`${dbUrl}/communities/${cid}/weekly_missions/counts.json${authQ}`, { method: 'DELETE' });
+      console.log(`[weekly-reset] ${cid} counts 초기화`);
+    } catch(e) {}
+  }
 }
