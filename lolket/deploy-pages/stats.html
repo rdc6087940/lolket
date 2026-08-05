@@ -843,9 +843,29 @@ async function loadData(){
   document.getElementById('stats-body').innerHTML='<tr><td colspan="13"><div class="state loading-state"><div class="spinner"></div> 불러오는 중...</div></td></tr>';
   document.getElementById('pagination').style.display='none';
   try{
-    const res=await fetch(`https://b2c-api-cdn.deeplol.gg/tournament/server_info?server_id=${SERVER_ID}`);
-    if(!res.ok) throw new Error('API 오류 '+res.status);
-    const json=await res.json();
+    // server_info 캐시 (sessionStorage 30분)
+    var _siCacheKey = 'si_' + SERVER_ID;
+    var _siCached = null;
+    try {
+      var _siRaw = sessionStorage.getItem(_siCacheKey);
+      if (_siRaw) {
+        var _siObj = JSON.parse(_siRaw);
+        if (Date.now() - _siObj.ts < 30 * 60 * 1000) _siCached = _siObj.data;
+      }
+    } catch(e) {}
+    var json;
+    if (_siCached) {
+      json = _siCached;
+    } else {
+      const _siRes = await fetch(WORKER_URL + '/server-info', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ serverId: SERVER_ID })
+      });
+      const _siJson = await _siRes.json();
+      if (!_siJson.ok) throw new Error('서버 정보 조회 실패');
+      json = _siJson.data;
+      try { sessionStorage.setItem(_siCacheKey, JSON.stringify({ data: json, ts: Date.now() })); } catch(e) {}
+    }
     document.getElementById('server-name').textContent=(json.server_name||'커뮤니티')+' 전적';
     document.title=(json.server_name||'커뮤니티')+' 전적';
     // cid 있으면 마스터 버튼 표시
@@ -1059,6 +1079,22 @@ function scrollTop(){document.getElementById('table-body-wrap').scrollTop=0;}
 async function loadAllRatings(season) {
   if (!COMMUNITY_ID || !allData.length) return;
   season = season || _currentSeason || 'default';
+  // sessionStorage 30분 캐시
+  var _rCacheKey = 'ratings_' + COMMUNITY_ID + '_' + season;
+  try {
+    var _rRaw = sessionStorage.getItem(_rCacheKey);
+    if (_rRaw) {
+      var _rObj = JSON.parse(_rRaw);
+      if (Date.now() - _rObj.ts < 30 * 60 * 1000) {
+        const ratings = _rObj.data;
+        allData.forEach(function(m) {
+          const r = ratings[m.puu_id];
+          if (r) { m._rating = r.current; m._ratingBefore = r.before; m._ratingDelta = r.delta; m._ratingGames = r.games; }
+        });
+        return;
+      }
+    }
+  } catch(e) {}
   try {
     const res = await fetch(WORKER_URL + '/rating-read', {
       method: 'POST',
@@ -1070,15 +1106,9 @@ async function loadAllRatings(season) {
       const ratings = json.data;
       allData.forEach(function(m) {
         const r = ratings[m.puu_id];
-        if (r) {
-          m._rating    = r.current;
-          m._ratingWins    = r.wins    || 0;
-          m._ratingLosses  = r.losses  || 0;
-          m._ratingStreak  = r.streak  || 0;
-        }
+        if (r) { m._rating = r.current; m._ratingBefore = r.before; m._ratingDelta = r.delta; m._ratingGames = r.games; }
       });
-      renderPage();
-      loadAllPeakTiers();
+      try { sessionStorage.setItem(_rCacheKey, JSON.stringify({ data: ratings, ts: Date.now() })); } catch(e) {}
     }
   } catch(e) {}
 }
@@ -1406,11 +1436,23 @@ function calcRatingDelta(S, aiScore, kda, streak) {
 async function saveToFirebase(puuId, mode, analysis, matchIds, memberData) {
   memberData = memberData || {};
   if (!COMMUNITY_ID) return;
+  // 이번 주 게임 수 계산
+  var _mondayTs = _getMondayTs();
+  var _weeklyCount = 0;
+  var _cache = detailCache && detailCache[mode] && detailCache[mode][puuId];
+  if (_cache && _cache.matches) {
+    _cache.matches.forEach(function(md) {
+      var ts = ((md.match_basic_dict || {}).creation_timestamp || 0) * 1000;
+      if (ts >= _mondayTs) _weeklyCount++;
+    });
+  }
   const payload = {
     meta: {
       updatedAt: Date.now(),
       matchCount: matchIds ? matchIds.size : 0,
       version: SCHEMA_VER,
+      weeklyCount: _weeklyCount,
+      weeklyTs: _mondayTs,
     },
     matchIds: matchIds ? Array.from(matchIds) : [],
     peakTier: memberData._peakTier || null,
@@ -1769,13 +1811,12 @@ async function openDetail(memberData) {
         fbData.meta.matchCount || (fbData.matchIds && fbData.matchIds.length) || 0,
         fbData.meta.updatedAt, fbRating);
     }
-    // 새 게임 체크 + 재분석을 위해 loadDetailData 계속 진행 (return 제거)
-    // knownIds는 이미 detailCache에 세팅됨
+    // Firebase 캐시 있으면 표시하고 종료 (업데이트 버튼으로만 갱신)
+    if (fbData.analysis) return;
   }
 
-  // Firebase에도 없거나, Firebase 로드 후 새 게임 체크 새로 분석
-  // isUpdate=true: cache.matchIds(Firebase matchIds)를 knownIds로 사용해 새 게임만 fetch
-  await loadDetailData(memberData, true);
+  // Firebase에 없으면 처음 분석
+  await loadDetailData(memberData, false);
 }
 
 async function loadDetailData(memberData, isUpdate) {
@@ -3715,7 +3756,21 @@ async function loadWeeklyMission(member) {
     }
 
     // 캐시된 매치로 이번 주 게임 수 계산
-    var count = _calcWeeklyCountFromCache(member.puu_id) || 0;
+    var count = _calcWeeklyCountFromCache(member.puu_id);
+    if (count === null) {
+      // Firebase 저장 데이터에서 weeklyCount 읽기
+      try {
+        var _fbRes = await fetch(WORKER_URL + '/member-analysis-read', {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ communityId: COMMUNITY_ID, puuId: member.puu_id, mode: 'custom' })
+        });
+        var _fbJ = await _fbRes.json();
+        if (_fbJ.ok && _fbJ.data && _fbJ.data.meta && _fbJ.data.meta.weeklyTs >= _getMondayTs()) {
+          count = _fbJ.data.meta.weeklyCount || 0;
+        } else { count = 0; }
+      } catch(e) { count = 0; }
+    }
+    count = count || 0;
     var weekKey = (function() {
       var now = new Date();
       var kst = new Date(now.getTime() + 9*3600*1000);
@@ -3956,30 +4011,82 @@ function _calcWeeklyCountFromCache(puuId) {
   // custom 또는 현재 모드 캐시 확인
   var cache = (detailCache && detailCache['custom'] && detailCache['custom'][puuId])
            || (detailCache && detailCache[_queueMode] && detailCache[_queueMode][puuId]);
-  if (!cache || !cache.matches || !cache.matches.length) return null;
-  var count = 0;
-  cache.matches.forEach(function(matchData) {
-    var basic = matchData.match_basic_dict || {};
-    var ts = (basic.creation_timestamp || 0) * 1000;
-    if (ts >= mondayTs) count++;
-  });
-  return count;
+  if (cache && cache.matches && cache.matches.length) {
+    var count = 0;
+    cache.matches.forEach(function(matchData) {
+      var basic = matchData.match_basic_dict || {};
+      var ts = (basic.creation_timestamp || 0) * 1000;
+      if (ts >= mondayTs) count++;
+    });
+    return count;
+  }
+  // detailCache 없으면 Firebase matchIds 타임스탬프로 계산
+  if (cache && cache.matchIds && cache.matchIds.size > 0) {
+    // matchIds는 Set인데 타임스탬프 정보가 없음
+    // _weeklyCountFromFb에서 비동기로 처리
+    return null;
+  }
+  return null;
+}
+
+// Firebase matchIds에서 이번 주 카운트 비동기 계산
+async function _calcWeeklyCountFromFb(member) {
+  if (!COMMUNITY_ID || !member) return null;
+  try {
+    var res = await fetch(WORKER_URL + '/member-analysis-read', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ communityId: COMMUNITY_ID, puuId: member.puu_id, mode: 'custom' })
+    });
+    var j = await res.json();
+    if (!j.ok || !j.data || !j.data.matchIds) return null;
+    var mondayTs = _getMondayTs();
+    // matchIds 배열에서 타임스탬프 추출 (형식: matchId_timestamp 또는 숫자)
+    var matchIds = j.data.matchIds;
+    // 실제 게임 데이터가 없으면 matches 배열에서 계산
+    if (j.data.matches) {
+      var count = 0;
+      j.data.matches.forEach(function(m) {
+        var ts = (m.creation_timestamp || 0) * 1000;
+        if (ts >= mondayTs) count++;
+      });
+      return count;
+    }
+    return null;
+  } catch(e) { return null; }
 }
 
 // 상세 팝업 주간 게임 수 배지
 function _loadWeeklyCountBadge(member) {
   if (!member) return;
-  // 캐시에서 즉시 계산
-  var count = _calcWeeklyCountFromCache(member.puu_id);
   var badge = document.getElementById('dm-weekly-badge');
-  if (badge) {
-    if (count !== null) {
-      badge.textContent = '이번 주 ' + count + '판';
-      badge.style.display = '';
-    } else {
-      // 캐시 없으면 분석 완료 후 업데이트 (renderDetail 호출 후)
-      badge.style.display = 'none';
-    }
+  if (!badge) return;
+
+  // 1. detailCache에서 즉시 계산
+  var count = _calcWeeklyCountFromCache(member.puu_id);
+  if (count !== null) {
+    badge.textContent = '이번 주 ' + count + '판';
+    badge.style.display = '';
+    return;
+  }
+
+  // 2. Firebase 저장 데이터에서 weeklyCount 읽기
+  badge.style.display = 'none';
+  if (COMMUNITY_ID) {
+    fetch(WORKER_URL + '/member-analysis-read', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ communityId: COMMUNITY_ID, puuId: member.puu_id, mode: 'custom' })
+    }).then(function(r){ return r.json(); }).then(function(j) {
+      if (!j.ok || !j.data || !j.data.meta) return;
+      var wc = j.data.meta.weeklyCount;
+      var wts = j.data.meta.weeklyTs;
+      // 저장된 주간 카운트가 이번 주 것인지 확인
+      if (wc !== undefined && wts && wts >= _getMondayTs()) {
+        if (badge && _detailCurrentMemberForLog && _detailCurrentMemberForLog.puu_id === member.puu_id) {
+          badge.textContent = '이번 주 ' + wc + '판';
+          badge.style.display = '';
+        }
+      }
+    }).catch(function(){});
   }
 }
 
@@ -4042,9 +4149,8 @@ async function checkMaintenanceMode() {
   } catch(e) {}
 }
 
-// 페이지 로드 시 즉시 + 5초마다 폴링 (실시간에 가깝게)
+// 페이지 로드 시 1번만 확인
 checkMaintenanceMode();
-setInterval(checkMaintenanceMode, 5000);
 
 </script>
 

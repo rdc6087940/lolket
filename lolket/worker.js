@@ -291,6 +291,10 @@ export default {
       return handleRatingMatchApply(request, env);
     }
     // 마스터 전용 Cron 수동 실행 테스트
+    // 딥롤 서버 정보 프록시 (캐시)
+    if (path === '/server-info' && request.method === 'POST') {
+      return handleServerInfo(request, env);
+    }
     // 피크티어 경량 읽기
     if (path === '/peak-tiers-read' && request.method === 'POST') {
       return handlePeakTiersRead(request, env);
@@ -424,8 +428,11 @@ async function runAlarmCheck(env) {
   const secret = env.FB_DB_SECRET;
   const authQ  = secret ? '?auth=' + secret : '';
 
-  // match_alarms에서 notified=false 전체 조회
-  const res = await fetch(dbUrl + '/match_alarms.json' + authQ);
+  // notified=false인 알람만 Firebase 쿼리로 조회
+  const queryQ = authQ
+    ? authQ + '&orderBy="notified"&equalTo=false'
+    : '?orderBy="notified"&equalTo=false';
+  const res = await fetch(dbUrl + '/match_alarms.json' + queryQ);
   if (!res.ok) return;
   const data = await res.json();
   if (!data) return;
@@ -434,7 +441,7 @@ async function runAlarmCheck(env) {
   const oneHour = 60 * 60 * 1000;
 
   const targets = Object.values(data).filter(a => {
-    if (!a || !a.matchId || a.notified) return false;
+    if (!a || !a.matchId) return false;
     const st = Number(a.startTime);
     if (isNaN(st)) return false;
     const diff = st - now;
@@ -594,7 +601,7 @@ async function handleDbPublicRead(request, env) {
         const res = await fetch(`${dbUrl}/${dbPath}.json${authQ}`);
         if (!res.ok) return null;
         return await res.json();
-      }, 300);
+      }, 1800);
       return json({ ok: true, data });
     }
     const res = await fetch(`${dbUrl}/${dbPath}.json${authQ}${shallowParam}`);
@@ -738,7 +745,7 @@ async function handleDbRead(request, env) {
         const res = await fetch(`${dbUrl}/${dbPath}.json${authQ}`);
         if (!res.ok) return null;
         return await res.json();
-      }, 300);
+      }, 1800);
       return json({ ok: true, data });
     }
     const res = await fetch(`${dbUrl}/${dbPath}.json${authQ}${shallowParam}`);
@@ -1644,7 +1651,7 @@ async function handleRatingRead(request, env) {
       if (!res.ok) return {};
       return await res.json();
     },
-    300 // 5분
+    1800 // 30분
   );
   return json({ ok: true, data: data || {} });
 }
@@ -2240,7 +2247,7 @@ async function handleWeeklyMissionConfigRead(request, env) {
       const res = await fetch(`${dbUrl}/communities/${communityId}/weekly_missions/config.json${authQ}`);
       return await res.json();
     },
-    600 // 10분
+    1800 // 30분
   );
   return json({ ok:true, data: data || [] });
 }
@@ -2438,7 +2445,29 @@ async function handlePeakTiersRead(request, env) {
       });
       return result;
     },
-    900 // 15분
+    1800 // 30분
   );
   return json({ ok: true, data: data || {} });
+}
+
+// ── 딥롤 서버 정보 프록시 (10분 Cloudflare 캐시) ──
+async function handleServerInfo(request, env) {
+  let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
+  const { serverId } = body;
+  if (!serverId) return json({ok:false,error:'serverId 없음'},400);
+
+  const data = await cachedFetch(
+    `server-info-${serverId}`,
+    async () => {
+      const res = await fetch(
+        `https://b2c-api-cdn.deeplol.gg/tournament/server_info?server_id=${serverId}`,
+        { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Referer': 'https://www.deeplol.gg/' } }
+      );
+      if (!res.ok) return null;
+      return await res.json();
+    },
+    1800 // 30분
+  );
+  if (!data) return json({ok:false,error:'서버 정보 조회 실패'},500);
+  return json({ ok:true, data });
 }
