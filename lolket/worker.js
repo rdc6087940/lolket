@@ -1,22 +1,28 @@
 
 // ── Cloudflare Cache API 헬퍼 ──
 async function cachedFetch(cacheKey, fetchFn, ttlSeconds) {
-  const cache = caches.default;
-  const req = new Request('https://cache.roonging.com/' + cacheKey);
-  const cached = await cache.match(req);
-  if (cached) {
-    const data = await cached.json();
-    return data;
-  }
-  const data = await fetchFn();
-  const res = new Response(JSON.stringify(data), {
-    headers: {
-      'Content-Type': 'application/json',
-      'Cache-Control': `public, max-age=${ttlSeconds}`
+  try {
+    const cache = caches.default;
+    const req = new Request('https://cache.roonging.com/' + cacheKey);
+    const cached = await cache.match(req);
+    if (cached) {
+      console.log('[cache] HIT:', cacheKey);
+      return await cached.json();
     }
-  });
-  await cache.put(req, res);
-  return data;
+    console.log('[cache] MISS:', cacheKey);
+    const data = await fetchFn();
+    const res = new Response(JSON.stringify(data), {
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': `public, max-age=${ttlSeconds}`
+      }
+    });
+    await cache.put(req, res);
+    return data;
+  } catch(e) {
+    console.log('[cache] ERROR:', e.message, '- falling back to direct fetch');
+    return await fetchFn();
+  }
 }
 
 async function invalidateCache(cacheKey) {
@@ -285,6 +291,10 @@ export default {
       return handleRatingMatchApply(request, env);
     }
     // 마스터 전용 Cron 수동 실행 테스트
+    // 피크티어 경량 읽기
+    if (path === '/peak-tiers-read' && request.method === 'POST') {
+      return handlePeakTiersRead(request, env);
+    }
     // 주간 미션
     if (path === '/weekly-mission-config-read' && request.method === 'POST') {
       return handleWeeklyMissionConfigRead(request, env);
@@ -565,6 +575,7 @@ async function handleDbPublicRead(request, env) {
     /^communities\/[^/]+\/rating_history($|\/)/,
     /^communities\/[^/]+\/matches\/[^/]+\/chat($|\/)/,
     /^communities\/[^/]+\/matches\/[^/]+\/auctionLog($|\/)/,
+    /^system\/patch_mode$/,
   ];
   if (!publicRead.some(r => r.test(dbPath))) {
     return json({ ok: false, error: '허용되지 않는 경로입니다' }, 403);
@@ -2399,4 +2410,35 @@ async function runWeeklyMissionReset(env) {
       console.log(`[weekly-reset] ${cid} counts 초기화`);
     } catch(e) {}
   }
+}
+
+// ── 피크티어 경량 읽기 ──
+// member_analysis 전체(2.3MB) 대신 peak_tier만 추출해서 반환 (15분 캐시)
+async function handlePeakTiersRead(request, env) {
+  let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
+  const { communityId } = body;
+  if (!communityId) return json({ok:false,error:'communityId 없음'},400);
+
+  const data = await cachedFetch(
+    `peak-tiers-${communityId}`,
+    async () => {
+      const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+      const authQ = secret ? '?auth='+secret : '';
+      // 전체 member_analysis를 읽되 Worker에서 peak_tier만 추출
+      const res = await fetch(`${dbUrl}/communities/${communityId}/member_analysis.json${authQ}`);
+      if (!res.ok) return {};
+      const raw = await res.json();
+      if (!raw) return {};
+      // peak_tier, peak_lp만 추출 → 크기 대폭 축소
+      const result = {};
+      Object.entries(raw).forEach(([puuId, d]) => {
+        if (d && d.peak_tier) {
+          result[puuId] = { tier: d.peak_tier, lp: d.peak_lp || 0 };
+        }
+      });
+      return result;
+    },
+    900 // 15분
+  );
+  return json({ ok: true, data: data || {} });
 }

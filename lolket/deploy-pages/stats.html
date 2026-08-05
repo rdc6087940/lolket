@@ -443,6 +443,16 @@ tbody td{padding:.55rem 1rem;font-size:12px;vertical-align:middle;}
     gap:.35rem;
   }
 }
+
+/* ── 점검 모드 ── */
+.maintenance-overlay{position:fixed;inset:0;z-index:9999;background:linear-gradient(145deg,#020C18 0%,#0A1628 100%);flex-direction:column;align-items:center;justify-content:center;gap:1.5rem;display:none;pointer-events:none;}
+.maintenance-overlay.active{display:flex;pointer-events:all;}
+.maintenance-gif{width:160px;height:160px;object-fit:contain;}
+.maintenance-title{font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:4px;color:var(--gold);text-align:center;}
+.maintenance-sub{font-size:13px;color:var(--muted);text-align:center;line-height:1.8;max-width:300px;}
+.maintenance-badge{font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;color:#e05050;background:rgba(224,80,80,.1);border:1px solid rgba(224,80,80,.3);padding:4px 14px;border-radius:10px;display:flex;align-items:center;gap:6px;}
+.maintenance-badge::before{content:'';width:6px;height:6px;border-radius:50%;background:#e05050;animation:blink 1s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.2;}}
 </style>
 </head>
 <body>
@@ -1079,33 +1089,22 @@ async function loadAllPeakTiers() {
   // 15분 캐시
   if (Date.now() - _peakTierCacheTs < 15 * 60 * 1000) return;
   try {
-    const res = await fetch(WORKER_URL + '/db-public-read', {
+    const res = await fetch(WORKER_URL + '/peak-tiers-read', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ path: 'communities/' + COMMUNITY_ID + '/member_analysis' })
+      body: JSON.stringify({ communityId: COMMUNITY_ID })
     });
     const json = await res.json();
     if (!json.ok || !json.data) return;
-    const analysisMap = json.data;
-    console.log('[peakTier] analysisMap keys:', Object.keys(analysisMap).length);
-    const sampleKey = Object.keys(analysisMap)[0];
-    console.log('[peakTier] sample:', sampleKey, JSON.stringify(analysisMap[sampleKey]).slice(0,100));
-    console.log('[peakTier] allData[0].puu_id:', allData[0]?.puu_id);
-    let updated = false;
     allData.forEach(function(m) {
-      const d = analysisMap[m.puu_id];
-      if (!d) return;
-      const peakTier = d.peakTier || (d.custom && d.custom.peakTier) || null;
-      const peakLp   = d.peakLp !== undefined ? d.peakLp : (d.custom && d.custom.peakLp !== undefined ? d.custom.peakLp : null);
-      if (peakTier) {
-        m._peakTier = peakTier;
-        m._peakLp   = peakLp;
-        updated = true;
-      }
+      const d = json.data[m.puu_id];
+      if (d) { m._peakTier = d.tier; m._peakLp = d.lp || 0; }
     });
-    console.log('[peakTier] updated:', updated);
-    if (updated) renderPage();
-  } catch(e) {}
+    _peakTierCacheTs = Date.now();
+    renderPage();
+  } catch(e) {
+    console.error('[peakTier]', e.message);
+  }
 }
 
 
@@ -1909,9 +1908,17 @@ async function fetchMatchesBatch(matchIds, platform, labelPrefix) {
   const results = [];
   for (let i=0; i<matchIds.length; i+=BATCH) {
     const batch = matchIds.slice(i,i+BATCH);
-    const fetched = await Promise.all(batch.map(function(mid){
-      return fetch(API_BASE+'/match/match-cached?match_id='+mid+'&platform_id='+platform)
-        .then(function(r){return r.json();}).catch(function(){return null;});
+    const fetched = await Promise.all(batch.map(async function(mid){
+      // IndexedDB 캐시 확인
+      const cached = await idbGetMatch(mid);
+      if (cached) return cached;
+      // 캐시 없으면 API 호출 후 저장
+      try {
+        const r = await fetch(API_BASE+'/match/match-cached?match_id='+mid+'&platform_id='+platform);
+        const data = await r.json();
+        if (data) idbPutMatch(mid, data); // 비동기 저장
+        return data;
+      } catch(e) { return null; }
     }));
     results.push.apply(results, fetched.filter(Boolean));
     const done = Math.min(i+BATCH, matchIds.length);
@@ -3976,6 +3983,69 @@ function _loadWeeklyCountBadge(member) {
   }
 }
 
+
+// ── IndexedDB 매치 캐시 ──
+var _idb = null;
+function openMatchDB() {
+  if (_idb) return Promise.resolve(_idb);
+  return new Promise(function(resolve, reject) {
+    var req = indexedDB.open('roonging-matches', 1);
+    req.onupgradeneeded = function(e) {
+      e.target.result.createObjectStore('matches', { keyPath: 'id' });
+    };
+    req.onsuccess = function(e) { _idb = e.target.result; resolve(_idb); };
+    req.onerror = function() { reject(req.error); };
+  });
+}
+
+async function idbGetMatch(matchId) {
+  try {
+    var db = await openMatchDB();
+    return new Promise(function(resolve) {
+      var tx = db.transaction('matches', 'readonly');
+      var req = tx.objectStore('matches').get(matchId);
+      req.onsuccess = function() { resolve(req.result ? req.result.data : null); };
+      req.onerror = function() { resolve(null); };
+    });
+  } catch(e) { return null; }
+}
+
+async function idbPutMatch(matchId, data) {
+  try {
+    var db = await openMatchDB();
+    return new Promise(function(resolve) {
+      var tx = db.transaction('matches', 'readwrite');
+      tx.objectStore('matches').put({ id: matchId, data: data, ts: Date.now() });
+      tx.oncomplete = resolve;
+      tx.onerror = resolve;
+    });
+  } catch(e) {}
+}
+
+
+// ── 임시 점검 확인 ──
+var _maintenanceMode = false;
+
+async function checkMaintenanceMode() {
+  try {
+    var res = await fetch(WORKER_URL + '/db-public-read', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path: 'system/patch_mode' })
+    });
+    var j = await res.json();
+    var isOn = j.ok && (j.data === true || j.data === 'true');
+    if (isOn !== _maintenanceMode) {
+      _maintenanceMode = isOn;
+      var overlay = document.getElementById('maintenance-overlay');
+      if (overlay) overlay.classList.toggle('active', isOn);
+    }
+  } catch(e) {}
+}
+
+// 페이지 로드 시 즉시 + 5초마다 폴링 (실시간에 가깝게)
+checkMaintenanceMode();
+setInterval(checkMaintenanceMode, 5000);
+
 </script>
 
 
@@ -3996,5 +4066,17 @@ function _loadWeeklyCountBadge(member) {
   </div>
 </div>
 
+
+<!-- ── 임시 점검 오버레이 ── -->
+<div id="maintenance-overlay" class="maintenance-overlay">
+  <div class="maintenance-badge">점검중</div>
+  <img src="/notice-icon.png" class="maintenance-gif" alt="점검중">
+  <div class="maintenance-title">현재 점검중입니다</div>
+  <div class="maintenance-sub">
+    이용에 불편을 드려 죄송합니다.<br>
+    빠른 시일 내에 서비스를 재개하겠습니다.<br><br>
+    <span style="color:var(--muted);font-size:11px;">문의: 관리자에게 연락해 주세요</span>
+  </div>
+</div>
 </body>
 </html>
