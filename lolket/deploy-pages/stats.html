@@ -564,6 +564,17 @@ tbody td{padding:.55rem 1rem;font-size:12px;vertical-align:middle;}
       style="padding:5px 14px;border-radius:2px 2px 0 0;border:1px solid var(--border);border-bottom:none;background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">
       📈 레이팅 변화
     </button>
+    <button id="tab-community" onclick="switchMainTab('community')"
+      style="padding:5px 14px;border-radius:2px 2px 0 0;border:1px solid var(--border);border-bottom:none;background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">
+      🏆 커뮤니티 통계
+    </button>
+  </div>
+
+  <!-- ── 커뮤니티 통계 뷰 ── -->
+  <div id="community-stats-view" style="display:none;padding:1rem;max-width:900px;margin:0 auto;">
+    <div id="community-stats-content">
+      <div style="text-align:center;color:var(--muted);padding:3rem;font-family:'Rajdhani',sans-serif;">로딩 중...</div>
+    </div>
   </div>
 
   <!-- ── 레이팅 변화 랭킹 뷰 ── -->
@@ -1327,8 +1338,14 @@ let _lastUpdateTime = {}; // puuId+mode → timestamp (쿨타임용)
 // ── Firebase 저장/로드 ──
 function _cacheKey(puuId, mode) { return puuId + '__' + mode; }
 
+// Firebase 분석 데이터 캐시 { puuId_mode: data }
+var _fbAnalysisCache = {};
+
 async function loadFromFirebase(puuId, mode) {
   if (!COMMUNITY_ID) return null;
+  // 메모리 캐시 확인
+  var cacheKey = puuId + '_' + mode;
+  if (_fbAnalysisCache[cacheKey]) return _fbAnalysisCache[cacheKey];
   try {
     const res = await fetch(WORKER_URL + '/member-analysis-read', {
       method: 'POST',
@@ -1337,6 +1354,7 @@ async function loadFromFirebase(puuId, mode) {
     });
     const json = await res.json();
     if (!json.ok || !json.data) return null;
+    _fbAnalysisCache[cacheKey] = json.data; // 캐시 저장
     return json.data;
   } catch(e) { return null; }
 }
@@ -3057,38 +3075,37 @@ function switchMainTab(tab) {
   var filterBar = document.querySelector('.filter-bar');
 
   var mobileCards = document.getElementById('mobile-card-list');
+  var communityTab = document.getElementById('tab-community');
+  var communityView = document.getElementById('community-stats-view');
+  [statsTab, ratingTab, communityTab].forEach(function(t) {
+    if (t) { t.style.borderBottom='none'; t.style.background='transparent'; t.style.color='var(--muted)'; }
+  });
+  var pagination = document.getElementById('pagination');
+  if (tableWrap) tableWrap.style.display = 'none';
+  if (rankView) rankView.style.display = 'none';
+  if (communityView) communityView.style.display = 'none';
+  if (filterBar) filterBar.style.display = 'none';
+  if (mobileCards) mobileCards.style.display = 'none';
+  if (pagination) pagination.style.display = 'none';
+
   if (tab === 'stats') {
-    statsTab.style.borderBottom  = '2px solid var(--blue)';
-    statsTab.style.background    = 'rgba(10,200,185,.08)';
-    statsTab.style.color         = 'var(--blue)';
-    ratingTab.style.borderBottom = 'none';
-    ratingTab.style.background   = 'transparent';
-    ratingTab.style.color        = 'var(--muted)';
+    statsTab.style.borderBottom = '2px solid var(--blue)';
+    statsTab.style.background   = 'rgba(10,200,185,.08)';
+    statsTab.style.color        = 'var(--blue)';
     if (tableWrap) tableWrap.style.display = '';
-    if (rankView)  rankView.style.display  = 'none';
     if (filterBar) filterBar.style.display = '';
     if (mobileCards) mobileCards.style.display = '';
-  } else {
+    if (pagination) pagination.style.display = '';
+  } else if (tab === 'rating') {
     ratingTab.style.borderBottom = '2px solid var(--gold)';
     ratingTab.style.background   = 'rgba(200,170,110,.08)';
     ratingTab.style.color        = 'var(--gold)';
-    statsTab.style.borderBottom  = 'none';
-    statsTab.style.background    = 'transparent';
-    statsTab.style.color         = 'var(--muted)';
-    if (tableWrap) tableWrap.style.display = 'none';
-    if (rankView)  rankView.style.display  = '';
-    if (filterBar) filterBar.style.display = 'none';
-    if (mobileCards) mobileCards.style.display = 'none';
-    // 기본 기간: 최근 30일
-    var today = new Date();
-    var from30 = new Date(today); from30.setDate(from30.getDate() - 30);
-    var toStr   = today.toISOString().slice(0, 10);
-    var fromStr = from30.toISOString().slice(0, 10);
-    var fromEl = document.getElementById('rating-rank-from');
-    var toEl   = document.getElementById('rating-rank-to');
-    if (fromEl && !fromEl.value) fromEl.value = fromStr;
-    if (toEl   && !toEl.value)   toEl.value   = toStr;
-    loadRatingRank();
+    if (rankView) rankView.style.display = '';
+  } else if (tab === 'community') {
+    communityTab.style.borderBottom = '2px solid #A78BFA';
+    communityTab.style.background   = 'rgba(167,139,250,.08)';
+    communityTab.style.color        = '#A78BFA';
+    if (communityView) { communityView.style.display = ''; renderCommunityStats(); }
   }
 }
 
@@ -3788,17 +3805,26 @@ async function loadWeeklyMission(member) {
     // 캐시된 매치로 이번 주 게임 수 계산
     var count = _calcWeeklyCountFromCache(member.puu_id);
     if (count === null) {
-      // Firebase 저장 데이터에서 weeklyCount 읽기
-      try {
-        var _fbRes = await fetch(WORKER_URL + '/member-analysis-read', {
-          method: 'POST', headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({ communityId: COMMUNITY_ID, puuId: member.puu_id, mode: 'custom' })
-        });
-        var _fbJ = await _fbRes.json();
-        if (_fbJ.ok && _fbJ.data && _fbJ.data.meta && _fbJ.data.meta.weeklyTs >= _getMondayTs()) {
-          count = _fbJ.data.meta.weeklyCount || 0;
-        } else { count = 0; }
-      } catch(e) { count = 0; }
+      // 캐시된 Firebase 데이터에서 weeklyCount 읽기
+      var _fbCached2 = _fbAnalysisCache[member.puu_id + '_custom'];
+      if (_fbCached2 && _fbCached2.meta && _fbCached2.meta.weeklyTs >= _getMondayTs()) {
+        count = _fbCached2.meta.weeklyCount || 0;
+      } else {
+        // 캐시 없으면 직접 조회
+        try {
+          var _fbRes = await fetch(WORKER_URL + '/member-analysis-read', {
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ communityId: COMMUNITY_ID, puuId: member.puu_id, mode: 'custom' })
+          });
+          var _fbJ = await _fbRes.json();
+          if (_fbJ.ok && _fbJ.data) {
+            _fbAnalysisCache[member.puu_id + '_custom'] = _fbJ.data;
+            if (_fbJ.data.meta && _fbJ.data.meta.weeklyTs >= _getMondayTs()) {
+              count = _fbJ.data.meta.weeklyCount || 0;
+            } else { count = 0; }
+          } else { count = 0; }
+        } catch(e) { count = 0; }
+      }
     }
     count = count || 0;
     var weekKey = (function() {
@@ -4059,31 +4085,6 @@ function _calcWeeklyCountFromCache(puuId) {
   return null;
 }
 
-// Firebase matchIds에서 이번 주 카운트 비동기 계산
-async function _calcWeeklyCountFromFb(member) {
-  if (!COMMUNITY_ID || !member) return null;
-  try {
-    var res = await fetch(WORKER_URL + '/member-analysis-read', {
-      method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ communityId: COMMUNITY_ID, puuId: member.puu_id, mode: 'custom' })
-    });
-    var j = await res.json();
-    if (!j.ok || !j.data || !j.data.matchIds) return null;
-    var mondayTs = _getMondayTs();
-    // matchIds 배열에서 타임스탬프 추출 (형식: matchId_timestamp 또는 숫자)
-    var matchIds = j.data.matchIds;
-    // 실제 게임 데이터가 없으면 matches 배열에서 계산
-    if (j.data.matches) {
-      var count = 0;
-      j.data.matches.forEach(function(m) {
-        var ts = (m.creation_timestamp || 0) * 1000;
-        if (ts >= mondayTs) count++;
-      });
-      return count;
-    }
-    return null;
-  } catch(e) { return null; }
-}
 
 // 상세 팝업 주간 게임 수 배지
 function _loadWeeklyCountBadge(member) {
@@ -4099,24 +4100,16 @@ function _loadWeeklyCountBadge(member) {
     return;
   }
 
-  // 2. Firebase 저장 데이터에서 weeklyCount 읽기
+  // 2. 캐시된 Firebase 데이터에서 weeklyCount 읽기 (추가 API 호출 없음)
   badge.style.display = 'none';
-  if (COMMUNITY_ID) {
-    fetch(WORKER_URL + '/member-analysis-read', {
-      method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ communityId: COMMUNITY_ID, puuId: member.puu_id, mode: 'custom' })
-    }).then(function(r){ return r.json(); }).then(function(j) {
-      if (!j.ok || !j.data || !j.data.meta) return;
-      var wc = j.data.meta.weeklyCount;
-      var wts = j.data.meta.weeklyTs;
-      // 저장된 주간 카운트가 이번 주 것인지 확인
-      if (wc !== undefined && wts && wts >= _getMondayTs()) {
-        if (badge && _detailCurrentMemberForLog && _detailCurrentMemberForLog.puu_id === member.puu_id) {
-          badge.textContent = '이번 주 ' + wc + '판';
-          badge.style.display = '';
-        }
-      }
-    }).catch(function(){});
+  var fbCached = _fbAnalysisCache[member.puu_id + '_custom'];
+  if (fbCached && fbCached.meta) {
+    var wc = fbCached.meta.weeklyCount;
+    var wts = fbCached.meta.weeklyTs;
+    if (wc !== undefined && wts && wts >= _getMondayTs()) {
+      badge.textContent = '이번 주 ' + wc + '판';
+      badge.style.display = '';
+    }
   }
 }
 
@@ -4253,6 +4246,178 @@ async function runNicknameCheck() {
     }
   } catch(e) { alert('오류: ' + e.message); }
   if (btn) { btn.disabled = false; btn.textContent = '🏷️ 닉변경 체크'; }
+}
+
+
+// ── 커뮤니티 통계 ──
+var _communityStatsCache = null;
+var _communityStatsCacheTs = 0;
+
+function renderCommunityStats() {
+  if (!allData || !allData.length) return;
+  var el = document.getElementById('community-stats-content');
+  if (!el) return;
+
+  if (_communityStatsCache && Date.now() - _communityStatsCacheTs < 5 * 60 * 1000) {
+    el.innerHTML = _communityStatsCache; return;
+  }
+
+  var members = allData.filter(function(m){ return m.cnt > 0; });
+  var total = members.length;
+  if (!total) { el.innerHTML = '<div style="text-align:center;color:var(--muted);padding:3rem;">데이터가 없습니다</div>'; return; }
+
+  // 1. 포지션 - normalizePos 반환값('Top','Jungle' 등)에 맞게
+  var POS_MAP = {'Top':'TOP','Jungle':'JUNGLE','Middle':'MIDDLE','Bottom':'BOTTOM','Support':'SUPPORT'};
+  var POS_ORDER = ['TOP','JUNGLE','MIDDLE','BOTTOM','SUPPORT'];
+  var POS_KO = {TOP:'탑',JUNGLE:'정글',MIDDLE:'미드',BOTTOM:'원딜',SUPPORT:'서폿'};
+  var POS_COLORS = {TOP:'#E74C3C',JUNGLE:'#27AE60',MIDDLE:'#3498DB',BOTTOM:'#E67E22',SUPPORT:'#9B59B6'};
+  var posCount = {TOP:0,JUNGLE:0,MIDDLE:0,BOTTOM:0,SUPPORT:0};
+  members.forEach(function(m) {
+    var pos = POS_MAP[normalizePos(m.most_position)];
+    if (pos) posCount[pos]++;
+  });
+
+  // 2. 티어
+  var TIER_ORDER = ['CHALLENGER','GRANDMASTER','MASTER','DIAMOND','EMERALD','PLATINUM','GOLD','SILVER','BRONZE','IRON'];
+  var TIER_KO = {CHALLENGER:'챌린저',GRANDMASTER:'그마',MASTER:'마스터',DIAMOND:'다이아',EMERALD:'에메',PLATINUM:'플래',GOLD:'골드',SILVER:'실버',BRONZE:'브론즈',IRON:'아이언'};
+  var TIER_COLORS = {CHALLENGER:'#F4C842',GRANDMASTER:'#E05050',MASTER:'#9B59B6',DIAMOND:'#4A90D9',EMERALD:'#27AE60',PLATINUM:'#1ABC9C',GOLD:'#F39C12',SILVER:'#95A5A6',BRONZE:'#CD6133',IRON:'#7F8C8D'};
+  var tierCount = {};
+  TIER_ORDER.forEach(function(t){ tierCount[t]=0; });
+  members.forEach(function(m) {
+    var t = (m.tier||'').toUpperCase().split(' ')[0].trim();
+    if (tierCount[t] !== undefined) tierCount[t]++;
+  });
+
+  // 3. 최근 게임 분포 (creation_timestamp = 마지막 게임 시각, 초 단위)
+  var nowSec = Date.now()/1000;
+  var buckets = [
+    {label:'1일 이내',  max:86400,    count:0},
+    {label:'3일 이내',  max:86400*3,  count:0},
+    {label:'1주 이내',  max:86400*7,  count:0},
+    {label:'1달 이내',  max:86400*30, count:0},
+    {label:'3달 이상',  max:Infinity, count:0}
+  ];
+  members.forEach(function(m) {
+    var ts = m.creation_timestamp || 0;
+    var diff = nowSec - ts;
+    for (var i=0; i<buckets.length; i++) {
+      if (diff <= buckets[i].max) { buckets[i].count++; break; }
+    }
+  });
+
+  // 4. 평균값
+  // 레이팅: _rating (loadAllRatings에서 세팅, 10판 이상만)
+  var rSum=0, rCnt=0, kdaSum=0, kCnt=0, gamesSum=0;
+  var winSum=0, loseSum=0;
+  members.forEach(function(m) {
+    if (m._rating && m._rating > 0 && m.cnt >= 10) { rSum+=m._rating; rCnt++; }
+    // KDA = (kill+assist)/death 비율인데, 딥롤은 kda 필드가 소수값
+    // 비정상적 높은 값 방지: 20 이하만 포함
+    if (m.kda && m.kda > 0 && m.kda < 20) { kdaSum+=m.kda; kCnt++; }
+    gamesSum += (m.cnt||0);
+    winSum  += (m.win||0);
+    loseSum += ((m.cnt||0)-(m.win||0));
+  });
+  var avgRating  = rCnt ? Math.round(rSum/rCnt) : null;
+  var avgKda     = kCnt ? (kdaSum/kCnt).toFixed(2) : '—';
+  var avgGames   = Math.round(gamesSum/total);
+  var avgWinrate = gamesSum ? (winSum/gamesSum*100).toFixed(1)+'%' : '—';
+  // 총 내전: 전체 게임 합산 ÷ 10 (양 팀 5명씩 참여)
+  var communityGames = Math.floor(gamesSum/10);
+
+  // ── 차트 함수 ──
+  function drawPie(keys, countObj, colors) {
+    var validKeys = keys.filter(function(k){ return countObj[k]>0; });
+    var tot = validKeys.reduce(function(s,k){ return s+countObj[k]; },0);
+    if (!tot) return '<div style="width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,.05);flex-shrink:0;"></div>';
+    var svg = '<svg viewBox="0 0 100 100" width="160" height="160" style="flex-shrink:0;">';
+    var angle = -90, r=38, cx=50, cy=50;
+    validKeys.forEach(function(k) {
+      var sweep = countObj[k]/tot*360;
+      var a1 = angle*Math.PI/180;
+      var a2 = (angle+sweep)*Math.PI/180;
+      var x1=cx+r*Math.cos(a1), y1=cy+r*Math.sin(a1);
+      var x2=cx+r*Math.cos(a2), y2=cy+r*Math.sin(a2);
+      svg += '<path d="M'+cx+' '+cy+' L'+x1.toFixed(2)+' '+y1.toFixed(2)+
+             ' A'+r+' '+r+' 0 '+(sweep>180?1:0)+' 1 '+x2.toFixed(2)+' '+y2.toFixed(2)+' Z"'+
+             ' fill="'+(colors[k]||'#555')+'"/>';
+      angle += sweep;
+    });
+    svg += '<circle cx="50" cy="50" r="24" fill="var(--bg-dark)"/></svg>';
+    return svg;
+  }
+
+  function drawLegend(keys, countObj, colors, labelMap) {
+    var tot = keys.reduce(function(s,k){ return s+(countObj[k]||0); },0);
+    return keys.filter(function(k){ return countObj[k]>0; }).map(function(k) {
+      var pct = (countObj[k]/tot*100).toFixed(1);
+      return '<div style="display:flex;align-items:center;gap:7px;padding:3px 0;">' +
+        '<div style="width:10px;height:10px;border-radius:2px;flex-shrink:0;background:'+(colors[k]||'#555')+'"></div>' +
+        '<span style="font-size:12px;color:var(--white);">'+(labelMap&&labelMap[k]||k)+'</span>' +
+        '<span style="margin-left:auto;font-size:12px;font-weight:700;color:var(--white);">'+pct+'%</span>' +
+        '<span style="font-size:11px;color:var(--muted);margin-left:4px;">('+countObj[k]+')</span>' +
+      '</div>';
+    }).join('');
+  }
+
+  // 막대 차트 - flex로 높이 비율 표현
+  var maxB = Math.max.apply(null, buckets.map(function(b){return b.count;}));
+  var barHtml = '<div style="display:flex;gap:8px;height:160px;align-items:flex-end;">' +
+    buckets.map(function(b) {
+      var heightPct = maxB ? Math.round(b.count/maxB*120) : 0;
+      return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;">' +
+        '<span style="font-size:12px;font-weight:700;color:var(--white);">'+b.count+'</span>' +
+        '<div style="width:100%;height:'+heightPct+'px;min-height:'+(b.count>0?4:0)+'px;'+
+             'background:linear-gradient(to top,#6366f1,#a78bfa);border-radius:4px 4px 0 0;"></div>' +
+        '<span style="font-size:10px;color:var(--muted);text-align:center;white-space:nowrap;">'+b.label+'</span>' +
+      '</div>';
+    }).join('') + '</div>';
+
+  function statBox(emoji, label, value, color) {
+    return '<div style="background:var(--bg-panel);border:1px solid var(--border-subtle);border-radius:8px;padding:1rem;text-align:center;">' +
+      '<div style="font-size:18px;margin-bottom:4px;">'+emoji+'</div>' +
+      '<div style="font-size:11px;color:var(--muted);margin-bottom:6px;">'+label+'</div>' +
+      '<div style="font-size:22px;font-weight:800;color:'+color+';">'+value+'</div>' +
+    '</div>';
+  }
+  function chartCard(title, body) {
+    return '<div style="background:var(--bg-panel);border:1px solid var(--border-subtle);border-radius:8px;padding:1.25rem;">' +
+      '<div style="font-size:12px;font-weight:700;letter-spacing:1px;color:var(--white);margin-bottom:1rem;">'+title+'</div>' +
+      body+'</div>';
+  }
+
+  var html = '<div style="max-width:860px;margin:0 auto;display:flex;flex-direction:column;gap:.75rem;">';
+
+  // 요약 박스 5개
+  html += '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:.6rem;">';
+  html += statBox('⭐','평균 레이팅', avgRating||'—', '#F59E0B');
+  html += statBox('⚔️','평균 KDA', avgKda, 'var(--blue)');
+  html += statBox('🎮','평균 게임수', avgGames+'판', '#A78BFA');
+  html += statBox('📈','평균 승률', avgWinrate, '#22C55E');
+  html += statBox('🏆','총 내전 수', communityGames.toLocaleString()+'게임', '#F59E0B');
+  html += '</div>';
+
+  // 포지션 + 티어
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;">';
+  html += chartCard('🎮 주 포지션 분포',
+    '<div style="display:flex;align-items:center;gap:1.25rem;flex-wrap:wrap;">' +
+    drawPie(POS_ORDER, posCount, POS_COLORS) +
+    '<div style="flex:1;min-width:120px;">'+drawLegend(POS_ORDER, posCount, POS_COLORS, POS_KO)+'</div>' +
+    '</div>');
+  html += chartCard('🏅 현 티어 분포',
+    '<div style="display:flex;align-items:center;gap:1.25rem;flex-wrap:wrap;">' +
+    drawPie(TIER_ORDER, tierCount, TIER_COLORS) +
+    '<div style="flex:1;min-width:120px;">'+drawLegend(TIER_ORDER, tierCount, TIER_COLORS, TIER_KO)+'</div>' +
+    '</div>');
+  html += '</div>';
+
+  // 막대차트
+  html += chartCard('📅 최근 게임 시간 분포', barHtml);
+  html += '</div>';
+
+  _communityStatsCache = html;
+  _communityStatsCacheTs = Date.now();
+  el.innerHTML = html;
 }
 
 </script>
