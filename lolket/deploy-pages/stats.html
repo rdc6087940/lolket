@@ -488,6 +488,10 @@ tbody td{padding:.55rem 1rem;font-size:12px;vertical-align:middle;}
           style="padding:5px 12px;border-radius:3px;border:1px solid rgba(200,100,100,.3);background:rgba(200,100,100,.06);color:#e88;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:.5px;cursor:pointer;display:none;">
           🔄 Cron 수동실행
         </button>
+        <button id="btn-nickname-run" onclick="runNicknameCheck()"
+          style="padding:5px 12px;border-radius:3px;border:1px solid rgba(167,139,250,.3);background:rgba(167,139,250,.06);color:#A78BFA;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:.5px;cursor:pointer;display:none;">
+          🏷️ 닉변경 체크
+        </button>
         <button id="discord-login-btn" onclick="discordHeaderLogin()"
           style="padding:5px 10px;border-radius:3px;border:1px solid rgba(114,137,218,.4);background:rgba(114,137,218,.08);color:#7289da;font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;">
           <img src="https://cdn.prod.website-files.com/6257adef93867e50d84d30e2/636e0a69f118df70ad7828d4_icon_clyde_blurple_RGB.png" style="width:12px;height:12px;">Discord 로그인
@@ -870,12 +874,8 @@ async function loadData(){
     document.title=(json.server_name||'커뮤니티')+' 전적';
     // cid 있으면 마스터 버튼 표시
     if (COMMUNITY_ID) {
-      var mb = document.getElementById('btn-init-rating');
-      if (mb) mb.style.display = '';
-      var mbCron = document.getElementById('btn-cron-test');
-      if (mbCron) mbCron.style.display = '';
-      var mbWm2 = document.getElementById('btn-weekly-mission');
-      if (mbWm2) mbWm2.style.display = '';
+      // 마스터 전용 버튼은 로그인 후에만 표시
+
     }
     // 이미 관리자 로그인된 경우 UI 복원
     if (_masterAuthed && _masterSessionToken) {
@@ -1290,6 +1290,8 @@ function syncTableWidth(){} // 단일 테이블 구조에서 불필요
         style="padding:4px 10px;border-radius:2px 2px 0 0;border:1px solid var(--border);border-bottom:none;background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:.5px;">💬 코멘트</button>
       <button id="dm-tab-memo" onclick="switchDetailTab('memo')"
         style="padding:4px 10px;border-radius:2px 2px 0 0;border:1px solid var(--border);border-bottom:none;background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:.5px;">📝 메모</button>
+      <button id="dm-tab-nickname" onclick="switchDetailTab('nickname')"
+        style="padding:4px 10px;border-radius:2px 2px 0 0;border:1px solid var(--border);border-bottom:none;background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:.5px;">🏷️ 닉 변경</button>
     </div>
     <div id="dm-content">
       <div class="dm-loading"><div class="spinner"></div> 분석 중...</div>
@@ -1301,6 +1303,7 @@ function syncTableWidth(){} // 단일 테이블 구조에서 불필요
     <div id="dm-comments" style="display:none;overflow-y:auto;max-height:500px;">
       <div style="padding:2rem;text-align:center;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:12px;">로딩 중...</div>
     </div>
+    <div id="dm-nickname" style="display:none;overflow-y:auto;max-height:500px;padding:.75rem;"></div>
     <div id="dm-memo" style="display:none;padding:.75rem;">
       <div id="dm-memo-content">
         <div style="padding:2rem;text-align:center;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:12px;">로딩 중...</div>
@@ -1879,7 +1882,8 @@ async function loadDetailData(memberData, isUpdate) {
 
     // 레이팅 계산 (커스텀 모드일 때만)
     // 최고 티어 조회 (표시용만 - 레이팅 계산과 무관)
-    if (!memberData._peakTier) {
+    // 업데이트 시 또는 없을 때 갱신
+    if (!memberData._peakTier || isUpdate) {
       var peakData = await fetchPeakTier(memberData.puu_id, memberData.platform_id || 'KR');
       if (peakData) {
         memberData._peakTier = peakData.tier;
@@ -2326,8 +2330,10 @@ async function doMasterAuth() {
     sessionStorage.setItem('master_token', _masterSessionToken);
     sessionStorage.setItem('master_id', id);
     sessionStorage.setItem('master_pw', pw);
-    var mbWm = document.getElementById('btn-weekly-mission');
-    if (mbWm) mbWm.style.display = '';
+    ['btn-weekly-mission','btn-nickname-run','btn-init-rating','btn-cron-test'].forEach(function(bid) {
+      var el = document.getElementById(bid);
+      if (el) el.style.display = '';
+    });
     scheduleAutoRating(); // 3시간마다 자동 계산 스케줄
     document.getElementById('master-overlay').classList.remove('open');
     openBatchModal();
@@ -2593,6 +2599,17 @@ async function doStatsAdminLogin() {
     var statusEl = document.getElementById('admin-status');
     statusEl.style.display = 'flex';
     document.getElementById('admin-status-text').textContent = (_statsAdminRole === 'master' ? '👑 마스터' : '🔑 관리자') + ' ' + id;
+    // 마스터 전용 버튼 표시
+    if (_statsAdminRole === 'master') {
+      var _btnWm = document.getElementById('btn-weekly-mission');
+      if (_btnWm) _btnWm.style.display = '';
+      var _btnNick = document.getElementById('btn-nickname-run');
+      if (_btnNick) _btnNick.style.display = '';
+      var _btnInit = document.getElementById('btn-init-rating');
+      if (_btnInit) _btnInit.style.display = '';
+      var _btnCron = document.getElementById('btn-cron-test');
+      if (_btnCron) _btnCron.style.display = '';
+    }
     renderPage();
   } catch(e) {
     document.getElementById('al-err').textContent = '오류: ' + e.message;
@@ -2605,6 +2622,11 @@ function statsAdminLogout() {
   _statsAdminRole  = '';
   document.getElementById('btn-admin-login').style.display = '';
   document.getElementById('admin-status').style.display = 'none';
+  // 마스터 전용 버튼 숨기기
+  ['btn-weekly-mission','btn-nickname-run','btn-init-rating','btn-cron-test'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
   renderPage();
 }
 window.statsAdminLogout = statsAdminLogout;
@@ -2765,26 +2787,29 @@ document.getElementById('tt-overlay').addEventListener('click', function(e) {
 var _detailCurrentMemberForLog = null;
 
 function switchDetailTab(tab) {
-  var analysisTab = document.getElementById('dm-tab-analysis');
-  var logTab      = document.getElementById('dm-tab-rating-log');
-  var weeklyTab   = document.getElementById('dm-tab-weekly');
-  var commTab     = document.getElementById('dm-tab-comments');
-  var memoTab     = document.getElementById('dm-tab-memo');
-  var contentEl   = document.getElementById('dm-content');
-  var logEl       = document.getElementById('dm-rating-log');
-  var weeklyEl    = document.getElementById('dm-weekly');
-  var commEl      = document.getElementById('dm-comments');
-  var memoEl      = document.getElementById('dm-memo');
+  var analysisTab  = document.getElementById('dm-tab-analysis');
+  var logTab       = document.getElementById('dm-tab-rating-log');
+  var weeklyTab    = document.getElementById('dm-tab-weekly');
+  var commTab      = document.getElementById('dm-tab-comments');
+  var memoTab      = document.getElementById('dm-tab-memo');
+  var nicknameTab  = document.getElementById('dm-tab-nickname');
+  var contentEl    = document.getElementById('dm-content');
+  var logEl        = document.getElementById('dm-rating-log');
+  var weeklyEl     = document.getElementById('dm-weekly');
+  var commEl       = document.getElementById('dm-comments');
+  var memoEl       = document.getElementById('dm-memo');
+  var nicknameEl   = document.getElementById('dm-nickname');
   if (!analysisTab) return;
 
-  [analysisTab, logTab, weeklyTab, commTab, memoTab].forEach(function(t) {
+  [analysisTab, logTab, weeklyTab, commTab, memoTab, nicknameTab].forEach(function(t) {
     if (t) { t.style.borderBottom='none'; t.style.background='transparent'; t.style.color='var(--muted)'; }
   });
-  if (contentEl) contentEl.style.display = 'none';
-  if (logEl)     logEl.style.display     = 'none';
-  if (weeklyEl)  weeklyEl.style.display  = 'none';
-  if (commEl)    commEl.style.display    = 'none';
-  if (memoEl)    memoEl.style.display    = 'none';
+  if (contentEl)   contentEl.style.display  = 'none';
+  if (logEl)       logEl.style.display      = 'none';
+  if (weeklyEl)    weeklyEl.style.display   = 'none';
+  if (commEl)      commEl.style.display     = 'none';
+  if (memoEl)      memoEl.style.display     = 'none';
+  if (nicknameEl)  nicknameEl.style.display = 'none';
 
   if (tab === 'analysis') {
     analysisTab.style.borderBottom = '2px solid var(--blue)';
@@ -2811,6 +2836,11 @@ function switchDetailTab(tab) {
     memoTab.style.background   = 'rgba(245,158,11,.08)';
     memoTab.style.color        = '#F59E0B';
     if (memoEl) { memoEl.style.display = ''; loadMemo(_detailCurrentMemberForLog); }
+  } else if (tab === 'nickname') {
+    nicknameTab.style.borderBottom = '2px solid #A78BFA';
+    nicknameTab.style.background   = 'rgba(167,139,250,.08)';
+    nicknameTab.style.color        = '#A78BFA';
+    if (nicknameEl) { nicknameEl.style.display = ''; loadNicknameHistory(_detailCurrentMemberForLog); }
   }
 }
 window.switchDetailTab = switchDetailTab;
@@ -3183,7 +3213,7 @@ async function runCronTest() {
     const res = await fetch(WORKER_URL + '/cron-rating-test', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token: _masterSessionToken, adminId: _masterAuthId, adminPw: _masterAuthPw })
+      body: JSON.stringify({ token: _statsAdminToken || _masterSessionToken, communityId: COMMUNITY_ID, serverId: SERVER_ID })
     });
     const j = await res.json();
     if (j.ok) {
@@ -4151,6 +4181,79 @@ async function checkMaintenanceMode() {
 
 // 페이지 로드 시 1번만 확인
 checkMaintenanceMode();
+
+
+// ── 닉네임 변경 이력 ──
+async function loadNicknameHistory(member) {
+  var el = document.getElementById('dm-nickname');
+  if (!el || !member || !COMMUNITY_ID) return;
+  el.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:12px;padding:1.5rem;">로딩 중...</div>';
+
+  try {
+    var res = await fetch(WORKER_URL + '/nickname-history-read', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ communityId: COMMUNITY_ID, puuId: member.puu_id })
+    });
+    var j = await res.json();
+    var history = (j.ok && Array.isArray(j.data)) ? j.data : [];
+
+    if (!history.length) {
+      el.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:12px;padding:2rem;">닉네임 변경 이력이 없습니다<br><span style="font-size:10px;color:var(--muted);opacity:.6;">매일 자정에 업데이트됩니다</span></div>';
+      return;
+    }
+
+    // 최신순 정렬
+    var sorted = history.slice().reverse();
+    var html = '<div>';
+    sorted.forEach(function(h, i) {
+      var isFirst = i === sorted.length - 1;
+      var isLatest = i === 0;
+      var parts = (h.name || '').split('#');
+      var name = parts[0] || h.name;
+      var tag = parts[1] ? '#' + parts[1] : '';
+      var dateLabel = h.label || h.date || '—';
+
+      html += '<div style="display:flex;align-items:center;gap:.75rem;padding:.6rem 0;border-bottom:1px solid rgba(255,255,255,.04);">';
+      // 타임라인 점
+      html += '<div style="display:flex;flex-direction:column;align-items:center;gap:0;flex-shrink:0;">';
+      html += '<div style="width:8px;height:8px;border-radius:50%;background:' + (isLatest ? '#A78BFA' : 'var(--border)') + ';"></div>';
+      html += '</div>';
+      html += '<div style="flex:1;min-width:0;">';
+      html += '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">';
+      html += '<span style="font-size:13px;font-weight:700;color:' + (isLatest ? 'var(--white)' : 'var(--muted)') + '">' + esc(name) + '</span>';
+      html += '<span style="font-size:11px;color:var(--muted);">' + esc(tag) + '</span>';
+      if (isLatest) html += '<span style="font-size:9px;color:#A78BFA;background:rgba(167,139,250,.1);padding:1px 6px;border-radius:8px;">현재</span>';
+      if (h.label) html += '<span style="font-size:9px;color:var(--gold);background:rgba(200,170,110,.1);padding:1px 6px;border-radius:8px;">' + esc(h.label) + '</span>';
+      html += '</div>';
+      html += '<div style="font-size:10px;color:var(--muted);margin-top:2px;">' + esc(dateLabel) + '</div>';
+      html += '</div></div>';
+    });
+    html += '</div>';
+    el.innerHTML = html;
+  } catch(e) {
+    el.innerHTML = '<div style="text-align:center;color:var(--red);font-size:12px;padding:1.5rem;">오류: ' + esc(e.message) + '</div>';
+  }
+}
+
+
+async function runNicknameCheck() {
+  if (!confirm('닉네임 변경 체크를 실행합니다. (전체 커뮤니티 대상)')) return;
+  var btn = document.getElementById('btn-nickname-run');
+  if (btn) { btn.disabled = true; btn.textContent = '🏷️ 실행중...'; }
+  try {
+    var res = await fetch(WORKER_URL + '/nickname-history-run', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ token: _statsAdminToken || _masterSessionToken, communityId: COMMUNITY_ID, serverId: SERVER_ID })
+    });
+    var j = await res.json();
+    if (j.ok) {
+      alert('닉네임 체크 시작됨! 완료까지 수십 초 소요됩니다.');
+    } else {
+      alert('오류: ' + j.error);
+    }
+  } catch(e) { alert('오류: ' + e.message); }
+  if (btn) { btn.disabled = false; btn.textContent = '🏷️ 닉변경 체크'; }
+}
 
 </script>
 

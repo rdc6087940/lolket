@@ -295,6 +295,13 @@ export default {
     if (path === '/server-info' && request.method === 'POST') {
       return handleServerInfo(request, env);
     }
+    // 닉네임 히스토리
+    if (path === '/nickname-history-run' && request.method === 'POST') {
+      return handleNicknameHistoryRun(request, env);
+    }
+    if (path === '/nickname-history-read' && request.method === 'POST') {
+      return handleNicknameHistoryRead(request, env);
+    }
     // 피크티어 경량 읽기
     if (path === '/peak-tiers-read' && request.method === 'POST') {
       return handlePeakTiersRead(request, env);
@@ -583,6 +590,7 @@ async function handleDbPublicRead(request, env) {
     /^communities\/[^/]+\/matches\/[^/]+\/chat($|\/)/,
     /^communities\/[^/]+\/matches\/[^/]+\/auctionLog($|\/)/,
     /^system\/patch_mode$/,
+    /^communities\/[^/]+\/nickname_history\/[^/]+$/,
   ];
   if (!publicRead.some(r => r.test(dbPath))) {
     return json({ ok: false, error: '허용되지 않는 경로입니다' }, 403);
@@ -2470,4 +2478,142 @@ async function handleServerInfo(request, env) {
   );
   if (!data) return json({ok:false,error:'서버 정보 조회 실패'},500);
   return json({ ok:true, data });
+}
+
+// ── 닉네임 히스토리 ──
+
+// 닉네임 히스토리 읽기
+async function handleNicknameHistoryRead(request, env) {
+  let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
+  const { communityId, puuId } = body;
+  if (!communityId || !puuId) return json({ok:false,error:'필수 파라미터 없음'},400);
+  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth='+secret : '';
+  const res = await fetch(`${dbUrl}/communities/${communityId}/nickname_history/${puuId}.json${authQ}`);
+  if (!res.ok) return json({ok:false,error:'조회 실패'},500);
+  const data = await res.json();
+  return json({ ok:true, data: data || [] });
+}
+
+// 자정 닉네임 변경 체크 Cron
+// 단일 커뮤니티 닉네임 체크
+async function runNicknameHistoryCheckForCommunity(env, cid, isManual) {
+  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth='+secret : '';
+
+  const now = new Date();
+  const kst = new Date(now.getTime() + 9 * 3600 * 1000);
+  if (!isManual) kst.setUTCDate(kst.getUTCDate() - 1);
+  const dateStr = kst.getUTCFullYear() + '-' +
+    String(kst.getUTCMonth()+1).padStart(2,'0') + '-' +
+    String(kst.getUTCDate()).padStart(2,'0');
+
+  try {
+    // 1. deeplolServerId 확인
+    console.log('[nickname-check] cid:', cid);
+    const sidRes = await fetch(`${dbUrl}/communities_info/${cid}/deeplolServerId.json${authQ}`);
+    const serverId = await sidRes.json();
+    console.log('[nickname-check] serverId:', serverId);
+    if (!serverId) return { cid, skipped: 'no serverId' };
+
+    // 2. 딥롤 API로 현재 멤버 닉네임 한 번에 가져오기
+    const sRes = await fetch(
+      `https://b2c-api-cdn.deeplol.gg/tournament/server_info?server_id=${serverId}`,
+      { headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://www.deeplol.gg/' } }
+    );
+    if (!sRes.ok) return { cid, error: 'deeplol API 실패' };
+    const sData = await sRes.json();
+    const members = sData?.tournament_stats?.tournament_stats_all_list || [];
+    console.log('[nickname-check] members:', members.length);
+    if (!members.length) return { cid, skipped: 'no members' };
+
+    // 3. 기존 히스토리 전체를 한 번에 읽기
+    const histRes = await fetch(`${dbUrl}/communities/${cid}/nickname_history.json${authQ}`);
+    const allHistory = (await histRes.json()) || {};
+
+    // 4. 메모리에서 비교 후 변경된 것만 Firebase 쓰기
+    const writes = [];
+    for (const m of members) {
+      if (!m.puu_id || !m.riot_name || !m.riot_tag) continue;
+      const currentNick = `${m.riot_name}#${m.riot_tag}`;
+      const history = allHistory[m.puu_id];
+
+      if (!history || !Array.isArray(history) || history.length === 0) {
+        // 히스토리 없으면 초기 닉네임 저장
+        writes.push({ path: `communities/${cid}/nickname_history/${m.puu_id}`,
+          data: [{ name: currentNick, date: dateStr, label: '초기 닉네임' }] });
+      } else {
+        const lastNick = history[history.length - 1].name;
+        if (lastNick !== currentNick) {
+          // 변경 감지
+          const updated = [...history, { name: currentNick, date: dateStr }];
+          writes.push({ path: `communities/${cid}/nickname_history/${m.puu_id}`, data: updated });
+          console.log(`[nickname-check] ${cid} / ${m.puu_id}: ${lastNick} → ${currentNick}`);
+        }
+      }
+    }
+
+    // 5. 변경된 것 모두 PATCH 1번으로 묶어서 쓰기
+    if (writes.length > 0) {
+      const patchBody = {};
+      writes.forEach(w => {
+        // path에서 communities/{cid}/nickname_history/{puuId} → {puuId}만 키로
+        const puuId = w.path.split('/').pop();
+        patchBody[puuId] = w.data;
+      });
+      await fetch(`${dbUrl}/communities/${cid}/nickname_history.json${authQ}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(patchBody)
+      });
+    }
+
+    console.log(`[nickname-check] ${cid} 완료: ${members.length}명 확인, ${writes.length}개 변경`);
+    return { cid, members: members.length, changes: writes.length };
+  } catch(e) {
+    console.error(`[nickname-check] ${cid} 오류:`, e.message);
+    return { cid, error: e.message };
+  }
+}
+
+// 전체 Cron - 커뮤니티별 순차 처리
+async function runNicknameHistoryCheck(env, isManual) {
+  console.log('[nickname-check] 시작', isManual ? '(수동)' : '(Cron)');
+  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth='+secret : '';
+  const shallowQ = authQ ? authQ+'&shallow=true' : '?shallow=true';
+  const commRes = await fetch(`${dbUrl}/communities_info.json${shallowQ}`);
+  if (!commRes.ok) return;
+  const commKeys = await commRes.json();
+  if (!commKeys) return;
+  for (const cid of Object.keys(commKeys)) {
+    await runNicknameHistoryCheckForCommunity(env, cid, isManual);
+  }
+  console.log('[nickname-check] 완료');
+}
+
+// 닉네임 히스토리 수동 실행
+async function handleNicknameHistoryRun(request, env) {
+  let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
+  const { token, communityId, serverId } = body;
+  const session = getSession(token);
+  if (!session || (session.role !== 'master' && session.role !== 'admin')) {
+    return json({ok:false,error:'마스터 권한 필요'},403);
+  }
+  let targetCid = communityId;
+  // communityId 없으면 serverId로 커뮤니티 찾기 (전체 한번에 읽기)
+  if (!targetCid && serverId) {
+    const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+    const authQ = secret ? '?auth='+secret : '';
+    const ciRes = await fetch(`${dbUrl}/communities_info.json${authQ}`);
+    const ciData = await ciRes.json() || {};
+    for (const [cid, info] of Object.entries(ciData)) {
+      if (info && String(info.deeplolServerId) === String(serverId)) {
+        targetCid = cid; break;
+      }
+    }
+  }
+  if (!targetCid) return json({ok:false,error:'커뮤니티를 찾을 수 없음'},400);
+  const result = await runNicknameHistoryCheckForCommunity(env, targetCid, true);
+  return json({ ok:true, result });
 }
