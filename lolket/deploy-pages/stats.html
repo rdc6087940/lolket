@@ -571,9 +571,23 @@ tbody td{padding:.55rem 1rem;font-size:12px;vertical-align:middle;}
   </div>
 
   <!-- ── 커뮤니티 통계 뷰 ── -->
-  <div id="community-stats-view" style="display:none;padding:1rem;max-width:900px;margin:0 auto;">
-    <div id="community-stats-content">
-      <div style="text-align:center;color:var(--muted);padding:3rem;font-family:'Rajdhani',sans-serif;">로딩 중...</div>
+  <div id="community-stats-view" style="display:none;padding:1rem;">
+    <div style="display:flex;gap:1rem;align-items:flex-start;max-width:1100px;margin:0 auto;">
+      <div id="community-stats-content" style="flex:1;min-width:0;">
+        <div style="text-align:center;color:var(--muted);padding:3rem;font-family:'Rajdhani',sans-serif;">로딩 중...</div>
+      </div>
+      <!-- 후원 목록 사이드바 -->
+      <div id="donation-sidebar" style="width:240px;flex-shrink:0;">
+        <div style="background:var(--bg-panel);border:1px solid var(--border-subtle);border-radius:8px;padding:1rem;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;">
+            <div style="font-size:12px;font-weight:700;color:var(--white);">💝 후원 목록</div>
+            <button id="btn-donation-edit" onclick="openDonationAdd()" style="display:none;padding:2px 8px;border-radius:3px;border:1px solid rgba(167,139,250,.3);background:transparent;color:#A78BFA;font-size:10px;font-family:Rajdhani,sans-serif;cursor:pointer;">편집</button>
+          </div>
+          <div id="donation-list">
+            <div style="text-align:center;color:var(--muted);font-size:11px;padding:1rem;">로딩 중...</div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -651,6 +665,10 @@ tbody td{padding:.55rem 1rem;font-size:12px;vertical-align:middle;}
 </div><!-- .layout -->
 
 <script>
+var _statsAdminToken = (function(){ try{ return localStorage.getItem('sa_token')||''; }catch(e){ return ''; } })();
+var _statsAdminRole  = (function(){ try{ return localStorage.getItem('sa_role')||''; }catch(e){ return ''; } })();
+var _statsAdminId    = (function(){ try{ return localStorage.getItem('sa_id')||''; }catch(e){ return ''; } })();
+var _statsAdminPw    = (function(){ try{ return localStorage.getItem('sa_pw')||''; }catch(e){ return ''; } })();
 const DD_VER = '16.14.1';
 const DD_ICON = id => `https://ddragon.leagueoflegends.com/cdn/${DD_VER}/img/champion/${id}.png`;
 const PER_PAGE = 20;
@@ -888,14 +906,38 @@ async function loadData(){
       // 마스터 전용 버튼은 로그인 후에만 표시
 
     }
-    // 이미 관리자 로그인된 경우 UI 복원
-    if (_masterAuthed && _masterSessionToken) {
+    // 이미 관리자 로그인된 경우 UI 복원 (_statsAdminToken)
+    if (_statsAdminToken && _statsAdminRole) {
       var adminStatus = document.getElementById('admin-status');
       var adminStatusText = document.getElementById('admin-status-text');
       var adminLoginBtn = document.getElementById('btn-admin-login');
       if (adminStatus) adminStatus.style.display = 'flex';
-      if (adminStatusText) adminStatusText.textContent = '관리자 ✓';
+      if (adminStatusText) adminStatusText.textContent = (_statsAdminRole === 'master' ? '👑 마스터' : '🔑 관리자') + ' ' + _statsAdminId;
       if (adminLoginBtn) adminLoginBtn.style.display = 'none';
+      // 마스터 전용 버튼 복원
+      if (_statsAdminRole === 'master') {
+        ['btn-weekly-mission','btn-nickname-run','btn-init-rating','btn-cron-test'].forEach(function(bid) {
+          var el = document.getElementById(bid);
+          if (el) el.style.display = '';
+        });
+      }
+      // 후원 편집 버튼 표시 (관리자 이상)
+      var btnDonEdit = document.getElementById('btn-donation-edit');
+      if (btnDonEdit) btnDonEdit.style.display = '';
+    }
+    // stats 관리자 세션 복원
+    if (_statsAdminToken && _statsAdminRole) {
+      var saLoginBtn = document.getElementById('btn-admin-login');
+      if (saLoginBtn) saLoginBtn.style.display = 'none';
+      var saStatus = document.getElementById('admin-status');
+      if (saStatus) saStatus.style.display = 'flex';
+      var saText = document.getElementById('admin-status-text');
+      if (saText) saText.textContent = (_statsAdminRole==='master'?'👑 마스터':'🔑 관리자')+' '+_statsAdminId;
+      if (_statsAdminRole === 'master') {
+        ['btn-weekly-mission','btn-nickname-run','btn-init-rating','btn-cron-test'].forEach(function(bid) {
+          var el = document.getElementById(bid); if (el) el.style.display = '';
+        });
+      }
     }
     allData=(json.tournament_stats&&json.tournament_stats.tournament_stats_all_list)||[];
     document.getElementById('member-count').textContent=allData.length;
@@ -2530,10 +2572,6 @@ document.addEventListener('visibilitychange', function() {
 // ══════════════════════════════════════
 // 관리자 로그인 + 임시 티어
 // ══════════════════════════════════════
-let _statsAdminToken = '';
-let _statsAdminRole  = '';
-let _statsAdminId    = '';
-let _statsAdminPw    = '';
 let _tempTiers = {};       // puuId → { tier, lp } 또는 문자열
 let _ttCurrentMember = null;
 let _ttSelectedTier  = null;
@@ -2612,6 +2650,13 @@ async function doStatsAdminLogin() {
     _statsAdminRole  = data.role;
     _statsAdminId    = id;
     _statsAdminPw    = pw;
+    // sessionStorage 저장
+    try {
+      localStorage.setItem('sa_token', _statsAdminToken);
+      localStorage.setItem('sa_role', _statsAdminRole);
+      localStorage.setItem('sa_id', id);
+      localStorage.setItem('sa_pw', pw);
+    } catch(e) {}
     document.getElementById('admin-login-overlay').classList.remove('open');
     document.getElementById('btn-admin-login').style.display = 'none';
     var statusEl = document.getElementById('admin-status');
@@ -2628,6 +2673,9 @@ async function doStatsAdminLogin() {
       var _btnCron = document.getElementById('btn-cron-test');
       if (_btnCron) _btnCron.style.display = '';
     }
+    // 후원 편집 버튼 (관리자 이상)
+    var _btnDon = document.getElementById('btn-donation-edit');
+    if (_btnDon) _btnDon.style.display = '';
     renderPage();
   } catch(e) {
     document.getElementById('al-err').textContent = '오류: ' + e.message;
@@ -2638,6 +2686,7 @@ window.doStatsAdminLogin = doStatsAdminLogin;
 function statsAdminLogout() {
   _statsAdminToken = '';
   _statsAdminRole  = '';
+  try { localStorage.removeItem('sa_token'); localStorage.removeItem('sa_role'); localStorage.removeItem('sa_id'); localStorage.removeItem('sa_pw'); } catch(e) {}
   document.getElementById('btn-admin-login').style.display = '';
   document.getElementById('admin-status').style.display = 'none';
   // 마스터 전용 버튼 숨기기
@@ -3105,7 +3154,7 @@ function switchMainTab(tab) {
     communityTab.style.borderBottom = '2px solid #A78BFA';
     communityTab.style.background   = 'rgba(167,139,250,.08)';
     communityTab.style.color        = '#A78BFA';
-    if (communityView) { communityView.style.display = ''; renderCommunityStats(); }
+    if (communityView) { communityView.style.display = ''; renderCommunityStats(); loadDonations(); }
   }
 }
 
@@ -4420,6 +4469,119 @@ function renderCommunityStats() {
   el.innerHTML = html;
 }
 
+
+// ── 후원 목록 ──
+var _donationList = null;
+var _donationEditIdx = -1; // -1: 추가, 0이상: 수정
+
+async function loadDonations() {
+  if (!COMMUNITY_ID) return;
+  var el = document.getElementById('donation-list');
+  if (!el) return;
+  try {
+    var res = await fetch(WORKER_URL + '/donation-read', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ communityId: COMMUNITY_ID })
+    });
+    var j = await res.json();
+    _donationList = Array.isArray(j.data) ? j.data : [];
+    renderDonationList();
+  } catch(e) {
+    if (el) el.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:11px;padding:1rem;">로드 실패</div>';
+  }
+}
+
+function renderDonationList() {
+  var el = document.getElementById('donation-list');
+  if (!el) return;
+  if (!_donationList || !_donationList.length) {
+    el.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:11px;padding:1rem 0;">후원 내역이 없습니다</div>';
+    return;
+  }
+  var isAdmin = !!_statsAdminRole;
+  el.innerHTML = _donationList.map(function(d, i) {
+    return '<div style="padding:.5rem 0;border-bottom:1px solid rgba(255,255,255,.04);">' +
+      '<div style="display:flex;align-items:flex-start;gap:4px;">' +
+        '<div style="flex:1;min-width:0;">' +
+          '<span style="font-size:12px;font-weight:700;color:var(--white);">' + esc(d.name||'') + '</span>' +
+          (d.date ? '<span style="font-size:10px;color:var(--muted);margin-left:6px;">' + esc(d.date) + '</span>' : '') +
+          (d.item ? '<div style="font-size:11px;color:var(--gold);margin-top:2px;">🎁 ' + esc(d.item) + '</div>' : '') +
+        '</div>' +
+        (isAdmin ? '<div style="display:flex;gap:3px;flex-shrink:0;">' +
+          '<button onclick="openDonationEdit('+i+')" style="padding:2px 6px;background:transparent;border:1px solid var(--border-subtle);border-radius:2px;color:var(--muted);font-size:9px;cursor:pointer;">수정</button>' +
+          '<button onclick="deleteDonation('+i+')" style="padding:2px 4px;background:transparent;border:none;color:var(--muted);font-size:12px;cursor:pointer;">✕</button>' +
+        '</div>' : '') +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+// 추가 팝업 열기
+function openDonationAdd() {
+  _donationEditIdx = -1;
+  document.getElementById('donation-modal-title').textContent = '💝 후원 추가';
+  document.getElementById('don-confirm-btn').textContent = '추가';
+  document.getElementById('don-input-name').value = '';
+  document.getElementById('don-input-item').value = '';
+  document.getElementById('don-input-date').value = '';
+  document.getElementById('donation-modal').style.display = 'flex';
+  setTimeout(function(){ document.getElementById('don-input-name').focus(); }, 100);
+}
+
+// 수정 팝업 열기
+function openDonationEdit(idx) {
+  _donationEditIdx = idx;
+  var d = _donationList[idx];
+  document.getElementById('donation-modal-title').textContent = '💝 후원 수정';
+  document.getElementById('don-confirm-btn').textContent = '수정';
+  document.getElementById('don-input-name').value = d.name || '';
+  document.getElementById('don-input-item').value = d.item || '';
+  document.getElementById('don-input-date').value = d.date || '';
+  document.getElementById('donation-modal').style.display = 'flex';
+  setTimeout(function(){ document.getElementById('don-input-name').focus(); }, 100);
+}
+
+// 삭제
+async function deleteDonation(idx) {
+  var d = _donationList[idx];
+  if (!confirm('"' + (d.name||'') + '" 후원 내역을 정말 삭제하시겠습니까?')) return;
+  _donationList.splice(idx, 1);
+  await _saveDonationsToServer();
+  renderDonationList();
+}
+
+// 추가/수정 확인
+async function confirmDonation() {
+  var name = document.getElementById('don-input-name').value.trim();
+  var item = document.getElementById('don-input-item').value.trim();
+  var date = document.getElementById('don-input-date').value.trim();
+  if (!name) { alert('이름을 입력해주세요'); return; }
+  var entry = { name: name, item: item, date: date };
+  if (_donationEditIdx === -1) {
+    // 추가
+    _donationList = _donationList || [];
+    _donationList.push(entry);
+  } else {
+    // 수정
+    _donationList[_donationEditIdx] = entry;
+  }
+  document.getElementById('donation-modal').style.display = 'none';
+  await _saveDonationsToServer();
+  renderDonationList();
+}
+
+async function _saveDonationsToServer() {
+  if (!_statsAdminRole) { alert('관리자 로그인 필요'); return; }
+  try {
+    var res = await fetch(WORKER_URL + '/donation-write', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ communityId: COMMUNITY_ID, donations: _donationList, token: _statsAdminToken, adminId: _statsAdminId, adminPw: _statsAdminPw })
+    });
+    var j = await res.json();
+    if (!j.ok) alert('저장 실패: ' + j.error);
+  } catch(e) { alert('오류: ' + e.message); }
+}
+
 </script>
 
 
@@ -4450,6 +4612,36 @@ function renderCommunityStats() {
     이용에 불편을 드려 죄송합니다.<br>
     빠른 시일 내에 서비스를 재개하겠습니다.<br><br>
     <span style="color:var(--muted);font-size:11px;">문의: 관리자에게 연락해 주세요</span>
+  </div>
+</div>
+
+<!-- ── 후원 목록 편집 모달 ── -->
+<div id="donation-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:2000;align-items:center;justify-content:center;" onclick="if(event.target===this)this.style.display='none'">
+  <div style="background:var(--bg-panel);border:1px solid var(--border);border-radius:6px;padding:1.25rem;width:90%;max-width:360px;">
+    <div id="donation-modal-title" style="font-size:13px;font-weight:700;color:var(--gold);margin-bottom:1rem;">💝 후원 추가</div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:1rem;">
+      <div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:3px;">이름 *</div>
+        <input id="don-input-name" type="text" placeholder="후원자 이름"
+          style="width:100%;box-sizing:border-box;background:var(--bg-dark);border:1px solid var(--border-subtle);border-radius:3px;padding:6px 8px;color:var(--white);font-size:12px;outline:none;">
+      </div>
+      <div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:3px;">금액/상품</div>
+        <input id="don-input-item" type="text" placeholder="예: 30,000원 / 스타벅스 쿠폰"
+          style="width:100%;box-sizing:border-box;background:var(--bg-dark);border:1px solid var(--border-subtle);border-radius:3px;padding:6px 8px;color:var(--white);font-size:12px;outline:none;">
+      </div>
+      <div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:3px;">날짜</div>
+        <input id="don-input-date" type="text" placeholder="예: 2026-08-01"
+          style="width:100%;box-sizing:border-box;background:var(--bg-dark);border:1px solid var(--border-subtle);border-radius:3px;padding:6px 8px;color:var(--white);font-size:12px;outline:none;">
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <button onclick="document.getElementById('donation-modal').style.display='none'"
+        style="padding:6px 14px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:11px;cursor:pointer;">취소</button>
+      <button id="don-confirm-btn" onclick="confirmDonation()"
+        style="padding:6px 14px;border-radius:3px;border:1px solid rgba(200,170,110,.4);background:rgba(200,170,110,.1);color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;">추가</button>
+    </div>
   </div>
 </div>
 </body>

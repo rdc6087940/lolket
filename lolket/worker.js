@@ -295,6 +295,13 @@ export default {
     if (path === '/server-info' && request.method === 'POST') {
       return handleServerInfo(request, env);
     }
+    // 후원 목록
+    if (path === '/donation-read' && request.method === 'POST') {
+      return handleDonationRead(request, env);
+    }
+    if (path === '/donation-write' && request.method === 'POST') {
+      return handleDonationWrite(request, env);
+    }
     // 닉네임 히스토리
     if (path === '/nickname-history-run' && request.method === 'POST') {
       return handleNicknameHistoryRun(request, env);
@@ -2617,3 +2624,35 @@ async function handleNicknameHistoryRun(request, env) {
   const result = await runNicknameHistoryCheckForCommunity(env, targetCid, true);
   return json({ ok:true, result });
 }
+
+// ── 후원 목록 ──
+async function handleDonationRead(request, env) {
+  let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
+  const { communityId } = body;
+  if (!communityId) return json({ok:false,error:'communityId 없음'},400);
+  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth='+secret : '';
+  const res = await fetch(`${dbUrl}/communities/${communityId}/donations.json${authQ}`);
+  if (!res.ok) return json({ok:false,error:'조회 실패'},500);
+  const data = await res.json();
+  return json({ ok:true, data: data || [] });
+}
+
+async function handleDonationWrite(request, env) {
+  let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
+  const { communityId, donations, token } = body;
+  if (!communityId) return json({ok:false,error:'communityId 없음'},400);
+  const session = getSession(token);
+  if (!session || (session.role !== 'master' && session.role !== 'admin')) {
+    return json({ok:false,error:'관리자 권한 필요'},403);
+  }
+  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth='+secret : '';
+  await fetch(`${dbUrl}/communities/${communityId}/donations.json${authQ}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(donations)
+  });
+  return json({ ok:true });
+}
+
