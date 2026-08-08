@@ -87,6 +87,13 @@ export default {
     const url  = new URL(request.url);
     const path = url.pathname;
 
+    // 크롤러가 stats 페이지 요청 시 동적 OG HTML 반환
+    if (path === '/stats' || path === '/stats.html') {
+      const ua = request.headers.get('User-Agent') || '';
+      if (isCrawler(ua)) return handleOgProxy(request, env);
+      return fetch(request);
+    }
+
     if (path === '/riot.txt') {
       return new Response('e8781c6a-562d-45db-903d-d54ad00da76c', {
         status: 200, headers: { 'Content-Type': 'text/plain', ...CORS },
@@ -294,6 +301,14 @@ export default {
     // 딥롤 서버 정보 프록시 (캐시)
     if (path === '/server-info' && request.method === 'POST') {
       return handleServerInfo(request, env);
+    }
+    // 관찰 분석
+    if (path === '/scout-ranked' && request.method === 'POST') {
+      return handleScoutRanked(request, env);
+    }
+    // 관찰 분석 대상
+    if (path === '/scout-targets-write' && request.method === 'POST') {
+      return handleScoutTargetsWrite(request, env);
     }
     // 후원 목록
     if (path === '/donation-read' && request.method === 'POST') {
@@ -598,6 +613,8 @@ async function handleDbPublicRead(request, env) {
     /^communities\/[^/]+\/matches\/[^/]+\/auctionLog($|\/)/,
     /^system\/patch_mode$/,
     /^communities\/[^/]+\/nickname_history\/[^/]+$/,
+    /^communities\/[^/]+\/matches$/,
+    /^communities\/[^/]+\/scout_targets$/,
   ];
   if (!publicRead.some(r => r.test(dbPath))) {
     return json({ ok: false, error: '허용되지 않는 경로입니다' }, 403);
@@ -2235,6 +2252,57 @@ async function handleMemoRead(request, env) {
   return json({ ok: true, data: data || null });
 }
 
+
+// ── 공통 관리자 인증 헬퍼 ──
+async function verifyAdmin(token, adminId, adminPw, communityId, env) {
+  // 1. 세션 토큰
+  const session = getSession(token);
+  if (session && (session.role === 'master' || session.role === 'admin')) return session;
+
+  if (!adminId || !adminPw) return null;
+
+  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth='+secret : '';
+
+  // 2. master 검증
+  try {
+    const saltRes = await fetch(dbUrl + '/master/salt.json' + authQ);
+    if (saltRes.ok) {
+      const salt = await saltRes.json();
+      if (salt) {
+        const enc = new TextEncoder();
+        const hashBuf = await crypto.subtle.digest('SHA-256', enc.encode(adminPw + salt));
+        const hashHex = Array.from(new Uint8Array(hashBuf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+        const mr = await fetch(dbUrl + '/master.json' + authQ);
+        if (mr.ok) {
+          const master = await mr.json();
+          if (master && master.id === adminId && master.pw === hashHex) {
+            return { role: 'master', id: adminId };
+          }
+        }
+      }
+    }
+  } catch(e) {}
+
+  // 3. community admin 검증
+  if (communityId) {
+    try {
+      const adminListRes = await fetch(`${dbUrl}/communities_info/${communityId}/adminList.json${authQ}`);
+      if (adminListRes.ok) {
+        const adminList = await adminListRes.json();
+        if (adminList && Array.isArray(adminList)) {
+          const enc = new TextEncoder();
+          const hashBuf = await crypto.subtle.digest('SHA-256', enc.encode(adminPw));
+          const hashHex = Array.from(new Uint8Array(hashBuf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+          const found = adminList.find(a => a.id === adminId && a.pw === hashHex);
+          if (found) return { role: 'admin', id: adminId };
+        }
+      }
+    } catch(e) {}
+  }
+  return null;
+}
+
 // ── 주간 미션 ──
 
 // 현재 주 키 (KST 기준 YYYY_Www)
@@ -2270,15 +2338,8 @@ async function handleWeeklyMissionConfigRead(request, env) {
 // 미션 설정 저장 (마스터만)
 async function handleWeeklyMissionConfigWrite(request, env) {
   let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
-  const { communityId, missions, token, adminId, adminPw } = body;
-  let session = getSession(token);
-  // master 또는 해당 커뮤니티 admin이면 허용
-  if (!session) return json({ok:false,error:'마스터 권한 필요'},403);
-  if (session.role !== 'master' && session.role !== 'admin') return json({ok:false,error:'관리자 권한 필요'},403);
-  // admin인 경우 해당 커뮤니티 확인
-  if (session.role === 'admin' && session.communityId && communityId && session.communityId !== communityId) {
-    return json({ok:false,error:'이 커뮤니티의 관리자가 아닙니다'},403);
-  }
+  const { communityId, missions } = body;
+  if (!communityId) return json({ok:false,error:'communityId 없음'},400);
   const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
   const authQ = secret ? '?auth='+secret : '';
   await fetch(`${dbUrl}/communities/${communityId}/weekly_missions/config.json${authQ}`, {
@@ -2640,12 +2701,8 @@ async function handleDonationRead(request, env) {
 
 async function handleDonationWrite(request, env) {
   let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
-  const { communityId, donations, token } = body;
+  const { communityId, donations } = body;
   if (!communityId) return json({ok:false,error:'communityId 없음'},400);
-  const session = getSession(token);
-  if (!session || (session.role !== 'master' && session.role !== 'admin')) {
-    return json({ok:false,error:'관리자 권한 필요'},403);
-  }
   const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
   const authQ = secret ? '?auth='+secret : '';
   await fetch(`${dbUrl}/communities/${communityId}/donations.json${authQ}`, {
@@ -2656,3 +2713,143 @@ async function handleDonationWrite(request, env) {
   return json({ ok:true });
 }
 
+
+
+// ── OG 이미지 동적 처리 ──
+const CRAWLERS = ['Twitterbot','facebookexternalhit','LinkedInBot','Slackbot','TelegramBot',
+  'Discordbot','KakaoTalk','WhatsApp','Line','Googlebot','bingbot','Baiduspider','Yeti'];
+
+function isCrawler(userAgent) {
+  if (!userAgent) return false;
+  return CRAWLERS.some(c => userAgent.includes(c));
+}
+
+// 커뮤니티별 OG 설정
+const COMMUNITY_OG = {
+  'c_1786029938203': {
+    image: 'https://roonging.com/og-hyeokgo.png',
+    title: '협곡 지통실',
+    description: '협곡 지통실 LoL 내전 전적 페이지'
+  }
+};
+
+async function handleOgProxy(request, env) {
+  const url = new URL(request.url);
+  const cid = url.searchParams.get('cid') || '';
+  const serverId = url.searchParams.get('server_id') || '';
+
+  // 커뮤니티별 OG 설정 확인
+  const og = COMMUNITY_OG[cid];
+  const ogImage = og ? og.image : 'https://roonging.com/og-banner.jpg';
+  const ogTitle = og ? og.title + ' 전적' : '룽잉 전적';
+  const ogDesc = og ? og.description : 'LoL 내전 전적 통계 플랫폼';
+  const pageUrl = 'https://roonging.com/stats?server_id=' + serverId + '&cid=' + cid;
+
+  const html = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta property="og:type" content="website">
+<meta property="og:url" content="${pageUrl}">
+<meta property="og:title" content="${ogTitle}">
+<meta property="og:description" content="${ogDesc}">
+<meta property="og:image" content="${ogImage}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="${ogTitle}">
+<meta name="twitter:description" content="${ogDesc}">
+<meta name="twitter:image" content="${ogImage}">
+<meta http-equiv="refresh" content="0; url=${pageUrl}">
+<title>${ogTitle}</title>
+</head>
+<body>
+<script>location.replace('${pageUrl}');</script>
+</body>
+</html>`;
+
+  return new Response(html, {
+    headers: { 'Content-Type': 'text/html;charset=UTF-8', 'Cache-Control': 'public,max-age=3600' }
+  });
+}
+
+// ── 관찰 분석 대상 저장 ──
+async function handleScoutTargetsWrite(request, env) {
+  let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
+  const { communityId, targets } = body;
+  if (!communityId) return json({ok:false,error:'communityId 없음'},400);
+  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth='+secret : '';
+  await fetch(`${dbUrl}/communities/${communityId}/scout_targets.json${authQ}`, {
+    method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(targets||[])
+  });
+  return json({ ok:true });
+}
+
+// ── 관찰 분석: 솔랭+내전 데이터 프록시 ──
+async function handleScoutRanked(request, env) {
+  let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
+  const { puuId, platform, queueType } = body;
+  if (!puuId) return json({ok:false,error:'puuId 없음'},400);
+
+  const plat = (platform||'KR').toLowerCase();
+  const qType = queueType || 'RANKED_SOLO'; // RANKED_SOLO or CUSTOM
+  const headers = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+    'Referer': 'https://www.deeplol.gg/'
+  };
+
+  // 1. 솔랭 티어 (RANKED_SOLO 요청 시만)
+  let soloTier = null;
+  if (qType === 'RANKED_SOLO') {
+    try {
+      const tierRes = await fetch(
+        `https://b2c-api-cdn.deeplol.gg/summoner/summoner-realtime?platform_id=${plat}&summoner_id=&puu_id=${encodeURIComponent(puuId)}`,
+        { headers }
+      );
+      if (tierRes.ok) {
+        const tierJson = await tierRes.json();
+        const solo = tierJson?.season_tier_info_dict?.ranked_solo_5x5;
+        if (solo) soloTier = {
+          tier: solo.tier, division: solo.division,
+          lp: solo.league_points, wins: solo.wins, losses: solo.losses
+        };
+      }
+    } catch(e) {}
+  }
+
+  // 2. 매치 목록 페이지네이션 (최대 100게임)
+  let allMatchIds = [];
+  let offset = 0;
+  const PAGE = 20;
+  const MAX_GAMES = 100;
+  while (allMatchIds.length < MAX_GAMES) {
+    try {
+      const listUrl = `https://b2c-api-cdn.deeplol.gg/match/matches?puu_id=${encodeURIComponent(puuId)}&platform_id=${plat}&offset=${offset}&count=${PAGE}&queue_type=${qType}&champion_id=0&only_list=1&last_updated_at=1`;
+      const res = await fetch(listUrl, { headers });
+      if (!res.ok) break;
+      const j = await res.json();
+      // 키 이름: match_id_list (문자열 배열) 또는 match_list (객체 배열)
+      const ids = j.match_id_list || (j.match_list||[]).map(m => m.match_id);
+      if (!ids.length) break;
+      allMatchIds = allMatchIds.concat(ids);
+      if (ids.length < PAGE) break;
+      offset += PAGE;
+    } catch(e) { console.log('[scout] err:', e.message); break; }
+  }
+  allMatchIds = allMatchIds.slice(0, MAX_GAMES);
+
+  // 3. 매치 상세 병렬 (배치 10개씩)
+  let matches = [];
+  const BATCH = 10;
+  for (let i = 0; i < allMatchIds.length; i += BATCH) {
+    const batch = allMatchIds.slice(i, i + BATCH);
+    const details = await Promise.all(batch.map(mid =>
+      fetch(`https://b2c-api-cdn.deeplol.gg/match/match-cached?match_id=${mid}&platform_id=${plat}`, { headers })
+        .then(r => r.json()).catch(() => null)
+    ));
+    matches = matches.concat(details.filter(Boolean));
+  }
+
+  return json({ ok: true, soloTier, matches, total: matches.length });
+}

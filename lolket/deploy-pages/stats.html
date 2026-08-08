@@ -568,6 +568,15 @@ tbody td{padding:.55rem 1rem;font-size:12px;vertical-align:middle;}
       style="padding:5px 14px;border-radius:2px 2px 0 0;border:1px solid var(--border);border-bottom:none;background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">
       🏆 커뮤니티 통계
     </button>
+    <button id="tab-scout" onclick="switchMainTab('scout')"
+      style="padding:5px 14px;border-radius:2px 2px 0 0;border:1px solid var(--border);border-bottom:none;background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">
+      🔍 관찰 분석
+    </button>
+  </div>
+
+  <!-- ── 관찰 분석 뷰 ── -->
+  <div id="scout-view" style="display:none;padding:1rem;">
+    <div id="scout-content"></div>
   </div>
 
   <!-- ── 커뮤니티 통계 뷰 ── -->
@@ -669,6 +678,12 @@ var _statsAdminToken = (function(){ try{ return localStorage.getItem('sa_token')
 var _statsAdminRole  = (function(){ try{ return localStorage.getItem('sa_role')||''; }catch(e){ return ''; } })();
 var _statsAdminId    = (function(){ try{ return localStorage.getItem('sa_id')||''; }catch(e){ return ''; } })();
 var _statsAdminPw    = (function(){ try{ return localStorage.getItem('sa_pw')||''; }catch(e){ return ''; } })();
+// 두 번째 script에서 선언되는 전역 변수 미리 선언 (참조 오류 방지)
+var _weeklyEmojis = {};
+var _weeklyMissionConfig = null;
+var _communityStatsCache = null;
+var _donationList = null;
+
 const DD_VER = '16.14.1';
 const DD_ICON = id => `https://ddragon.leagueoflegends.com/cdn/${DD_VER}/img/champion/${id}.png`;
 const PER_PAGE = 20;
@@ -1162,6 +1177,8 @@ async function loadAllRatings(season) {
         if (r) { m._rating = r.current; m._ratingBefore = r.before; m._ratingDelta = r.delta; m._ratingGames = r.games; }
       });
       try { sessionStorage.setItem(_rCacheKey, JSON.stringify({ data: ratings, ts: Date.now() })); } catch(e) {}
+      // 레이팅 로드 완료 시 통계 캐시 초기화 (평균 레이팅 반영)
+      _communityStatsCache = null;
     }
   } catch(e) {}
 }
@@ -1213,6 +1230,7 @@ document.getElementById('btn-refresh').addEventListener('click',loadData);
 // 가로 스크롤 동기화 (헤더 ↔ 바디)
 const bodyWrap=document.getElementById('table-body-wrap');
 function syncTableWidth(){} // 단일 테이블 구조에서 불필요
+
 
 (async()=>{
   await loadChampMap();
@@ -3126,13 +3144,16 @@ function switchMainTab(tab) {
   var mobileCards = document.getElementById('mobile-card-list');
   var communityTab = document.getElementById('tab-community');
   var communityView = document.getElementById('community-stats-view');
-  [statsTab, ratingTab, communityTab].forEach(function(t) {
+  var scoutTab = document.getElementById('tab-scout');
+  [statsTab, ratingTab, communityTab, scoutTab].forEach(function(t) {
     if (t) { t.style.borderBottom='none'; t.style.background='transparent'; t.style.color='var(--muted)'; }
   });
   var pagination = document.getElementById('pagination');
+  var scoutViewEl = document.getElementById('scout-view');
   if (tableWrap) tableWrap.style.display = 'none';
   if (rankView) rankView.style.display = 'none';
   if (communityView) communityView.style.display = 'none';
+  if (scoutViewEl) scoutViewEl.style.display = 'none';
   if (filterBar) filterBar.style.display = 'none';
   if (mobileCards) mobileCards.style.display = 'none';
   if (pagination) pagination.style.display = 'none';
@@ -3155,6 +3176,18 @@ function switchMainTab(tab) {
     communityTab.style.background   = 'rgba(167,139,250,.08)';
     communityTab.style.color        = '#A78BFA';
     if (communityView) { communityView.style.display = ''; renderCommunityStats(); loadDonations(); }
+  } else if (tab === 'scout') {
+    var scoutTab = document.getElementById('tab-scout');
+    var scoutView = document.getElementById('scout-view');
+    if (scoutTab) {
+      scoutTab.style.borderBottom = '2px solid #E05050';
+      scoutTab.style.background   = 'rgba(224,80,80,.08)';
+      scoutTab.style.color        = '#E05050';
+    }
+    if (scoutView) {
+      scoutView.style.display = '';
+      initScoutView();
+    }
   }
 }
 
@@ -4438,11 +4471,11 @@ function renderCommunityStats() {
   var html = '<div style="max-width:860px;margin:0 auto;display:flex;flex-direction:column;gap:.75rem;">';
 
   // 요약 박스 5개
-  html += '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:.6rem;">';
+  html += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.6rem;">';
   html += statBox('⭐','평균 레이팅', avgRating||'—', '#F59E0B');
   html += statBox('⚔️','평균 KDA', avgKda, 'var(--blue)');
   html += statBox('🎮','평균 게임수', avgGames+'판', '#A78BFA');
-  html += statBox('📈','평균 승률', avgWinrate, '#22C55E');
+
   html += statBox('🏆','총 내전 수', communityGames.toLocaleString()+'게임', '#F59E0B');
   html += '</div>';
 
@@ -4472,6 +4505,7 @@ function renderCommunityStats() {
 
 // ── 후원 목록 ──
 var _donationList = null;
+
 var _donationEditIdx = -1; // -1: 추가, 0이상: 수정
 
 async function loadDonations() {
@@ -4571,7 +4605,7 @@ async function confirmDonation() {
 }
 
 async function _saveDonationsToServer() {
-  if (!_statsAdminRole) { alert('관리자 로그인 필요'); return; }
+  if (!_statsAdminRole) { alert('관리자 로그인이 필요합니다'); return; }
   try {
     var res = await fetch(WORKER_URL + '/donation-write', {
       method:'POST', headers:{'Content-Type':'application/json'},
@@ -4580,6 +4614,572 @@ async function _saveDonationsToServer() {
     var j = await res.json();
     if (!j.ok) alert('저장 실패: ' + j.error);
   } catch(e) { alert('오류: ' + e.message); }
+}
+
+
+// ════════════════════════════════════════
+// 관찰 분석 탭
+// ════════════════════════════════════════
+var _scoutTargets = [];   // [{ puuId, name, tag, platform }]
+var _scoutData = {};      // { puuId: { internal, ranked, champStats, recentMatches } }
+var _scoutActiveIdx = 0;
+var _scoutInited = false;
+
+function initScoutView() {
+  var el = document.getElementById('scout-content');
+  if (!el) return;
+
+  // 마스터 권한 체크
+  if (_statsAdminRole !== 'master') {
+    el.innerHTML = '<div style="text-align:center;padding:4rem;font-family:Rajdhani,sans-serif;font-size:16px;color:var(--muted);">🔒 권한이 없습니다</div>';
+    return;
+  }
+
+  renderScoutLayout();
+  if (!_scoutInited) {
+    _scoutInited = true;
+    loadScoutTargets();
+  }
+}
+
+// Firebase에서 관찰 대상 목록 로드
+async function loadScoutTargets() {
+  if (!COMMUNITY_ID) return;
+  try {
+    var res = await fetch(WORKER_URL + '/db-public-read', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ path: 'communities/' + COMMUNITY_ID + '/scout_targets' })
+    });
+    var j = await res.json();
+    _scoutTargets = Array.isArray(j.data) ? j.data : [];
+  } catch(e) { _scoutTargets = []; }
+  renderScoutLayout();
+}
+
+async function saveScoutTargets() {
+  if (!COMMUNITY_ID) return;
+  await fetch(WORKER_URL + '/donation-write', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ communityId: COMMUNITY_ID, donations: null })
+  });
+  // scout_targets 직접 저장
+  await fetch(WORKER_URL + '/db-public-read', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ path: 'communities/' + COMMUNITY_ID + '/scout_targets' })
+  });
+}
+
+// Worker에 scout-targets-write 없으니 donation-write 패턴으로 저장
+async function saveScoutTargetsToFb() {
+  if (!COMMUNITY_ID || !_statsAdminRole) return;
+  try {
+    var res = await fetch(WORKER_URL + '/scout-targets-write', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ communityId: COMMUNITY_ID, targets: _scoutTargets, token: _statsAdminToken })
+    });
+    var j = await res.json();
+    return j.ok;
+  } catch(e) { return false; }
+}
+
+function renderScoutLayout() {
+  var el = document.getElementById('scout-content');
+  if (!el) return;
+  if (_statsAdminRole !== 'master') {
+    el.innerHTML = '<div style="text-align:center;padding:4rem;font-family:Rajdhani,sans-serif;font-size:16px;color:var(--muted);">🔒 권한이 없습니다</div>';
+    return;
+  }
+
+  var html = '<div style="display:flex;flex-direction:column;gap:.75rem;">';
+
+  // 상단: 관찰 대상 탭 + 추가 버튼
+  html += '<div style="display:flex;align-items:center;gap:.5rem;border-bottom:1px solid var(--border);padding-bottom:.5rem;flex-wrap:wrap;">';
+  _scoutTargets.forEach(function(t, i) {
+    var active = i === _scoutActiveIdx;
+    html += '<button onclick="selectScoutTarget('+i+')" style="padding:5px 14px;border-radius:3px 3px 0 0;border:1px solid var(--border);border-bottom:'+(active?'2px solid #E05050':'none')+';background:'+(active?'rgba(224,80,80,.08)':'transparent')+';color:'+(active?'#E05050':'var(--muted)')+';font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;cursor:pointer;">'+esc(t.name)+'#'+esc(t.tag)+'</button>';
+  });
+  html += '<button onclick="openScoutAddModal()" style="padding:4px 10px;border-radius:3px;border:1px dashed var(--border-subtle);background:transparent;color:var(--muted);font-family:Rajdhani,sans-serif;font-size:11px;cursor:pointer;">+ 추가</button>';
+  if (_scoutTargets.length > 0) {
+    html += '<button onclick="removeScoutTarget('+_scoutActiveIdx+')" style="margin-left:auto;padding:4px 8px;border-radius:3px;border:1px solid rgba(224,80,80,.3);background:transparent;color:#E05050;font-family:Rajdhani,sans-serif;font-size:10px;cursor:pointer;">✕ 제거</button>';
+  }
+  html += '</div>';
+
+  // 분석 내용
+  html += '<div id="scout-target-content">';
+  if (_scoutTargets.length === 0) {
+    html += '<div style="text-align:center;padding:3rem;color:var(--muted);font-family:Rajdhani,sans-serif;">관찰 대상을 추가해주세요</div>';
+  } else {
+    html += '<div style="text-align:center;padding:2rem;color:var(--muted);font-family:Rajdhani,sans-serif;font-size:12px;"><div class="spinner" style="margin:0 auto 8px;"></div>분석 중...</div>';
+  }
+  html += '</div>';
+  html += '</div>';
+
+  el.innerHTML = html;
+
+  if (_scoutTargets.length > 0) {
+    loadScoutAnalysis(_scoutActiveIdx);
+  }
+}
+
+function selectScoutTarget(idx) {
+  _scoutActiveIdx = idx;
+  renderScoutLayout();
+}
+
+function removeScoutTarget(idx) {
+  if (!confirm('"' + _scoutTargets[idx].name + '" 을 제거하시겠습니까?')) return;
+  _scoutTargets.splice(idx, 1);
+  _scoutActiveIdx = Math.min(_scoutActiveIdx, _scoutTargets.length - 1);
+  saveScoutTargetsToFb();
+  renderScoutLayout();
+}
+
+// 관찰 대상 추가 모달
+function openScoutAddModal() {
+  var modal = document.getElementById('scout-add-modal');
+  if (!modal) return;
+  document.getElementById('scout-input-name').value = '';
+  document.getElementById('scout-input-tag').value = '';
+  modal.style.display = 'flex';
+  setTimeout(function(){ document.getElementById('scout-input-name').focus(); }, 100);
+}
+
+async function confirmScoutAdd() {
+  var name = document.getElementById('scout-input-name').value.trim();
+  var tag = document.getElementById('scout-input-tag').value.trim().replace('#','');
+  if (!name) { alert('소환사 이름을 입력하세요'); return; }
+  if (!tag) { alert('태그를 입력하세요'); return; }
+
+  var btn = document.getElementById('scout-add-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '검색 중...'; }
+
+  try {
+    // 딥롤 summoner search로 puuId 찾기
+    var searchRes = await fetch(API_BASE + '/summoner/summoner-search?keyword=' + encodeURIComponent(name + '%23' + tag) + '&platform_id=KR',
+      { headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://www.deeplol.gg/' } });
+    var searchJson = await searchRes.json();
+    var summoner = searchJson && (searchJson.summoner || (searchJson.summoners && searchJson.summoners[0]));
+
+    var puuId = '';
+    if (summoner && summoner.puu_id) {
+      puuId = summoner.puu_id;
+    } else {
+      // allData에서 찾기
+      var found = allData.find(function(m) {
+        return m.riot_name && m.riot_name.toLowerCase() === name.toLowerCase() &&
+               m.riot_tag && m.riot_tag.toLowerCase() === tag.toLowerCase();
+      });
+      if (found) puuId = found.puu_id;
+    }
+
+    if (!puuId) { alert('소환사를 찾을 수 없습니다'); if(btn){btn.disabled=false;btn.textContent='추가';} return; }
+
+    // 이미 있는지 확인
+    if (_scoutTargets.find(function(t){ return t.puuId === puuId; })) {
+      alert('이미 추가된 소환사입니다'); if(btn){btn.disabled=false;btn.textContent='추가';} return;
+    }
+
+    _scoutTargets.push({ puuId, name, tag, platform: 'KR' });
+    _scoutActiveIdx = _scoutTargets.length - 1;
+    document.getElementById('scout-add-modal').style.display = 'none';
+    saveScoutTargetsToFb();
+    renderScoutLayout();
+  } catch(e) {
+    alert('오류: ' + e.message);
+    if(btn){btn.disabled=false;btn.textContent='추가';}
+  }
+}
+
+// ── 분석 데이터 로드 ──
+async function loadScoutAnalysis(idx, forceUpdate) {
+  var target = _scoutTargets[idx];
+  if (!target) return;
+  var el = document.getElementById('scout-target-content');
+  if (!el) return;
+  var puuId = target.puuId;
+  var platform = target.platform || 'KR';
+
+  if (_scoutData[puuId] && _scoutData[puuId].loaded && !forceUpdate) {
+    renderScoutAnalysis(idx); return;
+  }
+
+  el.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--muted);font-size:12px;"><div class="spinner" style="margin:0 auto 12px;width:28px;height:28px;"></div><div>'+esc(target.name)+'#'+esc(target.tag)+' 전적 수집 중...<br><span style="font-size:10px;opacity:.6;">최대 100게임 × 2큐 수집, 1~2분 소요</span></div></div>';
+
+  try {
+    // 1. 내전 데이터
+    var internalMember = allData.find(function(m){ return m.puu_id === puuId; });
+    var internalData = null;
+    if (internalMember) {
+      if (detailCache && detailCache['custom'] && detailCache['custom'][puuId]) {
+        internalData = detailCache['custom'][puuId];
+      } else {
+        internalData = await loadFromFirebase(puuId, 'custom');
+      }
+    }
+
+    // 2. 솔랭 데이터 (Worker 프록시)
+    var soloTier = null, rankedMatches = [];
+    try {
+      var rkRes = await fetch(WORKER_URL + '/scout-ranked', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ puuId, platform, queueType: 'RANKED_SOLO' })
+      });
+      var rkJson = await rkRes.json();
+      if (rkJson.ok) { soloTier = rkJson.soloTier; rankedMatches = rkJson.matches || []; }
+    } catch(e) {}
+
+    // 3. 커스텀(내전) 딥롤 데이터 (Worker 프록시) - 모든 내전 포함
+    var customMatches = [];
+    try {
+      var cmRes = await fetch(WORKER_URL + '/scout-ranked', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ puuId, platform, queueType: 'CUSTOM' })
+      });
+      var cmJson = await cmRes.json();
+      if (cmJson.ok) customMatches = cmJson.matches || [];
+    } catch(e) {}
+
+    _scoutData[puuId] = {
+      internalData, rankedMatches, customMatches, soloTier,
+      loaded: true, member: internalMember, ts: Date.now()
+    };
+    renderScoutAnalysis(idx);
+  } catch(e) {
+    el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--red);">오류: '+esc(e.message)+'</div>';
+  }
+}
+
+// ── 분석 렌더링 ──
+function renderScoutAnalysis(idx) {
+  var target = _scoutTargets[idx];
+  var data = _scoutData[target.puuId];
+  var el = document.getElementById('scout-target-content');
+  if (!el || !data) return;
+
+  var puuId = target.puuId;
+  var member = data.member;
+  var soloTier = data.soloTier;
+  var ranked = data.rankedMatches || [];   // 솔랭
+  var custom = data.customMatches || [];   // 커스텀(내전) 딥롤
+
+  // ── 헬퍼 ──
+  function wr(w,t){ return t?Math.round(w/t*100):0; }
+  function kdaStr(k,d,a){ return d ? ((k+a)/d).toFixed(2) : (k+a)+'/-'; }
+  function champImg(cid){
+    var n=champMap[String(cid)]; if(!n) return '';
+    var e1=document.createElement('img');e1.src=DD_ICON(n);e1.style.cssText='width:24px;height:24px;border-radius:3px;vertical-align:middle;';e1.onerror=function(){this.style.display='none';};return e1.outerHTML;
+  }
+  function champImgLg(cid){
+    var n=champMap[String(cid)]; if(!n) return '';
+    var e2=document.createElement('img');e2.src=DD_ICON(n);e2.style.cssText='width:36px;height:36px;border-radius:5px;object-fit:cover;';e2.onerror=function(){this.style.display='none';};return e2.outerHTML;
+  }
+  function sec2min(s){ return Math.floor(s/60)+"'"+String(Math.floor(s%60)).padStart(2,'0')+'"'; }
+  function tierColor(t){
+    var C={CHALLENGER:'#F4C842',GRANDMASTER:'#E05050',MASTER:'#9B59B6',DIAMOND:'#4A90D9',
+           EMERALD:'#27AE60',PLATINUM:'#1ABC9C',GOLD:'#F39C12',SILVER:'#95A5A6',BRONZE:'#CD6133',IRON:'#7F8C8D'};
+    return C[t]||'#5B6474';
+  }
+  function tierText(t){
+    var S={CHALLENGER:'챌린저',GRANDMASTER:'그랜드마스터',MASTER:'마스터',DIAMOND:'다이아',
+           EMERALD:'에메랄드',PLATINUM:'플래티넘',GOLD:'골드',SILVER:'실버',BRONZE:'브론즈',IRON:'아이언'};
+    if(!t||!t.tier) return '언랭크';
+    return (S[t.tier]||t.tier)+(t.division?' '+t.division:'')+' '+( t.lp||0)+'LP';
+  }
+  function wrColor(w){ return w>=60?'#22C55E':w>=50?'#0ac8b9':w>=40?'#F59E0B':'#E05050'; }
+  function scard(title,body){
+    return '<div style="background:var(--bg-panel);border:1px solid var(--border-subtle);border-radius:8px;padding:1rem;">'+
+      '<div style="font-size:11px;font-weight:700;letter-spacing:.5px;color:var(--white);margin-bottom:.75rem;">'+title+'</div>'+
+      body+'</div>';
+  }
+
+  // ── 매치 파싱 헬퍼 ──
+  function parsePart(matchData, pid){
+    if(!matchData||!matchData.participants_list) return null;
+    return matchData.participants_list.find(function(p){ return p.puu_id===pid; });
+  }
+  function parseBasic(matchData){ return matchData&&matchData.match_basic_dict||{}; }
+
+  // ── 커스텀 매치 집계 ──
+  var cs_stats={games:0,wins:0,kills:0,deaths:0,assists:0,cs:0,dmgDealt:0,dmgTaken:0,
+               vision:0,gold:0,aiSum:0,aiCnt:0,dur:0};
+  var cs_champMap={};  // {cid: {n,games,wins,k,d,a,cs,ai,aiCnt,pos:{}}}
+  var cs_posMap={};
+  var cs_recentChamps=[];   // 최근 5게임 챔피언
+  var cs_olderChamps=new Set(); // 6게임 이후
+  var cs_kda_by_time=[]; // [{ts,kda}] 트렌드용
+  var cs_winstreak=0, cs_losestreak=0, cs_curW=0, cs_curL=0;
+
+  custom.slice().sort(function(a,b){
+    return (parseBasic(b).creation_timestamp||0)-(parseBasic(a).creation_timestamp||0);
+  }).forEach(function(md, i){
+    var me = parsePart(md, puuId); if(!me) return;
+    var basic = parseBasic(md);
+    var stat = me.final_stat_dict||{};
+    var isWin = !!me.is_win;
+    var dur = basic.game_duration||0;
+    var cid = String(me.champion_id);
+    var cname = champMap[cid]||cid;
+    var pos = me.position||'Unknown';
+
+    cs_stats.games++; if(isWin) cs_stats.wins++;
+    cs_stats.kills+=stat.kills||0; cs_stats.deaths+=stat.death||stat.deaths||0;
+    cs_stats.assists+=stat.assists||0; cs_stats.cs+=stat.cs||0;
+    cs_stats.dmgDealt+=stat.damage_dealt||stat.total_damage_dealt_to_champions||0;
+    cs_stats.dmgTaken+=stat.damage_taken||stat.total_damage_taken||0;
+    cs_stats.vision+=stat.vision_score||0; cs_stats.gold+=stat.gold_earned||0;
+    cs_stats.dur+=dur;
+    if(me.ai_score){ cs_stats.aiSum+=me.ai_score; cs_stats.aiCnt++; }
+
+    if(!cs_champMap[cid]) cs_champMap[cid]={n:cname,games:0,wins:0,k:0,d:0,a:0,cs:0,ai:0,aiCnt:0,pos:{}};
+    cs_champMap[cid].games++; if(isWin) cs_champMap[cid].wins++;
+    cs_champMap[cid].k+=stat.kills||0; cs_champMap[cid].d+=stat.death||stat.deaths||0;
+    cs_champMap[cid].a+=stat.assists||0; cs_champMap[cid].cs+=stat.cs||0;
+    if(me.ai_score){ cs_champMap[cid].ai+=me.ai_score; cs_champMap[cid].aiCnt++; }
+    cs_champMap[cid].pos[pos]=(cs_champMap[cid].pos[pos]||0)+1;
+
+    cs_posMap[pos]=(cs_posMap[pos]||0)+1;
+
+    if(i<5) cs_recentChamps.push(cid);
+    else cs_olderChamps.add(cid);
+
+    if(isWin){ cs_curW++; cs_curL=0; }
+    else{ cs_curL++; cs_curW=0; }
+    if(cs_curW>cs_winstreak) cs_winstreak=cs_curW;
+    if(cs_curL>cs_losestreak) cs_losestreak=cs_curL;
+  });
+
+  // 솔랭 집계
+  var rk_stats={games:0,wins:0,kills:0,deaths:0,assists:0,cs:0,dur:0};
+  var rk_champMap={};
+  var rk_posMap={};
+  ranked.forEach(function(md){
+    var me=parsePart(md,puuId); if(!me) return;
+    var basic=parseBasic(md), stat=me.final_stat_dict||{};
+    var isWin=!!me.is_win, dur=basic.game_duration||0;
+    var cid=String(me.champion_id), pos=me.position||'Unknown';
+    rk_stats.games++; if(isWin) rk_stats.wins++;
+    rk_stats.kills+=stat.kills||0; rk_stats.deaths+=stat.death||stat.deaths||0;
+    rk_stats.assists+=stat.assists||0; rk_stats.cs+=stat.cs||0; rk_stats.dur+=dur;
+    if(!rk_champMap[cid]) rk_champMap[cid]={n:champMap[cid]||cid,games:0,wins:0,k:0,d:0,a:0,cs:0};
+    rk_champMap[cid].games++; if(isWin) rk_champMap[cid].wins++;
+    rk_champMap[cid].k+=stat.kills||0; rk_champMap[cid].d+=stat.death||stat.deaths||0;
+    rk_champMap[cid].a+=stat.assists||0; rk_champMap[cid].cs+=stat.cs||0;
+    rk_posMap[pos]=(rk_posMap[pos]||0)+1;
+  });
+
+  var newChamps = cs_recentChamps.filter(function(c){ return !cs_olderChamps.has(c); });
+  var newRkChamps = [];
+  var rkRecentSet=new Set(ranked.slice(0,5).map(function(m){var me=parsePart(m,puuId);return me?String(me.champion_id):null;}).filter(Boolean));
+  var rkOlderSet=new Set(ranked.slice(5).map(function(m){var me=parsePart(m,puuId);return me?String(me.champion_id):null;}).filter(Boolean));
+  rkRecentSet.forEach(function(c){if(!rkOlderSet.has(c)) newRkChamps.push(c);});
+
+  // 강점/약점 분석
+  var strengths=[], weaknesses=[];
+  var avgKda=cs_stats.deaths?((cs_stats.kills+cs_stats.assists)/cs_stats.deaths):0;
+  var avgWr=wr(cs_stats.wins, cs_stats.games);
+  var avgCs=cs_stats.dur?cs_stats.cs/(cs_stats.dur/60):0;
+  var avgAi=cs_stats.aiCnt?cs_stats.aiSum/cs_stats.aiCnt:0;
+  var champPool=Object.keys(cs_champMap).length;
+  var topChamps=Object.values(cs_champMap).sort(function(a,b){return b.games-a.games;});
+  var topChampWr=topChamps.length?wr(topChamps[0].wins,topChamps[0].games):0;
+
+  if(avgKda>=3) strengths.push('KDA가 높아 생존력이 좋음 ('+avgKda.toFixed(2)+')');
+  else if(avgKda<1.5) weaknesses.push('KDA가 낮음 ('+avgKda.toFixed(2)+') — 데스 관리 필요');
+  if(avgWr>=55) strengths.push('높은 승률 ('+avgWr+'%) — 팀 기여도 높음');
+  else if(avgWr<=40) weaknesses.push('낮은 승률 ('+avgWr+'%) — 의사결정 개선 필요');
+  if(avgCs>=7) strengths.push('분당 CS가 높음 ('+avgCs.toFixed(1)+'/분) — 파밍 효율 좋음');
+  else if(avgCs<5&&avgCs>0) weaknesses.push('분당 CS 낮음 ('+avgCs.toFixed(1)+'/분) — 라인전 파밍 개선 필요');
+  if(avgAi>=70) strengths.push('평균 AI점수 높음 ('+Math.round(avgAi)+') — 전투 기여도 높음');
+  else if(avgAi>0&&avgAi<50) weaknesses.push('평균 AI점수 낮음 ('+Math.round(avgAi)+') — 전투 참여 개선 필요');
+  if(champPool>=8) strengths.push('챔피언 폭이 넓음 ('+champPool+'종) — 픽 다양성 높음');
+  else if(champPool<=3&&cs_stats.games>=10) weaknesses.push('챔피언 폭이 좁음 ('+champPool+'종) — 밴픽 취약');
+  if(topChamps.length&&topChampWr>=65) strengths.push('주 챔피언('+topChamps[0].n+') 숙련도 높음 ('+topChampWr+'%)');
+  if(cs_winstreak>=3) strengths.push('최대 '+cs_winstreak+'연승 기록 — 기세 좋음');
+  if(cs_losestreak>=4) weaknesses.push('최대 '+cs_losestreak+'연패 기록 — 멘탈 관리 필요');
+  if(newChamps.length+newRkChamps.length>0) weaknesses.push('최근 새 챔피언 시도 중 ('+( newChamps.concat(newRkChamps)).map(function(c){return champMap[c]||c;}).join(', ')+') — 숙련도 미지수');
+
+  // ── 렌더링 ──
+  var lastTs=data.ts?new Date(data.ts):null;
+  var tsStr=lastTs?(lastTs.getMonth()+1)+'/'+lastTs.getDate()+' '+lastTs.getHours().toString().padStart(2,'0')+':'+lastTs.getMinutes().toString().padStart(2,'0'):'—';
+  var html='<div style="display:flex;flex-direction:column;gap:.75rem;">';
+
+  // 헤더 바
+  html+='<div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;">';
+  html+='<span style="font-family:Rajdhani,sans-serif;font-size:11px;color:var(--muted);">내전 '+custom.length+'게임 · 솔랭 '+ranked.length+'게임 분석 · 업데이트: '+tsStr+'</span>';
+  html+='<button onclick="loadScoutAnalysis('+idx+',true)" style="margin-left:auto;padding:4px 12px;border-radius:3px;border:1px solid rgba(10,200,185,.3);background:rgba(10,200,185,.06);color:var(--blue);font-family:Rajdhani,sans-serif;font-size:10px;font-weight:700;cursor:pointer;">↻ 업데이트</button>';
+  html+='</div>';
+
+  // 요약 카드
+  html+='<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:.5rem;">';
+  var soloWins=soloTier?(soloTier.wins||0):0, soloLosses=soloTier?(soloTier.losses||0):0;
+  var soloGames=soloWins+soloLosses;
+  var items=[
+    ['⭐','내전 레이팅', member&&member._rating?Math.round(member._rating):'—','#F59E0B'],
+    ['🎮','내전 승률', cs_stats.games?wr(cs_stats.wins,cs_stats.games)+'%':'—',wrColor(avgWr)],
+    ['⚔️','내전 KDA', cs_stats.deaths?avgKda.toFixed(2):cs_stats.games?(cs_stats.kills+cs_stats.assists)+'/-':'—','var(--blue)'],
+    ['🏅','솔랭', soloTier?'<span style="color:'+tierColor(soloTier.tier)+';">'+tierText(soloTier)+'</span>':'언랭','#A78BFA'],
+    ['📊','솔랭 승률', soloGames?wr(soloWins,soloGames)+'%':'—',wrColor(soloGames?wr(soloWins,soloGames):0)],
+    ['🎯','챔피언 폭', champPool+'종 내전 / '+Object.keys(rk_champMap).length+'종 솔랭','var(--muted)'],
+  ];
+  items.forEach(function(it){
+    html+='<div style="background:var(--bg-panel);border:1px solid var(--border-subtle);border-radius:6px;padding:.6rem;text-align:center;">'+
+      '<div style="font-size:14px;margin-bottom:2px;">'+it[0]+'</div>'+
+      '<div style="font-size:9px;color:var(--muted);margin-bottom:3px;">'+it[1]+'</div>'+
+      '<div style="font-size:13px;font-weight:800;color:'+it[3]+';">'+it[2]+'</div>'+
+    '</div>';
+  });
+  html+='</div>';
+
+  // 강점/약점
+  if(strengths.length||weaknesses.length){
+    html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;">';
+    html+='<div style="background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.2);border-radius:6px;padding:.75rem;">';
+    html+='<div style="font-size:11px;font-weight:700;color:#22C55E;margin-bottom:.4rem;">💪 강점</div>';
+    html+=strengths.length?strengths.map(function(s){return '<div style="font-size:11px;color:var(--white);padding:2px 0;border-bottom:1px solid rgba(255,255,255,.03);">✓ '+s+'</div>';}).join(''):'<div style="font-size:11px;color:var(--muted);">분석 데이터 부족</div>';
+    html+='</div>';
+    html+='<div style="background:rgba(224,80,80,.06);border:1px solid rgba(224,80,80,.2);border-radius:6px;padding:.75rem;">';
+    html+='<div style="font-size:11px;font-weight:700;color:#E05050;margin-bottom:.4rem;">⚠️ 약점/주의</div>';
+    html+=weaknesses.length?weaknesses.map(function(s){return '<div style="font-size:11px;color:var(--white);padding:2px 0;border-bottom:1px solid rgba(255,255,255,.03);">• '+s+'</div>';}).join(''):'<div style="font-size:11px;color:var(--muted);">뚜렷한 약점 없음</div>';
+    html+='</div>';
+    html+='</div>';
+  }
+
+  // 챔피언 풀 (내전 + 솔랭)
+  html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;">';
+  // 내전 챔피언 풀
+  html+=scard('⚔️ 내전 챔피언 풀 ('+cs_stats.games+'게임 / '+champPool+'종)',
+    topChamps.length?'<div style="display:flex;flex-direction:column;gap:3px;">'+
+    topChamps.slice(0,10).map(function(c){
+      var w=wr(c.wins,c.games), kd=c.d?((c.k+c.a)/c.d).toFixed(2):(c.k+c.a)+'/-';
+      var csMin=cs_stats.dur&&c.games?( c.cs/(cs_stats.dur/60/cs_stats.games*c.games)).toFixed(1):'—';
+      var aiAvg=c.aiCnt?Math.round(c.ai/c.aiCnt):null;
+      var mainPos=Object.entries(c.pos).sort(function(a,b){return b[1]-a[1];})[0];
+      var POS_KO3={Top:'탑',Jungle:'정글',Middle:'미드',Bottom:'원딜',Support:'서폿'};
+      return '<div style="display:flex;align-items:center;gap:.4rem;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.03);">'+
+        champImgLg(Object.keys(cs_champMap).find(function(k){return cs_champMap[k]===c;})||'')+
+        '<div style="flex:1;min-width:0;">'+
+          '<div style="font-size:12px;font-weight:700;color:var(--white);">'+esc(c.n)+'<span style="font-size:9px;color:var(--muted);margin-left:4px;">'+(mainPos?POS_KO3[mainPos[0]]||mainPos[0]:'')+'</span></div>'+
+          '<div style="font-size:10px;color:var(--muted);">KDA '+kd+' · CS '+csMin+'/분'+(aiAvg?' · AI '+aiAvg:'')+'</div>'+
+        '</div>'+
+        '<div style="text-align:right;flex-shrink:0;">'+
+          '<div style="font-size:13px;font-weight:800;color:'+wrColor(w)+';">'+w+'%</div>'+
+          '<div style="font-size:10px;color:var(--muted);">'+c.games+'판</div>'+
+        '</div>'+
+        '<div style="width:32px;height:32px;border-radius:50%;background:conic-gradient('+wrColor(w)+' '+w*3.6+'deg,rgba(255,255,255,.05) 0deg);flex-shrink:0;"></div>'+
+      '</div>';
+    }).join('')+'</div>'
+    :'<div style="color:var(--muted);font-size:11px;text-align:center;padding:1rem;">내전 데이터 없음</div>'
+  );
+  // 솔랭 챔피언 풀
+  var rkChamps=Object.values(rk_champMap).sort(function(a,b){return b.games-a.games;});
+  html+=scard('🏅 솔랭 챔피언 풀 ('+ranked.length+'게임 / '+Object.keys(rk_champMap).length+'종)',
+    rkChamps.length?'<div style="display:flex;flex-direction:column;gap:3px;">'+
+    rkChamps.slice(0,10).map(function(c){
+      var cid=Object.keys(rk_champMap).find(function(k){return rk_champMap[k]===c;})||'';
+      var w=wr(c.wins,c.games), kd=c.d?((c.k+c.a)/c.d).toFixed(2):(c.k+c.a)+'/-';
+      var csMin=rk_stats.dur&&c.games?(c.cs/(rk_stats.dur/60/rk_stats.games*c.games)).toFixed(1):'—';
+      return '<div style="display:flex;align-items:center;gap:.4rem;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.03);">'+
+        champImgLg(cid)+
+        '<div style="flex:1;min-width:0;">'+
+          '<div style="font-size:12px;font-weight:700;color:var(--white);">'+esc(c.n)+'</div>'+
+          '<div style="font-size:10px;color:var(--muted);">KDA '+kd+' · CS '+csMin+'/분</div>'+
+        '</div>'+
+        '<div style="text-align:right;flex-shrink:0;">'+
+          '<div style="font-size:13px;font-weight:800;color:'+wrColor(w)+';">'+w+'%</div>'+
+          '<div style="font-size:10px;color:var(--muted);">'+c.games+'판</div>'+
+        '</div>'+
+      '</div>';
+    }).join('')+'</div>'
+    :'<div style="color:var(--muted);font-size:11px;text-align:center;padding:1rem;">솔랭 데이터 없음</div>'
+  );
+  html+='</div>';
+
+  // 포지션 + 연습 챔피언
+  html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;">';
+  var totalPos=Object.values(cs_posMap).reduce(function(s,v){return s+v;},0)+Object.values(rk_posMap).reduce(function(s,v){return s+v;},0);
+  var mergedPos={};
+  Object.entries(cs_posMap).forEach(function(kv){mergedPos[kv[0]]=(mergedPos[kv[0]]||0)+kv[1];});
+  Object.entries(rk_posMap).forEach(function(kv){mergedPos[kv[0]]=(mergedPos[kv[0]]||0)+kv[1];});
+  var POS_C={Top:'#E74C3C',Jungle:'#27AE60',Middle:'#3498DB',Bottom:'#E67E22',Support:'#9B59B6'};
+  var POS_K={Top:'탑',Jungle:'정글',Middle:'미드',Bottom:'원딜',Support:'서폿'};
+  html+=scard('🗺️ 포지션 분포 (내전+솔랭)',
+    totalPos?Object.entries(mergedPos).sort(function(a,b){return b[1]-a[1];}).map(function(kv){
+      var pos=kv[0],cnt=kv[1],pct=Math.round(cnt/totalPos*100);
+      var c=POS_C[pos]||'#5B6474', l=POS_K[pos]||pos;
+      return '<div style="margin-bottom:.4rem;">'+
+        '<div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:2px;">'+
+          '<span style="color:'+c+';font-weight:700;">'+l+'</span>'+
+          '<span style="color:var(--muted);">'+cnt+'게임 ('+pct+'%)</span>'+
+        '</div>'+
+        '<div style="height:5px;background:rgba(255,255,255,.05);border-radius:3px;">'+
+          '<div style="height:100%;width:'+pct+'%;background:'+c+';border-radius:3px;"></div>'+
+        '</div>'+
+      '</div>';
+    }).join('')
+    :'<div style="color:var(--muted);font-size:11px;text-align:center;padding:1rem;">데이터 없음</div>'
+  );
+
+  var allNew=[...new Set([...newChamps,...newRkChamps])];
+  html+=scard('🔬 연습 의심 챔피언',
+    allNew.length?
+    '<div style="margin-bottom:.5rem;font-size:10px;color:var(--muted);">최근 5게임 이내 첫 등장 챔피언</div>'+
+    '<div style="display:flex;flex-wrap:wrap;gap:.4rem;">'+
+    allNew.map(function(cid){
+      var n=champMap[cid]||cid;
+      return '<div style="display:flex;align-items:center;gap:4px;background:rgba(224,80,80,.08);border:1px solid rgba(224,80,80,.2);border-radius:4px;padding:3px 8px;">'+
+        champImg(cid)+'<span style="font-size:11px;color:#E05050;font-weight:700;">'+esc(n)+'</span></div>';
+    }).join('')+'</div>'
+    :'<div style="color:var(--muted);font-size:11px;text-align:center;padding:1rem;">새로운 챔피언 없음<br><span style="font-size:10px;opacity:.6;">안정적인 챔피언 풀 유지 중</span></div>'
+  );
+  html+='</div>';
+
+  // 최근 전적 (내전+솔랭 시간순)
+  var recentAll=[];
+  custom.slice(0,10).forEach(function(md){
+    var me=parsePart(md,puuId); if(!me) return;
+    var basic=parseBasic(md), stat=me.final_stat_dict||{};
+    recentAll.push({ts:basic.creation_timestamp||0,md,me,stat,type:'custom'});
+  });
+  ranked.slice(0,10).forEach(function(md){
+    var me=parsePart(md,puuId); if(!me) return;
+    var basic=parseBasic(md), stat=me.final_stat_dict||{};
+    recentAll.push({ts:basic.creation_timestamp||0,md,me,stat,type:'ranked'});
+  });
+  recentAll.sort(function(a,b){return b.ts-a.ts;});
+
+  html+=scard('📋 최근 전적 (내전⚔️ / 솔랭🏅)',
+    recentAll.length?'<div style="display:flex;flex-direction:column;gap:2px;">'+
+    recentAll.slice(0,15).map(function(r){
+      var me=r.me, stat=r.stat, basic=parseBasic(r.md);
+      var isWin=!!me.is_win, cid=String(me.champion_id);
+      var ts=r.ts?new Date(r.ts*1000):null;
+      var dateStr=ts?(ts.getMonth()+1)+'/'+ts.getDate()+' '+ts.getHours().toString().padStart(2,'0')+':'+ts.getMinutes().toString().padStart(2,'0'):'';
+      var dur=basic.game_duration?sec2min(basic.game_duration):'';
+      var kda=stat.deaths?((( stat.kills||0)+(stat.assists||0))/stat.deaths).toFixed(1):(stat.kills||0)+(stat.assists||0)+'/-';
+      var csMin=basic.game_duration&&stat.cs?(stat.cs/(basic.game_duration/60)).toFixed(1)+'cs/m':'';
+      var ai=me.ai_score?'AI '+Math.round(me.ai_score):'';
+      var typeIcon=r.type==='custom'?'⚔️':'🏅';
+      return '<div style="display:flex;align-items:center;gap:.4rem;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.03);">'+
+        '<div style="width:3px;height:32px;border-radius:2px;background:'+(isWin?'#22C55E':'#E05050')+';flex-shrink:0;"></div>'+
+        champImgLg(cid)+
+        '<div style="flex:1;min-width:0;">'+
+          '<div style="display:flex;align-items:center;gap:4px;">'+
+            '<span style="font-size:11px;font-weight:700;color:var(--white);">'+esc(champMap[cid]||cid)+'</span>'+
+            '<span style="font-size:10px;color:var(--muted);">'+typeIcon+'</span>'+
+            (me.position?'<span style="font-size:9px;color:var(--muted);">'+( POS_K[me.position]||me.position)+'</span>':'')+'</div>'+
+          '<div style="font-size:10px;color:var(--muted);">'+(stat.kills||0)+'/'+(stat.death||stat.deaths||0)+'/'+(stat.assists||0)+' · '+kda+' KDA'+(csMin?' · '+csMin:'')+(ai?' · '+ai:'')+(dur?' · '+dur:'')+'</div>'+
+        '</div>'+
+        '<div style="text-align:right;flex-shrink:0;">'+
+          '<div style="font-size:11px;font-weight:700;color:'+(isWin?'#22C55E':'#E05050')+'">'+(isWin?'승':'패')+'</div>'+
+          '<div style="font-size:9px;color:var(--muted);">'+dateStr+'</div>'+
+        '</div>'+
+      '</div>';
+    }).join('')+'</div>'
+    :'<div style="color:var(--muted);font-size:11px;text-align:center;padding:1rem;">전적 없음</div>'
+  );
+
+  html+='</div>';
+  el.innerHTML=html;
 }
 
 </script>
@@ -4641,6 +5241,32 @@ async function _saveDonationsToServer() {
         style="padding:6px 14px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:11px;cursor:pointer;">취소</button>
       <button id="don-confirm-btn" onclick="confirmDonation()"
         style="padding:6px 14px;border-radius:3px;border:1px solid rgba(200,170,110,.4);background:rgba(200,170,110,.1);color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;">추가</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── 관찰 대상 추가 모달 ── -->
+<div id="scout-add-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:2000;align-items:center;justify-content:center;" onclick="if(event.target===this)this.style.display='none'">
+  <div style="background:var(--bg-panel);border:1px solid var(--border);border-radius:6px;padding:1.25rem;width:90%;max-width:340px;">
+    <div style="font-size:13px;font-weight:700;color:#E05050;margin-bottom:1rem;">🔍 관찰 대상 추가</div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:1rem;">
+      <div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:3px;">소환사 이름 *</div>
+        <input id="scout-input-name" type="text" placeholder="소환사명"
+          style="width:100%;box-sizing:border-box;background:var(--bg-dark);border:1px solid var(--border-subtle);border-radius:3px;padding:6px 8px;color:var(--white);font-size:12px;outline:none;">
+      </div>
+      <div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:3px;">태그 * (#제외)</div>
+        <input id="scout-input-tag" type="text" placeholder="KR1"
+          style="width:100%;box-sizing:border-box;background:var(--bg-dark);border:1px solid var(--border-subtle);border-radius:3px;padding:6px 8px;color:var(--white);font-size:12px;outline:none;">
+      </div>
+    </div>
+    <div style="font-size:10px;color:var(--muted);margin-bottom:.75rem;">커뮤니티 멤버가 아니어도 추가 가능합니다</div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <button onclick="document.getElementById('scout-add-modal').style.display='none'"
+        style="padding:6px 14px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:11px;cursor:pointer;">취소</button>
+      <button id="scout-add-btn" onclick="confirmScoutAdd()"
+        style="padding:6px 14px;border-radius:3px;border:1px solid rgba(224,80,80,.4);background:rgba(224,80,80,.1);color:#E05050;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;">추가</button>
     </div>
   </div>
 </div>

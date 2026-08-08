@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>내전 목록</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Bebas+Neue&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --bg-panel: #0d1525;
+    --bg-dark: #070b14;
+    --border: rgba(255,255,255,.08);
+    --border-subtle: rgba(255,255,255,.05);
+    --white: #e8eaf0;
+    --muted: #5b6474;
+    --gold: #C8AA6E;
+    --blue: #0ac8b9;
+    --red: #e05050;
+    --green: #22C55E;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--white); font-family: 'Noto Sans KR', sans-serif; min-height: 100vh; }
+
+  .header {
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border);
+    padding: .75rem 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+  }
+  .header-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 2px;
+    color: var(--gold);
+  }
+  .header-sub {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .container {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 1.25rem 1rem;
+  }
+
+  .filter-bar {
+    display: flex;
+    gap: .5rem;
+    margin-bottom: 1rem;
+    align-items: center;
+  }
+  .search-input {
+    flex: 1;
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 7px 12px;
+    color: var(--white);
+    font-size: 13px;
+    outline: none;
+  }
+  .search-input::placeholder { color: var(--muted); }
+  .filter-select {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 7px 10px;
+    color: var(--white);
+    font-size: 12px;
+    font-family: 'Rajdhani', sans-serif;
+    outline: none;
+    cursor: pointer;
+  }
+
+  .match-list { display: flex; flex-direction: column; gap: .6rem; }
+
+  .match-card {
+    background: var(--bg-panel);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    padding: .9rem 1rem;
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+    text-decoration: none;
+    display: block;
+    color: inherit;
+  }
+  .match-card:hover {
+    border-color: rgba(200,170,110,.4);
+    background: rgba(200,170,110,.04);
+  }
+  .match-card-top {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    margin-bottom: .4rem;
+  }
+  .match-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--white);
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .status-pill {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 10px;
+    flex-shrink: 0;
+  }
+  .status-wait    { background: rgba(91,100,116,.2); color: var(--muted); border: 1px solid rgba(91,100,116,.3); }
+  .status-ongoing { background: rgba(34,197,94,.1);  color: var(--green); border: 1px solid rgba(34,197,94,.3); }
+  .status-done    { background: rgba(200,170,110,.1); color: var(--gold);  border: 1px solid rgba(200,170,110,.3); }
+  .status-cancel  { background: rgba(224,80,80,.1);   color: var(--red);   border: 1px solid rgba(224,80,80,.3); }
+
+  .match-meta {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .match-meta span { display: flex; align-items: center; gap: 3px; }
+
+  .empty {
+    text-align: center;
+    color: var(--muted);
+    font-family: 'Rajdhani', sans-serif;
+    padding: 4rem 0;
+    font-size: 14px;
+  }
+
+  .loading {
+    text-align: center;
+    color: var(--muted);
+    padding: 4rem 0;
+    font-size: 13px;
+  }
+  .spinner {
+    display: inline-block;
+    width: 20px; height: 20px;
+    border: 2px solid rgba(255,255,255,.1);
+    border-top-color: var(--blue);
+    border-radius: 50%;
+    animation: spin .8s linear infinite;
+    margin-bottom: 8px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .count-badge {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 11px;
+    color: var(--muted);
+    margin-left: auto;
+  }
+
+  @media(max-width: 600px) {
+    .header-title { font-size: 18px; }
+    .container { padding: 1rem .75rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="header-title" id="community-name">내전 목록</div>
+    <div class="header-sub" id="community-sub">로딩 중...</div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="filter-bar">
+    <input class="search-input" id="search-input" type="text" placeholder="🔍 내전 이름 검색..." oninput="renderList()">
+    <select class="filter-select" id="status-filter" onchange="renderList()">
+      <option value="">전체</option>
+      <option value="ongoing">진행중</option>
+      <option value="done">완료</option>
+      <option value="wait">대기</option>
+    </select>
+    <span class="count-badge" id="count-badge"></span>
+  </div>
+  <div id="match-list-container">
+    <div class="loading">
+      <div class="spinner"></div><br>불러오는 중...
+    </div>
+  </div>
+</div>
+
+<script>
+const WORKER_URL = 'https://api.roonging.com';
+const params = new URLSearchParams(location.search);
+const CID = params.get('cid') || '';
+const SERVER_ID = params.get('server_id') || '';
+
+var _matches = [];
+var _communityName = '';
+
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function getStatusInfo(status) {
+  var s = (status||'').toLowerCase();
+  if (s === 'ongoing' || s === '진행중') return { cls: 'status-ongoing', label: '진행중' };
+  if (s === 'done' || s === '완료' || s === 'end') return { cls: 'status-done', label: '완료' };
+  if (s === 'cancel' || s === '취소') return { cls: 'status-cancel', label: '취소' };
+  return { cls: 'status-wait', label: '대기' };
+}
+
+function formatTime(t) {
+  if (!t) return '—';
+  var d = new Date(t);
+  if (isNaN(d)) return t;
+  var now = new Date();
+  var diff = now - d;
+  if (diff < 60000) return '방금 전';
+  if (diff < 3600000) return Math.floor(diff/60000) + '분 전';
+  if (diff < 86400000) return Math.floor(diff/3600000) + '시간 전';
+  if (diff < 86400000*7) return Math.floor(diff/86400000) + '일 전';
+  return (d.getMonth()+1) + '/' + d.getDate();
+}
+
+function getMatchUrl(matchId) {
+  // 비회원 뷰 URL: ?match={cid}__{matchId}
+  return 'index.html?match=' + encodeURIComponent(CID + '__' + matchId);
+}
+
+function renderList() {
+  var query = (document.getElementById('search-input').value || '').trim().toLowerCase();
+  var statusFilter = document.getElementById('status-filter').value;
+  var container = document.getElementById('match-list-container');
+
+  var filtered = _matches.filter(function(m) {
+    if (query && !(m.name||'').toLowerCase().includes(query)) return false;
+    if (statusFilter) {
+      var s = (m.status||'').toLowerCase();
+      if (statusFilter === 'ongoing' && s !== 'ongoing' && s !== '진행중') return false;
+      if (statusFilter === 'done' && s !== 'done' && s !== '완료' && s !== 'end') return false;
+      if (statusFilter === 'wait' && s !== 'wait' && s !== '' && s !== '대기') return false;
+    }
+    return true;
+  });
+
+  document.getElementById('count-badge').textContent = filtered.length + '개';
+
+  if (!filtered.length) {
+    container.innerHTML = '<div class="empty">내전이 없습니다</div>';
+    return;
+  }
+
+  container.innerHTML = '<div class="match-list">' +
+    filtered.map(function(m) {
+      var si = getStatusInfo(m.status);
+      var url = getMatchUrl(m.id);
+      return '<a class="match-card" href="' + esc(url) + '" target="_blank">' +
+        '<div class="match-card-top">' +
+          '<span class="match-name">' + esc(m.name || '이름 없음') + '</span>' +
+          '<span class="status-pill ' + si.cls + '">' + si.label + '</span>' +
+        '</div>' +
+        '<div class="match-meta">' +
+          '<span>🕐 ' + esc(formatTime(m.time || m.createdAt || m._createdAt)) + '</span>' +
+          (m.admin ? '<span>👤 ' + esc(m.admin) + '</span>' : '') +
+        '</div>' +
+      '</a>';
+    }).join('') +
+  '</div>';
+}
+
+async function loadMatches() {
+  if (!CID) {
+    document.getElementById('match-list-container').innerHTML =
+      '<div class="empty">URL에 cid 파라미터가 필요합니다</div>';
+    return;
+  }
+
+  try {
+    // 커뮤니티 이름 로드
+    if (SERVER_ID) {
+      try {
+        var siRes = await fetch(WORKER_URL + '/server-info', {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ serverId: SERVER_ID })
+        });
+        var siJson = await siRes.json();
+        if (siJson.ok && siJson.data) {
+          _communityName = siJson.data.server_name || '';
+          document.getElementById('community-name').textContent = _communityName + ' 내전 목록';
+          document.title = _communityName + ' 내전 목록';
+        }
+      } catch(e) {}
+    }
+    document.getElementById('community-sub').textContent = '공개 내전 목록';
+
+    // 내전 목록 로드
+    var res = await fetch(WORKER_URL + '/db-public-read', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ path: 'communities/' + CID + '/matches', shallow: false })
+    });
+    var json = await res.json();
+
+    if (!json.ok || !json.data) {
+      document.getElementById('match-list-container').innerHTML =
+        '<div class="empty">내전 목록을 불러올 수 없습니다</div>';
+      return;
+    }
+
+    // 객체 → 배열 변환
+    var raw = json.data;
+    _matches = Object.entries(raw).map(function(kv) {
+      return Object.assign({ id: kv[0] }, kv[1]);
+    });
+
+    // 최신순 정렬
+    _matches.sort(function(a, b) {
+      var getTs = function(m) {
+        return m.createdAt || m._createdAt
+          || (m.id && /match_(\d+)/.exec(m.id) ? parseInt(/match_(\d+)/.exec(m.id)[1]) : 0)
+          || new Date(m.time).getTime() || 0;
+      };
+      return getTs(b) - getTs(a);
+    });
+
+    renderList();
+  } catch(e) {
+    document.getElementById('match-list-container').innerHTML =
+      '<div class="empty">오류: ' + esc(e.message) + '</div>';
+  }
+}
+
+// db-public-read에 matches 경로 허용이 필요
+// communities/{cid}/matches 경로 허용 확인
+loadMatches();
+</script>
+</body>
+</html>
