@@ -4635,10 +4635,20 @@ function initScoutView() {
     return;
   }
 
-  renderScoutLayout();
+  // 챔피언 카드 클릭 이벤트 위임
+  var sc = document.getElementById('scout-content');
+  if (sc && !sc._delegated) {
+    sc._delegated = true;
+    sc.addEventListener('click', function(e) {
+      var row = e.target.closest('.scout-rk-champ');
+      if (row) showCounterPick(row.dataset.cid, row.dataset.puu);
+    });
+  }
   if (!_scoutInited) {
     _scoutInited = true;
-    loadScoutTargets();
+    loadScoutTargets(); // 완료 후 내부에서 renderScoutLayout 호출
+  } else {
+    renderScoutLayout(); // 이미 로드됐으면 바로 렌더
   }
 }
 
@@ -4754,25 +4764,40 @@ async function confirmScoutAdd() {
   if (btn) { btn.disabled = true; btn.textContent = '검색 중...'; }
 
   try {
-    // 딥롤 summoner search로 puuId 찾기
-    var searchRes = await fetch(API_BASE + '/summoner/summoner-search?keyword=' + encodeURIComponent(name + '%23' + tag) + '&platform_id=KR',
-      { headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://www.deeplol.gg/' } });
-    var searchJson = await searchRes.json();
-    var summoner = searchJson && (searchJson.summoner || (searchJson.summoners && searchJson.summoners[0]));
-
     var puuId = '';
-    if (summoner && summoner.puu_id) {
-      puuId = summoner.puu_id;
-    } else {
-      // allData에서 찾기
-      var found = allData.find(function(m) {
-        return m.riot_name && m.riot_name.toLowerCase() === name.toLowerCase() &&
-               m.riot_tag && m.riot_tag.toLowerCase() === tag.toLowerCase();
-      });
-      if (found) puuId = found.puu_id;
+
+    // 1. allData(커뮤니티 멤버)에서 먼저 찾기
+    var found = allData.find(function(m) {
+      return m.riot_name && m.riot_name.toLowerCase() === name.toLowerCase() &&
+             m.riot_tag && m.riot_tag.toLowerCase() === tag.toLowerCase();
+    });
+    if (found) puuId = found.puu_id;
+
+    // 2. 없으면 딥롤 API로 검색
+    if (!puuId) {
+      try {
+        var keyword = encodeURIComponent(name + '#' + tag);
+        var searchRes = await fetch(API_BASE + '/summoner/summoner-search?keyword=' + keyword + '&platform_id=KR');
+        if (searchRes.ok) {
+          var searchJson = await searchRes.json();
+          var summoner = searchJson && (searchJson.summoner || (Array.isArray(searchJson.summoners) && searchJson.summoners[0]));
+          if (summoner && summoner.puu_id) puuId = summoner.puu_id;
+        }
+      } catch(e2) {}
     }
 
-    if (!puuId) { alert('소환사를 찾을 수 없습니다'); if(btn){btn.disabled=false;btn.textContent='추가';} return; }
+    // 3. 딥롤 realtime API로도 시도
+    if (!puuId) {
+      try {
+        var rtRes = await fetch(API_BASE + '/summoner/summoner-realtime?platform_id=KR&summoner_id=&riot_name=' + encodeURIComponent(name) + '&riot_tag=' + encodeURIComponent(tag));
+        if (rtRes.ok) {
+          var rtJson = await rtRes.json();
+          if (rtJson && rtJson.puu_id) puuId = rtJson.puu_id;
+        }
+      } catch(e3) {}
+    }
+
+    if (!puuId) { alert(name + '#' + tag + ' 소환사를 찾을 수 없습니다. 커뮤니티 멤버라면 닉네임/태그를 정확히 입력해주세요'); if(btn){btn.disabled=false;btn.textContent='추가';} return; }
 
     // 이미 있는지 확인
     if (_scoutTargets.find(function(t){ return t.puuId === puuId; })) {
@@ -4803,10 +4828,10 @@ async function loadScoutAnalysis(idx, forceUpdate) {
     renderScoutAnalysis(idx); return;
   }
 
-  el.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--muted);font-size:12px;"><div class="spinner" style="margin:0 auto 12px;width:28px;height:28px;"></div><div>'+esc(target.name)+'#'+esc(target.tag)+' 전적 수집 중...<br><span style="font-size:10px;opacity:.6;">최대 100게임 × 2큐 수집, 1~2분 소요</span></div></div>';
+  el.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--muted);font-size:12px;"><div class="spinner" style="margin:0 auto 12px;width:28px;height:28px;"></div><div>'+esc(target.name)+'#'+esc(target.tag)+' 전적 수집 중...</div></div>';
 
   try {
-    // 1. 내전 데이터
+    // 1. 내전 Firebase 데이터
     var internalMember = allData.find(function(m){ return m.puu_id === puuId; });
     var internalData = null;
     if (internalMember) {
@@ -4817,27 +4842,60 @@ async function loadScoutAnalysis(idx, forceUpdate) {
       }
     }
 
-    // 2. 솔랭 데이터 (Worker 프록시)
-    var soloTier = null, rankedMatches = [];
+    // 2. 솔랭 티어
+    var soloTier = null;
     try {
-      var rkRes = await fetch(WORKER_URL + '/scout-ranked', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ puuId, platform, queueType: 'RANKED_SOLO' })
-      });
-      var rkJson = await rkRes.json();
-      if (rkJson.ok) { soloTier = rkJson.soloTier; rankedMatches = rkJson.matches || []; }
+      var tierRes = await fetch(API_BASE + '/summoner/summoner-realtime?platform_id=' + platform + '&summoner_id=&puu_id=' + encodeURIComponent(puuId));
+      if (tierRes.ok) {
+        var tierJson = await tierRes.json();
+        var solo = tierJson && tierJson.season_tier_info_dict && tierJson.season_tier_info_dict.ranked_solo_5x5;
+        if (solo) soloTier = { tier: solo.tier, division: solo.division, lp: solo.league_points, wins: solo.wins, losses: solo.losses };
+      }
     } catch(e) {}
 
-    // 3. 커스텀(내전) 딥롤 데이터 (Worker 프록시) - 모든 내전 포함
-    var customMatches = [];
+    // 3. 전체 매치 목록 가져오기 (queue_type 파라미터가 실제론 무시됨 → 전체 가져와서 분리)
+    var allMatchIds = [];
     try {
-      var cmRes = await fetch(WORKER_URL + '/scout-ranked', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ puuId, platform, queueType: 'CUSTOM' })
-      });
-      var cmJson = await cmRes.json();
-      if (cmJson.ok) customMatches = cmJson.matches || [];
+      var offset = 0;
+      while (allMatchIds.length < 200) {
+        var res = await fetch(API_BASE + '/match/matches?puu_id=' + encodeURIComponent(puuId) +
+          '&platform_id=' + platform + '&offset=' + offset + '&count=20&queue_type=CUSTOM&champion_id=0&only_list=1&last_updated_at=1');
+        if (!res.ok) break;
+        var j = await res.json();
+        var raw = j.match_id_list || [];
+        var ids = raw.map(function(x){ return typeof x === 'string' ? x : x.match_id; }).filter(Boolean);
+        if (!ids.length) break;
+        allMatchIds = allMatchIds.concat(ids);
+        if (ids.length < 20) break;
+        offset += 20;
+      }
     } catch(e) {}
+
+    // 4. 상세 데이터 배치 로드
+    var allMatches = [];
+    for (var i = 0; i < Math.min(allMatchIds.length, 200); i += 10) {
+      var batch = allMatchIds.slice(i, i+10);
+      var details = await Promise.all(batch.map(function(mid){
+        return fetch(API_BASE + '/match/match-cached?match_id=' + mid + '&platform_id=' + platform)
+          .then(function(r){ return r.json(); }).catch(function(){ return null; });
+      }));
+      allMatches = allMatches.concat(details.filter(Boolean));
+    }
+
+    // 5. queue_id로 분리
+    // 420=솔랭, 440=자유랭크, 430=일반, 3130=커스텀(내전)
+    var RANKED_IDS = [420, 440];
+    var CUSTOM_IDS = [3130];
+    var rankedMatches = allMatches.filter(function(m){
+      var qid = m.match_basic_dict && m.match_basic_dict.queue_id;
+      return RANKED_IDS.indexOf(qid) >= 0;
+    });
+    var customMatches = allMatches.filter(function(m){
+      var qid = m.match_basic_dict && m.match_basic_dict.queue_id;
+      return CUSTOM_IDS.indexOf(qid) >= 0;
+    });
+
+    console.log('[scout] total:', allMatches.length, 'ranked:', rankedMatches.length, 'custom:', customMatches.length);
 
     _scoutData[puuId] = {
       internalData, rankedMatches, customMatches, soloTier,
@@ -5044,55 +5102,68 @@ function renderScoutAnalysis(idx) {
     html+='</div>';
   }
 
-  // 챔피언 풀 (내전 + 솔랭)
+  // 챔피언 풀 (내전 + 솔랭) - 라인 필터 + 스크롤
+  var POS_FILTERS = ['전체','Top','Jungle','Middle','Bottom','Support'];
+  var POS_KO4 = {Top:'탑',Jungle:'정글',Middle:'미드',Bottom:'원딜',Support:'서폿'};
+
+  function renderChampPool(champMapObj, statsObj, queueLabel, puuIdVal, filterPos) {
+    var champs = Object.values(champMapObj).sort(function(a,b){ return b.games-a.games; });
+    if (filterPos && filterPos !== '전체') {
+      champs = champs.filter(function(c){
+        var mainPos = Object.entries(c.pos||{}).sort(function(a,b){return b[1]-a[1];})[0];
+        return mainPos && mainPos[0] === filterPos;
+      });
+    }
+    if (!champs.length) return '<div style="color:var(--muted);font-size:11px;text-align:center;padding:1rem;">해당 포지션 데이터 없음</div>';
+    return '<div style="display:flex;flex-direction:column;gap:3px;">' +
+      champs.map(function(c) {
+        var cid = Object.keys(champMapObj).find(function(k){ return champMapObj[k]===c; })||'';
+        var w = wr(c.wins,c.games);
+        var kd = c.d ? ((c.k+c.a)/c.d).toFixed(2) : (c.k+c.a)+'/-';
+        var csMin = statsObj.dur&&c.games ? (c.cs/(statsObj.dur/60/statsObj.games*c.games)).toFixed(1) : '—';
+        var aiAvg = c.aiCnt ? Math.round(c.ai/c.aiCnt) : null;
+        var mainPos = Object.entries(c.pos||{}).sort(function(a,b){return b[1]-a[1];})[0];
+        return '<div data-cid="'+cid+'" class="scout-rk-champ" data-puu="'+puuIdVal+'" style="display:flex;align-items:center;gap:.4rem;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.03);cursor:pointer;border-radius:4px;">'+
+          champImgLg(cid)+
+          '<div style="flex:1;min-width:0;">'+
+            '<div style="font-size:12px;font-weight:700;color:var(--white);">'+esc(c.n)+'<span style="font-size:9px;color:var(--muted);margin-left:4px;">'+(mainPos?POS_KO4[mainPos[0]]||mainPos[0]:'')+'</span></div>'+
+            '<div style="font-size:10px;color:var(--muted);">KDA '+kd+' · CS '+csMin+'/분'+(aiAvg?' · AI '+aiAvg:'')+'</div>'+
+          '</div>'+
+          '<div style="text-align:right;flex-shrink:0;">'+
+            '<div style="font-size:13px;font-weight:800;color:'+wrColor(w)+';">'+w+'%</div>'+
+            '<div style="font-size:10px;color:var(--muted);">'+c.games+'판</div>'+
+          '</div>'+
+        '</div>';
+      }).join('')+
+    '</div>';
+  }
+
+  // filterChampPool은 전역 함수로 처리
+
+  function champPoolCard(queueType, label, champMapObj, statsObj) {
+    var total = Object.keys(champMapObj).length;
+    var filterBtns = POS_FILTERS.map(function(pos){
+      var ko = POS_KO4[pos]||pos;
+      return '<button class="champ-filter-btn-'+queueType+'-'+puuId+'" data-pos="'+pos+'" '+
+        'onclick="scoutFilterChamp(this)" data-queue="'+queueType+'" data-puu="'+puuId+'" '+
+        'style="padding:2px 8px;border-radius:3px;border:1px solid var(--border-subtle);background:'+(pos==='전체'?'rgba(167,139,250,.1)':'transparent')+';color:'+(pos==='전체'?'#A78BFA':'var(--muted)')+';font-size:10px;cursor:pointer;font-family:Rajdhani,sans-serif;font-weight:700;border-color:'+(pos==='전체'?'rgba(167,139,250,.3)':'var(--border-subtle)')+';">'+ko+'</button>';
+    }).join('');
+    return '<div style="background:var(--bg-panel);border:1px solid var(--border-subtle);border-radius:8px;padding:1rem;">'+
+      '<div style="font-size:11px;font-weight:700;letter-spacing:.5px;color:var(--white);margin-bottom:.5rem;">'+label+' <span style="color:var(--muted);font-weight:400;">(총 '+total+'종)</span></div>'+
+      '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:.75rem;">'+filterBtns+'</div>'+
+      '<div id="champ-pool-list-'+queueType+'-'+puuId+'" style="max-height:360px;overflow-y:auto;">'+
+        renderChampPool(champMapObj, statsObj, label, puuId, '전체')+
+      '</div>'+
+    '</div>';
+  }
+
   html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;">';
-  // 내전 챔피언 풀
-  html+=scard('⚔️ 내전 챔피언 풀 ('+cs_stats.games+'게임 / '+champPool+'종)',
-    topChamps.length?'<div style="display:flex;flex-direction:column;gap:3px;">'+
-    topChamps.slice(0,10).map(function(c){
-      var w=wr(c.wins,c.games), kd=c.d?((c.k+c.a)/c.d).toFixed(2):(c.k+c.a)+'/-';
-      var csMin=cs_stats.dur&&c.games?( c.cs/(cs_stats.dur/60/cs_stats.games*c.games)).toFixed(1):'—';
-      var aiAvg=c.aiCnt?Math.round(c.ai/c.aiCnt):null;
-      var mainPos=Object.entries(c.pos).sort(function(a,b){return b[1]-a[1];})[0];
-      var POS_KO3={Top:'탑',Jungle:'정글',Middle:'미드',Bottom:'원딜',Support:'서폿'};
-      return '<div style="display:flex;align-items:center;gap:.4rem;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.03);">'+
-        champImgLg(Object.keys(cs_champMap).find(function(k){return cs_champMap[k]===c;})||'')+
-        '<div style="flex:1;min-width:0;">'+
-          '<div style="font-size:12px;font-weight:700;color:var(--white);">'+esc(c.n)+'<span style="font-size:9px;color:var(--muted);margin-left:4px;">'+(mainPos?POS_KO3[mainPos[0]]||mainPos[0]:'')+'</span></div>'+
-          '<div style="font-size:10px;color:var(--muted);">KDA '+kd+' · CS '+csMin+'/분'+(aiAvg?' · AI '+aiAvg:'')+'</div>'+
-        '</div>'+
-        '<div style="text-align:right;flex-shrink:0;">'+
-          '<div style="font-size:13px;font-weight:800;color:'+wrColor(w)+';">'+w+'%</div>'+
-          '<div style="font-size:10px;color:var(--muted);">'+c.games+'판</div>'+
-        '</div>'+
-        '<div style="width:32px;height:32px;border-radius:50%;background:conic-gradient('+wrColor(w)+' '+w*3.6+'deg,rgba(255,255,255,.05) 0deg);flex-shrink:0;"></div>'+
-      '</div>';
-    }).join('')+'</div>'
-    :'<div style="color:var(--muted);font-size:11px;text-align:center;padding:1rem;">내전 데이터 없음</div>'
-  );
-  // 솔랭 챔피언 풀
-  var rkChamps=Object.values(rk_champMap).sort(function(a,b){return b.games-a.games;});
-  html+=scard('🏅 솔랭 챔피언 풀 ('+ranked.length+'게임 / '+Object.keys(rk_champMap).length+'종)',
-    rkChamps.length?'<div style="display:flex;flex-direction:column;gap:3px;">'+
-    rkChamps.slice(0,10).map(function(c){
-      var cid=Object.keys(rk_champMap).find(function(k){return rk_champMap[k]===c;})||'';
-      var w=wr(c.wins,c.games), kd=c.d?((c.k+c.a)/c.d).toFixed(2):(c.k+c.a)+'/-';
-      var csMin=rk_stats.dur&&c.games?(c.cs/(rk_stats.dur/60/rk_stats.games*c.games)).toFixed(1):'—';
-      return '<div style="display:flex;align-items:center;gap:.4rem;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.03);">'+
-        champImgLg(cid)+
-        '<div style="flex:1;min-width:0;">'+
-          '<div style="font-size:12px;font-weight:700;color:var(--white);">'+esc(c.n)+'</div>'+
-          '<div style="font-size:10px;color:var(--muted);">KDA '+kd+' · CS '+csMin+'/분</div>'+
-        '</div>'+
-        '<div style="text-align:right;flex-shrink:0;">'+
-          '<div style="font-size:13px;font-weight:800;color:'+wrColor(w)+';">'+w+'%</div>'+
-          '<div style="font-size:10px;color:var(--muted);">'+c.games+'판</div>'+
-        '</div>'+
-      '</div>';
-    }).join('')+'</div>'
-    :'<div style="color:var(--muted);font-size:11px;text-align:center;padding:1rem;">솔랭 데이터 없음</div>'
-  );
+  html+=champPoolCard('custom', '⚔️ 내전 챔피언 풀 ('+cs_stats.games+'게임)', cs_champMap, cs_stats);
+  html+=champPoolCard('ranked', '🏅 솔랭 챔피언 풀 ('+ranked.length+'게임)', rk_champMap, rk_stats);
   html+='</div>';
+
+  // 카운터픽 결과 표시 영역
+  html+='<div id="scout-counter-'+puuId+'" style="display:none;"></div>';
 
   // 포지션 + 연습 챔피언
   html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;">';
@@ -5180,6 +5251,220 @@ function renderScoutAnalysis(idx) {
 
   html+='</div>';
   el.innerHTML=html;
+}
+
+
+// ── 카운터픽 분석 ──
+function showCounterPick(selectedCid, puuId) {
+  var el = document.getElementById('scout-counter-' + puuId);
+  if (!el) return;
+
+  var data = _scoutData[puuId];
+  if (!data) return;
+
+  var allMatches = (data.customMatches || []).concat(data.rankedMatches || []);
+  // 솔랭도 포함해서 카운터 분석
+
+  // 선택 챔피언으로 플레이한 게임 필터
+  var myGames = allMatches.filter(function(md) {
+    if (!md || !md.participants_list) return false;
+    var me = md.participants_list.find(function(p) { return p.puu_id === puuId; });
+    return me && String(me.champion_id) === String(selectedCid);
+  });
+
+  if (!myGames.length) {
+    el.style.display = '';
+    el.innerHTML = '<div style="background:var(--bg-panel);border:1px solid var(--border-subtle);border-radius:8px;padding:1rem;color:var(--muted);font-size:12px;text-align:center;">해당 챔피언 게임 데이터 없음</div>';
+    return;
+  }
+
+  // 내 포지션 파악 (해당 챔피언으로 가장 많이 한 포지션)
+  var myPosCount = {};
+  myGames.forEach(function(md) {
+    var me = md.participants_list && md.participants_list.find(function(p) { return p.puu_id === puuId; });
+    if (me && me.position) myPosCount[me.position] = (myPosCount[me.position]||0)+1;
+  });
+  var myMainPosEntry = Object.entries(myPosCount).sort(function(a,b){return b[1]-a[1];})[0];
+  var myMainPos = myMainPosEntry ? myMainPosEntry[0] : null;
+
+  // 상대 챔피언별 집계 — 맞라인(같은 포지션)만
+  var vsStats = {};
+  myGames.forEach(function(md) {
+    var me = md.participants_list && md.participants_list.find(function(p) { return p.puu_id === puuId; });
+    if (!me) return;
+    var mySide = me.side;
+    var myPos = me.position || myMainPos;
+    var isWin = !!me.is_win;
+    md.participants_list.forEach(function(p) {
+      if (p.puu_id === puuId) return;
+      if (p.side === mySide) return;
+      if (myPos && p.position && p.position !== myPos) return; // 맞라인만
+      var cid = String(p.champion_id);
+      if (!vsStats[cid]) vsStats[cid] = { games: 0, wins: 0 };
+      vsStats[cid].games++;
+      if (isWin) vsStats[cid].wins++;
+    });
+  });
+
+  // 3게임 이상인 챔피언만 + 승률 오름차순 정렬
+  var sorted = Object.entries(vsStats)
+    .filter(function(kv) { return kv[1].games >= 2; })
+    .map(function(kv) {
+      var wr = Math.round(kv[1].wins / kv[1].games * 100);
+      return { cid: kv[0], games: kv[1].games, wins: kv[1].wins, wr: wr };
+    })
+    .sort(function(a, b) { return a.wr - b.wr; }); // 낮은 승률 = 카운터
+
+  var champName = champMap[String(selectedCid)] || selectedCid;
+  var html = '<div style="background:var(--bg-panel);border:1px solid rgba(167,139,250,.3);border-radius:8px;padding:1rem;">';
+  html += '<div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.75rem;">';
+  var posLabel = {'Top':'탑','Jungle':'정글','Middle':'미드','Bottom':'원딜','Support':'서폿'};
+  var posText = myMainPos ? ' ('+( posLabel[myMainPos]||myMainPos)+' 맞라인)' : '';
+  html += '<div style="font-size:11px;font-weight:700;color:#A78BFA;">🎯 ';
+  html += '<img src="'+DD_ICON(champName)+'" style="width:20px;height:20px;border-radius:3px;vertical-align:middle;"> ';
+  html += esc(champName)+posText+' 상대 승률 분석</div>';
+  html += '<span style="font-size:10px;color:var(--muted);margin-left:auto;">'+myGames.length+'게임 기반</span>';
+  html += '<button data-pid="'+puuId+'" onclick="(function(el){el.style.display=\'none\';})(document.getElementById(\'scout-counter-\'+this.dataset.pid))" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:14px;">✕</button>';
+  html += '</div>';
+
+  if (!sorted.length) {
+    html += '<div style="color:var(--muted);font-size:11px;text-align:center;padding:1rem;">샘플 수 부족 (2게임 이상 상대 없음)</div>';
+  } else {
+    html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;">';
+
+    // 취약한 상대 (낮은 승률 = 이 챔피언 상대로 잘 못함 = 카운터)
+    var weak = sorted.slice(0, 6);
+    // 강한 상대 (높은 승률)
+    var strong = sorted.slice(-Math.min(6, sorted.length)).reverse();
+
+    html += '<div>';
+    html += '<div style="font-size:10px;color:#E05050;font-weight:700;margin-bottom:.4rem;">😰 약한 상대 (카운터 추천)</div>';
+    weak.forEach(function(v) {
+      var n = champMap[v.cid] || v.cid;
+      var bar = (100 - v.wr);
+      html += '<div style="display:flex;align-items:center;gap:.4rem;padding:3px 0;">';
+      var imgEl=document.createElement('img');imgEl.src=DD_ICON(n);imgEl.style.cssText='width:22px;height:22px;border-radius:3px;';imgEl.onerror=function(){this.style.display='none';};
+      html += imgEl.outerHTML;
+      html += '<div style="flex:1;min-width:0;">';
+      html += '<div style="font-size:11px;color:var(--white);">'+esc(n)+'</div>';
+      html += '<div style="height:3px;background:rgba(255,255,255,.05);border-radius:2px;margin-top:2px;"><div style="width:'+bar+'%;height:100%;background:#E05050;border-radius:2px;"></div></div>';
+      html += '</div>';
+      html += '<div style="font-size:12px;font-weight:700;color:#E05050;min-width:30px;text-align:right;">'+v.wr+'%</div>';
+      html += '<div style="font-size:9px;color:var(--muted);">'+v.games+'판</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+
+    html += '<div>';
+    html += '<div style="font-size:10px;color:#22C55E;font-weight:700;margin-bottom:.4rem;">💪 강한 상대 (피해야 할 픽)</div>';
+    strong.forEach(function(v) {
+      var n = champMap[v.cid] || v.cid;
+      html += '<div style="display:flex;align-items:center;gap:.4rem;padding:3px 0;">';
+      var imgEl=document.createElement('img');imgEl.src=DD_ICON(n);imgEl.style.cssText='width:22px;height:22px;border-radius:3px;';imgEl.onerror=function(){this.style.display='none';};
+      html += imgEl.outerHTML;
+      html += '<div style="flex:1;min-width:0;">';
+      html += '<div style="font-size:11px;color:var(--white);">'+esc(n)+'</div>';
+      html += '<div style="height:3px;background:rgba(255,255,255,.05);border-radius:2px;margin-top:2px;"><div style="width:'+v.wr+'%;height:100%;background:#22C55E;border-radius:2px;"></div></div>';
+      html += '</div>';
+      html += '<div style="font-size:12px;font-weight:700;color:#22C55E;min-width:30px;text-align:right;">'+v.wr+'%</div>';
+      html += '<div style="font-size:9px;color:var(--muted);">'+v.games+'판</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+    html += '</div>'; // grid
+  }
+
+  html += '</div>';
+  el.style.display = '';
+  el.innerHTML = html;
+  // 스크롤
+  setTimeout(function(){ el.scrollIntoView({ behavior:'smooth', block:'nearest' }); }, 100);
+}
+
+
+// ── 관찰 분석 챔피언 풀 필터 (전역) ──
+function scoutFilterChamp(btn) {
+  var queueType = btn.getAttribute('data-queue');
+  var puuIdVal  = btn.getAttribute('data-puu');
+  var pos       = btn.getAttribute('data-pos');
+
+  var data = _scoutData[puuIdVal];
+  if (!data) return;
+
+  // cs_champMap, rk_champMap 재계산
+  var matches = queueType === 'custom' ? (data.customMatches||[]) : (data.rankedMatches||[]);
+  var champMapObj = {};
+  var totalDur = 0, totalGames = 0;
+  matches.forEach(function(md) {
+    if (!md || !md.participants_list) return;
+    var me = md.participants_list.find(function(p){ return p.puu_id === puuIdVal; });
+    if (!me) return;
+    var basic = md.match_basic_dict || {};
+    var stat = me.final_stat_dict || {};
+    var cid = String(me.champion_id);
+    var cname = champMap[cid] || cid;
+    totalDur += basic.game_duration || 0;
+    totalGames++;
+    if (!champMapObj[cid]) champMapObj[cid] = {n:cname,games:0,wins:0,k:0,d:0,a:0,cs:0,ai:0,aiCnt:0,pos:{}};
+    var c = champMapObj[cid];
+    c.games++; if(me.is_win) c.wins++;
+    c.k+=(stat.kills||0); c.d+=(stat.death||stat.deaths||0); c.a+=(stat.assists||0);
+    c.cs+=(stat.cs||0);
+    if(me.ai_score){ c.ai+=me.ai_score; c.aiCnt++; }
+    if(me.position) c.pos[me.position]=(c.pos[me.position]||0)+1;
+  });
+
+  var POS_KO4 = {Top:'탑',Jungle:'정글',Middle:'미드',Bottom:'원딜',Support:'서폿'};
+  function wrC(w){ return w>=60?'#22C55E':w>=50?'#0ac8b9':w>=40?'#F59E0B':'#E05050'; }
+
+  // 필터 적용
+  var champs = Object.values(champMapObj).sort(function(a,b){ return b.games-a.games; });
+  if (pos && pos !== '전체') {
+    champs = champs.filter(function(c){
+      var mp = Object.entries(c.pos).sort(function(a,b){return b[1]-a[1];})[0];
+      return mp && mp[0] === pos;
+    });
+  }
+
+  var html = champs.length ? champs.map(function(c) {
+    var cid = Object.keys(champMapObj).find(function(k){ return champMapObj[k]===c; })||'';
+    var w = c.games ? Math.round(c.wins/c.games*100) : 0;
+    var kd = c.d ? ((c.k+c.a)/c.d).toFixed(2) : (c.k+c.a)+'/-';
+    var csMin = totalDur&&c.games ? (c.cs/(totalDur/60/totalGames*c.games)).toFixed(1) : '—';
+    var aiAvg = c.aiCnt ? Math.round(c.ai/c.aiCnt) : null;
+    var mp = Object.entries(c.pos).sort(function(a,b){return b[1]-a[1];})[0];
+    var imgEl = document.createElement('img');
+    imgEl.src = DD_ICON(champMap[cid]||cid);
+    imgEl.style.cssText = 'width:36px;height:36px;border-radius:5px;object-fit:cover;';
+    imgEl.onerror = function(){ this.style.display='none'; };
+    return '<div data-cid="'+cid+'" class="scout-rk-champ" data-puu="'+puuIdVal+'" style="display:flex;align-items:center;gap:.4rem;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.03);cursor:pointer;border-radius:4px;">'+
+      imgEl.outerHTML+
+      '<div style="flex:1;min-width:0;">'+
+        '<div style="font-size:12px;font-weight:700;color:var(--white);">'+esc(c.n)+'<span style="font-size:9px;color:var(--muted);margin-left:4px;">'+(mp?POS_KO4[mp[0]]||mp[0]:'')+'</span></div>'+
+        '<div style="font-size:10px;color:var(--muted);">KDA '+kd+' · CS '+csMin+'/분'+(aiAvg?' · AI '+aiAvg:'')+'</div>'+
+      '</div>'+
+      '<div style="text-align:right;flex-shrink:0;">'+
+        '<div style="font-size:13px;font-weight:800;color:'+wrC(w)+';">'+w+'%</div>'+
+        '<div style="font-size:10px;color:var(--muted);">'+c.games+'판</div>'+
+      '</div>'+
+    '</div>';
+  }).join('') : '<div style="color:var(--muted);font-size:11px;text-align:center;padding:1rem;">해당 포지션 데이터 없음</div>';
+
+  var listEl = document.getElementById('champ-pool-list-'+queueType+'-'+puuIdVal);
+  if (listEl) listEl.innerHTML = html;
+
+  // 필터 버튼 활성화
+  var container = btn.closest('[id]');
+  if (container) {
+    container.querySelectorAll('[data-pos]').forEach(function(b){
+      b.style.background = 'transparent';
+      b.style.color = 'var(--muted)';
+      b.style.borderColor = 'var(--border-subtle)';
+    });
+  }
+  btn.style.background = 'rgba(167,139,250,.1)';
+  btn.style.color = '#A78BFA';
+  btn.style.borderColor = 'rgba(167,139,250,.3)';
 }
 
 </script>
