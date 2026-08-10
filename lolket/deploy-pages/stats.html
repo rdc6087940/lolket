@@ -5116,6 +5116,9 @@ function renderScoutAnalysis(idx) {
   html+='<button onclick="loadScoutAnalysis('+idx+',true)" style="margin-left:auto;padding:4px 12px;border-radius:3px;border:1px solid rgba(10,200,185,.3);background:rgba(10,200,185,.06);color:var(--blue);font-family:Rajdhani,sans-serif;font-size:10px;font-weight:700;cursor:pointer;">↻ 업데이트</button>';
   html+='</div>';
 
+  // 임시티어 추천
+  html += renderTempTierAnalysis(idx);
+
   // 요약 카드
   html+='<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:.5rem;">';
   var soloWins=soloTier?(soloTier.wins||0):0, soloLosses=soloTier?(soloTier.losses||0):0;
@@ -5530,6 +5533,194 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   })();
 });
+
+
+// ── 임시티어 추천 분석 ──
+function analyzeTempTier(data, allData) {
+  var member   = data.member;
+  var soloTier = data.soloTier;
+  var custom   = data.customMatches || [];
+  var ranked   = data.rankedMatches || [];
+  var puuId    = Object.keys(_scoutData).find(function(k){ return _scoutData[k]===data; });
+
+  // ── 1. 솔랭 티어 점수화 ──
+  var TIER_SCORE = {
+    CHALLENGER:2800, GRANDMASTER:2600, MASTER:2400,
+    DIAMOND:2000, EMERALD:1700, PLATINUM:1400,
+    GOLD:1100, SILVER:800, BRONZE:500, IRON:200, UNRANKED:600
+  };
+  var DIV_BONUS = {1:150, 2:100, 3:50, 4:0};
+  var soloScore = 0;
+  var soloLabel = '언랭크';
+  if (soloTier && soloTier.tier) {
+    soloScore = (TIER_SCORE[soloTier.tier]||600) + (DIV_BONUS[soloTier.division]||0);
+    soloLabel = soloTier.tier + (soloTier.division?' '+soloTier.division:'') + ' '+( soloTier.lp||0)+'LP';
+  }
+
+  // ── 2. 내전 레이팅 상대 위치 ──
+  var intRating = member && member._rating;
+  var ratingScore = 0;
+  var ratingReason = '';
+  if (intRating && allData && allData.length > 0) {
+    var validRatings = allData.filter(function(m){ return m._rating && m.cnt >= 10; })
+                             .map(function(m){ return m._rating; })
+                             .sort(function(a,b){return b-a;});
+    if (validRatings.length > 0) {
+      var rank = validRatings.findIndex(function(r){ return r <= intRating; }) + 1;
+      var pct  = rank / validRatings.length; // 0=최상위, 1=최하위
+      // 상위 % → 점수 보정 (-300 ~ +300)
+      ratingScore = Math.round((0.5 - pct) * 600);
+      var rankPct = Math.round(pct * 100);
+      ratingReason = '커뮤니티 내 레이팅 상위 '+rankPct+'% ('+Math.round(intRating)+')';
+    }
+  }
+
+  // ── 3. 내전 퍼포먼스 ──
+  var perfScore = 0, perfReasons = [];
+  var csGames=0, csWins=0, csKills=0, csDeaths=0, csAssists=0, csAiSum=0, csAiCnt=0;
+  custom.forEach(function(md){
+    if(!md||!md.participants_list) return;
+    var me=md.participants_list.find(function(p){return p.puu_id===puuId;});
+    if(!me) return;
+    var stat=me.final_stat_dict||{};
+    csGames++; if(me.is_win) csWins++;
+    csKills+=(stat.kills||0); csDeaths+=(stat.death||stat.deaths||0); csAssists+=(stat.assists||0);
+    if(me.ai_score){csAiSum+=me.ai_score;csAiCnt++;}
+  });
+  var csWr = csGames ? csWins/csGames : 0.5;
+  var csKda = csDeaths ? (csKills+csAssists)/csDeaths : (csKills+csAssists);
+  var csAi = csAiCnt ? csAiSum/csAiCnt : 0;
+
+  // 승률 보정
+  if (csGames >= 10) {
+    var wrDelta = (csWr - 0.5) * 400; // 60% → +40점, 40% → -40점
+    perfScore += Math.round(wrDelta);
+    if (csWr > 0.58) perfReasons.push('높은 내전 승률 ('+Math.round(csWr*100)+'%) +');
+    else if (csWr < 0.42) perfReasons.push('낮은 내전 승률 ('+Math.round(csWr*100)+'%) -');
+  }
+  // KDA 보정
+  if (csGames >= 5) {
+    if (csKda >= 3.5)      { perfScore += 100; perfReasons.push('우수한 KDA ('+csKda.toFixed(2)+') +'); }
+    else if (csKda >= 2.5) { perfScore += 50; }
+    else if (csKda < 1.5)  { perfScore -= 100; perfReasons.push('낮은 KDA ('+csKda.toFixed(2)+') -'); }
+  }
+  // AI점수 보정
+  if (csAiCnt >= 5) {
+    if (csAi >= 75)      { perfScore += 100; perfReasons.push('AI점수 우수 ('+Math.round(csAi)+') +'); }
+    else if (csAi >= 60) { perfScore += 50; }
+    else if (csAi < 45)  { perfScore -= 100; perfReasons.push('AI점수 낮음 ('+Math.round(csAi)+') -'); }
+  }
+
+  // ── 4. 최근 트렌드 (최근 10게임) ──
+  var recentGames = custom.slice(0,10);
+  var recentWins = recentGames.filter(function(md){
+    var me=md&&md.participants_list&&md.participants_list.find(function(p){return p.puu_id===puuId;});
+    return me&&me.is_win;
+  }).length;
+  var recentWr = recentGames.length ? recentWins/recentGames.length : 0.5;
+  var trendScore = 0, trendReason = '';
+  if (recentGames.length >= 5) {
+    trendScore = Math.round((recentWr - 0.5) * 200);
+    if (recentWr >= 0.7)       trendReason = '최근 '+recentGames.length+'게임 폼 매우 좋음 ('+Math.round(recentWr*100)+'%)';
+    else if (recentWr >= 0.6)  trendReason = '최근 '+recentGames.length+'게임 폼 좋음 ('+Math.round(recentWr*100)+'%)';
+    else if (recentWr <= 0.3)  trendReason = '최근 '+recentGames.length+'게임 폼 나쁨 ('+Math.round(recentWr*100)+'%)';
+    else if (recentWr <= 0.4)  trendReason = '최근 '+recentGames.length+'게임 폼 저조 ('+Math.round(recentWr*100)+'%)';
+  }
+
+  // ── 5. 최종 점수 → 티어 결정 ──
+  var totalScore = soloScore + ratingScore + perfScore + trendScore;
+
+  // 티어 경계값
+  var TIERS = [
+    { score: 2900, tier:'마스터',    color:'#9B59B6' },
+    { score: 2700, tier:'다이아 1',  color:'#4A90D9' },
+    { score: 2500, tier:'다이아 2',  color:'#4A90D9' },
+    { score: 2300, tier:'다이아 3',  color:'#4A90D9' },
+    { score: 2100, tier:'다이아 4',  color:'#4A90D9' },
+    { score: 1900, tier:'에메 1',    color:'#27AE60' },
+    { score: 1700, tier:'에메 2',    color:'#27AE60' },
+    { score: 1550, tier:'에메 3',    color:'#27AE60' },
+    { score: 1400, tier:'플래 1',    color:'#1ABC9C' },
+    { score: 1250, tier:'플래 2',    color:'#1ABC9C' },
+    { score: 1100, tier:'플래 3',    color:'#1ABC9C' },
+    { score: 950,  tier:'골드 1',    color:'#F39C12' },
+    { score: 800,  tier:'골드 2',    color:'#F39C12' },
+    { score: 680,  tier:'골드 3',    color:'#F39C12' },
+    { score: 560,  tier:'실버 1',    color:'#95A5A6' },
+    { score: 440,  tier:'실버 2',    color:'#95A5A6' },
+    { score: 320,  tier:'브론즈',    color:'#CD6133' },
+    { score: 0,    tier:'아이언',    color:'#7F8C8D' },
+  ];
+  var result = TIERS[TIERS.length-1];
+  for (var i=0; i<TIERS.length; i++) {
+    if (totalScore >= TIERS[i].score) { result = TIERS[i]; break; }
+  }
+
+  // ── 6. 근거 정리 ──
+  var reasons = [];
+  reasons.push({ label:'솔랭 티어', value: soloLabel || '정보 없음', score: soloScore, sign: '' });
+  if (ratingReason) reasons.push({ label:'내전 레이팅', value: ratingReason, score: ratingScore, sign: ratingScore>=0?'+':'' });
+  perfReasons.forEach(function(r){ reasons.push({ label:'퍼포먼스', value: r, score:'', sign:'' }); });
+  if (trendReason) reasons.push({ label:'최근 폼', value: trendReason, score: trendScore, sign: trendScore>=0?'+':'' });
+
+  return { result, totalScore, reasons, soloScore, ratingScore, perfScore, trendScore,
+           csGames, csWr, csKda, csAi };
+}
+
+function renderTempTierAnalysis(idx) {
+  var target = _scoutTargets[idx];
+  var data   = _scoutData[target.puuId];
+  if (!data || !data.loaded) return '<div style="color:var(--muted);font-size:11px;text-align:center;padding:1rem;">데이터 로드 후 사용 가능</div>';
+
+  var a = analyzeTempTier(data, allData);
+  var r = a.result;
+
+  var html = '<div style="background:var(--bg-panel);border:1px solid rgba('+
+    (r.color==='#4A90D9'?'74,144,217':r.color==='#27AE60'?'39,174,96':r.color==='#F39C12'?'243,156,18':'150,150,150')+
+    ',.3);border-radius:8px;padding:1rem;">';
+
+  // 헤더
+  html += '<div style="display:flex;align-items:center;gap:.75rem;margin-bottom:1rem;">';
+  html += '<div style="font-size:11px;font-weight:700;letter-spacing:.5px;color:var(--white);">🎯 임시티어 추천</div>';
+  html += '<div style="margin-left:auto;text-align:right;">';
+  html += '<div style="font-size:22px;font-weight:900;color:'+r.color+';">'+r.tier+'</div>';
+  html += '<div style="font-size:10px;color:var(--muted);">종합 점수: '+a.totalScore+'</div>';
+  html += '</div></div>';
+
+  // 점수 분해
+  html += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.4rem;margin-bottom:.75rem;">';
+  [
+    ['솔랭 기준', a.soloScore, '#4A90D9'],
+    ['레이팅 보정', a.ratingScore, a.ratingScore>=0?'#22C55E':'#E05050'],
+    ['퍼포먼스', a.perfScore, a.perfScore>=0?'#22C55E':'#E05050'],
+    ['최근 폼', a.trendScore, a.trendScore>=0?'#22C55E':'#E05050'],
+  ].forEach(function(it){
+    html += '<div style="background:rgba(255,255,255,.03);border-radius:5px;padding:.4rem;text-align:center;">';
+    html += '<div style="font-size:9px;color:var(--muted);">'+it[0]+'</div>';
+    html += '<div style="font-size:14px;font-weight:800;color:'+it[2]+';">'+(it[1]>=0&&it[0]!=='솔랭 기준'?'+':'')+it[1]+'</div>';
+    html += '</div>';
+  });
+  html += '</div>';
+
+  // 근거
+  html += '<div style="font-size:10px;font-weight:700;color:var(--muted);margin-bottom:.4rem;letter-spacing:.5px;">📋 분석 근거</div>';
+  html += '<div style="display:flex;flex-direction:column;gap:3px;">';
+  a.reasons.forEach(function(r2){
+    html += '<div style="display:flex;align-items:center;gap:.5rem;font-size:11px;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.03);">';
+    html += '<span style="color:var(--muted);min-width:60px;flex-shrink:0;">'+r2.label+'</span>';
+    html += '<span style="color:var(--white);flex:1;">'+esc(r2.value)+'</span>';
+    if (r2.score!=='') html += '<span style="color:'+(r2.score>=0?'#22C55E':'#E05050')+';font-weight:700;flex-shrink:0;">'+(r2.sign)+r2.score+'</span>';
+    html += '</div>';
+  });
+  html += '</div>';
+
+  // 주의사항
+  html += '<div style="margin-top:.75rem;font-size:10px;color:var(--muted);background:rgba(255,255,255,.03);border-radius:4px;padding:.5rem;">';
+  html += '⚠️ 이 추천은 솔랭·내전 데이터 기반 참고용입니다. 최종 임시티어는 운영진이 판단해주세요.';
+  html += '</div>';
+  html += '</div>';
+  return html;
+}
 
 </script>
 
