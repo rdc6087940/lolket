@@ -1232,18 +1232,6 @@ const bodyWrap=document.getElementById('table-body-wrap');
 function syncTableWidth(){} // 단일 테이블 구조에서 불필요
 
 
-(async()=>{
-  await loadChampMap();
-  await loadData();
-  await loadAllRatings();
-  if (COMMUNITY_ID) {
-    await loadTempTiers();
-    // 관리자 로그인 버튼 표시 (cid 있을 때만)
-    var loginBtn = document.getElementById('btn-admin-login');
-    if (loginBtn) loginBtn.style.display = '';
-  }
-})();
-
 </script>
 
 
@@ -5466,6 +5454,21 @@ function scoutFilterChamp(btn) {
   btn.style.color = '#A78BFA';
   btn.style.borderColor = 'rgba(167,139,250,.3)';
 }
+
+
+// ── 페이지 초기화 ──
+document.addEventListener('DOMContentLoaded', function() {
+  (async function() {
+    await loadChampMap();
+    await loadData();
+    await loadAllRatings();
+    if (COMMUNITY_ID) {
+      await loadTempTiers();
+      var loginBtn = document.getElementById('btn-admin-login');
+      if (loginBtn) loginBtn.style.display = '';
+    }
+  })();
+});
 
 </script>
 
