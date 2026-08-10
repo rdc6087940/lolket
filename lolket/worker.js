@@ -318,6 +318,9 @@ export default {
       return handleDonationWrite(request, env);
     }
     // 닉네임 히스토리
+    if (path === '/nickname-history-write' && request.method === 'POST') {
+      return handleNicknameHistoryWrite(request, env);
+    }
     if (path === '/nickname-history-run' && request.method === 'POST') {
       return handleNicknameHistoryRun(request, env);
     }
@@ -2625,15 +2628,16 @@ async function runNicknameHistoryCheckForCommunity(env, cid, isManual) {
     if (writes.length > 0) {
       const patchBody = {};
       writes.forEach(w => {
-        // path에서 communities/{cid}/nickname_history/{puuId} → {puuId}만 키로
         const puuId = w.path.split('/').pop();
         patchBody[puuId] = w.data;
       });
-      await fetch(`${dbUrl}/communities/${cid}/nickname_history.json${authQ}`, {
+      const patchRes = await fetch(`${dbUrl}/communities/${cid}/nickname_history.json${authQ}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(patchBody)
       });
+      const patchText = await patchRes.text();
+      console.log(`[nickname-check] PATCH status:${patchRes.status} body:${patchText.slice(0,200)}`);
     }
 
     console.log(`[nickname-check] ${cid} 완료: ${members.length}명 확인, ${writes.length}개 변경`);
@@ -2852,4 +2856,19 @@ async function handleScoutRanked(request, env) {
   }
 
   return json({ ok: true, soloTier, matches, total: matches.length });
+}
+
+// 닉네임 히스토리 수정 (hidden 토글)
+async function handleNicknameHistoryWrite(request, env) {
+  let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
+  const { communityId, puuId, history } = body;
+  if (!communityId || !puuId) return json({ok:false,error:'필수 파라미터 없음'},400);
+  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth='+secret : '';
+  await fetch(`${dbUrl}/communities/${communityId}/nickname_history/${puuId}.json${authQ}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(history)
+  });
+  return json({ ok: true });
 }

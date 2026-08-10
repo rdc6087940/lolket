@@ -4261,41 +4261,102 @@ async function loadNicknameHistory(member) {
     var history = (j.ok && Array.isArray(j.data)) ? j.data : [];
 
     if (!history.length) {
-      el.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:12px;padding:2rem;">닉네임 변경 이력이 없습니다<br><span style="font-size:10px;color:var(--muted);opacity:.6;">매일 자정에 업데이트됩니다</span></div>';
+      el.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:12px;padding:2rem;">닉네임 변경 이력이 없습니다<br><span style="font-size:10px;opacity:.6;">매일 자정에 업데이트됩니다</span></div>';
       return;
     }
 
-    // 최신순 정렬
+    var isMaster = _statsAdminRole === 'master';
     var sorted = history.slice().reverse();
     var html = '<div>';
+
     sorted.forEach(function(h, i) {
-      var isFirst = i === sorted.length - 1;
       var isLatest = i === 0;
+      var isHidden = !!h.hidden;
       var parts = (h.name || '').split('#');
       var name = parts[0] || h.name;
       var tag = parts[1] ? '#' + parts[1] : '';
       var dateLabel = h.label || h.date || '—';
+      var realIdx = sorted.length - 1 - i; // 원본 배열에서의 인덱스
 
       html += '<div style="display:flex;align-items:center;gap:.75rem;padding:.6rem 0;border-bottom:1px solid rgba(255,255,255,.04);">';
+
       // 타임라인 점
-      html += '<div style="display:flex;flex-direction:column;align-items:center;gap:0;flex-shrink:0;">';
-      html += '<div style="width:8px;height:8px;border-radius:50%;background:' + (isLatest ? '#A78BFA' : 'var(--border)') + ';"></div>';
-      html += '</div>';
+      html += '<div style="width:8px;height:8px;border-radius:50%;flex-shrink:0;background:' + (isLatest ? '#A78BFA' : 'var(--border)') + ';"></div>';
+
       html += '<div style="flex:1;min-width:0;">';
-      html += '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">';
-      html += '<span style="font-size:13px;font-weight:700;color:' + (isLatest ? 'var(--white)' : 'var(--muted)') + '">' + esc(name) + '</span>';
-      html += '<span style="font-size:11px;color:var(--muted);">' + esc(tag) + '</span>';
-      if (isLatest) html += '<span style="font-size:9px;color:#A78BFA;background:rgba(167,139,250,.1);padding:1px 6px;border-radius:8px;">현재</span>';
-      if (h.label) html += '<span style="font-size:9px;color:var(--gold);background:rgba(200,170,110,.1);padding:1px 6px;border-radius:8px;">' + esc(h.label) + '</span>';
+      if (isHidden && !isMaster) {
+        // 일반 유저에게는 비공개로 표시
+        html += '<div style="display:flex;align-items:center;gap:6px;">';
+        html += '<span style="font-size:12px;color:var(--muted);">🔒 비공개</span>';
+        html += '</div>';
+        html += '<div style="font-size:10px;color:var(--muted);margin-top:2px;">' + esc(dateLabel) + '</div>';
+      } else {
+        html += '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">';
+        html += '<span style="font-size:13px;font-weight:700;color:' + (isHidden ? 'var(--muted)' : isLatest ? 'var(--white)' : 'var(--muted)') + '">' + esc(name) + '</span>';
+        html += '<span style="font-size:11px;color:var(--muted);">' + esc(tag) + '</span>';
+        if (isLatest) html += '<span style="font-size:9px;color:#A78BFA;background:rgba(167,139,250,.1);padding:1px 6px;border-radius:8px;">현재</span>';
+        if (h.label) html += '<span style="font-size:9px;color:var(--gold);background:rgba(200,170,110,.1);padding:1px 6px;border-radius:8px;">' + esc(h.label) + '</span>';
+        if (isHidden) html += '<span style="font-size:9px;color:var(--muted);background:rgba(255,255,255,.05);padding:1px 6px;border-radius:8px;">🔒 비공개</span>';
+        html += '</div>';
+        html += '<div style="font-size:10px;color:var(--muted);margin-top:2px;">' + esc(dateLabel) + '</div>';
+      }
       html += '</div>';
-      html += '<div style="font-size:10px;color:var(--muted);margin-top:2px;">' + esc(dateLabel) + '</div>';
-      html += '</div></div>';
+
+      // 마스터만: 비공개/공개 토글 버튼
+      if (isMaster) {
+        var btnLabel = isHidden ? '👁 공개' : '🔒 가리기';
+        var btnColor = isHidden ? 'rgba(10,200,185,.3)' : 'rgba(255,255,255,.1)';
+        html += '<button class="nick-hide-btn" data-puu="'+esc(member.puu_id)+'" data-idx="'+realIdx+'" data-hidden="'+((!isHidden)?'true':'false')+'" ' +
+          'style="padding:2px 8px;border-radius:3px;border:1px solid '+btnColor+';background:transparent;color:var(--muted);font-size:9px;font-family:Rajdhani,sans-serif;cursor:pointer;flex-shrink:0;">'+
+          btnLabel+'</button>';
+      }
+
+      html += '</div>';
     });
+
     html += '</div>';
     el.innerHTML = html;
+    el._member = member;
+    // 버튼 이벤트 등록
+    el.querySelectorAll('.nick-hide-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var puu = this.getAttribute('data-puu');
+        var idx2 = parseInt(this.getAttribute('data-idx'));
+        var hid = this.getAttribute('data-hidden') === 'true';
+        toggleNickHidden(puu, idx2, hid);
+      });
+    });
   } catch(e) {
     el.innerHTML = '<div style="text-align:center;color:var(--red);font-size:12px;padding:1.5rem;">오류: ' + esc(e.message) + '</div>';
   }
+}
+
+// 닉네임 히스토리 비공개/공개 토글
+async function toggleNickHidden(puuId, idx, hidden) {
+  if (!COMMUNITY_ID || _statsAdminRole !== 'master') return;
+  try {
+    // 현재 히스토리 읽기
+    var res = await fetch(WORKER_URL + '/nickname-history-read', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ communityId: COMMUNITY_ID, puuId })
+    });
+    var j = await res.json();
+    if (!j.ok || !Array.isArray(j.data)) return;
+    var history = j.data;
+    if (hidden) history[idx].hidden = true;
+    else delete history[idx].hidden;
+
+    // 저장
+    await fetch(WORKER_URL + '/nickname-history-write', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ communityId: COMMUNITY_ID, puuId, history, token: _statsAdminToken })
+    });
+
+    // 재로드
+    var el = document.getElementById('dm-nickname');
+    var member = el && el._member;
+    if (member) loadNicknameHistory(member);
+  } catch(e) { alert('오류: ' + e.message); }
 }
 
 
