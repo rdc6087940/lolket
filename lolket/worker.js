@@ -303,6 +303,12 @@ export default {
       return handleServerInfo(request, env);
     }
     // 관찰 분석
+    if (path === '/scout-categories-write' && request.method === 'POST') {
+      return handleScoutCategoriesWrite(request, env);
+    }
+    if (path === '/scout-allow-write' && request.method === 'POST') {
+      return handleScoutAllowWrite(request, env);
+    }
     if (path === '/scout-ranked' && request.method === 'POST') {
       return handleScoutRanked(request, env);
     }
@@ -618,6 +624,8 @@ async function handleDbPublicRead(request, env) {
     /^communities\/[^/]+\/nickname_history\/[^/]+$/,
     /^communities\/[^/]+\/matches$/,
     /^communities\/[^/]+\/scout_targets$/,
+    /^communities\/[^/]+\/scout_allowed_discord$/,
+    /^communities\/[^/]+\/scout_categories$/,
   ];
   if (!publicRead.some(r => r.test(dbPath))) {
     return json({ ok: false, error: '허용되지 않는 경로입니다' }, 403);
@@ -2869,6 +2877,36 @@ async function handleNicknameHistoryWrite(request, env) {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(history)
+  });
+  return json({ ok: true });
+}
+
+// ── 관찰분석 접근 허용 목록 저장 ──
+async function handleScoutAllowWrite(request, env) {
+  let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
+  const { communityId, allowList } = body;
+  if (!communityId) return json({ok:false,error:'communityId 없음'},400);
+  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth='+secret : '';
+  await fetch(`${dbUrl}/communities/${communityId}/scout_allowed_discord.json${authQ}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(allowList||[])
+  });
+  return json({ ok: true });
+}
+
+// ── 관찰분석 카테고리 저장 ──
+async function handleScoutCategoriesWrite(request, env) {
+  let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
+  const { communityId, categories } = body;
+  if (!communityId) return json({ok:false,error:'communityId 없음'},400);
+  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth='+secret : '';
+  await fetch(`${dbUrl}/communities/${communityId}/scout_categories.json${authQ}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(categories||[])
   });
   return json({ ok: true });
 }

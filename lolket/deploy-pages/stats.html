@@ -1876,6 +1876,11 @@ async function openDetail(memberData) {
       ? { rating: memberData._rating, breakdown: {} } : null;
     // Firebase 분석 결과를 임시 표시 (analysis가 있을 때만)
     if (fbData.analysis) {
+      // Firebase analysis를 detailCache에도 저장 (소표본 필터 등 동작하도록)
+      if (!detailCache[_queueMode][memberData.puu_id]) {
+        detailCache[_queueMode][memberData.puu_id] = { matchIds: new Set(), matches: [] };
+      }
+      detailCache[_queueMode][memberData.puu_id].analysis = fbData.analysis;
       renderDetail(fbData.analysis, memberData,
         fbData.meta.matchCount || (fbData.matchIds && fbData.matchIds.length) || 0,
         fbData.meta.updatedAt, fbRating);
@@ -4674,30 +4679,38 @@ var _scoutData = {};      // { puuId: { internal, ranked, champStats, recentMatc
 var _scoutActiveIdx = 0;
 var _scoutInited = false;
 
-function initScoutView() {
+async function initScoutView() {
   var el = document.getElementById('scout-content');
   if (!el) return;
 
-  // 마스터 권한 체크
-  if (_statsAdminRole !== 'master') {
+  // 로딩 표시
+  el.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--muted);font-size:12px;"><div class="spinner" style="margin:0 auto 8px;"></div>권한 확인 중...</div>';
+
+  // allowList 항상 먼저 로드
+  await loadScoutAllowList();
+
+  // 권한 체크
+  if (!isScoutAllowed()) {
     el.innerHTML = '<div style="text-align:center;padding:4rem;font-family:Rajdhani,sans-serif;font-size:16px;color:var(--muted);">🔒 권한이 없습니다</div>';
     return;
   }
 
   // 챔피언 카드 클릭 이벤트 위임
-  var sc = document.getElementById('scout-content');
-  if (sc && !sc._delegated) {
-    sc._delegated = true;
-    sc.addEventListener('click', function(e) {
+  if (!el._delegated) {
+    el._delegated = true;
+    el.addEventListener('click', function(e) {
       var row = e.target.closest('.scout-rk-champ');
-      if (row) showCounterPick(row.dataset.cid, row.dataset.puu);
+      if (row) { showCounterPick(row.dataset.cid, row.dataset.puu); return; }
+      var catBtn = e.target.closest('.scout-cat-btn');
+      if (catBtn) { selectScoutCategory(catBtn.dataset.cat); return; }
     });
   }
+
   if (!_scoutInited) {
     _scoutInited = true;
-    loadScoutTargets(); // 완료 후 내부에서 renderScoutLayout 호출
+    await loadScoutTargets();
   } else {
-    renderScoutLayout(); // 이미 로드됐으면 바로 렌더
+    renderScoutLayout();
   }
 }
 
@@ -4744,40 +4757,96 @@ async function saveScoutTargetsToFb() {
 function renderScoutLayout() {
   var el = document.getElementById('scout-content');
   if (!el) return;
-  if (_statsAdminRole !== 'master') {
+  if (!isScoutAllowed()) {
     el.innerHTML = '<div style="text-align:center;padding:4rem;font-family:Rajdhani,sans-serif;font-size:16px;color:var(--muted);">🔒 권한이 없습니다</div>';
     return;
   }
 
+  var isMaster = _statsAdminRole === 'master';
+
+  // 현재 카테고리 목록
+  var categories = [];
+  _scoutTargets.forEach(function(t){
+    var cat = t.category || '기본';
+    if (!categories.includes(cat)) categories.push(cat);
+  });
+  // 빈 폴더도 표시
+  if (window._scoutExtraCategories) {
+    window._scoutExtraCategories.forEach(function(cat){
+      if (!categories.includes(cat)) categories.push(cat);
+    });
+  }
+
+  // 활성 카테고리
+  if (!window._scoutActiveCategory) window._scoutActiveCategory = '전체';
+  var activeCat = window._scoutActiveCategory;
+
+  // 현재 카테고리의 대상만 필터
+  var filteredTargets = activeCat === '전체'
+    ? _scoutTargets
+    : _scoutTargets.filter(function(t){ return (t.category||'기본') === activeCat; });
+
+  // 활성 인덱스 보정
+  if (_scoutActiveIdx >= filteredTargets.length) _scoutActiveIdx = 0;
+
   var html = '<div style="display:flex;flex-direction:column;gap:.75rem;">';
 
-  // 상단: 관찰 대상 탭 + 추가 버튼
-  html += '<div style="display:flex;align-items:center;gap:.5rem;border-bottom:1px solid var(--border);padding-bottom:.5rem;flex-wrap:wrap;">';
-  _scoutTargets.forEach(function(t, i) {
-    var active = i === _scoutActiveIdx;
-    html += '<button onclick="selectScoutTarget('+i+')" style="padding:5px 14px;border-radius:3px 3px 0 0;border:1px solid var(--border);border-bottom:'+(active?'2px solid #E05050':'none')+';background:'+(active?'rgba(224,80,80,.08)':'transparent')+';color:'+(active?'#E05050':'var(--muted)')+';font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;cursor:pointer;">'+esc(t.name)+'#'+esc(t.tag)+'</button>';
+  // ── 카테고리 폴더 행 ──
+  html += '<div style="display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;border-bottom:1px solid var(--border);padding-bottom:.4rem;">';
+  // 전체 버튼
+  html += '<button class="scout-cat-btn" data-cat="전체" style="padding:4px 12px;border-radius:4px;border:1px solid '+(activeCat==='전체'?'rgba(167,139,250,.5)':'var(--border-subtle)')+';background:'+(activeCat==='전체'?'rgba(167,139,250,.12)':'transparent')+';color:'+(activeCat==='전체'?'#A78BFA':'var(--muted)')+';font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;cursor:pointer;">📁 전체 ('+_scoutTargets.length+')</button>';
+  categories.forEach(function(cat) {
+    var cnt = _scoutTargets.filter(function(t){ return (t.category||'기본') === cat; }).length;
+    var isActive = activeCat === cat;
+    html += '<button class="scout-cat-btn" data-cat="'+(esc(cat))+'" style="padding:4px 12px;border-radius:4px;border:1px solid '+(isActive?'rgba(224,80,80,.5)':'var(--border-subtle)')+';background:'+(isActive?'rgba(224,80,80,.08)':'transparent')+';color:'+(isActive?'#E05050':'var(--muted)')+';font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;cursor:pointer;">📂 '+esc(cat)+' ('+cnt+')</button>';
   });
-  html += '<button onclick="openScoutAddModal()" style="padding:4px 10px;border-radius:3px;border:1px dashed var(--border-subtle);background:transparent;color:var(--muted);font-family:Rajdhani,sans-serif;font-size:11px;cursor:pointer;">+ 추가</button>';
-  if (_scoutTargets.length > 0) {
-    html += '<button onclick="removeScoutTarget('+_scoutActiveIdx+')" style="margin-left:auto;padding:4px 8px;border-radius:3px;border:1px solid rgba(224,80,80,.3);background:transparent;color:#E05050;font-family:Rajdhani,sans-serif;font-size:10px;cursor:pointer;">✕ 제거</button>';
+  if (isMaster) {
+    html += '<button onclick="openScoutAddCategoryModal()" style="padding:3px 8px;border-radius:3px;border:1px dashed var(--border-subtle);background:transparent;color:var(--muted);font-family:Rajdhani,sans-serif;font-size:10px;cursor:pointer;">+ 폴더</button>';
+    html += '<button onclick="openScoutAllowModal()" style="margin-left:auto;padding:3px 10px;border-radius:3px;border:1px solid rgba(200,170,110,.3);background:transparent;color:var(--gold);font-family:Rajdhani,sans-serif;font-size:10px;cursor:pointer;">👥 접근관리</button>';
   }
   html += '</div>';
 
-  // 분석 내용
-  html += '<div id="scout-target-content">';
-  if (_scoutTargets.length === 0) {
-    html += '<div style="text-align:center;padding:3rem;color:var(--muted);font-family:Rajdhani,sans-serif;">관찰 대상을 추가해주세요</div>';
-  } else {
-    html += '<div style="text-align:center;padding:2rem;color:var(--muted);font-family:Rajdhani,sans-serif;font-size:12px;"><div class="spinner" style="margin:0 auto 8px;"></div>분석 중...</div>';
+  // ── 대상 탭 행 ──
+  html += '<div style="display:flex;align-items:center;gap:.4rem;border-bottom:1px solid var(--border);padding-bottom:.4rem;flex-wrap:wrap;">';
+  if (filteredTargets.length === 0) {
+    html += '<span style="font-size:11px;color:var(--muted);">이 폴더에 대상이 없습니다</span>';
+  }
+  filteredTargets.forEach(function(t, i) {
+    var active = i === _scoutActiveIdx;
+    html += '<button onclick="selectScoutTarget('+i+')" style="padding:4px 12px;border-radius:3px 3px 0 0;border:1px solid var(--border);border-bottom:'+(active?'2px solid #E05050':'none')+';background:'+(active?'rgba(224,80,80,.08)':'transparent')+';color:'+(active?'#E05050':'var(--muted)')+';font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;cursor:pointer;">'+esc(t.name)+'#'+esc(t.tag)+'</button>';
+  });
+  if (isMaster) {
+    html += '<button onclick="openScoutAddModal()" style="padding:3px 10px;border-radius:3px;border:1px dashed var(--border-subtle);background:transparent;color:var(--muted);font-family:Rajdhani,sans-serif;font-size:11px;cursor:pointer;">+ 추가</button>';
+    if (filteredTargets.length > 0) {
+      var realIdx = _scoutTargets.indexOf(filteredTargets[_scoutActiveIdx]);
+      html += '<button onclick="openScoutMoveModal('+realIdx+')" style="padding:3px 8px;border-radius:3px;border:1px solid var(--border-subtle);background:transparent;color:var(--muted);font-family:Rajdhani,sans-serif;font-size:10px;cursor:pointer;">📂 이동</button>';
+      html += '<button onclick="removeScoutTarget('+realIdx+')" style="padding:3px 8px;border-radius:3px;border:1px solid rgba(224,80,80,.3);background:transparent;color:#E05050;font-family:Rajdhani,sans-serif;font-size:10px;cursor:pointer;">✕ 제거</button>';
+    }
   }
   html += '</div>';
-  html += '</div>';
+
+  // ── 분석 내용 ──
+  html += '<div id="scout-target-content">';
+  if (filteredTargets.length === 0) {
+    html += '<div style="text-align:center;padding:3rem;color:var(--muted);font-family:Rajdhani,sans-serif;">관찰 대상을 추가해주세요</div>';
+  } else {
+    html += '<div style="text-align:center;padding:2rem;color:var(--muted);font-size:12px;"><div class="spinner" style="margin:0 auto 8px;"></div>분석 중...</div>';
+  }
+  html += '</div></div>';
 
   el.innerHTML = html;
 
-  if (_scoutTargets.length > 0) {
-    loadScoutAnalysis(_scoutActiveIdx);
+  if (filteredTargets.length > 0) {
+    // filteredTargets[_scoutActiveIdx]의 실제 전체 인덱스로 분석
+    var globalIdx = _scoutTargets.indexOf(filteredTargets[_scoutActiveIdx]);
+    loadScoutAnalysis(globalIdx);
   }
+}
+
+function selectScoutCategory(cat) {
+  window._scoutActiveCategory = cat;
+  _scoutActiveIdx = 0;
+  renderScoutLayout();
 }
 
 function selectScoutTarget(idx) {
@@ -4799,6 +4868,19 @@ function openScoutAddModal() {
   if (!modal) return;
   document.getElementById('scout-input-name').value = '';
   document.getElementById('scout-input-tag').value = '';
+  var btn = document.getElementById('scout-add-btn');
+  if (btn) { btn.disabled = false; btn.textContent = '추가'; }
+  // 카테고리 옵션 채우기
+  var sel = document.getElementById('scout-add-category-select');
+  if (sel) {
+    var cats = [];
+    _scoutTargets.forEach(function(t){ var c=t.category||'기본'; if(!cats.includes(c)) cats.push(c); });
+    if (!cats.includes('기본')) cats.unshift('기본');
+    sel.innerHTML = cats.map(function(c){
+      var selected = (window._scoutActiveCategory && window._scoutActiveCategory !== '전체' && c === window._scoutActiveCategory) ? 'selected' : '';
+      return '<option value="'+esc(c)+'" '+selected+'>'+esc(c)+'</option>';
+    }).join('');
+  }
   modal.style.display = 'flex';
   setTimeout(function(){ document.getElementById('scout-input-name').focus(); }, 100);
 }
@@ -4853,9 +4935,12 @@ async function confirmScoutAdd() {
       alert('이미 추가된 소환사입니다'); if(btn){btn.disabled=false;btn.textContent='추가';} return;
     }
 
-    _scoutTargets.push({ puuId, name, tag, platform: 'KR' });
+    var addCat = document.getElementById('scout-add-category-select');
+    var cat = addCat ? (addCat.value || '기본') : (window._scoutActiveCategory !== '전체' ? window._scoutActiveCategory : '기본');
+    _scoutTargets.push({ puuId, name, tag, platform: 'KR', category: cat });
     _scoutActiveIdx = _scoutTargets.length - 1;
     document.getElementById('scout-add-modal').style.display = 'none';
+    if(btn){btn.disabled=false;btn.textContent='추가';}
     saveScoutTargetsToFb();
     renderScoutLayout();
   } catch(e) {
@@ -5113,7 +5198,20 @@ function renderScoutAnalysis(idx) {
   // 헤더 바
   html+='<div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;">';
   html+='<span style="font-family:Rajdhani,sans-serif;font-size:11px;color:var(--muted);">내전 '+custom.length+'게임 · 솔랭 '+ranked.length+'게임 분석 · 업데이트: '+tsStr+'</span>';
+  var sName = esc(target.name), sTag = esc(target.tag);
+  var siteLinks = [
+    ['딥롤',   'https://www.deeplol.gg/summoner/kr/'+target.name+'-'+target.tag],
+    ['오피지지','https://op.gg/ko/lol/summoners/kr/'+target.name+'-'+target.tag],
+    ['포우',   'https://www.fow.lol/find/kr/'+target.name+'-'+target.tag],
+    ['유어지지','https://your.gg/ko/kr/profile/'+encodeURIComponent(target.name+'#'+target.tag)],
+    ['포로지지','https://poro.gg/summoner/kr/'+target.name+'-'+target.tag],
+  ];
+  html+='<div style="display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;">';
+  siteLinks.forEach(function(s){
+    html+='<a href="'+s[1]+'" target="_blank" style="padding:3px 8px;border-radius:3px;border:1px solid var(--border-subtle);background:transparent;color:var(--muted);font-family:Rajdhani,sans-serif;font-size:10px;font-weight:700;cursor:pointer;text-decoration:none;white-space:nowrap;">'+s[0]+'</a>';
+  });
   html+='<button onclick="loadScoutAnalysis('+idx+',true)" style="margin-left:auto;padding:4px 12px;border-radius:3px;border:1px solid rgba(10,200,185,.3);background:rgba(10,200,185,.06);color:var(--blue);font-family:Rajdhani,sans-serif;font-size:10px;font-weight:700;cursor:pointer;">↻ 업데이트</button>';
+  html+='</div>';
   html+='</div>';
 
   // 임시티어 추천
@@ -5155,8 +5253,8 @@ function renderScoutAnalysis(idx) {
   }
 
   // 챔피언 풀 (내전 + 솔랭) - 라인 필터 + 스크롤
-  var POS_FILTERS = ['전체','Top','Jungle','Middle','Bottom','Support'];
-  var POS_KO4 = {Top:'탑',Jungle:'정글',Middle:'미드',Bottom:'원딜',Support:'서폿'};
+  var POS_FILTERS = ['전체','Top','Jungle','Middle','Bot','Support'];
+  var POS_KO4 = {Top:'탑',Jungle:'정글',Middle:'미드',Bot:'원딜',Bottom:'원딜',Support:'서폿'};
 
   function renderChampPool(champMapObj, statsObj, queueLabel, puuIdVal, filterPos) {
     var champs = Object.values(champMapObj).sort(function(a,b){ return b.games-a.games; });
@@ -5194,6 +5292,9 @@ function renderScoutAnalysis(idx) {
 
   function champPoolCard(queueType, label, champMapObj, statsObj) {
     var total = Object.keys(champMapObj).length;
+    var deepLolChampUrl = queueType === 'ranked'
+      ? 'https://www.deeplol.gg/summoner/kr/' + encodeURIComponent(target.name + '-' + target.tag) + '/champions'
+      : '';
     var filterBtns = POS_FILTERS.map(function(pos){
       var ko = POS_KO4[pos]||pos;
       return '<button class="champ-filter-btn-'+queueType+'-'+puuId+'" data-pos="'+pos+'" '+
@@ -5201,7 +5302,10 @@ function renderScoutAnalysis(idx) {
         'style="padding:2px 8px;border-radius:3px;border:1px solid var(--border-subtle);background:'+(pos==='전체'?'rgba(167,139,250,.1)':'transparent')+';color:'+(pos==='전체'?'#A78BFA':'var(--muted)')+';font-size:10px;cursor:pointer;font-family:Rajdhani,sans-serif;font-weight:700;border-color:'+(pos==='전체'?'rgba(167,139,250,.3)':'var(--border-subtle)')+';">'+ko+'</button>';
     }).join('');
     return '<div style="background:var(--bg-panel);border:1px solid var(--border-subtle);border-radius:8px;padding:1rem;">'+
-      '<div style="font-size:11px;font-weight:700;letter-spacing:.5px;color:var(--white);margin-bottom:.5rem;">'+label+' <span style="color:var(--muted);font-weight:400;">(총 '+total+'종)</span></div>'+
+      '<div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem;">'+
+        '<div style="font-size:11px;font-weight:700;letter-spacing:.5px;color:var(--white);">'+label+' <span style="color:var(--muted);font-weight:400;">(총 '+total+'종)</span></div>'+
+        (deepLolChampUrl ? '<a href="'+deepLolChampUrl+'" target="_blank" style="margin-left:auto;padding:2px 8px;border-radius:3px;border:1px solid rgba(10,200,185,.3);background:rgba(10,200,185,.06);color:var(--blue);font-family:Rajdhani,sans-serif;font-size:10px;font-weight:700;text-decoration:none;white-space:nowrap;">전체 기록 상세 보기 ↗</a>' : '')+
+      '</div>'+
       '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:.75rem;">'+filterBtns+'</div>'+
       '<div id="champ-pool-list-'+queueType+'-'+puuId+'" style="max-height:360px;overflow-y:auto;">'+
         renderChampPool(champMapObj, statsObj, label, puuId, '전체')+
@@ -5463,17 +5567,36 @@ function scoutFilterChamp(btn) {
     c.k+=(stat.kills||0); c.d+=(stat.death||stat.deaths||0); c.a+=(stat.assists||0);
     c.cs+=(stat.cs||0);
     if(me.ai_score){ c.ai+=me.ai_score; c.aiCnt++; }
-    if(me.position) c.pos[me.position]=(c.pos[me.position]||0)+1;
+    var npos = me.position ? ({'Bot':'Bot','ADC':'Bot','BOTTOM':'Bot','Bottom':'Bot','BOT':'Bot','SUPPORT':'Support','SUP':'Support','Supporter':'Support','support':'Support','MID':'Middle','MIDDLE':'Middle','Mid':'Middle','JUG':'Jungle','JUNGLE':'Jungle','TOP':'Top'}[me.position] || me.position) : null;
+    if(npos) c.pos[npos]=(c.pos[npos]||0)+1;
   });
 
-  var POS_KO4 = {Top:'탑',Jungle:'정글',Middle:'미드',Bottom:'원딜',Support:'서폿'};
+  var POS_KO4 = {Top:'탑',Jungle:'정글',Middle:'미드',Bot:'원딜',Bottom:'원딜',Support:'서폿'};
   function wrC(w){ return w>=60?'#22C55E':w>=50?'#0ac8b9':w>=40?'#F59E0B':'#E05050'; }
+
+  // 포지션 정규화 (API 값 → 통일)
+  function normPos(p) {
+    if (!p) return '';
+    var m = {
+      'Top':'Top','TOP':'Top',
+      'Jungle':'Jungle','JUNGLE':'Jungle','JUG':'Jungle',
+      'Middle':'Middle','MID':'Middle','MIDDLE':'Middle','Mid':'Middle',
+      'Bottom':'Bot','BOTTOM':'Bot','Bot':'Bot','BOT':'Bot','ADC':'Bot','AD':'Bot',
+      'Support':'Support','SUPPORT':'Support','SUP':'Support','Supporter':'Support','UTIL':'Support',
+    };
+    return m[p] || p;
+  }
 
   // 필터 적용
   var champs = Object.values(champMapObj).sort(function(a,b){ return b.games-a.games; });
   if (pos && pos !== '전체') {
     champs = champs.filter(function(c){
-      var mp = Object.entries(c.pos).sort(function(a,b){return b[1]-a[1];})[0];
+      var normalizedPos = {};
+      Object.entries(c.pos).forEach(function(kv){
+        var np = normPos(kv[0]);
+        normalizedPos[np] = (normalizedPos[np]||0) + kv[1];
+      });
+      var mp = Object.entries(normalizedPos).sort(function(a,b){return b[1]-a[1];})[0];
       return mp && mp[0] === pos;
     });
   }
@@ -5569,7 +5692,7 @@ function analyzeTempTier(data, allData) {
       var rank = validRatings.findIndex(function(r){ return r <= intRating; }) + 1;
       var pct  = rank / validRatings.length; // 0=최상위, 1=최하위
       // 상위 % → 점수 보정 (-300 ~ +300)
-      ratingScore = Math.round((0.5 - pct) * 600);
+      ratingScore = Math.round((0.5 - pct) * 1000); // -500~+500
       var rankPct = Math.round(pct * 100);
       ratingReason = '커뮤니티 내 레이팅 상위 '+rankPct+'% ('+Math.round(intRating)+')';
     }
@@ -5593,22 +5716,24 @@ function analyzeTempTier(data, allData) {
 
   // 승률 보정
   if (csGames >= 10) {
-    var wrDelta = (csWr - 0.5) * 400; // 60% → +40점, 40% → -40점
+    var wrDelta = (csWr - 0.5) * 800; // 60% → +80점, 40% → -80점
     perfScore += Math.round(wrDelta);
     if (csWr > 0.58) perfReasons.push('높은 내전 승률 ('+Math.round(csWr*100)+'%) +');
     else if (csWr < 0.42) perfReasons.push('낮은 내전 승률 ('+Math.round(csWr*100)+'%) -');
   }
   // KDA 보정
   if (csGames >= 5) {
-    if (csKda >= 3.5)      { perfScore += 100; perfReasons.push('우수한 KDA ('+csKda.toFixed(2)+') +'); }
-    else if (csKda >= 2.5) { perfScore += 50; }
-    else if (csKda < 1.5)  { perfScore -= 100; perfReasons.push('낮은 KDA ('+csKda.toFixed(2)+') -'); }
+    if (csKda >= 3.5)      { perfScore += 150; perfReasons.push('우수한 KDA ('+csKda.toFixed(2)+') +'); }
+    else if (csKda >= 2.5) { perfScore += 75; }
+    else if (csKda < 1.5)  { perfScore -= 200; perfReasons.push('낮은 KDA ('+csKda.toFixed(2)+') -'); }
+    else if (csKda < 2.0)  { perfScore -= 100; }
   }
   // AI점수 보정
   if (csAiCnt >= 5) {
-    if (csAi >= 75)      { perfScore += 100; perfReasons.push('AI점수 우수 ('+Math.round(csAi)+') +'); }
-    else if (csAi >= 60) { perfScore += 50; }
-    else if (csAi < 45)  { perfScore -= 100; perfReasons.push('AI점수 낮음 ('+Math.round(csAi)+') -'); }
+    if (csAi >= 75)      { perfScore += 150; perfReasons.push('AI점수 우수 ('+Math.round(csAi)+') +'); }
+    else if (csAi >= 60) { perfScore += 75; }
+    else if (csAi < 45)  { perfScore -= 200; perfReasons.push('AI점수 낮음 ('+Math.round(csAi)+') -'); }
+    else if (csAi < 55)  { perfScore -= 100; }
   }
 
   // ── 4. 최근 트렌드 (최근 10게임) ──
@@ -5620,7 +5745,7 @@ function analyzeTempTier(data, allData) {
   var recentWr = recentGames.length ? recentWins/recentGames.length : 0.5;
   var trendScore = 0, trendReason = '';
   if (recentGames.length >= 5) {
-    trendScore = Math.round((recentWr - 0.5) * 200);
+    trendScore = Math.round((recentWr - 0.5) * 400);
     if (recentWr >= 0.7)       trendReason = '최근 '+recentGames.length+'게임 폼 매우 좋음 ('+Math.round(recentWr*100)+'%)';
     else if (recentWr >= 0.6)  trendReason = '최근 '+recentGames.length+'게임 폼 좋음 ('+Math.round(recentWr*100)+'%)';
     else if (recentWr <= 0.3)  trendReason = '최근 '+recentGames.length+'게임 폼 나쁨 ('+Math.round(recentWr*100)+'%)';
@@ -5722,6 +5847,159 @@ function renderTempTierAnalysis(idx) {
   return html;
 }
 
+
+// ── 관찰분석 접근 권한 ──
+var _scoutAllowList = []; // [{id, name}]
+var _scoutAllowLoaded = false;
+
+function isScoutAllowed() {
+  if (_statsAdminRole === 'master') return true;
+  if (!_discordUser) return false;
+  return _scoutAllowList.some(function(a){
+    return a.id === _discordUser.id || a.id === _discordUser.username;
+  });
+}
+
+async function loadScoutAllowList() {
+  if (!COMMUNITY_ID) return;
+  try {
+    var res = await fetch(WORKER_URL + '/db-public-read', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ path: 'communities/' + COMMUNITY_ID + '/scout_allowed_discord' })
+    });
+    var j = await res.json();
+    _scoutAllowList = Array.isArray(j.data) ? j.data : [];
+    _scoutAllowLoaded = true;
+  } catch(e) { _scoutAllowList = []; }
+}
+
+async function saveScoutAllowList() {
+  if (!COMMUNITY_ID) return;
+  await fetch(WORKER_URL + '/scout-allow-write', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ communityId: COMMUNITY_ID, allowList: _scoutAllowList })
+  });
+}
+
+function openScoutAllowModal() {
+  renderScoutAllowList();
+  document.getElementById('scout-allow-modal').style.display = 'flex';
+}
+
+function renderScoutAllowList() {
+  var el = document.getElementById('scout-allow-list');
+  if (!el) return;
+  if (!_scoutAllowList.length) {
+    el.innerHTML = '<div style="color:var(--muted);font-size:11px;text-align:center;padding:.75rem;">허용된 계정 없음</div>';
+    return;
+  }
+  el.innerHTML = _scoutAllowList.map(function(a, i) {
+    return '<div style="display:flex;align-items:center;gap:.5rem;padding:.4rem 0;border-bottom:1px solid rgba(255,255,255,.04);">' +
+      '<span style="font-size:12px;color:var(--white);flex:1;">' + esc(a.name||a.id) + '</span>' +
+      '<span style="font-size:10px;color:var(--muted);">ID: ' + esc(a.id) + '</span>' +
+      '<button onclick="removeScoutAllow('+i+')" style="background:transparent;border:none;color:var(--muted);font-size:13px;cursor:pointer;">✕</button>' +
+    '</div>';
+  }).join('');
+}
+
+function addScoutAllow() {
+  var input = document.getElementById('scout-allow-input');
+  var val = input.value.trim();
+  if (!val) return;
+  if (_scoutAllowList.find(function(a){ return a.id === val; })) {
+    alert('이미 추가된 계정입니다'); return;
+  }
+  _scoutAllowList.push({ id: val, name: val });
+  input.value = '';
+  saveScoutAllowList();
+  renderScoutAllowList();
+}
+
+function removeScoutAllow(idx) {
+  _scoutAllowList.splice(idx, 1);
+  saveScoutAllowList();
+  renderScoutAllowList();
+}
+
+
+// ── 폴더 관리 ──
+var _scoutMoveTargetIdx = -1;
+
+function openScoutAddCategoryModal() {
+  document.getElementById('scout-category-name-input').value = '';
+  document.getElementById('scout-add-category-modal').style.display = 'flex';
+  setTimeout(function(){ document.getElementById('scout-category-name-input').focus(); }, 100);
+}
+
+function confirmAddCategory() {
+  var name = document.getElementById('scout-category-name-input').value.trim();
+  if (!name) return;
+  document.getElementById('scout-add-category-modal').style.display = 'none';
+  if (!window._scoutExtraCategories) window._scoutExtraCategories = [];
+  if (!window._scoutExtraCategories.includes(name)) {
+    window._scoutExtraCategories.push(name);
+    saveScoutCategories();
+  }
+  window._scoutActiveCategory = name;
+  renderScoutLayout();
+}
+
+async function saveScoutCategories() {
+  if (!COMMUNITY_ID) return;
+  await fetch(WORKER_URL + '/scout-categories-write', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ communityId: COMMUNITY_ID, categories: window._scoutExtraCategories || [] })
+  });
+}
+
+async function loadScoutCategories() {
+  if (!COMMUNITY_ID) return;
+  try {
+    var res = await fetch(WORKER_URL + '/db-public-read', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ path: 'communities/' + COMMUNITY_ID + '/scout_categories' })
+    });
+    var j = await res.json();
+    window._scoutExtraCategories = Array.isArray(j.data) ? j.data : [];
+  } catch(e) { window._scoutExtraCategories = []; }
+}
+
+function openScoutMoveModal(realIdx) {
+  _scoutMoveTargetIdx = realIdx;
+  var cats = [];
+  _scoutTargets.forEach(function(t){ var c=t.category||'기본'; if(!cats.includes(c)) cats.push(c); });
+  if (!cats.includes('기본')) cats.unshift('기본');
+  // Firebase에 저장된 빈 폴더도 포함
+  if (window._scoutExtraCategories) {
+    window._scoutExtraCategories.forEach(function(c){ if(!cats.includes(c)) cats.push(c); });
+  }
+  var sel = document.getElementById('scout-move-category-select');
+  if (sel) {
+    sel.innerHTML = cats.map(function(c){
+      return '<option value="'+esc(c)+'">'+esc(c)+'</option>';
+    }).join('') + '<option value="__new__">+ 새 폴더...</option>';
+  }
+  document.getElementById('scout-move-modal').style.display = 'flex';
+}
+
+function confirmScoutMove() {
+  var sel = document.getElementById('scout-move-category-select');
+  if (!sel) return;
+  var val = sel.value;
+  if (val === '__new__') {
+    document.getElementById('scout-move-modal').style.display = 'none';
+    openScoutAddCategoryModal();
+    return;
+  }
+  if (_scoutMoveTargetIdx >= 0 && _scoutTargets[_scoutMoveTargetIdx]) {
+    _scoutTargets[_scoutMoveTargetIdx].category = val;
+    saveScoutTargetsToFb();
+  }
+  document.getElementById('scout-move-modal').style.display = 'none';
+  window._scoutActiveCategory = val;
+  renderScoutLayout();
+}
+
 </script>
 
 
@@ -5800,6 +6078,12 @@ function renderTempTierAnalysis(idx) {
         <input id="scout-input-tag" type="text" placeholder="KR1"
           style="width:100%;box-sizing:border-box;background:var(--bg-dark);border:1px solid var(--border-subtle);border-radius:3px;padding:6px 8px;color:var(--white);font-size:12px;outline:none;">
       </div>
+      <div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:3px;">폴더</div>
+        <select id="scout-add-category-select"
+          style="width:100%;box-sizing:border-box;background:var(--bg-dark);border:1px solid var(--border-subtle);border-radius:3px;padding:6px 8px;color:var(--white);font-size:12px;outline:none;">
+        </select>
+      </div>
     </div>
     <div style="font-size:10px;color:var(--muted);margin-bottom:.75rem;">커뮤니티 멤버가 아니어도 추가 가능합니다</div>
     <div style="display:flex;gap:8px;justify-content:flex-end;">
@@ -5807,6 +6091,50 @@ function renderTempTierAnalysis(idx) {
         style="padding:6px 14px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:11px;cursor:pointer;">취소</button>
       <button id="scout-add-btn" onclick="confirmScoutAdd()"
         style="padding:6px 14px;border-radius:3px;border:1px solid rgba(224,80,80,.4);background:rgba(224,80,80,.1);color:#E05050;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;">추가</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── 관찰분석 접근 관리 모달 ── -->
+<div id="scout-allow-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:2000;align-items:center;justify-content:center;" onclick="if(event.target===this)this.style.display='none'">
+  <div style="background:var(--bg-panel);border:1px solid var(--border);border-radius:6px;padding:1.25rem;width:90%;max-width:380px;">
+    <div style="font-size:13px;font-weight:700;color:var(--gold);margin-bottom:.75rem;">👥 관찰분석 접근 허용 관리</div>
+    <div style="font-size:10px;color:var(--muted);margin-bottom:.75rem;">허용된 디스코드 계정은 관찰분석 탭을 열람할 수 있습니다.</div>
+    <div id="scout-allow-list" style="max-height:200px;overflow-y:auto;margin-bottom:.75rem;"></div>
+    <div style="display:flex;gap:6px;margin-bottom:.75rem;">
+      <input id="scout-allow-input" type="text" placeholder="디스코드 ID (숫자) 또는 사용자명"
+        style="flex:1;background:var(--bg-dark);border:1px solid var(--border-subtle);border-radius:3px;padding:6px 8px;color:var(--white);font-size:12px;outline:none;">
+      <button onclick="addScoutAllow()" style="padding:6px 12px;border-radius:3px;border:1px solid rgba(200,170,110,.4);background:rgba(200,170,110,.1);color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;">추가</button>
+    </div>
+    <div style="display:flex;justify-content:flex-end;">
+      <button onclick="document.getElementById('scout-allow-modal').style.display='none'" style="padding:6px 14px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:11px;cursor:pointer;">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── 폴더 추가 모달 ── -->
+<div id="scout-add-category-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:2000;align-items:center;justify-content:center;" onclick="if(event.target===this)this.style.display='none'">
+  <div style="background:var(--bg-panel);border:1px solid var(--border);border-radius:6px;padding:1.25rem;width:90%;max-width:320px;">
+    <div style="font-size:13px;font-weight:700;color:#A78BFA;margin-bottom:1rem;">📁 새 폴더 만들기</div>
+    <input id="scout-category-name-input" type="text" placeholder="폴더 이름"
+      style="width:100%;box-sizing:border-box;background:var(--bg-dark);border:1px solid var(--border-subtle);border-radius:3px;padding:6px 8px;color:var(--white);font-size:12px;outline:none;margin-bottom:.75rem;">
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <button onclick="document.getElementById('scout-add-category-modal').style.display='none'" style="padding:6px 14px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:11px;cursor:pointer;">취소</button>
+      <button onclick="confirmAddCategory()" style="padding:6px 14px;border-radius:3px;border:1px solid rgba(167,139,250,.4);background:rgba(167,139,250,.1);color:#A78BFA;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;">만들기</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── 폴더 이동 모달 ── -->
+<div id="scout-move-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:2000;align-items:center;justify-content:center;" onclick="if(event.target===this)this.style.display='none'">
+  <div style="background:var(--bg-panel);border:1px solid var(--border);border-radius:6px;padding:1.25rem;width:90%;max-width:320px;">
+    <div style="font-size:13px;font-weight:700;color:var(--white);margin-bottom:1rem;">📂 폴더 이동</div>
+    <select id="scout-move-category-select"
+      style="width:100%;box-sizing:border-box;background:var(--bg-dark);border:1px solid var(--border-subtle);border-radius:3px;padding:6px 8px;color:var(--white);font-size:12px;outline:none;margin-bottom:.75rem;">
+    </select>
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <button onclick="document.getElementById('scout-move-modal').style.display='none'" style="padding:6px 14px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:11px;cursor:pointer;">취소</button>
+      <button onclick="confirmScoutMove()" style="padding:6px 14px;border-radius:3px;border:1px solid rgba(10,200,185,.4);background:rgba(10,200,185,.08);color:var(--blue);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;">이동</button>
     </div>
   </div>
 </div>
