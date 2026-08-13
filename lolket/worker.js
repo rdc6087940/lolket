@@ -82,7 +82,7 @@ function issueSession(id, data) {
 }
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
     const url  = new URL(request.url);
     const path = url.pathname;
@@ -92,6 +92,11 @@ export default {
       const ua = request.headers.get('User-Agent') || '';
       if (isCrawler(ua)) return handleOgProxy(request, env);
       return fetch(request);
+    }
+
+    // 디스코드 Interactions
+    if (path === '/discord' && request.method === 'POST') {
+      return handleDiscordInteraction(request, env, ctx);
     }
 
     if (path === '/riot.txt') {
@@ -2910,3 +2915,721 @@ async function handleScoutCategoriesWrite(request, env) {
   });
   return json({ ok: true });
 }
+
+// ══════════════════════════════════════════
+// 디스코드 봇 (Interactions Endpoint)
+// ══════════════════════════════════════════
+
+// Ed25519 서명 검증
+async function verifyDiscordSignature(request, env) {
+  const signature = request.headers.get('x-signature-ed25519');
+  const timestamp  = request.headers.get('x-signature-timestamp');
+  if (!signature || !timestamp) return false;
+  const body = await request.text();
+  const PUBLIC_KEY = env.DISCORD_PUBLIC_KEY || 'e39c71aa12d8af890a14cf7e97fd1de64cdcc43e9d5f733d3c4ea936ed98c8c9';
+  try {
+    const key = await crypto.subtle.importKey(
+      'raw',
+      hexToUint8(PUBLIC_KEY),
+      { name: 'Ed25519', namedCurve: 'Ed25519' },
+      false, ['verify']
+    );
+    const valid = await crypto.subtle.verify(
+      { name: 'Ed25519' },
+      key,
+      hexToUint8(signature),
+      new TextEncoder().encode(timestamp + body)
+    );
+    return valid ? body : false;
+  } catch(e) {
+    console.error('[discord] verify error:', e.message);
+    return false;
+  }
+}
+
+function hexToUint8(hex) {
+  const arr = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < hex.length; i += 2) arr[i/2] = parseInt(hex.substr(i,2),16);
+  return arr;
+}
+
+// 디스코드 메시지 응답 헬퍼
+function discordReply(content, ephemeral = false) {
+  return new Response(JSON.stringify({
+    type: 4,
+    data: { content, flags: ephemeral ? 64 : 0 }
+  }), { headers: { 'Content-Type': 'application/json' } });
+}
+
+function discordDefer(ephemeral = false) {
+  return new Response(JSON.stringify({
+    type: 5,
+    data: { flags: ephemeral ? 64 : 0 }
+  }), { headers: { 'Content-Type': 'application/json' } });
+}
+
+async function discordFollowup(appId, token, content, env) {
+  const aid = appId || env.DISCORD_APP_ID || '1500717088984010883';
+  console.log('[followup] appId:', aid, 'token:', token?.slice(0,20));
+  const res = await fetch(`https://discord.com/api/v10/webhooks/${aid}/${token}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bot ${env.DISCORD_BOT_TOKEN}`
+    },
+    body: JSON.stringify({ content, flags: 64 })
+  });
+  const txt = await res.text();
+  console.log('[followup] status:', res.status, txt.slice(0,200));
+}
+
+const LANE_MAP = {
+  '탑':'top','top':'top','TOP':'top',
+  '정글':'jg','jungle':'jg','jg':'jg','JG':'jg','정':'jg',
+  '미드':'mid','mid':'mid','MID':'mid','middle':'mid',
+  '원딜':'bot','adc':'bot','ADC':'bot','봇':'bot','bot':'bot','BOT':'bot','Bottom':'bot','bottom':'bot',
+  '서폿':'sup','sup':'sup','SUP':'sup','서포터':'sup','support':'sup','Support':'sup',
+};
+
+async function handleDiscordInteraction(request, env, ctx) {
+  // 서명 검증
+  const bodyText = await verifyDiscordSignature(request.clone(), env);
+  if (bodyText === false) return new Response('Unauthorized', { status: 401 });
+
+  const interaction = JSON.parse(bodyText);
+
+  // PING
+  if (interaction.type === 1) {
+    return new Response(JSON.stringify({ type: 1 }), { headers: { 'Content-Type': 'application/json' } });
+  }
+
+  console.log('[discord] interaction type:', interaction.type, 'customId:', interaction.data?.custom_id, 'cmdName:', interaction.data?.name);
+
+  // 버튼 클릭 (Message Component)
+  if (interaction.type === 3) {
+    const customId = interaction.data.custom_id || '';
+    // 멤버 목록 버튼
+    if (customId.startsWith('members_match__') || customId.startsWith('members_match_')) {
+      let cid, matchId;
+      if (customId.startsWith('members_match__')) {
+        const inner = customId.slice('members_match__'.length);
+        const sepIdx = inner.indexOf('__');
+        cid = inner.slice(0, sepIdx);
+        matchId = inner.slice(sepIdx + 2);
+      } else {
+        const inner = customId.slice('members_match_'.length);
+        const matchIdx = inner.lastIndexOf('_match_');
+        cid = inner.slice(0, matchIdx);
+        matchId = 'match_' + inner.slice(matchIdx + 7);
+      }
+      const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+      const authQ = secret ? '?auth='+secret : '';
+      const matchRes = await fetch(`${dbUrl}/communities/${cid}/matches/${matchId}.json${authQ}`);
+      const matchData = await matchRes.json();
+      const members = matchData?._members || matchData?.members || [];
+      if (!members.length) {
+        return discordReply('아직 참가한 멤버가 없습니다.', true);
+      }
+      const LANE_EMOJI = {top:'🛡️',jg:'🌲',mid:'⚡',bot:'🏹',sup:'🌟'};
+      const TIER_EMOJI = {CHALLENGER:'🏆',GRANDMASTER:'💎',MASTER:'💜',DIAMOND:'💠',EMERALD:'💚',PLATINUM:'🩵',GOLD:'🥇',SILVER:'⚪',BRONZE:'🟤',IRON:'⬛',UNRANKED:'❓'};
+      const LANE_EMOJI3 = {top:'🛡️',jg:'🌲',mid:'⚡',bot:'🏹',sup:'🌟'};
+      const list = members.map((m, i) =>
+        `${i+1}. ${LANE_EMOJI3[m.mainLane]||'🎮'} **${m.name}#${m.tag}** ${TIER_EMOJI[m.tier]||''} ${m.tierFull||m.tier||''}`
+      ).join('\n');
+      return discordReply(`**👥 ${matchData.name||'내전'} 멤버 목록** (${members.length}명)\n${list}`, true);
+    }
+
+    if (customId.startsWith('join_match__') || customId.startsWith('join_match_')) {
+      let cid, matchId;
+      if (customId.startsWith('join_match__')) {
+        const inner = customId.slice('join_match__'.length);
+        const sepIdx = inner.indexOf('__');
+        cid = inner.slice(0, sepIdx);
+        matchId = inner.slice(sepIdx + 2);
+      } else {
+        const inner = customId.slice('join_match_'.length);
+        const matchIdx = inner.lastIndexOf('_match_');
+        cid = inner.slice(0, matchIdx);
+        matchId = 'match_' + inner.slice(matchIdx + 7);
+      }
+      const discordUserId = interaction.member?.user?.id || interaction.user?.id;
+      const discordName   = interaction.member?.user?.username || interaction.user?.username;
+      // 포지션 입력 받는 모달 표시
+      return new Response(JSON.stringify({
+        type: 9, // Modal
+        data: {
+          title: '내전 참가 신청',
+          custom_id: `join_modal_${cid}_${matchId}`,
+          components: [
+            {
+              type: 1,
+              components: [{
+                type: 4, label: '소환사명', custom_id: 'riot_name',
+                style: 1, placeholder: '예) 홍길동', required: true, min_length: 1, max_length: 50
+              }]
+            },
+            {
+              type: 1,
+              components: [{
+                type: 4, label: '태그', custom_id: 'riot_tag',
+                style: 1, placeholder: '예) KR1', required: true, min_length: 1, max_length: 10
+              }]
+            },
+            {
+              type: 1,
+              components: [{
+                type: 4, label: '주 포지션', custom_id: 'main_lane',
+                style: 1, placeholder: '탑 / 정글 / 미드 / 원딜 / 서폿', required: true, min_length: 1, max_length: 10
+              }]
+            },
+            {
+              type: 1,
+              components: [{
+                type: 4, label: '보조 포지션 (선택, 여러 개는 쉼표로)', custom_id: 'sub_lanes',
+                style: 1, placeholder: '예) 정글,서폿  (없으면 비워두세요)', required: false, max_length: 50
+              }]
+            },
+            {
+              type: 1,
+              components: [{
+                type: 4, label: '최고 티어 (선택)', custom_id: 'high_tier',
+                style: 1, placeholder: '예) 마스터 200 / 다이아 2 / 골드 1 (비워두면 자동)', required: false, max_length: 30
+              }]
+            }
+          ]
+        }
+      }), { headers: { 'Content-Type': 'application/json' } });
+    }
+  }
+
+  // 모달 제출 (type 5)
+  if (interaction.type === 5) {
+    const customId = interaction.data.custom_id || '';
+    if (customId.startsWith('join_modal__') || customId.startsWith('join_modal_')) {
+      let cid, matchId;
+      if (customId.startsWith('join_modal__')) {
+        const inner = customId.slice('join_modal__'.length);
+        const sepIdx = inner.indexOf('__');
+        cid = inner.slice(0, sepIdx);
+        matchId = inner.slice(sepIdx + 2);
+      } else {
+        // 구형: join_modal_c_XXXXX_match_YYYYY
+        const inner = customId.slice('join_modal_'.length); // c_XXXXX_match_YYYYY
+        // match_ 기준으로 분리
+        const matchIdx = inner.lastIndexOf('_match_');
+        cid = inner.slice(0, matchIdx);       // c_XXXXX
+        matchId = 'match_' + inner.slice(matchIdx + 7); // match_YYYYY
+      }
+      const comps = interaction.data.components || [];
+      const getVal = (id) => comps.flatMap(r => r.components).find(c => c.custom_id === id)?.value || '';
+      const riotName  = getVal('riot_name').trim();
+      const riotTag   = getVal('riot_tag').trim();
+      const mainLane  = getVal('main_lane').trim();
+      const subRaw    = getVal('sub_lanes').trim();
+      const subLanes  = subRaw ? subRaw.split(/[,，、]/).map(s => s.trim()).filter(Boolean) : [];
+      const highTierInput = getVal('high_tier').trim();
+      const discordUserId = interaction.member?.user?.id || interaction.user?.id;
+      const discordName   = interaction.member?.user?.username || interaction.user?.username;
+      console.log('[modal] cid:', cid, 'matchId:', matchId, 'name:', riotName, 'lane:', mainLane);
+      const appId = env.DISCORD_APP_ID || '1500717088984010883';
+      const token = interaction.token;
+      const resp = discordDefer(true);
+      ctx.waitUntil(
+        handleJoinMatchDirect(riotName, riotTag, mainLane, subLanes, matchId, cid, discordUserId, discordName, appId, token, env, highTierInput)
+          .catch(async (e) => {
+            console.error('[joinDirect error]', e.message, e.stack);
+            await discordFollowup(appId, token, '❌ 오류: ' + e.message, env);
+          })
+      );
+      return resp;
+    }
+  }
+
+  // 슬래시 커맨드
+  if (interaction.type === 2) {
+    const cmdName = interaction.data.name;
+    const options  = interaction.data.options || [];
+    const opt = (name) => options.find(o => o.name === name)?.value;
+
+    // ── /내전목록 ──
+    if (cmdName === '내전목록') {
+      return handleListMatches(interaction, env);
+    }
+
+    // ── /내전참가 ──
+    if (cmdName === '내전참가') {
+      const resp = discordDefer(true);
+      const discordUserId = interaction.member?.user?.id || interaction.user?.id;
+      const discordName   = interaction.member?.user?.username || interaction.user?.username;
+      const appId  = env.DISCORD_APP_ID || '1500717088984010883';
+      const token  = interaction.token;
+      const subRaw = opt('보조포지션') || '';
+      const subLanes = subRaw ? subRaw.split(/[,，、]/).map(s => s.trim()).filter(Boolean) : [];
+      const slashHighTier = opt('최고티어') || '';
+      ctx.waitUntil(
+        handleJoinMatch(opt('소환사명'), opt('태그'), opt('주포지션'), subLanes, opt('내전id'), discordUserId, discordName, appId, token, env, slashHighTier)
+          .catch(async (e) => {
+            console.error('[joinMatch error]', e.message);
+            await discordFollowup(appId, token, '❌ 오류: ' + e.message, env);
+          })
+      );
+      return resp;
+    }
+  }
+
+  return new Response('Unknown interaction', { status: 400 });
+}
+
+// ── /내전목록 처리 ──
+async function handleListMatches(interaction, env) {
+  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth='+secret : '';
+  const guildId   = interaction.guild_id;
+  const channelId = interaction.channel_id;
+
+  // 커뮤니티 찾기
+  const ciRes = await fetch(`${dbUrl}/communities_info.json${authQ}`);
+  const ciData = await ciRes.json() || {};
+  let targetCid = null;
+  for (const [cid, info] of Object.entries(ciData)) {
+    if (info && (
+      String(info.discordServerId)  === String(guildId) ||
+      String(info.discordChannelId) === String(channelId)
+    )) { targetCid = cid; break; }
+  }
+  if (!targetCid) {
+    return discordReply('❌ 이 서버와 연결된 커뮤니티를 찾을 수 없습니다.\n관리자에게 디스코드 서버 ID 설정을 요청하세요.', true);
+  }
+
+  const matchRes = await fetch(`${dbUrl}/communities/${targetCid}/matches.json${authQ}`);
+  const matches = await matchRes.json() || {};
+
+  const now = Date.now();
+  const TWELVE_HOURS = 12 * 60 * 60 * 1000;
+
+  // 1단계(멤버 모집중) + 12시간 이내 + discordJoinable ON
+  const openMatches = Object.entries(matches)
+    .filter(([, m]) => {
+      if (!m) return false;
+      if (!m.discordJoinable) return false;
+      // 완료/취소 제외
+      if (m.status === 'done' || m.status === 'cancel') return false;
+      // 12시간 이내
+      const created = m.createdAt || 0;
+      if (created && (now - created) > TWELVE_HOURS) return false;
+      return true;
+    })
+    .sort(([, a], [, b]) => (b.createdAt||0) - (a.createdAt||0))
+    .slice(0, 5);
+
+  if (!openMatches.length) {
+    return discordReply('현재 참가 가능한 내전이 없습니다.\n(디스코드 참가 ON + 12시간 이내 기준)', true);
+  }
+
+  // 내전마다 3개 버튼: 참가 / 멤버 목록 / 페이지 링크
+  const components = openMatches.flatMap(([id, m]) => {
+    const memberCount = (m._members||m.members||[]).length;
+    const age = m.createdAt ? Math.floor((now - m.createdAt) / 60000) : '?';
+    return [{
+      type: 1,
+      components: [
+        {
+          type: 2, style: 1, // Primary (파랑)
+          label: `⚔️ ${m.name||'내전'} 참가`,
+          custom_id: `join_match__${targetCid}__${id}`
+        },
+        {
+          type: 2, style: 2, // Secondary (회색)
+          label: `👥 멤버 ${memberCount}명`,
+          custom_id: `members_match__${targetCid}__${id}`
+        },
+        {
+          type: 2, style: 5, // Link
+          label: '🔗 내전 페이지',
+          url: `https://roonging.com/?match=${targetCid}__${id}`
+        }
+      ]
+    }];
+  });
+
+  const header = openMatches.map(([id, m]) => {
+    const age = m.createdAt ? Math.floor((now - m.createdAt) / 60000) : '?';
+    return `⚔️ **${m.name||'이름없음'}** — ${(m.members||[]).length}명 참가중 | ${age}분 전 생성`;
+  }).join('\n');
+
+  return new Response(JSON.stringify({
+    type: 4,
+    data: {
+      content: `**📋 참가 가능한 내전 목록**\n${header}`,
+      components,
+      flags: 64
+    }
+  }), { headers: { 'Content-Type': 'application/json' } });
+}
+
+// ── /내전참가 처리 ──
+async function handleJoinMatch(riotName, riotTag, laneInput, subLanesInput, matchId, discordUserId, discordName, appId, token, env, highTierInput) {
+  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth='+secret : '';
+
+  // 포지션 검증
+  if (!riotName || !riotTag) {
+    return discordFollowup(appId, token, '❌ 소환사명과 태그를 입력해주세요.\n예) `/내전참가 홍길동 KR1 탑 내전ID`', env);
+  }
+  const mainLane = LANE_MAP[laneInput];
+  if (!mainLane) {
+    return discordFollowup(appId, token,
+      `❌ 포지션이 올바르지 않습니다.\n사용 가능: 탑, 정글, 미드, 원딜, 서폿\n입력값: "${laneInput}"`, env);
+  }
+
+  // matchId 없으면 가장 최근 대기중 내전 자동 선택
+  const guildMatchId = matchId;
+
+  // 디스코드 서버 → 커뮤니티 찾기
+  // communities_info에서 discordServerId 매칭
+  const ciRes = await fetch(`${dbUrl}/communities_info.json${authQ}`);
+  const ciData = await ciRes.json() || {};
+
+  // Discord 유저의 서버 ID로 매핑 (interaction.guild_id 없으므로 전체 검색)
+  // 대신 discordUserId로 매핑된 커뮤니티 찾기
+  // → matchId가 있으면 직접 찾기
+  let targetCid = null, targetMatchId = null;
+
+  if (guildMatchId) {
+    // guild_id로 커뮤니티 먼저 찾고, 해당 커뮤니티에서 matchId 확인
+    for (const [cid, info] of Object.entries(ciData)) {
+      if (!info) continue;
+      const mRes = await fetch(`${dbUrl}/communities/${cid}/matches/${guildMatchId}.json${authQ}`);
+      if (mRes.ok) {
+        const mData = await mRes.json();
+        if (mData) { targetCid = cid; targetMatchId = guildMatchId; break; }
+      }
+    }
+  } else {
+    // matchId 없으면: deeplolServerId가 있는 커뮤니티에서 가장 최근 대기중 내전
+    for (const [cid, info] of Object.entries(ciData)) {
+      if (!info) continue;
+      const mRes = await fetch(`${dbUrl}/communities/${cid}/matches.json${authQ}`);
+      if (!mRes.ok) continue;
+      const matches = await mRes.json() || {};
+      const open = Object.entries(matches)
+        .filter(([, m]) => m && m.discordJoinable && m.status !== 'done' && m.status !== 'cancel')
+        .sort(([, a], [, b]) => (b.createdAt||0) - (a.createdAt||0));
+      if (open.length) { targetCid = cid; targetMatchId = open[0][0]; break; }
+    }
+  }
+
+  if (!targetCid || !targetMatchId) {
+    return discordFollowup(appId, token, '❌ 참가 가능한 내전을 찾을 수 없습니다. 내전 ID를 직접 입력해주세요.', env);
+  }
+
+  // 내전 정보
+  const matchRes = await fetch(`${dbUrl}/communities/${targetCid}/matches/${targetMatchId}.json${authQ}`);
+  const matchData = await matchRes.json();
+  if (!matchData) return discordFollowup(appId, token, '❌ 내전 정보를 불러올 수 없습니다.', env);
+  if (!matchData.discordJoinable) return discordFollowup(appId, token, '❌ 이 내전은 디스코드 참가가 비활성화되어 있습니다.', env);
+
+  // 이미 참가 여부 확인
+  const existingMembers = matchData.members || [];
+  const alreadyJoined = existingMembers.find(m =>
+    (m.discordId && m.discordId === discordUserId) ||
+    (m.name === riotName && m.tag === riotTag)
+  );
+  if (alreadyJoined) {
+    const msg = alreadyJoined.discordId === discordUserId
+      ? '❌ 이미 참여 신청하신 디스코드 계정입니다.'
+      : `❌ **${riotName}#${riotTag}** 은(는) 이미 참가 중입니다.`;
+    return discordFollowup(appId, token, msg, env);
+  }
+
+  // 딥롤 API로 소환사 정보 조회
+  const ddRes = await fetch(
+    `https://b2c-api-cdn.deeplol.gg/summoner/summoner-realtime?platform_id=KR&summoner_id=&riot_name=${encodeURIComponent(riotName)}&riot_tag=${encodeURIComponent(riotTag)}`,
+    { headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://www.deeplol.gg/' } }
+  );
+
+  let tierStr = 'UNRANKED', tierFull = 'UNRANKED', icon = '', level = 0, puuid = null;
+  if (ddRes.ok) {
+    const ddData = await ddRes.json();
+    icon = ddData.profile_icon_url || '';
+    level = ddData.summoner_level || 0;
+    puuid = ddData.puu_id || null;
+    const solo = ddData.season_tier_info_dict?.ranked_solo_5x5;
+    if (solo && solo.tier) {
+      tierStr = solo.tier;
+      tierFull = `${solo.tier} ${solo.division||''} ${solo.league_points||0}LP`.trim();
+    }
+  }
+
+  // 멤버 객체 생성 (index.html의 addMember와 동일 구조)
+  const newMember = {
+    id: Date.now(),
+    name: riotName,
+    tag: riotTag,
+    icon,
+    tier: tierStr,
+    tierFull,
+    mainLane,
+    subLane: (Array.isArray(subLanesInput) ? subLanesInput.map(l => LANE_MAP[l] || l) : []),
+    level,
+    puuid,
+    present: true,
+    discordId: discordUserId,
+    discordName,
+    joinedAt: Date.now(),
+  };
+
+  // Firebase에 멤버 추가 (PATCH)
+  const updatedMembers = [...existingMembers, newMember];
+  const patchRes = await fetch(`${dbUrl}/communities/${targetCid}/matches/${targetMatchId}.json${authQ}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ _members: updatedMembers })
+  });
+
+  if (!patchRes.ok) return discordFollowup(appId, token, '❌ 참가 처리 중 오류가 발생했습니다.', env);
+
+  const TIER_EMOJI = {
+    CHALLENGER:'🏆', GRANDMASTER:'💎', MASTER:'💜', DIAMOND:'💠',
+    EMERALD:'💚', PLATINUM:'🩵', GOLD:'🥇', SILVER:'⚪', BRONZE:'🟤', IRON:'⬛', UNRANKED:'❓'
+  };
+  const LANE_EMOJI = { Top:'🛡️', Jungle:'🌲', Middle:'⚡', Bottom:'🏹', Support:'🌟' };
+
+  return discordFollowup(appId, token,
+    `✅ **${riotName}#${riotTag}** 참가 완료!\n` +
+    `${TIER_EMOJI[tierStr]||'❓'} 티어: **${tierFull}**\n` +
+    `${LANE_EMOJI[mainLane]||'🎮'} 주 포지션: **${mainLane}**\n` +
+    `📋 내전: **${matchData.name || targetMatchId}**\n` +
+    `👥 현재 대기 멤버: ${updatedMembers.length}명`, env);
+}
+async function handleJoinMatchDirect(riotName, riotTag, laneInput, subLanesInput, matchId, cid, discordUserId, discordName, appId, token, env, highTierInput) {
+  console.log('[joinDirect] start', {riotName, riotTag, laneInput, matchId, cid});
+  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth='+secret : '';
+
+  // 포지션 검증
+  const mainLane = LANE_MAP[laneInput];
+  if (!mainLane) {
+    return discordFollowup(appId, token,
+      `❌ 포지션이 올바르지 않습니다.\n사용 가능: 탑, 정글, 미드, 원딜, 서폿\n입력값: "${laneInput}"`, env);
+  }
+
+  // 내전 정보 로드
+  console.log('[joinDirect] fetching match...');
+  const matchRes = await fetch(`${dbUrl}/communities/${cid}/matches/${matchId}.json${authQ}`);
+  const matchData = await matchRes.json();
+  if (!matchData) return discordFollowup(appId, token, '❌ 내전 정보를 불러올 수 없습니다.', env);
+
+  const existingMembers = (matchData._members || matchData.members || []);
+  const alreadyJoined = existingMembers.find(m =>
+    (m.discordId && m.discordId === discordUserId) ||
+    (m.name === riotName && m.tag === riotTag)
+  );
+  if (alreadyJoined) {
+    const msg2 = alreadyJoined.discordId === discordUserId
+      ? '❌ 이미 참여 신청하신 디스코드 계정입니다.'
+      : `❌ **${riotName}#${riotTag}** 은(는) 이미 참가 중입니다.`;
+    return discordFollowup(appId, token, msg2, env);
+  }
+
+  // Riot API로 소환사 정보 조회 (index.html과 동일한 구조)
+  console.log('[joinDirect] fetching summoner...');
+  const key = env.RIOT_API_KEY;
+  const regional = 'asia';
+  const platform = 'kr';
+
+  let name = riotName, tag = riotTag, icon = '0', level = 0, puuid = null;
+  let tierStr = 'UNRANKED', tierFull = 'UNRANKED', soloTier = 'UNRANKED', soloDivision = '';
+  let soloWins = 0, soloLosses = 0, soloLP = 0;
+  let highTier = null, highLp = 0, prevSeasonHighest = null;
+  let topChampions = [];
+  let isManual = false;
+
+  try {
+    // 1. puuid 조회
+    const accountRes = await fetch(
+      `https://${regional}.api.riotgames.com/riot/account/v1/accounts/by-riot-id/${encodeURIComponent(riotName)}/${encodeURIComponent(riotTag)}`,
+      { headers: { 'X-Riot-Token': key } }
+    );
+    if (!accountRes.ok) {
+      return discordFollowup(appId, token, `❌ **${riotName}#${riotTag}** 소환사를 찾을 수 없습니다.`, env);
+    }
+    const account = await accountRes.json();
+    puuid = account.puuid;
+    name = account.gameName || riotName;
+    tag = account.tagLine || riotTag;
+
+    // 2. 소환사 정보
+    const summonerRes = await fetch(
+      `https://${platform}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/${encodeURIComponent(puuid)}`,
+      { headers: { 'X-Riot-Token': key } }
+    );
+    if (summonerRes.ok) {
+      const summoner = await summonerRes.json();
+      icon = String(summoner.profileIconId || '0');
+      level = summoner.summonerLevel || 0;
+    }
+
+    // 3. 랭크 정보
+    const leagueRes = await fetch(
+      `https://${platform}.api.riotgames.com/lol/league/v4/entries/by-puuid/${encodeURIComponent(puuid)}`,
+      { headers: { 'X-Riot-Token': key } }
+    );
+    if (leagueRes.ok) {
+      const entries = await leagueRes.json();
+      const solo = entries.find(e => e.queueType === 'RANKED_SOLO_5x5');
+      const flex  = entries.find(e => e.queueType === 'RANKED_FLEX_SR');
+      prevSeasonHighest = solo?.highestTierAchieved || flex?.highestTierAchieved || null;
+      if (solo && solo.tier) {
+        soloTier = solo.tier;
+        soloDivision = solo.rank || '';
+        soloWins = solo.wins || 0;
+        soloLosses = solo.losses || 0;
+        soloLP = solo.leaguePoints || 0;
+        tierStr = solo.tier;
+        // tierFull: MASTER이상은 LP만, 나머지는 티어+디비전
+        const isHigh = ['MASTER','GRANDMASTER','CHALLENGER'].includes(solo.tier);
+        tierFull = isHigh
+          ? `${solo.tier} ${solo.leaguePoints}LP`
+          : `${solo.tier} ${solo.rank || ''} ${solo.leaguePoints}LP`.trim();
+        highTier = tierFull;
+      }
+    }
+
+    // 4. 딥롤에서 최고티어 조회
+    try {
+      const dlRes = await fetch(
+        `https://b2c-api-cdn.deeplol.gg/summoner/summoner-realtime?platform_id=KR&puu_id=${encodeURIComponent(puuid)}`,
+        { headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://www.deeplol.gg/' } }
+      );
+      if (dlRes.ok) {
+        const dlData = await dlRes.json();
+        const dlSolo = dlData?.season_tier_info_dict?.ranked_solo_5x5;
+        if (dlSolo?.tier) {
+          const isHigh2 = ['MASTER','GRANDMASTER','CHALLENGER'].includes(dlSolo.tier);
+          highTier = isHigh2
+            ? `${dlSolo.tier} ${dlSolo.league_points||0}LP`
+            : `${dlSolo.tier} ${dlSolo.division||''} ${dlSolo.league_points||0}LP`.trim();
+        }
+      }
+    } catch(e) {}
+
+    // 5. 모스트 챔피언
+    try {
+      const masteryRes = await fetch(
+        `https://${platform}.api.riotgames.com/lol/champion-mastery/v4/champion-masteries/by-puuid/${encodeURIComponent(puuid)}/top?count=3`,
+        { headers: { 'X-Riot-Token': key } }
+      );
+      if (masteryRes.ok) {
+        const champs = await masteryRes.json();
+        topChampions = champs.map(c => ({
+          championId: c.championId,
+          masteryLevel: c.championLevel,
+          masteryPoints: c.championPoints
+        }));
+      }
+    } catch(e) {}
+
+  } catch(e) {
+    console.error('[joinDirect] summoner fetch error:', e.message);
+    return discordFollowup(appId, token, `❌ 소환사 정보 조회 중 오류: ${e.message}`, env);
+  }
+
+  // 보조 포지션 정규화
+  const subLanesMapped = Array.isArray(subLanesInput)
+    ? subLanesInput.map(l => LANE_MAP[l] || l).filter(Boolean)
+    : [];
+
+  // 최고 티어 입력 시 처리
+  let manualHighTier = null, manualHighDetail = '', manualHighFull = '';
+  if (highTierInput) {
+    const TIER_PARSE = {
+      '챌린저':'CHALLENGER','CHALLENGER':'CHALLENGER','challenger':'CHALLENGER',
+      '그랜드마스터':'GRANDMASTER','GM':'GRANDMASTER','gm':'GRANDMASTER','GRANDMASTER':'GRANDMASTER',
+      '마스터':'MASTER','MASTER':'MASTER','master':'MASTER',
+      '다이아':'DIAMOND','다이아몬드':'DIAMOND','DIAMOND':'DIAMOND','diamond':'DIAMOND',
+      '에메랄드':'EMERALD','에메':'EMERALD','EMERALD':'EMERALD','emerald':'EMERALD',
+      '플래티넘':'PLATINUM','플래':'PLATINUM','PLATINUM':'PLATINUM','platinum':'PLATINUM','plat':'PLATINUM',
+      '골드':'GOLD','GOLD':'GOLD','gold':'GOLD',
+      '실버':'SILVER','SILVER':'SILVER','silver':'SILVER',
+      '브론즈':'BRONZE','BRONZE':'BRONZE','bronze':'BRONZE',
+      '아이언':'IRON','IRON':'IRON','iron':'IRON',
+    };
+    // 입력값에서 티어명 + 나머지(division/LP) 파싱
+    const words = highTierInput.trim().split(/\s+/);
+    const parsedTier = TIER_PARSE[words[0]] || TIER_PARSE[(words[0]||'').toUpperCase()];
+    if (parsedTier) {
+      manualHighTier = parsedTier;
+      const isHighTier = ['MASTER','GRANDMASTER','CHALLENGER'].includes(parsedTier);
+      const rest = words.slice(1).join(' ').trim(); // 예: "200", "2", "II"
+      if (isHighTier) {
+        // 마스터 이상: 나머지가 LP
+        const lpVal = rest.replace(/[^0-9]/g, '');
+        manualHighDetail = lpVal ? lpVal + 'LP' : '';
+        soloLP = parseInt(lpVal) || soloLP;
+      } else {
+        // 다이아 이하: 나머지가 Division
+        const divMap = {'1':'I','2':'II','3':'III','4':'IV','I':'I','II':'II','III':'III','IV':'IV'};
+        manualHighDetail = divMap[rest] || rest || '';
+      }
+      manualHighFull = parsedTier + (manualHighDetail ? ' ' + manualHighDetail : '');
+      tierStr = parsedTier;
+      tierFull = manualHighFull;
+      soloTier = parsedTier;
+      soloDivision = manualHighDetail;
+      isManual = true;
+    }
+  }
+
+
+  // index.html의 addMember와 동일한 멤버 구조
+  const newMember = {
+    id: Date.now(),
+    name, tag, icon, level, puuid,
+    tier: tierStr,
+    tierFull,
+    mainLane,         // 소문자: top, jg, mid, bot, sup
+    subLane: subLanesMapped,
+    highTier: (manualHighTier ? manualHighFull : null) || highTier || null,
+    highLp,
+    prevSeasonHighest,
+    present: false,
+    soloWins, soloLosses, soloLP,
+    soloTier, soloDivision,
+    isManual,
+    manualDetail: manualHighDetail || '',
+    topChampions,
+    discordId: discordUserId,
+    discordName,
+    joinedAt: Date.now(),
+  };
+
+  const updatedMembers = [...existingMembers, newMember];
+  console.log('[joinDirect] saving member:', name, tag, tierStr, 'total:', updatedMembers.length);
+
+  // _members 경로만 직접 PUT (버전 충돌 없이 반영)
+  const patchRes = await fetch(`${dbUrl}/communities/${cid}/matches/${matchId}/_members.json${authQ}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(updatedMembers)
+  });
+  console.log('[joinDirect] put status:', patchRes.status);
+
+  const TIER_EMOJI = {CHALLENGER:'🏆',GRANDMASTER:'💎',MASTER:'💜',DIAMOND:'💠',EMERALD:'💚',PLATINUM:'🩵',GOLD:'🥇',SILVER:'⚪',BRONZE:'🟤',IRON:'⬛',UNRANKED:'❓'};
+  const LANE_EMOJI = {top:'🛡️',jg:'🌲',mid:'⚡',bot:'🏹',sup:'🌟'};
+  const subText = subLanesMapped.length
+    ? `\n${subLanesMapped.map(l=>({top:'🛡️',jg:'🌲',mid:'⚡',bot:'🏹',sup:'🌟'}[l]||'🎮')).join('')} 보조: **${subLanesMapped.join(', ')}**`
+    : '';
+
+  // 완료 메시지
+  const origSoloTier = `${soloTier}${soloDivision&&!isManual?' '+soloDivision:''} ${soloLP&&!isManual?soloLP+'LP':''}`.trim();
+
+  return discordFollowup(appId, token,
+    `✅ **${name}#${tag}** 참가 완료!\n` +
+    `${TIER_EMOJI[tierStr]||'❓'} 설정 티어: **${tierFull}**\n` +
+    `${manualHighTier ? `🏅 최고 티어 (수동): **${manualHighFull}**\n` : `📊 현재 솔랭: **${origSoloTier||'언랭크'}**\n`}` +
+    `${{top:'🛡️',jg:'🌲',mid:'⚡',bot:'🏹',sup:'🌟'}[mainLane]||'🎮'} 주 포지션: **${mainLane}**${subText}\n` +
+    `📋 내전: **${matchData.name || matchId}**\n` +
+    `👥 현재 대기 멤버: ${updatedMembers.length}명`, env);
+}
+
