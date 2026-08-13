@@ -3008,6 +3008,31 @@ async function handleDiscordInteraction(request, env, ctx) {
   // 버튼 클릭 (Message Component)
   if (interaction.type === 3) {
     const customId = interaction.data.custom_id || '';
+    // 나가기 버튼
+    if (customId.startsWith('leave_match__') || customId.startsWith('leave_match_')) {
+      let cid, matchId;
+      if (customId.startsWith('leave_match__')) {
+        const inner = customId.slice('leave_match__'.length);
+        const sepIdx = inner.indexOf('__');
+        cid = inner.slice(0, sepIdx);
+        matchId = inner.slice(sepIdx + 2);
+      } else {
+        const inner = customId.slice('leave_match_'.length);
+        const matchIdx = inner.lastIndexOf('_match_');
+        cid = inner.slice(0, matchIdx);
+        matchId = 'match_' + inner.slice(matchIdx + 7);
+      }
+      const discordUserId = interaction.member?.user?.id || interaction.user?.id;
+      const appId = env.DISCORD_APP_ID || '1500717088984010883';
+      const token = interaction.token;
+      const resp = discordDefer(true);
+      ctx.waitUntil(
+        handleLeaveMatch(cid, matchId, discordUserId, appId, token, env)
+          .catch(async (e) => { await discordFollowup(appId, token, '❌ 오류: ' + e.message, env); })
+      );
+      return resp;
+    }
+
     // 멤버 목록 버튼
     if (customId.startsWith('members_match__') || customId.startsWith('members_match_')) {
       let cid, matchId;
@@ -3633,3 +3658,42 @@ async function handleJoinMatchDirect(riotName, riotTag, laneInput, subLanesInput
     `👥 현재 대기 멤버: ${updatedMembers.length}명`, env);
 }
 
+
+// ── 내전 나가기 ──
+async function handleLeaveMatch(cid, matchId, discordUserId, appId, token, env) {
+  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth='+secret : '';
+
+  const matchRes = await fetch(`${dbUrl}/communities/${cid}/matches/${matchId}.json${authQ}`);
+  const matchData = await matchRes.json();
+  if (!matchData) return discordFollowup(appId, token, '❌ 내전 정보를 불러올 수 없습니다.', env);
+
+  // 빼기 불가 체크
+  if (matchData.discordLeaveDisabled) {
+    return discordFollowup(appId, token, '❌ 현재 이 내전은 빼기가 불가능합니다. 관리자에게 문의해주세요.', env);
+  }
+
+  const existingMembers = Array.isArray(matchData._members)
+    ? matchData._members
+    : Object.values(matchData._members || {});
+
+  const memberToLeave = existingMembers.find(m => m.discordId && m.discordId === discordUserId);
+  if (!memberToLeave) {
+    return discordFollowup(appId, token, '❌ 참가 중인 내전이 아닙니다.', env);
+  }
+
+  const updatedMembers = existingMembers.filter(m => m.discordId !== discordUserId);
+
+  const patchRes = await fetch(`${dbUrl}/communities/${cid}/matches/${matchId}/_members.json${authQ}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(updatedMembers)
+  });
+
+  if (!patchRes.ok) return discordFollowup(appId, token, '❌ 처리 중 오류가 발생했습니다.', env);
+
+  return discordFollowup(appId, token,
+    `✅ **${memberToLeave.name}#${memberToLeave.tag}** 내전 참가가 취소되었습니다.\n` +
+    `📋 내전: **${matchData.name || matchId}**\n` +
+    `👥 남은 멤버: ${updatedMembers.length}명`, env);
+}
