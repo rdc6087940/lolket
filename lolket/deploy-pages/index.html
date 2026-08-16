@@ -11110,8 +11110,8 @@ async function saveCaptainCodes() {
 
 async function saveCurrentMatch() {
 if (!match || !match.id) return;
-// 디스코드로 참가한 멤버 병합 (편집 중 덮어쓰기 방지)
-mergeDiscordMembersBeforeSave();
+// 디스코드로 참가한 멤버 Firebase에서 직접 읽어 병합 (편집 중 덮어쓰기 방지)
+await syncDiscordMembersBeforeSave();
 const resultMatchesClean = resultMatches.map(rm => ({
 id: rm.id,
 label: (rm.label && rm.label !== 'undefined') ? rm.label : ('대진 ' + rm.id),
@@ -17013,6 +17013,24 @@ function mergeDiscordMembersBeforeSave() {
     var exists = members.find(function(m) { return m.id === rm.id; });
     if (!exists) members.push(rm);
   });
+}
+
+// 저장 전 Firebase에서 _members 직접 읽어서 병합 (실시간 리스너 누락 방지)
+async function syncDiscordMembersBeforeSave() {
+  if (!window._currentCommunityId || !match || !match.id) return;
+  if (!window._fb || !window._fb.fbGet) return;
+  try {
+    var path = 'communities/' + window._currentCommunityId + '/matches/' + match.id + '/_members';
+    var data = await window._fb.fbGet(path);
+    if (!data) return;
+    var remoteMembers = Array.isArray(data) ? data : Object.values(data);
+    remoteMembers.forEach(function(rm) {
+      if (!rm || !rm.id) return;
+      var exists = members.find(function(m) { return m.id === rm.id; });
+      if (!exists) { members.push(rm); }
+      _lastDiscordMembers = remoteMembers;
+    });
+  } catch(e) {}
 }
 
 </script>

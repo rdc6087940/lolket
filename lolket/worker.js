@@ -3078,49 +3078,49 @@ async function handleDiscordInteraction(request, env, ctx) {
         matchId = 'match_' + inner.slice(matchIdx + 7);
       }
       const discordUserId = interaction.member?.user?.id || interaction.user?.id;
-      const discordName   = interaction.member?.user?.username || interaction.user?.username;
-      // 포지션 입력 받는 모달 표시
+      // 저장된 프로필 로드
+      let ep = {};
+      try {
+        const dbUrl2 = env.FB_DATABASE_URL, secret2 = env.FB_DB_SECRET;
+        const authQ2 = secret2 ? '?auth='+secret2 : '';
+        const pRes = await fetch(`${dbUrl2}/discord_profiles/${discordUserId}.json${authQ2}`);
+        if (pRes.ok) ep = await pRes.json() || {};
+      } catch(e) {}
+      // 포지션 역매핑 (저장값 → 한글)
+      const LANE_KO_MAP = {top:'탑',jg:'정글',mid:'미드',bot:'원딜',sup:'서폿'};
+      const savedMainLane = ep.mainLane ? (LANE_KO_MAP[ep.mainLane] || ep.mainLane) : '';
+      const savedSubLanes = ep.subLanes ? ep.subLanes.map(l => LANE_KO_MAP[l] || l).join(',') : '';
       return new Response(JSON.stringify({
-        type: 9, // Modal
+        type: 9,
         data: {
           title: '내전 참가 신청',
           custom_id: `join_modal_${cid}_${matchId}`,
           components: [
-            {
-              type: 1,
-              components: [{
-                type: 4, label: '소환사명', custom_id: 'riot_name',
-                style: 1, placeholder: '예) 홍길동', required: true, min_length: 1, max_length: 50
-              }]
-            },
-            {
-              type: 1,
-              components: [{
-                type: 4, label: '태그', custom_id: 'riot_tag',
-                style: 1, placeholder: '예) KR1', required: true, min_length: 1, max_length: 10
-              }]
-            },
-            {
-              type: 1,
-              components: [{
-                type: 4, label: '주 포지션', custom_id: 'main_lane',
-                style: 1, placeholder: '탑 / 정글 / 미드 / 원딜 / 서폿', required: true, min_length: 1, max_length: 10
-              }]
-            },
-            {
-              type: 1,
-              components: [{
-                type: 4, label: '보조 포지션 (선택, 여러 개는 쉼표로)', custom_id: 'sub_lanes',
-                style: 1, placeholder: '예) 정글,서폿  (없으면 비워두세요)', required: false, max_length: 50
-              }]
-            },
-            {
-              type: 1,
-              components: [{
-                type: 4, label: '최고 티어 (선택)', custom_id: 'high_tier',
-                style: 1, placeholder: '예) 마스터 200 / 다이아 2 / 골드 1 (비워두면 자동)', required: false, max_length: 30
-              }]
-            }
+            { type: 1, components: [{
+              type: 4, label: '소환사명', custom_id: 'riot_name',
+              style: 1, placeholder: '예) 홍길동', required: true, min_length: 1, max_length: 50,
+              value: ep.riotName || ''
+            }]},
+            { type: 1, components: [{
+              type: 4, label: '태그', custom_id: 'riot_tag',
+              style: 1, placeholder: '예) KR1', required: true, min_length: 1, max_length: 10,
+              value: ep.riotTag || ''
+            }]},
+            { type: 1, components: [{
+              type: 4, label: '주 포지션', custom_id: 'main_lane',
+              style: 1, placeholder: '탑 / 정글 / 미드 / 원딜 / 서폿', required: true, min_length: 1, max_length: 10,
+              value: savedMainLane
+            }]},
+            { type: 1, components: [{
+              type: 4, label: '보조 포지션 (선택, 쉼표로 구분)', custom_id: 'sub_lanes',
+              style: 1, placeholder: '예) 정글,서폿', required: false, max_length: 50,
+              value: savedSubLanes
+            }]},
+            { type: 1, components: [{
+              type: 4, label: '최고/임시 티어 (선택)', custom_id: 'high_tier',
+              style: 1, placeholder: '예) e1 / d3 / m300 / gm500 / c (비워두면 자동)', required: false, max_length: 20,
+              value: ep.highTier || ''
+            }]}
           ]
         }
       }), { headers: { 'Content-Type': 'application/json' } });
@@ -3130,6 +3130,35 @@ async function handleDiscordInteraction(request, env, ctx) {
   // 모달 제출 (type 5)
   if (interaction.type === 5) {
     const customId = interaction.data.custom_id || '';
+    // 참여양식 저장 모달
+    if (customId.startsWith('save_profile__')) {
+      const discordUserId = customId.slice('save_profile__'.length);
+      const comps = interaction.data.components || [];
+      const getVal2 = (id) => comps.flatMap(r => r.components).find(c => c.custom_id === id)?.value || '';
+      const riotName  = getVal2('riot_name').trim();
+      const riotTag   = getVal2('riot_tag').trim();
+      const mainLane  = getVal2('main_lane').trim();
+      const subRaw    = getVal2('sub_lanes').trim();
+      const highTier  = getVal2('high_tier').trim();
+      const subLanes  = subRaw ? subRaw.split(/[,，、]/).map(s => s.trim()).filter(Boolean) : [];
+      const mainLaneMapped = LANE_MAP[mainLane] || mainLane;
+      const subLanesMapped = subLanes.map(l => LANE_MAP[l] || l).filter(Boolean);
+      const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+      const authQ = secret ? '?auth='+secret : '';
+      const profile = { riotName, riotTag, mainLane: mainLaneMapped, subLanes: subLanesMapped, highTier, updatedAt: Date.now() };
+      await fetch(`${dbUrl}/discord_profiles/${discordUserId}.json${authQ}`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(profile)
+      });
+      return new Response(JSON.stringify({
+        type: 4,
+        data: {
+          content: `✅ 참여 양식이 저장되었습니다!\n🎮 소환사: **${riotName}#${riotTag}**\n${{탑:'🛡️',정글:'🌲',미드:'⚡',원딜:'🏹',서폿:'🌟',top:'🛡️',jg:'🌲',mid:'⚡',bot:'🏹',sup:'🌟'}[mainLaneMapped]||'🎮'} 주 포지션: **${mainLaneMapped}**\n${highTier ? `🏅 최고/임시 티어: **${highTier}**` : ''}\n\n내전 참가 버튼을 누르면 자동으로 입력됩니다.`,
+          flags: 64
+        }
+      }), { headers: { 'Content-Type': 'application/json' } });
+    }
+
     if (customId.startsWith('join_modal__') || customId.startsWith('join_modal_')) {
       let cid, matchId;
       if (customId.startsWith('join_modal__')) {
@@ -3179,6 +3208,41 @@ async function handleDiscordInteraction(request, env, ctx) {
     // ── /내전목록 ──
     if (cmdName === '내전목록') {
       return handleListMatches(interaction, env);
+    }
+
+    // ── /참여양식저장 ──
+    if (cmdName === '참여양식저장') {
+      const discordUserId = interaction.member?.user?.id || interaction.user?.id;
+      // 바로 빈 모달 반환 (3초 제한 때문에 Firebase 조회 없이)
+      return new Response(JSON.stringify({
+        type: 9,
+        data: {
+          title: '참여 양식 저장',
+          custom_id: `save_profile__${discordUserId}`,
+          components: [
+            { type: 1, components: [{
+              type: 4, label: '소환사명', custom_id: 'riot_name',
+              style: 1, placeholder: '예) 홍길동', required: true, min_length: 1, max_length: 50
+            }]},
+            { type: 1, components: [{
+              type: 4, label: '태그', custom_id: 'riot_tag',
+              style: 1, placeholder: '예) KR1', required: true, min_length: 1, max_length: 10
+            }]},
+            { type: 1, components: [{
+              type: 4, label: '주 포지션', custom_id: 'main_lane',
+              style: 1, placeholder: '탑 / 정글 / 미드 / 원딜 / 서폿', required: true, min_length: 1, max_length: 10
+            }]},
+            { type: 1, components: [{
+              type: 4, label: '보조 포지션 (선택, 쉼표로 구분)', custom_id: 'sub_lanes',
+              style: 1, placeholder: '예) 정글,서폿 (없으면 비워두세요)', required: false, max_length: 50
+            }]},
+            { type: 1, components: [{
+              type: 4, label: '최고/임시 티어 (선택)', custom_id: 'high_tier',
+              style: 1, placeholder: '예) e1 / d3 / m300 / gm500 / c', required: false, max_length: 20
+            }]}
+          ]
+        }
+      }), { headers: { 'Content-Type': 'application/json' } });
     }
 
     // ── /내전참가 ──
@@ -3251,35 +3315,45 @@ async function handleListMatches(interaction, env) {
     return discordReply('현재 참가 가능한 내전이 없습니다.\n(디스코드 참가 ON + 12시간 이내 기준)', true);
   }
 
-  // 내전마다 3개 버튼: 참가 / 멤버 목록 / 페이지 링크
+  // 내전마다 4개 버튼: 참가 / 멤버 목록 / 페이지 링크 / 나가기
   const components = openMatches.flatMap(([id, m]) => {
     const memberCount = (m._members||m.members||[]).length;
-    const age = m.createdAt ? Math.floor((now - m.createdAt) / 60000) : '?';
     return [{
       type: 1,
       components: [
         {
-          type: 2, style: 1, // Primary (파랑)
+          type: 2, style: 1,
           label: `⚔️ ${m.name||'내전'} 참가`,
           custom_id: `join_match__${targetCid}__${id}`
         },
         {
-          type: 2, style: 2, // Secondary (회색)
+          type: 2, style: 2,
           label: `👥 멤버 ${memberCount}명`,
           custom_id: `members_match__${targetCid}__${id}`
         },
         {
-          type: 2, style: 5, // Link
+          type: 2, style: 5,
           label: '🔗 내전 페이지',
           url: `https://roonging.com/?match=${targetCid}__${id}`
+        },
+        {
+          type: 2, style: 4,
+          label: '🚪 나가기',
+          custom_id: `leave_match__${targetCid}__${id}`
         }
       ]
     }];
   });
 
   const header = openMatches.map(([id, m]) => {
-    const age = m.createdAt ? Math.floor((now - m.createdAt) / 60000) : '?';
-    return `⚔️ **${m.name||'이름없음'}** — ${(m.members||[]).length}명 참가중 | ${age}분 전 생성`;
+    let ageStr = '?';
+    if (m.createdAt) {
+      const ageMins = Math.floor((now - m.createdAt) / 60000);
+      const h = Math.floor(ageMins / 60);
+      const min = ageMins % 60;
+      ageStr = h > 0 ? `${h}시간 ${min}분 전` : `${min}분 전`;
+    }
+    return `⚔️ **${m.name||'이름없음'}** — ${(m._members||m.members||[]).length}명 참가중 | ${ageStr} 생성`;
   }).join('\n');
 
   return new Response(JSON.stringify({
@@ -3568,34 +3642,43 @@ async function handleJoinMatchDirect(riotName, riotTag, laneInput, subLanesInput
   // 최고 티어 입력 시 처리
   let manualHighTier = null, manualHighDetail = '', manualHighFull = '';
   if (highTierInput) {
-    const TIER_PARSE = {
-      '챌린저':'CHALLENGER','CHALLENGER':'CHALLENGER','challenger':'CHALLENGER',
-      '그랜드마스터':'GRANDMASTER','GM':'GRANDMASTER','gm':'GRANDMASTER','GRANDMASTER':'GRANDMASTER',
-      '마스터':'MASTER','MASTER':'MASTER','master':'MASTER',
-      '다이아':'DIAMOND','다이아몬드':'DIAMOND','DIAMOND':'DIAMOND','diamond':'DIAMOND',
-      '에메랄드':'EMERALD','에메':'EMERALD','EMERALD':'EMERALD','emerald':'EMERALD',
-      '플래티넘':'PLATINUM','플래':'PLATINUM','PLATINUM':'PLATINUM','platinum':'PLATINUM','plat':'PLATINUM',
-      '골드':'GOLD','GOLD':'GOLD','gold':'GOLD',
-      '실버':'SILVER','SILVER':'SILVER','silver':'SILVER',
-      '브론즈':'BRONZE','BRONZE':'BRONZE','bronze':'BRONZE',
-      '아이언':'IRON','IRON':'IRON','iron':'IRON',
-    };
-    // 입력값에서 티어명 + 나머지(division/LP) 파싱
-    const words = highTierInput.trim().split(/\s+/);
-    const parsedTier = TIER_PARSE[words[0]] || TIER_PARSE[(words[0]||'').toUpperCase()];
+    // 단순화된 파싱: 앞 문자열(티어) + 뒷 숫자(division/LP) 분리
+    // e3, d2, m300, gm500, p1, s2, b3, g1, c, u 등 모두 지원
+    const inp = highTierInput.trim().toLowerCase();
+    // gm 먼저 체크 (g가 골드이므로)
+    const TIER_MAP = [
+      ['gm', 'GRANDMASTER'], ['grandmaster', 'GRANDMASTER'], ['그랜드마스터', 'GRANDMASTER'], ['그랜드', 'GRANDMASTER'],
+      ['challenger', 'CHALLENGER'], ['챌린저', 'CHALLENGER'], ['챌', 'CHALLENGER'], ['c', 'CHALLENGER'],
+      ['master', 'MASTER'], ['마스터', 'MASTER'], ['m', 'MASTER'],
+      ['diamond', 'DIAMOND'], ['다이아몬드', 'DIAMOND'], ['다이아', 'DIAMOND'], ['다', 'DIAMOND'], ['dia', 'DIAMOND'], ['d', 'DIAMOND'],
+      ['emerald', 'EMERALD'], ['에메랄드', 'EMERALD'], ['에메', 'EMERALD'], ['em', 'EMERALD'], ['e', 'EMERALD'],
+      ['platinum', 'PLATINUM'], ['플래티넘', 'PLATINUM'], ['플래', 'PLATINUM'], ['플', 'PLATINUM'], ['plat', 'PLATINUM'], ['pt', 'PLATINUM'], ['p', 'PLATINUM'],
+      ['gold', 'GOLD'], ['골드', 'GOLD'], ['골', 'GOLD'], ['g', 'GOLD'],
+      ['silver', 'SILVER'], ['실버', 'SILVER'], ['실', 'SILVER'], ['sv', 'SILVER'], ['s', 'SILVER'],
+      ['bronze', 'BRONZE'], ['브론즈', 'BRONZE'], ['브', 'BRONZE'], ['br', 'BRONZE'], ['b', 'BRONZE'],
+      ['iron', 'IRON'], ['아이언', 'IRON'], ['아', 'IRON'], ['ir', 'IRON'], ['i', 'IRON'],
+      ['unranked', 'UNRANKED'], ['언랭크', 'UNRANKED'], ['언랭', 'UNRANKED'], ['ur', 'UNRANKED'], ['u', 'UNRANKED'],
+    ];
+
+    let parsedTier = null, rest = '';
+    for (const [key, val] of TIER_MAP) {
+      if (inp.startsWith(key)) {
+        parsedTier = val;
+        rest = inp.slice(key.length).trim();
+        break;
+      }
+    }
+
     if (parsedTier) {
       manualHighTier = parsedTier;
       const isHighTier = ['MASTER','GRANDMASTER','CHALLENGER'].includes(parsedTier);
-      const rest = words.slice(1).join(' ').trim(); // 예: "200", "2", "II"
+      const divMap = {'1':'I','2':'II','3':'III','4':'IV','i':'I','ii':'II','iii':'III','iv':'IV'};
       if (isHighTier) {
-        // 마스터 이상: 나머지가 LP
         const lpVal = rest.replace(/[^0-9]/g, '');
         manualHighDetail = lpVal ? lpVal + 'LP' : '';
         soloLP = parseInt(lpVal) || soloLP;
       } else {
-        // 다이아 이하: 나머지가 Division
-        const divMap = {'1':'I','2':'II','3':'III','4':'IV','I':'I','II':'II','III':'III','IV':'IV'};
-        manualHighDetail = divMap[rest] || rest || '';
+        manualHighDetail = divMap[rest] || (rest ? rest.toUpperCase() : '');
       }
       manualHighFull = parsedTier + (manualHighDetail ? ' ' + manualHighDetail : '');
       tierStr = parsedTier;
@@ -3652,7 +3735,7 @@ async function handleJoinMatchDirect(riotName, riotTag, laneInput, subLanesInput
   return discordFollowup(appId, token,
     `✅ **${name}#${tag}** 참가 완료!\n` +
     `${TIER_EMOJI[tierStr]||'❓'} 설정 티어: **${tierFull}**\n` +
-    `${manualHighTier ? `🏅 최고 티어 (수동): **${manualHighFull}**\n` : `📊 현재 솔랭: **${origSoloTier||'언랭크'}**\n`}` +
+    `${manualHighTier ? `🏅 최고/임시 티어 (수동): **${manualHighFull}**\n` : `📊 현재 솔랭: **${origSoloTier||'언랭크'}**\n`}` +
     `${{top:'🛡️',jg:'🌲',mid:'⚡',bot:'🏹',sup:'🌟'}[mainLane]||'🎮'} 주 포지션: **${mainLane}**${subText}\n` +
     `📋 내전: **${matchData.name || matchId}**\n` +
     `👥 현재 대기 멤버: ${updatedMembers.length}명`, env);
