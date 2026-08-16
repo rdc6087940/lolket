@@ -3650,6 +3650,7 @@ document.getElementById('bar-time').textContent =
 `${dt.getMonth()+1}/${dt.getDate()} ${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
 document.getElementById('bar-status').textContent=match.status;
 document.getElementById('btn-edit-time').style.display='inline-block';
+updateDiscordJoinableBtn();
 }
 async function startStatusTimer(){
 setInterval(async () =>{
@@ -4118,6 +4119,7 @@ await saveCurrentMatch();
 async function removeMember(id){
 const m=members.find(m => m.id === id);
 members=members.filter(m => m.id !== id);
+_locallyRemovedIds.add(id); // 로컬에서 삭제된 멤버 추적
 renderMembers();
 updateProgress();
 updateConditions();
@@ -11172,7 +11174,7 @@ try {
 }
 }
 function restoreMatch(snapshot) {
-match = { id: snapshot.id, name: snapshot.name, time: snapshot.time, admin: snapshot.admin, status: snapshot.status };
+match = { id: snapshot.id, name: snapshot.name, time: snapshot.time, admin: snapshot.admin, status: snapshot.status, discordJoinable: snapshot.discordJoinable || false, discordLeaveDisabled: snapshot.discordLeaveDisabled || false };
 members = snapshot._members || [];
 matchType = snapshot._matchType || null;
 teams = snapshot._teams || [];
@@ -16981,6 +16983,7 @@ function updateDiscordJoinableBtn() {
 // 디스코드 참가 멤버 실시간 구독
 var _discordMembersUnsub = null;
 var _lastDiscordMembers = []; // 마지막으로 받은 디스코드 멤버 목록
+var _locallyRemovedIds = new Set(); // 편집 페이지에서 삭제한 멤버 ID
 
 function subscribeDiscordMembers(cid, matchId) {
   if (_discordMembersUnsub) { _discordMembersUnsub(); _discordMembersUnsub = null; }
@@ -16994,6 +16997,7 @@ function subscribeDiscordMembers(cid, matchId) {
     var changed = false;
     remoteMembers.forEach(function(rm) {
       if (!rm || !rm.id) return;
+      if (_locallyRemovedIds.has(rm.id)) return; // 로컬에서 삭제된 멤버 제외
       var exists = members.find(function(m) { return m.id === rm.id; });
       if (!exists) { members.push(rm); changed = true; }
     });
@@ -17024,11 +17028,12 @@ async function syncDiscordMembersBeforeSave() {
     var data = await window._fb.fbGet(path);
     if (!data) return;
     var remoteMembers = Array.isArray(data) ? data : Object.values(data);
+    _lastDiscordMembers = remoteMembers;
     remoteMembers.forEach(function(rm) {
       if (!rm || !rm.id) return;
+      if (_locallyRemovedIds.has(rm.id)) return; // 로컬에서 삭제된 멤버 제외
       var exists = members.find(function(m) { return m.id === rm.id; });
       if (!exists) { members.push(rm); }
-      _lastDiscordMembers = remoteMembers;
     });
   } catch(e) {}
 }
