@@ -646,6 +646,7 @@ tbody td{padding:.55rem 1rem;font-size:12px;vertical-align:middle;}
           <th class="c7 sortable sort-asc" data-sort="games">게임 수</th>
           <th class="c8 sortable" data-sort="recent">최근 게임</th>
           <th class="sortable" data-sort="rating" style="color:var(--gold);">레이팅</th>
+          <th style="width:60px;text-align:center;cursor:pointer;" onclick="sortBy('mmr')">MMR <span id="th-mmr-arrow"></span></th>
           <th></th>
         </tr>
       </thead>
@@ -985,6 +986,7 @@ function applyAll(){
       case 'games': va=a.cnt||0;vb=b.cnt||0;break;
       case 'recent': va=a.creation_timestamp||0;vb=b.creation_timestamp||0;break;
       case 'rating': va=(a.cnt>=10&&a._rating)?a._rating:-Infinity;vb=(b.cnt>=10&&b._rating)?b._rating:-Infinity;break;
+      case 'mmr': var ma=calcMMR(a,allData),mb=calcMMR(b,allData); va=ma?ma.mmr:-Infinity;vb=mb?mb.mmr:-Infinity;break;
       case 'peakTier': return (peakTierOrder(a)-peakTierOrder(b))*sortDir;
       case 'tempTier': return (_tempTierSortOrder(a)-_tempTierSortOrder(b));
       default: va=0;vb=0;
@@ -1033,7 +1035,16 @@ function renderPage(){
       <td class="col-rank">${rank}</td>
       <td><span class="s-name">${esc(m.riot_name)}</span> <span class="s-tag">#${esc(m.riot_tag)}</span>${_weeklyEmojis&&_weeklyEmojis[m.puu_id]?' '+_weeklyEmojis[m.puu_id].map(function(e){return '<span title="'+e.label+'" style="font-size:12px;cursor:default;">'+e.emoji+'</span>';}).join(''):''}</td>
       <td><span class="pos-txt" style="color:${posC}">${posS}</span></td>
-      <td>${renderTierBadge(m.tier)}</td>
+      <td>${(function(){
+        var lp = undefined;
+        if (m._tempTier && m._tempTier.lp !== undefined) {
+          // 임시티어의 티어가 현재 티어와 같을 때만 LP 표시
+          var ttTier = (m._tempTier.tier || '').toUpperCase().trim();
+          var curTier = (m.tier || '').toUpperCase().trim().split(' ')[0];
+          if (ttTier === curTier) lp = m._tempTier.lp;
+        }
+        return renderTierBadge(m.tier, lp);
+      })()}</td>
       <td>${renderTierBadge(m._peakTier, m._peakLp)}</td>
       <td>${renderTempTierCell(m)}</td>
       <td><div class="champ-list">${champs}</div></td>
@@ -1047,6 +1058,7 @@ function renderPage(){
       <td class="col-games">${t}</td>
       <td class="col-recent">${timeAgo(m.creation_timestamp)}</td>
       <td style="width:68px;text-align:center;">${buildRatingCell(m._rating, m._ratingBreakdown, m.cnt)}</td>
+      <td style="width:60px;text-align:center;">${(function(){ var r=calcMMR(m, allData); return r ? '<span style="font-size:11px;font-weight:700;color:#A78BFA;">'+r.mmr+'</span><div style="font-size:9px;color:var(--muted);">MMR</div>' : '<span style="color:var(--muted);font-size:10px;">—</span>'; })()}</td>
       <td style="width:52px;text-align:center;">
         <button class="detail-btn" data-puu="${m.puu_id}"
           style="padding:3px 7px;border-radius:2px;border:1px solid rgba(10,200,185,.3);background:rgba(10,200,185,.06);color:var(--blue);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:.5px;cursor:pointer;white-space:nowrap;">
@@ -5221,8 +5233,10 @@ function renderScoutAnalysis(idx) {
   html+='<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:.5rem;">';
   var soloWins=soloTier?(soloTier.wins||0):0, soloLosses=soloTier?(soloTier.losses||0):0;
   var soloGames=soloWins+soloLosses;
+  var mmrResult = calcMMR(member, allData);
   var items=[
     ['⭐','내전 레이팅', member&&member._rating?Math.round(member._rating):'—','#F59E0B'],
+    ['💜','MMR', mmrResult ? mmrResult.mmr : '—', '#A78BFA'],
     ['🎮','내전 승률', cs_stats.games?wr(cs_stats.wins,cs_stats.games)+'%':'—',wrColor(avgWr)],
     ['⚔️','내전 KDA', cs_stats.deaths?avgKda.toFixed(2):cs_stats.games?(cs_stats.kills+cs_stats.assists)+'/-':'—','var(--blue)'],
     ['🏅','솔랭', soloTier?'<span style="color:'+tierColor(soloTier.tier)+';">'+tierText(soloTier)+'</span>':'언랭','#A78BFA'],
@@ -5699,8 +5713,15 @@ function analyzeTempTier(data, allData) {
   }
 
   // ── 3. 내전 퍼포먼스 ──
+  // 포지션별 팀 기여도 가중치 (원딜/정글/미드 > 탑 > 서폿)
+  // 서폿은 고티어일수록 약팀과 매칭되는 구조적 승률 왜곡이 있음
+  var POS_WEIGHT = { bot:1.5, jg:1.5, mid:1.5, top:1.0, sup:0.5,
+                     Bottom:1.5, Jungle:1.5, Middle:1.5, Top:1.0, Support:0.5 };
+
   var perfScore = 0, perfReasons = [];
   var csGames=0, csWins=0, csKills=0, csDeaths=0, csAssists=0, csAiSum=0, csAiCnt=0;
+  var posCounts={};
+
   custom.forEach(function(md){
     if(!md||!md.participants_list) return;
     var me=md.participants_list.find(function(p){return p.puu_id===puuId;});
@@ -5709,17 +5730,40 @@ function analyzeTempTier(data, allData) {
     csGames++; if(me.is_win) csWins++;
     csKills+=(stat.kills||0); csDeaths+=(stat.death||stat.deaths||0); csAssists+=(stat.assists||0);
     if(me.ai_score){csAiSum+=me.ai_score;csAiCnt++;}
+    if(me.position) posCounts[me.position]=(posCounts[me.position]||0)+1;
   });
+
+  // 주 포지션 파악 → 가중치 결정
+  var mainPos = Object.entries(posCounts).sort(function(a,b){return b[1]-a[1];})[0];
+  mainPos = mainPos ? mainPos[0] : null;
+  var posWeight = mainPos ? (POS_WEIGHT[mainPos] || 1.0) : 1.0;
+  var posLabel = {bot:'원딜',jg:'정글',mid:'미드',top:'탑',sup:'서폿',
+                  Bottom:'원딜',Jungle:'정글',Middle:'미드',Top:'탑',Support:'서폿'}[mainPos] || mainPos || '';
+
   var csWr = csGames ? csWins/csGames : 0.5;
   var csKda = csDeaths ? (csKills+csAssists)/csDeaths : (csKills+csAssists);
   var csAi = csAiCnt ? csAiSum/csAiCnt : 0;
 
-  // 승률 보정
+  // 승/패 게임 AI점수 분리 집계
+  var csAiWinSum=0, csAiWinCnt=0, csAiLoseSum=0, csAiLoseCnt=0;
+  custom.forEach(function(md){
+    if(!md||!md.participants_list) return;
+    var me=md.participants_list.find(function(p){return p.puu_id===puuId;});
+    if(!me||!me.ai_score) return;
+    if(me.is_win){ csAiWinSum+=me.ai_score; csAiWinCnt++; }
+    else { csAiLoseSum+=me.ai_score; csAiLoseCnt++; }
+  });
+  var csAiWin  = csAiWinCnt  ? csAiWinSum/csAiWinCnt   : 0;
+  var csAiLose = csAiLoseCnt ? csAiLoseSum/csAiLoseCnt : 0;
+
+  // 승률 보정 (포지션 가중치 적용)
   if (csGames >= 10) {
-    var wrDelta = (csWr - 0.5) * 800; // 60% → +80점, 40% → -80점
-    perfScore += Math.round(wrDelta);
-    if (csWr > 0.58) perfReasons.push('높은 내전 승률 ('+Math.round(csWr*100)+'%) +');
-    else if (csWr < 0.42) perfReasons.push('낮은 내전 승률 ('+Math.round(csWr*100)+'%) -');
+    var wrDelta = Math.round((csWr - 0.5) * 800 * posWeight);
+    perfScore += wrDelta;
+    var wrPct = Math.round(csWr*100);
+    if (csWr > 0.58) perfReasons.push('높은 내전 승률 ('+wrPct+'%'+(posLabel?' · '+posLabel+' ×'+posWeight:'')+') +');
+    else if (csWr < 0.42) perfReasons.push('낮은 내전 승률 ('+wrPct+'%'+(posLabel?' · '+posLabel+' ×'+posWeight:'')+') -');
+    if (posWeight < 1.0 && csWr < 0.5) perfReasons.push('서폿 특성상 승률 보정 완화 적용');
   }
   // KDA 보정
   if (csGames >= 5) {
@@ -5728,12 +5772,31 @@ function analyzeTempTier(data, allData) {
     else if (csKda < 1.5)  { perfScore -= 200; perfReasons.push('낮은 KDA ('+csKda.toFixed(2)+') -'); }
     else if (csKda < 2.0)  { perfScore -= 100; }
   }
-  // AI점수 보정
+  // AI점수 보정 - 승/패 분리 평가 (패배 게임 AI가 높으면 개인 기여 인정)
   if (csAiCnt >= 5) {
-    if (csAi >= 75)      { perfScore += 150; perfReasons.push('AI점수 우수 ('+Math.round(csAi)+') +'); }
-    else if (csAi >= 60) { perfScore += 75; }
-    else if (csAi < 45)  { perfScore -= 200; perfReasons.push('AI점수 낮음 ('+Math.round(csAi)+') -'); }
-    else if (csAi < 55)  { perfScore -= 100; }
+    // 전체 AI 기본 보정 (×1.5 가중치)
+    if (csAi >= 75)      { perfScore += 225; perfReasons.push('전체 AI점수 우수 ('+Math.round(csAi)+') +'); }
+    else if (csAi >= 65) { perfScore += 112; }
+    else if (csAi >= 60) { perfScore += 56; }
+    else if (csAi < 45)  { perfScore -= 225; perfReasons.push('전체 AI점수 낮음 ('+Math.round(csAi)+') -'); }
+    else if (csAi < 50)  { perfScore -= 112; }
+    else if (csAi < 55)  { perfScore -= 56; }
+
+    // 패배 게임 AI 보정 (이중 페널티 방지)
+    // 진 게임에서 AI가 높으면 → 팀이 져도 개인은 잘한 것 → 보너스
+    // 진 게임에서 AI가 낮으면 → 이미 전체 AI에 반영됨 → 추가 페널티 없음
+    if (csAiLoseCnt >= 3) {
+      if (csAiLose >= 70) {
+        var loseBonus = Math.round((csAiLose - 60) * 8);
+        perfScore += loseBonus;
+        perfReasons.push('패배 게임에서도 높은 AI ('+Math.round(csAiLose)+') — 팀 패배와 무관한 개인 기여 +');
+      }
+    }
+    // 승리 게임 AI가 낮으면 → 팀이 이겼지만 개인 기여 낮음 → 소폭 감점
+    if (csAiWinCnt >= 3 && csAiWin < 50) {
+      perfScore -= 75;
+      perfReasons.push('승리 게임 AI점수 낮음 ('+Math.round(csAiWin)+') — 팀 승리에 기여 적음 -');
+    }
   }
 
   // ── 4. 최근 트렌드 (최근 10게임) ──
@@ -5998,6 +6061,122 @@ function confirmScoutMove() {
   document.getElementById('scout-move-modal').style.display = 'none';
   window._scoutActiveCategory = val;
   renderScoutLayout();
+}
+
+
+// ── MMR 계산 ──
+// 티어 기준점수 (각 티어 4단계 × 75점 간격)
+var MMR_TIER_BASE = {
+  CHALLENGER:  3000,
+  GRANDMASTER: 2700,
+  MASTER:      2400,
+  DIAMOND:     2000, // 다이아4 기준, 1→+225, 2→+150, 3→+75
+  EMERALD:     1600,
+  PLATINUM:    1200,
+  GOLD:         850,
+  SILVER:       550,
+  BRONZE:       250,
+  IRON:           0,
+  UNRANKED:     600, // 언랭은 골드~실버 사이 기본값
+};
+
+var MMR_DIV_BONUS = { 'I':225, 'II':150, 'III':75, 'IV':0, '1':225, '2':150, '3':75, '4':0 };
+
+function calcMMR(member, allData) {
+  if (!member) return null;
+
+  // 1. 티어 결정 (임시티어 우선)
+  // member.tier가 "PLATINUM III" 형태일 수 있으므로 파싱
+  var _rawTier = (member.tier || 'UNRANKED').trim();
+  var _tierParts = _rawTier.split(/\s+/);
+  var tierStr = _tierParts[0] || 'UNRANKED';
+  var divStr  = _tierParts[1] || member.tierDetail || member.division || '';
+
+  // 임시티어 확인 (_tempTiers 전역 변수 사용)
+  var tempTierObj = null;
+  var tempLp = 0;
+  if (member.puu_id && typeof _tempTiers !== 'undefined' && _tempTiers[member.puu_id]) {
+    var tt = _tempTiers[member.puu_id];
+    var ttStr = typeof tt === 'string' ? tt : (tt.tier || '');
+    tempLp = (tt && tt.lp) ? parseInt(tt.lp) || 0 : (member._tempLp || 0);
+    // "골드 1", "다이아 2" 같은 한글 티어 → 영문 변환
+    var KO_TIER = {
+      '챌린저':'CHALLENGER','그랜드마스터':'GRANDMASTER','마스터':'MASTER',
+      '다이아몬드':'DIAMOND','다이아':'DIAMOND','에메랄드':'EMERALD','에메':'EMERALD',
+      '플래티넘':'PLATINUM','플래':'PLATINUM','골드':'GOLD','실버':'SILVER',
+      '브론즈':'BRONZE','아이언':'IRON','언랭':'UNRANKED'
+    };
+    var ttParts = ttStr.split(/\s+/);
+    var ttTier = KO_TIER[ttParts[0]] || (MMR_TIER_BASE[ttParts[0]] !== undefined ? ttParts[0] : null);
+    if (ttTier) {
+      tierStr = ttTier;
+      divStr  = ttParts[1] || '';
+      tempTierObj = ttStr;
+    }
+  }
+
+  var tierBase = MMR_TIER_BASE[tierStr] !== undefined ? MMR_TIER_BASE[tierStr] : 600;
+  var divBonus = MMR_DIV_BONUS[divStr] || 0;
+
+  // 마스터 이상은 LP도 반영
+  var lpBonus = 0;
+  var isHighTier = ['MASTER','GRANDMASTER','CHALLENGER'].includes(tierStr);
+  if (isHighTier) {
+    // LP 우선순위: 임시티어 LP > _tempLp > highLp
+    var effectiveLp = tempLp || member._tempLp || member.highLp || 0;
+    // LP 0~1000+ → 0~+200 보정
+    lpBonus = Math.round(Math.min(effectiveLp, 1500) / 7.5);
+  }
+
+  // 2. 레이팅 보정 (커뮤니티 내 상대 위치 → ±200)
+  var ratingBonus = 0;
+  var rating = member._rating;
+  if (rating && allData && allData.length > 0) {
+    // 같은 티어 내 멤버들의 레이팅 분포
+    var sameTierRatings = allData
+      .filter(function(m){
+        var mt = m.tier || 'UNRANKED';
+        // 임시티어 있으면 임시티어 기준
+        if (m._tempTier) {
+          var tp = (m._tempTier+'').split(/\s+/)[0];
+          if (MMR_TIER_BASE[tp] !== undefined) mt = tp;
+        }
+        return mt === tierStr && m._rating && m.cnt >= 5;
+      })
+      .map(function(m){ return m._rating; })
+      .sort(function(a,b){ return b-a; });
+
+    if (sameTierRatings.length >= 2) {
+      var minR = sameTierRatings[sameTierRatings.length-1];
+      var maxR = sameTierRatings[0];
+      var range = maxR - minR;
+      if (range > 0) {
+        var pct = (rating - minR) / range; // 0~1
+        ratingBonus = Math.round((pct - 0.5) * 400); // -200 ~ +200
+      }
+    } else {
+      // 같은 티어 인원이 적으면 전체 레이팅 기준으로 소폭 보정
+      var allRatings = allData.filter(function(m){ return m._rating && m.cnt >= 5; })
+                               .map(function(m){ return m._rating; })
+                               .sort(function(a,b){ return b-a; });
+      if (allRatings.length >= 2) {
+        var minA = allRatings[allRatings.length-1];
+        var maxA = allRatings[0];
+        var rangeA = maxA - minA;
+        if (rangeA > 0) {
+          var pctA = (rating - minA) / rangeA;
+          ratingBonus = Math.round((pctA - 0.5) * 200); // -100 ~ +100 (소폭)
+        }
+      }
+    }
+  }
+
+  var mmr = tierBase + divBonus + lpBonus + ratingBonus;
+  return {
+    mmr: Math.max(0, mmr),
+    tierBase, divBonus, lpBonus, ratingBonus,
+    tierStr, divStr, tempTier: tempTierObj
+  };
 }
 
 </script>
