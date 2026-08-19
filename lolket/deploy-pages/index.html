@@ -1659,7 +1659,7 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
         <span style="font-size:10px;background:rgba(10,200,185,.08);border:1px solid rgba(10,200,185,.2);border-radius:3px;padding:1px 6px;color:var(--blue-bright);font-family:monospace;">{출석인원}</span>
         <span style="font-size:10px;background:rgba(10,200,185,.08);border:1px solid rgba(10,200,185,.2);border-radius:3px;padding:1px 6px;color:var(--blue-bright);font-family:monospace;">{커뮤니티명}</span>
       </div>
-    </div> <div style="display:flex;flex-direction:column;gap:6px;margin-top:.5rem;"> <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;text-transform:uppercase;">딥롤 커넥트 Server ID <span style="color:var(--text-muted);font-size:9px;font-weight:400;">(전적 페이지용)</span></label> <input class="form-input" type="text" id="cm-deeplol-id" placeholder="예) 156" style="border-color:rgba(200,170,110,.2);"> <span style="font-size:10px;color:var(--text-muted);font-family:'Noto Sans KR',sans-serif;">딥롤 커넥트에서 생성한 서버의 ID를 입력하면 전적 페이지가 활성화됩니다.</span> </div> <div style="display:flex;flex-direction:column;gap:6px;margin-top:.5rem;"> <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;text-transform:uppercase;">디스코드 서버 ID <span style="color:var(--text-muted);font-size:9px;font-weight:400;">(봇 연동용)</span></label> <input class="form-input" type="text" id="cm-discord-server-id" placeholder="예) 1499401481097449636" style="border-color:rgba(88,101,242,.3);"> <span style="font-size:10px;color:var(--text-muted);font-family:'Noto Sans KR',sans-serif;">디스코드 봇 /내전참가 커맨드 연동에 사용됩니다. 서버 우클릭 → ID 복사</span> </div>
+    </div> <div style="display:flex;flex-direction:column;gap:6px;margin-top:.5rem;"> <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;text-transform:uppercase;">딥롤 커넥트 Server ID <span style="color:var(--text-muted);font-size:9px;font-weight:400;">(전적 페이지용)</span></label> <input class="form-input" type="text" id="cm-deeplol-id" placeholder="예) 156" style="border-color:rgba(200,170,110,.2);"> <span style="font-size:10px;color:var(--text-muted);font-family:'Noto Sans KR',sans-serif;">딥롤 커넥트에서 생성한 서버의 ID를 입력하면 전적 페이지가 활성화됩니다.</span> </div> <div style="display:flex;flex-direction:column;gap:6px;margin-top:.5rem;"> <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;text-transform:uppercase;">디스코드 서버 ID <span style="color:var(--text-muted);font-size:9px;font-weight:400;">(봇 연동용)</span></label> <input class="form-input" type="text" id="cm-discord-server-id" placeholder="예) 1499401481097449636" style="border-color:rgba(88,101,242,.3);"> <span style="font-size:10px;color:var(--text-muted);font-family:'Noto Sans KR',sans-serif;">디스코드 봇 /내전참가 커맨드 연동에 사용됩니다. 서버 우클릭 → ID 복사</span> </div> <div style="display:flex;flex-direction:column;gap:6px;margin-top:.5rem;"> <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;text-transform:uppercase;">내전 모임 메세지 채널 ID <span style="color:var(--text-muted);font-size:9px;font-weight:400;">(디스코드 호출용)</span></label> <input class="form-input" type="text" id="cm-discord-notify-channel" placeholder="예) 1500816161456263339" style="border-color:rgba(88,101,242,.3);"> <span style="font-size:10px;color:var(--text-muted);font-family:'Noto Sans KR',sans-serif;">📢 디스코드 호출 버튼으로 신청자들에게 멘션을 보낼 채널입니다.</span> </div>
   </div>
 </div>
 <div style="display:flex;flex-direction:column;gap:6px;">
@@ -1776,7 +1776,7 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
 </div>
 <div id="list-grid" class="list-grid"></div> <div id="list-empty" class="list-empty" style="display:none;"> <div class="list-empty-hex">◇</div> <div style="font-size:14px;">생성된 내전이 없습니다</div> <button class="btn-primary admin-only" onclick="openNewMatchFlow()" style="display:none;">첫 내전 생성하기</button> </div> </div> </div>
 </div> <div id="screen-1" class="screen">
-<div class="main"> <div class="match-bar section-full"> <div class="match-bar-field" style="flex-direction:row;align-items:center;gap:8px;"> <span class="match-bar-label">❄️ 칼바람</span> <button id="btn-aram" onclick="toggleAram()" style="padding:3px 10px;border-radius:3px;border:1px solid var(--border-subtle);background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;">OFF</button> </div> <div class="match-bar-divider"></div> <div class="match-bar-field" style="flex-direction:row;align-items:center;gap:8px;"> <span class="match-bar-label">🎮 디스코드 참가</span> <button id="btn-discord-joinable" onclick="toggleDiscordJoinable()" style="padding:3px 10px;border-radius:3px;border:1px solid var(--border-subtle);background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;">OFF</button> </div> <div class="match-bar-divider"></div> <div class="match-bar-field" style="flex-direction:row;align-items:center;gap:8px;"> <span class="match-bar-label">🚫 빼기 불가</span> <button id="btn-discord-leave-disabled" onclick="toggleDiscordLeaveDisabled()" style="padding:3px 10px;border-radius:3px;border:1px solid var(--border-subtle);background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;">OFF</button> </div> <div class="match-bar-divider"></div> <div class="match-bar-field"> <div class="match-bar-label">내전명</div> <div class="match-bar-value" id="bar-name">—</div> </div> <div class="match-bar-divider"></div> <div class="match-bar-field" style="flex-direction:row;align-items:center;gap:10px;"> <div> <div class="match-bar-label">시작 시간</div> <div class="match-bar-value" id="bar-time">—</div> </div> <button id="btn-edit-time" onclick="openEditTimeModal()" style="display:none;padding:3px 9px;background:transparent;border:1px solid var(--border-subtle);border-radius:2px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all .15s;white-space:nowrap;" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'" onmouseout="this.style.borderColor='var(--border-subtle)';this.style.color='var(--text-muted)'">수정</button> </div> <div class="match-bar-divider"></div> <div class="match-bar-field"> <div class="match-bar-label">상태</div> <div class="status-badge" id="bar-status">내전 모집</div> </div> <div class="match-bar-divider"></div> <div class="match-bar-field"> <div class="match-bar-label">진행 관리자</div> <div class="match-bar-value" id="bar-admin">—</div> </div> <div class="match-bar-spacer"></div> <div class="progress-block"> <div class="progress-label"> <span>출석 현황</span> <span id="prog-text">0 / 0</span> </div> <div class="progress-bar-bg"> <div class="progress-bar-fill" id="prog-fill" style="width:0%"></div> </div> </div> </div> <div class="panel" style="display:flex;flex-direction:column;height:calc(100vh - 200px);"> <div class="panel-header"> <div class="panel-title"> <div class="panel-title-dot"></div>
+<div class="main"> <div class="match-bar section-full"> <div class="match-bar-field" style="flex-direction:row;align-items:center;gap:8px;"> <span class="match-bar-label">❄️ 칼바람</span> <button id="btn-aram" onclick="toggleAram()" style="padding:3px 10px;border-radius:3px;border:1px solid var(--border-subtle);background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;">OFF</button> </div> <div class="match-bar-divider"></div> <div class="match-bar-field" style="flex-direction:row;align-items:center;gap:8px;"> <span class="match-bar-label">🎮 디스코드 참가</span> <button id="btn-discord-joinable" onclick="toggleDiscordJoinable()" style="padding:3px 10px;border-radius:3px;border:1px solid var(--border-subtle);background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;">OFF</button> </div> <div class="match-bar-divider"></div> <div class="match-bar-field" style="flex-direction:row;align-items:center;gap:8px;"> <span class="match-bar-label">🚫 빼기 불가</span> <button id="btn-discord-leave-disabled" onclick="toggleDiscordLeaveDisabled()" style="padding:3px 10px;border-radius:3px;border:1px solid var(--border-subtle);background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;">OFF</button> </div> <div class="match-bar-divider"></div> <div class="match-bar-field" style="flex-direction:row;align-items:center;gap:8px;"> <button onclick="openDiscordNotifyModal()" style="padding:3px 10px;border-radius:3px;border:1px solid rgba(88,101,242,.4);background:rgba(88,101,242,.08);color:#8B9CF4;font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;">📢 디스코드 호출</button> </div> <div class="match-bar-divider"></div> <div class="match-bar-field"> <div class="match-bar-label">내전명</div> <div class="match-bar-value" id="bar-name">—</div> </div> <div class="match-bar-divider"></div> <div class="match-bar-field" style="flex-direction:row;align-items:center;gap:10px;"> <div> <div class="match-bar-label">시작 시간</div> <div class="match-bar-value" id="bar-time">—</div> </div> <button id="btn-edit-time" onclick="openEditTimeModal()" style="display:none;padding:3px 9px;background:transparent;border:1px solid var(--border-subtle);border-radius:2px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all .15s;white-space:nowrap;" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'" onmouseout="this.style.borderColor='var(--border-subtle)';this.style.color='var(--text-muted)'">수정</button> </div> <div class="match-bar-divider"></div> <div class="match-bar-field"> <div class="match-bar-label">상태</div> <div class="status-badge" id="bar-status">내전 모집</div> </div> <div class="match-bar-divider"></div> <div class="match-bar-field"> <div class="match-bar-label">진행 관리자</div> <div class="match-bar-value" id="bar-admin">—</div> </div> <div class="match-bar-spacer"></div> <div class="progress-block"> <div class="progress-label"> <span>출석 현황</span> <span id="prog-text">0 / 0</span> </div> <div class="progress-bar-bg"> <div class="progress-bar-fill" id="prog-fill" style="width:0%"></div> </div> </div> </div> <div class="panel" style="display:flex;flex-direction:column;height:calc(100vh - 200px);"> <div class="panel-header"> <div class="panel-title"> <div class="panel-title-dot"></div>
  내전 대기 멤버
  </div> <div style="display:flex;align-items:center;gap:6px;"> <div class="filter-active-dot" id="s1-filter-dot"></div> <div id="member-count" class="count-badge">0명</div> </div> </div> <div class="filter-bar"> <div class="filter-search-row"> <input class="filter-search-input" id="s1-search" placeholder="닉네임 검색..." oninput="applyFilter('s1')"> <button class="filter-search-clear" id="s1-search-clear" onclick="clearSearch('s1')">✕</button> </div> <div class="filter-row"> <span class="filter-label">포지션</span> <button class="lane-filter-btn" data-lane="top" onclick="toggleLaneFilter('s1','top')">TOP</button> <button class="lane-filter-btn" data-lane="jg" onclick="toggleLaneFilter('s1','jg')">JG</button> <button class="lane-filter-btn" data-lane="mid" onclick="toggleLaneFilter('s1','mid')">MID</button> <button class="lane-filter-btn" data-lane="bot" onclick="toggleLaneFilter('s1','bot')">BOT</button> <button class="lane-filter-btn" data-lane="sup" onclick="toggleLaneFilter('s1','sup')">SUP</button> </div> <div class="filter-row" style="flex-wrap:wrap;"> <span class="filter-label">티어</span> <button class="lane-filter-btn" data-tier-filter="s1" data-tier="MASTER+" onclick="toggleTierFilter('s1','MASTER+')" style="color:var(--tier-master);">마스터+</button> <button class="lane-filter-btn" data-tier-filter="s1" data-tier="DIAMOND" onclick="toggleTierFilter('s1','DIAMOND')" style="color:var(--tier-diamond);">다이아</button> <button class="lane-filter-btn" data-tier-filter="s1" data-tier="EMERALD" onclick="toggleTierFilter('s1','EMERALD')" style="color:var(--tier-emerald);">에메랄드</button> <button class="lane-filter-btn" data-tier-filter="s1" data-tier="PLATINUM" onclick="toggleTierFilter('s1','PLATINUM')" style="color:var(--tier-plat);">플레티넘</button> <button class="lane-filter-btn" data-tier-filter="s1" data-tier="GOLD" onclick="toggleTierFilter('s1','GOLD')" style="color:var(--tier-gold);">골드</button> <button class="lane-filter-btn" data-tier-filter="s1" data-tier="SILVER" onclick="toggleTierFilter('s1','SILVER')" style="color:var(--tier-silver);">실버</button> <button class="lane-filter-btn" data-tier-filter="s1" data-tier="BRONZE" onclick="toggleTierFilter('s1','BRONZE')" style="color:var(--tier-bronze);">브론즈</button> <button class="lane-filter-btn" data-tier-filter="s1" data-tier="IRON" onclick="toggleTierFilter('s1','IRON')" style="color:var(--tier-iron);">아이언</button> <button onclick="resetTierFilter('s1')" style="padding:3px 8px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--text-muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;margin-left:2px;">↺ 초기화</button> </div> <div class="filter-row"> <span class="filter-label">정렬</span> <select class="sort-select" id="s1-sort" onchange="applyFilter('s1')"> <option value="">기본</option> <option value="tier-asc">티어 낮은순</option> <option value="tier-desc">티어 높은순</option> <option value="name-asc">이름 ㄱ→ㅎ</option> <option value="name-desc">이름 ㅎ→ㄱ</option> </select> </div> </div> <div id="balance-score-info" style="padding:.4rem .5rem .2rem;"><div class="score-info-box" style="font-size:10px;line-height:1.7;"><span class="score-info-title" style="font-size:10px;">⚖️ 밸런스 점수</span><strong>티어점수</strong>(아이언100~에메랄드675, 다이아700~775, 마스터+800~) + <strong>승률보정</strong>((승률-50%)×1.0, 30판↑부터 반영) + <strong>내전전적</strong>(3단계 선택). <strong style="color:#E05050;">언랭 계산불가.</strong></div></div>
  <div class="member-grid" id="member-grid" style="flex:1;overflow-y:auto;max-height:none;"> <div class="empty-state" id="empty-state"> <div class="empty-hex">◇</div> <div class="empty-text">우측 패널에서 소환사를 검색해 추가하세요</div> </div> </div> </div>
@@ -7738,6 +7738,8 @@ const dcInput = document.getElementById('cm-discord-channel');
 if (dcInput) dcInput.value = c.discordChannelId || '';
 const dsInput = document.getElementById('cm-discord-server-id');
 if (dsInput) dsInput.value = c.discordServerId || '';
+const dnInput = document.getElementById('cm-discord-notify-channel');
+if (dnInput) dnInput.value = c.discordNotifyChannelId || '';
 const alarmInput = document.getElementById('cm-discord-alarm-channel');
 if (alarmInput) alarmInput.value = c.alarmChannelId || '';
 const auctionAssistInput = document.getElementById('cm-auction-assist-channel');
@@ -7770,6 +7772,7 @@ const name = document.getElementById('cm-name').value.trim();
 const desc = document.getElementById('cm-desc').value.trim();
 const discordChannelId = (document.getElementById('cm-discord-channel')?.value || '').trim();
 const discordServerId  = (document.getElementById('cm-discord-server-id')?.value || '').trim();
+const discordNotifyChannelId = (document.getElementById('cm-discord-notify-channel')?.value || '').trim();
 const deeplolServerId  = (document.getElementById('cm-deeplol-id')?.value || '').trim();
 const alarmChannelId = (document.getElementById('cm-discord-alarm-channel')?.value || '').trim();
 const alarmEveryone = !!(document.getElementById('cm-alarm-everyone')?.checked);
@@ -7817,6 +7820,7 @@ try {
     official,
     discordChannelId: discordChannelId || null,
       discordServerId: discordServerId || null,
+      discordNotifyChannelId: discordNotifyChannelId || null,
   auctionAssistChannelId: (document.getElementById('cm-auction-assist-channel')?.value || '').trim() || null,
   deeplolServerId: deeplolServerId || null,
     alarmChannelId: alarmChannelId || null,
@@ -17083,6 +17087,55 @@ function updateAramBtn() {
   updateAramUI();
 }
 
+
+// ── 디스코드 호출 ──
+function openDiscordNotifyModal() {
+  // 디스코드로 참가한 멤버들 추출
+  var discordMembers = members.filter(function(m){ return m.discordId; });
+  var count = discordMembers.length;
+  document.getElementById('discord-notify-count').textContent = count;
+  if (count === 0) {
+    document.getElementById('discord-notify-info').textContent = '⚠️ 디스코드로 신청한 멤버가 없습니다.';
+  } else {
+    document.getElementById('discord-notify-info').textContent = count + '명의 디스코드 신청자에게 채널 멘션을 보냅니다.';
+  }
+  document.getElementById('discord-notify-msg').value = '';
+  document.getElementById('discord-notify-modal').style.display = 'flex';
+}
+
+async function sendDiscordNotify() {
+  var msg = document.getElementById('discord-notify-msg').value.trim();
+  if (!msg) { alert('메시지를 입력해주세요'); return; }
+  var discordMembers = members.filter(function(m){ return m.discordId; });
+  if (!discordMembers.length) { alert('디스코드로 신청한 멤버가 없습니다'); return; }
+
+  var btn = document.querySelector('#discord-notify-modal button:last-child');
+  if (btn) { btn.disabled = true; btn.textContent = '전송 중...'; }
+
+  try {
+    var res = await fetch(WORKER_URL + '/discord-notify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        communityId: window._currentCommunityId,
+        discordIds: discordMembers.map(function(m){ return m.discordId; }),
+        message: msg
+      })
+    });
+    var j = await res.json();
+    if (j.ok) {
+      document.getElementById('discord-notify-modal').style.display = 'none';
+      toast('✅ 디스코드 채널에 메시지를 전송했습니다!', 'ok');
+    } else {
+      toast('❌ 전송 실패: ' + (j.error || '알 수 없는 오류'), 'err');
+    }
+  } catch(e) {
+    toast('❌ 오류: ' + e.message, 'err');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '📨 보내기'; }
+  }
+}
+
 </script>
 
 <!-- ── 카테고리 관리 모달 ── -->
@@ -17113,5 +17166,20 @@ function updateAramBtn() {
   </div>
 </div>
 
+
+<!-- ── 디스코드 호출 모달 ── -->
+<div id="discord-notify-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:2000;align-items:center;justify-content:center;" onclick="if(event.target===this)this.style.display='none'">
+  <div style="background:var(--bg-panel);border:1px solid rgba(88,101,242,.4);border-radius:6px;padding:1.25rem;width:90%;max-width:420px;">
+    <div style="font-size:13px;font-weight:700;color:#8B9CF4;margin-bottom:.5rem;">📢 디스코드 호출</div>
+    <div style="font-size:11px;color:var(--text-muted);margin-bottom:.75rem;" id="discord-notify-info">디스코드 신청자들에게 채널 멘션을 보냅니다.</div>
+    <textarea id="discord-notify-msg" rows="4" placeholder="보낼 메시지를 입력하세요&#10;예) 내전 30분 후 시작합니다! 접속해주세요 🎮"
+      style="width:100%;background:var(--bg-dark);border:1px solid var(--border-subtle);border-radius:3px;padding:8px;color:var(--white);font-size:12px;font-family:'Noto Sans KR',sans-serif;resize:vertical;outline:none;"></textarea>
+    <div style="margin-top:.5rem;font-size:10px;color:var(--text-muted);">💡 신청자 <span id="discord-notify-count">0</span>명이 태그됩니다.</div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:.75rem;">
+      <button onclick="document.getElementById('discord-notify-modal').style.display='none'" style="padding:6px 14px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--text-muted);font-family:'Rajdhani',sans-serif;font-size:11px;cursor:pointer;">취소</button>
+      <button onclick="sendDiscordNotify()" style="padding:6px 16px;border-radius:3px;border:1px solid rgba(88,101,242,.5);background:rgba(88,101,242,.12);color:#8B9CF4;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;">📨 보내기</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>

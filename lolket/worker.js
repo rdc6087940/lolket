@@ -315,6 +315,9 @@ export default {
       return handleServerInfo(request, env);
     }
     // 관찰 분석
+    if (path === '/discord-notify' && request.method === 'POST') {
+      return handleDiscordNotify(request, env);
+    }
     if (path === '/row-effect-write' && request.method === 'POST') {
       return handleRowEffectWrite(request, env);
     }
@@ -3236,6 +3239,11 @@ async function handleDiscordInteraction(request, env, ctx) {
       return handleListMatches(interaction, env);
     }
 
+    // ── /내전승률 ──
+    if (cmdName === '내전승률') {
+      return handleMatchWinRate(interaction, env);
+    }
+
     // ── /참여양식저장 ──
     if (cmdName === '참여양식저장') {
       const discordUserId = interaction.member?.user?.id || interaction.user?.id;
@@ -3942,5 +3950,91 @@ async function handleSystemSettingWrite(request, env) {
   await fetch(`${dbUrl}/system/${field}.json${authQ}`, {
     method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(value)
   });
+  return json({ ok: true });
+}
+
+// ── /내전승률 ──
+async function handleMatchWinRate(interaction, env) {
+  const guildId   = interaction.guild_id;
+  const channelId = interaction.channel_id;
+  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth='+secret : '';
+
+  // 커뮤니티 찾기
+  const ciRes = await fetch(`${dbUrl}/communities_info.json${authQ}`);
+  const ciData = await ciRes.json() || {};
+  let targetCid = null, deeplolServerId = null;
+  for (const [cid, info] of Object.entries(ciData)) {
+    if (info && (
+      String(info.discordServerId)  === String(guildId) ||
+      String(info.discordChannelId) === String(channelId)
+    )) {
+      targetCid = cid;
+      deeplolServerId = info.deeplolServerId || null;
+      break;
+    }
+  }
+
+  if (!targetCid || !deeplolServerId) {
+    return discordReply('❌ 이 서버와 연결된 커뮤니티를 찾을 수 없습니다.\n관리자에게 서버 ID 설정을 요청하세요.', true);
+  }
+
+  const statsUrl = `https://roonging.com/stats?server_id=${deeplolServerId}&cid=${targetCid}`;
+
+  return new Response(JSON.stringify({
+    type: 4,
+    data: {
+      content: '📊 **내전 전적 페이지**\n아래 버튼을 눌러 커뮤니티 내전 승률을 확인하세요.',
+      components: [{
+        type: 1,
+        components: [{
+          type: 2, style: 5,
+          label: '🔗 내전 전적 보기',
+          url: statsUrl
+        }]
+      }],
+      flags: 64
+    }
+  }), { headers: { 'Content-Type': 'application/json' } });
+}
+
+// ── 디스코드 채널 호출 ──
+async function handleDiscordNotify(request, env) {
+  let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
+  const { communityId, discordIds, message } = body;
+  if (!communityId || !discordIds?.length || !message) return json({ok:false,error:'필수 파라미터 없음'},400);
+
+  const BOT_TOKEN = env.DISCORD_BOT_TOKEN;
+  if (!BOT_TOKEN) return json({ok:false,error:'BOT_TOKEN 없음'},500);
+
+  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth='+secret : '';
+
+  // 커뮤니티에서 notifyChannelId 조회
+  const ciRes = await fetch(`${dbUrl}/communities_info/${communityId}.json${authQ}`);
+  const ciData = await ciRes.json();
+  const channelId = ciData?.discordNotifyChannelId;
+  if (!channelId) return json({ok:false,error:'내전 모임 메세지 채널 ID가 설정되지 않았습니다. 커뮤니티 설정에서 채널 ID를 입력해주세요.'},400);
+
+  // 멘션 문자열 생성
+  const mentions = discordIds.map(id => `<@${id}>`).join(' ');
+  const fullMessage = `${mentions}\n${message}`;
+
+  // 채널에 메시지 전송
+  const res = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bot ${BOT_TOKEN}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ content: fullMessage })
+  });
+
+  if (!res.ok) {
+    const err = await res.text();
+    console.error('[discord-notify] error:', res.status, err);
+    return json({ok:false,error:`디스코드 전송 실패 (${res.status})`},500);
+  }
+
   return json({ ok: true });
 }
