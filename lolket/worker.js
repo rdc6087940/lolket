@@ -98,6 +98,13 @@ export default {
     if (path === '/discord' && request.method === 'POST') {
       return handleDiscordInteraction(request, env, ctx);
     }
+    // ── 어드민 API ──
+    if (path === '/admin-login' && request.method === 'POST') return handleLogin(request, env);
+    if (path === '/admin-list' && request.method === 'POST') return handleAdminList(request, env);
+    if (path === '/admin-add' && request.method === 'POST') return handleAdminAdd(request, env);
+    if (path === '/admin-remove' && request.method === 'POST') return handleAdminRemove(request, env);
+    if (path === '/admin-change-pw' && request.method === 'POST') return handleAdminChangePw(request, env);
+    if (path === '/system-setting-write' && request.method === 'POST') return handleSystemSettingWrite(request, env);
 
     if (path === '/riot.txt') {
       return new Response('e8781c6a-562d-45db-903d-d54ad00da76c', {
@@ -308,6 +315,9 @@ export default {
       return handleServerInfo(request, env);
     }
     // 관찰 분석
+    if (path === '/row-effect-write' && request.method === 'POST') {
+      return handleRowEffectWrite(request, env);
+    }
     if (path === '/scout-categories-write' && request.method === 'POST') {
       return handleScoutCategoriesWrite(request, env);
     }
@@ -631,6 +641,9 @@ async function handleDbPublicRead(request, env) {
     /^communities\/[^/]+\/scout_targets$/,
     /^communities\/[^/]+\/scout_allowed_discord$/,
     /^communities\/[^/]+\/scout_categories$/,
+    /^communities\/[^/]+\/row_effects$/,
+    /^communities\/[^/]+\/bg_effects$/,
+    /^system$/,
   ];
   if (!publicRead.some(r => r.test(dbPath))) {
     return json({ ok: false, error: '허용되지 않는 경로입니다' }, 403);
@@ -3090,10 +3103,32 @@ async function handleDiscordInteraction(request, env, ctx) {
       const LANE_KO_MAP = {top:'탑',jg:'정글',mid:'미드',bot:'원딜',sup:'서폿'};
       const savedMainLane = ep.mainLane ? (LANE_KO_MAP[ep.mainLane] || ep.mainLane) : '';
       const savedSubLanes = ep.subLanes ? ep.subLanes.map(l => LANE_KO_MAP[l] || l).join(',') : '';
+      // 칼바람 여부 확인
+      let isAram = false;
+      try {
+        const dbUrl3 = env.FB_DATABASE_URL, secret3 = env.FB_DB_SECRET;
+        const authQ3 = secret3 ? '?auth='+secret3 : '';
+        const mRes = await fetch(`${dbUrl3}/communities/${cid}/matches/${matchId}/isAram.json${authQ3}`);
+        if (mRes.ok) isAram = (await mRes.json()) === true;
+      } catch(e) {}
+
+      const laneComponents = isAram ? [] : [
+        { type: 1, components: [{
+          type: 4, label: '주 포지션', custom_id: 'main_lane',
+          style: 1, placeholder: '탑 / 정글 / 미드 / 원딜 / 서폿', required: false, min_length: 0, max_length: 10,
+          value: savedMainLane
+        }]},
+        { type: 1, components: [{
+          type: 4, label: '보조 포지션 (선택, 쉼표로 구분)', custom_id: 'sub_lanes',
+          style: 1, placeholder: '예) 정글,서폿', required: false, max_length: 50,
+          value: savedSubLanes
+        }]},
+      ];
+
       return new Response(JSON.stringify({
         type: 9,
         data: {
-          title: '내전 참가 신청',
+          title: isAram ? '❄️ 칼바람 내전 참가 신청' : '내전 참가 신청',
           custom_id: `join_modal_${cid}_${matchId}`,
           components: [
             { type: 1, components: [{
@@ -3106,16 +3141,7 @@ async function handleDiscordInteraction(request, env, ctx) {
               style: 1, placeholder: '예) KR1', required: true, min_length: 1, max_length: 10,
               value: ep.riotTag || ''
             }]},
-            { type: 1, components: [{
-              type: 4, label: '주 포지션', custom_id: 'main_lane',
-              style: 1, placeholder: '탑 / 정글 / 미드 / 원딜 / 서폿', required: true, min_length: 1, max_length: 10,
-              value: savedMainLane
-            }]},
-            { type: 1, components: [{
-              type: 4, label: '보조 포지션 (선택, 쉼표로 구분)', custom_id: 'sub_lanes',
-              style: 1, placeholder: '예) 정글,서폿', required: false, max_length: 50,
-              value: savedSubLanes
-            }]},
+            ...laneComponents,
             { type: 1, components: [{
               type: 4, label: '최고/임시 티어 (선택)', custom_id: 'high_tier',
               style: 1, placeholder: '예) e1 / d3 / m300 / gm500 / c (비워두면 자동)', required: false, max_length: 20,
@@ -3779,4 +3805,142 @@ async function handleLeaveMatch(cid, matchId, discordUserId, appId, token, env) 
     `✅ **${memberToLeave.name}#${memberToLeave.tag}** 내전 참가가 취소되었습니다.\n` +
     `📋 내전: **${matchData.name || matchId}**\n` +
     `👥 남은 멤버: ${updatedMembers.length}명`, env);
+}
+
+// ── 행 이펙트 저장 ──
+async function handleRowEffectWrite(request, env) {
+  let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
+  const { communityId, puuId, effect, type } = body;
+  if (!communityId || !puuId) return json({ok:false,error:'필수 파라미터 없음'},400);
+  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth='+secret : '';
+  const collection = type === 'bg' ? 'bg_effects' : 'row_effects';
+  if (effect) {
+    await fetch(`${dbUrl}/communities/${communityId}/${collection}/${puuId}.json${authQ}`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(effect)
+    });
+  } else {
+    await fetch(`${dbUrl}/communities/${communityId}/${collection}/${puuId}.json${authQ}`, {
+      method: 'DELETE'
+    });
+  }
+  return json({ ok: true });
+}
+
+// ══════════════════════════════
+// 어드민 API
+// ══════════════════════════════
+
+async function requireMaster(request, env) {
+  let body; try { body = await request.json(); } catch { return [null, json({ok:false,error:'bad request'},400)]; }
+  // 1. 메모리 세션 체크
+  const session = getSession(body.token);
+  if (session && session.role === 'master') return [body, null];
+  // 2. 세션 만료 시 토큰으로 Firebase superadmin 재검증
+  // 토큰은 "id:pwHash" base64 형태로 저장 (admin.html에서 발급)
+  if (body.token && body.token.startsWith('master:')) {
+    const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+    const authQ = secret ? '?auth='+secret : '';
+    const parts = body.token.split(':');
+    if (parts.length >= 3) {
+      const adminId = parts[1];
+      const pwHash  = parts.slice(2).join(':');
+      const res = await fetch(`${dbUrl}/superadmin.json${authQ}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.id === adminId && data.password === pwHash) {
+          // 재발급
+          issueSession(adminId, { role: 'master' });
+          return [body, null];
+        }
+      }
+    }
+  }
+  return [null, json({ok:false,error:'마스터 권한 필요'},403)];
+}
+
+// 운영진 목록
+async function handleAdminList(request, env) {
+  const [body, err] = await requireMaster(request, env);
+  if (err) return err;
+  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth='+secret : '';
+  const res = await fetch(`${dbUrl}/admin.json${authQ}`);
+  const data = await res.json() || {};
+  // id, role, communityId만 반환 (pw 제외)
+  const list = Object.entries(data).map(([id, info]) => ({
+    id, role: info.role || 'admin', communityId: info.communityId || null, lastLogin: info.lastLogin || null
+  }));
+  return json({ ok: true, data: list });
+}
+
+// 운영진 추가
+async function handleAdminAdd(request, env) {
+  const [body, err] = await requireMaster(request, env);
+  if (err) return err;
+  const { adminId, adminPw, role, communityId } = body;
+  if (!adminId || !adminPw) return json({ok:false,error:'ID/PW 필수'},400);
+  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth='+secret : '';
+  // 비밀번호 해시
+  const pwBuf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(adminPw));
+  const pwHex = Array.from(new Uint8Array(pwBuf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+  await fetch(`${dbUrl}/admin/${adminId}.json${authQ}`, {
+    method: 'PUT', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ id: adminId, pw: pwHex, role: role||'admin', communityId: communityId||null, createdAt: Date.now() })
+  });
+  return json({ ok: true });
+}
+
+// 운영진 제거
+async function handleAdminRemove(request, env) {
+  const [body, err] = await requireMaster(request, env);
+  if (err) return err;
+  const { targetId } = body;
+  if (!targetId) return json({ok:false,error:'targetId 필수'},400);
+  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth='+secret : '';
+  // 마스터 계정은 제거 불가
+  const res = await fetch(`${dbUrl}/admin/${targetId}.json${authQ}`);
+  const data = await res.json();
+  if (data?.role === 'master') return json({ok:false,error:'마스터 계정은 제거 불가'},403);
+  await fetch(`${dbUrl}/admin/${targetId}.json${authQ}`, { method: 'DELETE' });
+  return json({ ok: true });
+}
+
+// 비밀번호 변경
+async function handleAdminChangePw(request, env) {
+  const [body, err] = await requireMaster(request, env);
+  if (err) return err;
+  const { newPw } = body;
+  if (!newPw) return json({ok:false,error:'newPw 필수'},400);
+  // 세션에서 adminId 가져오기
+  const session = getSession(body.token);
+  const adminId = session?.id;
+  if (!adminId) return json({ok:false,error:'세션 오류'},403);
+  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth='+secret : '';
+  const pwBuf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(newPw));
+  const pwHex = Array.from(new Uint8Array(pwBuf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+  await fetch(`${dbUrl}/admin/${adminId}/pw.json${authQ}`, {
+    method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(pwHex)
+  });
+  return json({ ok: true });
+}
+
+// 시스템 설정 저장
+async function handleSystemSettingWrite(request, env) {
+  const [body, err] = await requireMaster(request, env);
+  if (err) return err;
+  const { field, value } = body;
+  if (!field) return json({ok:false,error:'field 필수'},400);
+  const allowed = ['maintenance','allowSignup','publicList','notice'];
+  if (!allowed.includes(field)) return json({ok:false,error:'허용되지 않은 필드'},400);
+  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth='+secret : '';
+  await fetch(`${dbUrl}/system/${field}.json${authQ}`, {
+    method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(value)
+  });
+  return json({ ok: true });
 }

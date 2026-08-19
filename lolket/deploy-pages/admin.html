@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>룽잉 관리자 콘솔</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;600;700&family=Noto+Sans+KR:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold: #C8AA6E; --gold-dim: #785A28; --blue: #0AC8B9; --blue-dim: #0397AB;
+  --bg-darkest: #010A13; --bg-dark: #0A1628; --bg-panel: #0D1B2E;
+  --bg-card: #112035; --border: #1E2D40; --border-gold: #463714;
+  --muted: #5B6474; --white: #E8E0D0; --red: #C03030; --purple: #9D48E0;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg-darkest); color: var(--white); min-height: 100vh; display: flex; }
+
+/* 사이드바 */
+.sidebar {
+  width: 220px; flex-shrink: 0; background: var(--bg-panel);
+  border-right: 1px solid var(--border-gold); display: flex; flex-direction: column;
+  position: fixed; top: 0; left: 0; bottom: 0; z-index: 100;
+}
+.sidebar-logo {
+  padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-gold);
+  font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 3px; color: var(--gold);
+  display: flex; align-items: center; gap: 8px;
+}
+.sidebar-logo-dot { width: 8px; height: 8px; background: var(--blue); transform: rotate(45deg); flex-shrink: 0; }
+.sidebar-label { font-family: 'Rajdhani', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 2px; color: var(--muted); padding: .75rem 1.5rem .35rem; text-transform: uppercase; }
+.nav-item {
+  display: flex; align-items: center; gap: 10px; padding: .6rem 1.5rem;
+  font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: .5px;
+  color: var(--muted); cursor: pointer; transition: all .15s; position: relative;
+}
+.nav-item:hover { color: var(--white); background: rgba(255,255,255,.03); }
+.nav-item.active { color: var(--blue); background: rgba(10,200,185,.06); }
+.nav-item.active::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background: var(--blue); }
+.nav-icon { font-size: 14px; width: 18px; text-align: center; }
+.sidebar-bottom { margin-top: auto; padding: 1rem 1.5rem; border-top: 1px solid var(--border); }
+.admin-badge { font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 1.5px; padding: 3px 8px; border-radius: 2px; background: rgba(157,72,224,.12); color: #B97EEA; border: 1px solid rgba(157,72,224,.35); display: inline-block; margin-bottom: 6px; }
+.admin-id { font-size: 12px; color: var(--muted); }
+
+/* 메인 */
+.main { margin-left: 220px; flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+.topbar { padding: .85rem 2rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: var(--bg-panel); }
+.topbar-title { font-family: 'Rajdhani', sans-serif; font-size: 15px; font-weight: 700; letter-spacing: 2px; color: var(--white); }
+.topbar-right { display: flex; align-items: center; gap: 12px; }
+.btn-sm { padding: 5px 12px; border-radius: 2px; font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 1px; cursor: pointer; transition: all .15s; }
+.btn-danger { background: rgba(192,48,48,.1); border: 1px solid rgba(192,48,48,.4); color: #E05050; }
+.btn-danger:hover { background: rgba(192,48,48,.2); }
+.content { padding: 2rem; flex: 1; }
+
+/* 로그인 화면 */
+.login-wrap { display: flex; align-items: center; justify-content: center; min-height: 100vh; width: 100%; }
+.login-box { background: var(--bg-panel); border: 1px solid var(--border-gold); border-radius: 6px; padding: 2.5rem; width: 360px; }
+.login-title { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 3px; color: var(--gold); margin-bottom: .35rem; }
+.login-sub { font-size: 12px; color: var(--muted); margin-bottom: 1.5rem; }
+.form-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 1rem; }
+.form-label { font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 1.5px; color: var(--muted); text-transform: uppercase; }
+.form-input { background: var(--bg-dark); border: 1px solid var(--border); border-radius: 3px; padding: 8px 12px; font-family: 'Noto Sans KR', sans-serif; font-size: 13px; color: var(--white); outline: none; transition: border .15s; width: 100%; }
+.form-input:focus { border-color: var(--blue); }
+.btn-login { width: 100%; padding: 10px; background: rgba(10,200,185,.1); border: 1px solid rgba(10,200,185,.4); border-radius: 3px; color: var(--blue); font-family: 'Rajdhani', sans-serif; font-size: 14px; font-weight: 700; letter-spacing: 2px; cursor: pointer; transition: all .15s; margin-top: .5rem; }
+.btn-login:hover { background: rgba(10,200,185,.2); }
+.login-err { font-size: 12px; color: #E05050; margin-top: .5rem; min-height: 16px; }
+
+/* 탭 패널 */
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* 통계 카드 */
+.stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem; }
+.stat-card { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 4px; padding: 1.25rem; position: relative; overflow: hidden; }
+.stat-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; }
+.stat-card.blue::before { background: var(--blue); }
+.stat-card.gold::before { background: var(--gold); }
+.stat-card.purple::before { background: var(--purple); }
+.stat-card.red::before { background: var(--red); }
+.stat-label { font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 1.5px; color: var(--muted); text-transform: uppercase; margin-bottom: .4rem; }
+.stat-val { font-family: 'Bebas Neue', sans-serif; font-size: 32px; letter-spacing: 2px; color: var(--white); line-height: 1; margin-bottom: .3rem; }
+.stat-sub { font-size: 11px; color: var(--muted); }
+
+/* 테이블 */
+.section-title { font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 2px; color: var(--gold); text-transform: uppercase; margin-bottom: .75rem; display: flex; align-items: center; gap: 8px; }
+.section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.data-table { width: 100%; border-collapse: collapse; font-family: 'Rajdhani', sans-serif; font-size: 12px; }
+.data-table th { text-align: left; padding: 8px 12px; font-size: 10px; font-weight: 700; letter-spacing: 1.5px; color: var(--muted); border-bottom: 1px solid var(--border); text-transform: uppercase; }
+.data-table td { padding: 10px 12px; border-bottom: 1px solid rgba(30,45,64,.5); color: var(--white); vertical-align: middle; }
+.data-table tr:hover td { background: rgba(255,255,255,.02); }
+.table-wrap { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 4px; overflow: hidden; margin-bottom: 1.5rem; }
+
+/* 뱃지 */
+.badge { display: inline-block; padding: 2px 8px; border-radius: 2px; font-size: 10px; font-weight: 700; letter-spacing: 1px; font-family: 'Rajdhani', sans-serif; }
+.badge-blue { background: rgba(10,200,185,.12); color: var(--blue); border: 1px solid rgba(10,200,185,.3); }
+.badge-gold { background: rgba(200,170,110,.12); color: var(--gold); border: 1px solid rgba(200,170,110,.3); }
+.badge-purple { background: rgba(157,72,224,.12); color: #B97EEA; border: 1px solid rgba(157,72,224,.3); }
+.badge-red { background: rgba(192,48,48,.12); color: #E05050; border: 1px solid rgba(192,48,48,.3); }
+.badge-muted { background: rgba(91,100,116,.15); color: var(--muted); border: 1px solid var(--border); }
+
+/* 버튼 */
+.btn-xs { padding: 3px 9px; border-radius: 2px; font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 1px; cursor: pointer; transition: all .15s; }
+.btn-blue { background: rgba(10,200,185,.1); border: 1px solid rgba(10,200,185,.35); color: var(--blue); }
+.btn-blue:hover { background: rgba(10,200,185,.2); }
+.btn-red { background: transparent; border: 1px solid transparent; color: var(--muted); }
+.btn-red:hover { background: rgba(192,48,48,.12); border-color: rgba(192,48,48,.4); color: #E05050; }
+.btn-gold { background: rgba(200,170,110,.1); border: 1px solid rgba(200,170,110,.35); color: var(--gold); }
+.btn-gold:hover { background: rgba(200,170,110,.2); }
+
+/* 스피너 */
+.spinner { width: 18px; height: 18px; border: 2px solid var(--border); border-top-color: var(--blue); border-radius: 50%; animation: spin .7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* 로딩 상태 */
+.loading-row td { text-align: center; padding: 2rem; color: var(--muted); }
+
+/* 모달 */
+.modal-overlay { position: fixed; inset: 0; background: rgba(1,10,19,.85); display: none; align-items: center; justify-content: center; z-index: 500; }
+.modal-overlay.open { display: flex; }
+.modal-box { background: var(--bg-panel); border: 1px solid var(--border-gold); border-radius: 6px; padding: 1.5rem; width: 90%; max-width: 440px; }
+.modal-title { font-family: 'Rajdhani', sans-serif; font-size: 14px; font-weight: 700; letter-spacing: 1px; color: var(--gold); margin-bottom: 1rem; }
+.modal-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 1.25rem; }
+
+/* 설정 */
+.setting-row { display: flex; align-items: center; justify-content: space-between; padding: .85rem 1rem; border-bottom: 1px solid rgba(30,45,64,.5); }
+.setting-row:last-child { border-bottom: none; }
+.setting-label { font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 600; color: var(--white); }
+.setting-desc { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.toggle-btn { padding: 4px 12px; border-radius: 2px; font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 700; cursor: pointer; transition: all .15s; min-width: 48px; text-align: center; }
+.toggle-on { background: rgba(10,200,185,.12); border: 1px solid rgba(10,200,185,.4); color: var(--blue); }
+.toggle-off { background: transparent; border: 1px solid var(--border); color: var(--muted); }
+
+/* 반응형 */
+@media (max-width: 900px) { .stat-grid { grid-template-columns: repeat(2, 1fr); } }
+</style>
+</head>
+<body>
+
+<!-- 로그인 화면 -->
+<div id="login-screen" style="width:100%;display:flex;align-items:center;justify-content:center;min-height:100vh;">
+  <div class="login-box">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:1.5rem;">
+      <div style="width:8px;height:8px;background:var(--blue);transform:rotate(45deg);"></div>
+      <span style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:3px;color:var(--gold);">ROONGING ADMIN</span>
+    </div>
+    <div class="login-sub">마스터 계정으로 로그인하세요</div>
+    <div class="form-group">
+      <label class="form-label">관리자 ID</label>
+      <input class="form-input" type="text" id="login-id" placeholder="admin ID" autocomplete="off">
+    </div>
+    <div class="form-group">
+      <label class="form-label">비밀번호</label>
+      <input class="form-input" type="password" id="login-pw" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="btn-login" onclick="doLogin()">로그인</button>
+    <div class="login-err" id="login-err"></div>
+  </div>
+</div>
+
+<!-- 어드민 UI -->
+<div id="admin-screen" style="display:none;width:100%;display:none;">
+
+  <!-- 사이드바 -->
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-dot"></div>
+      ROONGING
+    </div>
+    <div class="sidebar-label">메뉴</div>
+    <div class="nav-item active" onclick="switchTab('dashboard')">
+      <span class="nav-icon">📊</span> 대시보드
+    </div>
+    <div class="nav-item" onclick="switchTab('communities')">
+      <span class="nav-icon">🏠</span> 커뮤니티 관리
+    </div>
+    <div class="nav-item" onclick="switchTab('operators')">
+      <span class="nav-icon">👥</span> 운영진 관리
+    </div>
+    <div class="nav-item" onclick="switchTab('system')">
+      <span class="nav-icon">⚙️</span> 시스템 설정
+    </div>
+    <div class="sidebar-bottom">
+      <div class="admin-badge">MASTER</div>
+      <div class="admin-id" id="sidebar-admin-id">—</div>
+      <button class="btn-sm btn-danger" style="margin-top:8px;width:100%;" onclick="doLogout()">로그아웃</button>
+    </div>
+  </div>
+
+  <!-- 메인 -->
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-title" id="topbar-title">대시보드</div>
+      <div class="topbar-right">
+        <span style="font-size:11px;color:var(--muted);font-family:'Rajdhani',sans-serif;" id="topbar-time"></span>
+        <button class="btn-sm btn-gold" onclick="refreshCurrentTab()">↻ 새로고침</button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- 📊 대시보드 -->
+      <div class="tab-panel active" id="tab-dashboard">
+        <div class="stat-grid" id="dash-stats">
+          <div class="stat-card blue"><div class="stat-label">총 커뮤니티</div><div class="stat-val" id="s-communities">—</div><div class="stat-sub">등록된 커뮤니티</div></div>
+          <div class="stat-card gold"><div class="stat-label">총 내전 수</div><div class="stat-val" id="s-matches">—</div><div class="stat-sub">전체 누적</div></div>
+          <div class="stat-card purple"><div class="stat-label">총 멤버 수</div><div class="stat-val" id="s-members">—</div><div class="stat-sub">전체 참가자 (중복 포함)</div></div>
+          <div class="stat-card red"><div class="stat-label">활성 내전</div><div class="stat-val" id="s-active">—</div><div class="stat-sub">현재 진행 중</div></div>
+        </div>
+
+        <div class="section-title">커뮤니티별 활성도</div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead><tr>
+              <th>커뮤니티</th><th>서버 ID</th><th>총 내전</th><th>총 멤버</th><th>최근 내전</th><th>상태</th>
+            </tr></thead>
+            <tbody id="dash-community-table">
+              <tr class="loading-row"><td colspan="6"><div class="spinner" style="margin:0 auto;"></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="section-title">최근 내전 (전체)</div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead><tr>
+              <th>커뮤니티</th><th>내전명</th><th>상태</th><th>멤버</th><th>생성일시</th>
+            </tr></thead>
+            <tbody id="dash-recent-matches">
+              <tr class="loading-row"><td colspan="5"><div class="spinner" style="margin:0 auto;"></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 🏠 커뮤니티 관리 -->
+      <div class="tab-panel" id="tab-communities">
+        <div class="section-title">커뮤니티 목록</div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead><tr>
+              <th>ID</th><th>이름</th><th>딥롤 서버 ID</th><th>디스코드 서버 ID</th><th>내전 수</th><th>액션</th>
+            </tr></thead>
+            <tbody id="communities-table">
+              <tr class="loading-row"><td colspan="6"><div class="spinner" style="margin:0 auto;"></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 👥 운영진 관리 -->
+      <div class="tab-panel" id="tab-operators">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;">
+          <div class="section-title" style="margin-bottom:0;flex:1;">운영진 계정 목록</div>
+          <button class="btn-sm btn-blue" onclick="openAddOperatorModal()">+ 운영진 추가</button>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead><tr>
+              <th>ID</th><th>역할</th><th>커뮤니티</th><th>마지막 로그인</th><th>액션</th>
+            </tr></thead>
+            <tbody id="operators-table">
+              <tr class="loading-row"><td colspan="5"><div class="spinner" style="margin:0 auto;"></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ⚙️ 시스템 설정 -->
+      <div class="tab-panel" id="tab-system">
+        <div class="section-title">시스템 설정</div>
+        <div class="table-wrap">
+          <div class="setting-row">
+            <div>
+              <div class="setting-label">점검 모드</div>
+              <div class="setting-desc">ON 시 일반 유저에게 점검 안내 표시</div>
+            </div>
+            <button class="toggle-btn toggle-off" id="toggle-maintenance" onclick="toggleSetting('maintenance')">OFF</button>
+          </div>
+          <div class="setting-row">
+            <div>
+              <div class="setting-label">신규 커뮤니티 가입</div>
+              <div class="setting-desc">OFF 시 신규 커뮤니티 생성 불가</div>
+            </div>
+            <button class="toggle-btn toggle-on" id="toggle-signup" onclick="toggleSetting('signup')">ON</button>
+          </div>
+          <div class="setting-row">
+            <div>
+              <div class="setting-label">공개 내전 목록</div>
+              <div class="setting-desc">OFF 시 공개 내전 목록 페이지 비활성화</div>
+            </div>
+            <button class="toggle-btn toggle-on" id="toggle-public-list" onclick="toggleSetting('public_list')">ON</button>
+          </div>
+        </div>
+
+        <div class="section-title" style="margin-top:1.5rem;">공지사항</div>
+        <div class="table-wrap" style="padding:1rem;">
+          <div class="form-group">
+            <label class="form-label">공지 메시지 (비워두면 비표시)</label>
+            <textarea id="notice-text" class="form-input" rows="3" placeholder="전체 공지 메시지 입력..." style="resize:vertical;"></textarea>
+          </div>
+          <button class="btn-sm btn-blue" onclick="saveNotice()">공지 저장</button>
+        </div>
+
+        <div class="section-title" style="margin-top:1.5rem;">마스터 비밀번호 변경</div>
+        <div class="table-wrap" style="padding:1rem;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.75rem;">
+            <div class="form-group" style="margin-bottom:0;">
+              <label class="form-label">새 비밀번호</label>
+              <input class="form-input" type="password" id="new-pw" placeholder="새 비밀번호">
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+              <label class="form-label">확인</label>
+              <input class="form-input" type="password" id="new-pw2" placeholder="비밀번호 확인">
+            </div>
+          </div>
+          <button class="btn-sm btn-gold" onclick="changePw()">비밀번호 변경</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- 운영진 추가 모달 -->
+<div class="modal-overlay" id="modal-add-operator">
+  <div class="modal-box">
+    <div class="modal-title">👥 운영진 추가</div>
+    <div class="form-group">
+      <label class="form-label">관리자 ID</label>
+      <input class="form-input" type="text" id="op-id" placeholder="admin">
+    </div>
+    <div class="form-group">
+      <label class="form-label">비밀번호</label>
+      <input class="form-input" type="password" id="op-pw" placeholder="••••••••">
+    </div>
+    <div class="form-group">
+      <label class="form-label">역할</label>
+      <select class="form-input" id="op-role">
+        <option value="admin">admin (일반 운영진)</option>
+        <option value="master">master (마스터)</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">커뮤니티 ID (admin 역할만)</label>
+      <input class="form-input" type="text" id="op-cid" placeholder="c_XXXXX">
+    </div>
+    <div class="modal-footer">
+      <button class="btn-sm btn-red" onclick="closeModal('modal-add-operator')">취소</button>
+      <button class="btn-sm btn-blue" onclick="addOperator()">추가</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const WORKER_URL = 'https://api.roonging.com';
+let _token = sessionStorage.getItem('admin_token') || '';
+let _masterToken = sessionStorage.getItem('admin_master_token') || '';
+let _adminId = sessionStorage.getItem('admin_id') || '';
+let _currentTab = 'dashboard';
+let _systemSettings = {};
+let _communities = {};
+
+// ── 유틸 ──
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function timeAgo(ts) {
+  if (!ts) return '—';
+  const d = Date.now() - ts;
+  if (d < 60000) return '방금';
+  if (d < 3600000) return Math.floor(d/60000) + '분 전';
+  if (d < 86400000) return Math.floor(d/3600000) + '시간 전';
+  return Math.floor(d/86400000) + '일 전';
+}
+function fmtDate(ts) {
+  if (!ts) return '—';
+  return new Date(ts).toLocaleString('ko-KR', {month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+}
+function toast(msg, type='ok') {
+  const el = document.createElement('div');
+  el.style.cssText = 'position:fixed;bottom:1.5rem;right:1.5rem;background:var(--bg-panel);border:1px solid '+(type==='err'?'rgba(192,48,48,.5)':'rgba(10,200,185,.4)')+';border-radius:3px;padding:10px 16px;font-family:Rajdhani,sans-serif;font-size:12px;color:var(--white);z-index:9999;animation:toastIn .2s ease';
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 2500);
+}
+
+// ── 로그인 ──
+async function doLogin() {
+  const id = document.getElementById('login-id').value.trim();
+  const pw = document.getElementById('login-pw').value;
+  const err = document.getElementById('login-err');
+  err.textContent = '';
+  if (!id || !pw) { err.textContent = 'ID와 비밀번호를 입력하세요'; return; }
+  try {
+    const res = await fetch(WORKER_URL + '/admin-login', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ id, pw, type: 'master' })
+    });
+    const j = await res.json();
+    if (!j.ok || j.role !== 'master') { err.textContent = j.error || '마스터 권한이 없습니다'; return; }
+    _token = j.token; _adminId = id;
+    // pwHash를 직접 계산해서 영구 토큰 생성 (Worker 재시작 대비)
+    const pwBuf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw + 'lolket_v1'));
+    const pwHex = Array.from(new Uint8Array(pwBuf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+    _masterToken = 'master:' + id + ':' + pwHex;
+    sessionStorage.setItem('admin_token', _token);
+    sessionStorage.setItem('admin_master_token', _masterToken);
+    sessionStorage.setItem('admin_id', _adminId);
+    showAdmin();
+  } catch(e) { err.textContent = '연결 오류: ' + e.message; }
+}
+
+function doLogout() {
+  sessionStorage.removeItem('admin_token');
+  sessionStorage.removeItem('admin_id');
+  _token = ''; _adminId = '';
+  document.getElementById('admin-screen').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+}
+
+function showAdmin() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('admin-screen').style.display = 'flex';
+  document.getElementById('sidebar-admin-id').textContent = _adminId;
+  updateClock();
+  setInterval(updateClock, 60000);
+  loadDashboard();
+}
+
+function updateClock() {
+  document.getElementById('topbar-time').textContent = new Date().toLocaleString('ko-KR', {month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+}
+
+// ── 탭 전환 ──
+function switchTab(tab) {
+  _currentTab = tab;
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  const titles = {dashboard:'대시보드',communities:'커뮤니티 관리',operators:'운영진 관리',system:'시스템 설정'};
+  document.getElementById('topbar-title').textContent = titles[tab] || tab;
+  event.currentTarget.classList.add('active');
+  if (tab === 'dashboard') loadDashboard();
+  else if (tab === 'communities') loadCommunities();
+  else if (tab === 'operators') loadOperators();
+  else if (tab === 'system') loadSystem();
+}
+
+function refreshCurrentTab() {
+  if (_currentTab === 'dashboard') loadDashboard();
+  else if (_currentTab === 'communities') loadCommunities();
+  else if (_currentTab === 'operators') loadOperators();
+  else if (_currentTab === 'system') loadSystem();
+}
+
+// ── API 헬퍼 ──
+async function dbRead(path) {
+  const res = await fetch(WORKER_URL + '/db-public-read', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ path })
+  });
+  const j = await res.json();
+  return j.data;
+}
+
+async function adminApi(endpoint, body) {
+  const res = await fetch(WORKER_URL + endpoint, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ ...body, token: _token || _masterToken })
+  });
+  return await res.json();
+}
+
+// ── 대시보드 ──
+async function loadDashboard() {
+  try {
+    const ciData = await dbRead('communities_info') || {};
+    const cids = Object.keys(ciData);
+
+    document.getElementById('s-communities').textContent = cids.length;
+
+    let totalMatches = 0, totalMembers = 0, activeMatches = 0;
+    const communityStats = [];
+    const recentMatches = [];
+
+    await Promise.all(cids.map(async cid => {
+      const matches = await dbRead('communities/' + cid + '/matches') || {};
+      const matchList = Object.entries(matches);
+      const memberCount = matchList.reduce((sum, [, m]) => sum + ((m._members||m.members||[]).length), 0);
+      const active = matchList.filter(([,m]) => m && m.status !== '종료' && m.status !== 'done').length;
+      const lastMatch = matchList.sort(([,a],[,b]) => (b.createdAt||0)-(a.createdAt||0))[0];
+
+      totalMatches += matchList.length;
+      totalMembers += memberCount;
+      activeMatches += active;
+
+      communityStats.push({
+        cid, name: ciData[cid]?.name || cid,
+        deeplolId: ciData[cid]?.deeplolServerId || '—',
+        matchCount: matchList.length, memberCount, active,
+        lastAt: lastMatch ? lastMatch[1].createdAt : null
+      });
+
+      matchList.slice(0,3).forEach(([id,m]) => {
+        recentMatches.push({ cid, cidName: ciData[cid]?.name||cid, id, ...m });
+      });
+    }));
+
+    document.getElementById('s-matches').textContent = totalMatches;
+    document.getElementById('s-members').textContent = totalMembers;
+    document.getElementById('s-active').textContent = activeMatches;
+
+    // 커뮤니티 테이블
+    communityStats.sort((a,b) => (b.lastAt||0)-(a.lastAt||0));
+    document.getElementById('dash-community-table').innerHTML = communityStats.map(c => `
+      <tr>
+        <td><span style="font-family:Rajdhani,sans-serif;font-weight:700;">${esc(c.name)}</span><br><span style="font-size:10px;color:var(--muted);">${esc(c.cid)}</span></td>
+        <td><span style="font-size:11px;color:var(--muted);">${esc(c.deeplolId)}</span></td>
+        <td>${c.matchCount}</td>
+        <td>${c.memberCount}</td>
+        <td><span style="font-size:11px;color:var(--muted);">${timeAgo(c.lastAt)}</span></td>
+        <td>${c.active > 0 ? '<span class="badge badge-blue">활성 '+c.active+'</span>' : '<span class="badge badge-muted">없음</span>'}</td>
+      </tr>
+    `).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:1.5rem;">데이터 없음</td></tr>';
+
+    // 최근 내전
+    recentMatches.sort((a,b) => (b.createdAt||0)-(a.createdAt||0));
+    document.getElementById('dash-recent-matches').innerHTML = recentMatches.slice(0,10).map(m => {
+      const statusBadge = m.status === '종료' ? 'badge-muted' : m.status === '진행' ? 'badge-purple' : 'badge-blue';
+      return `<tr>
+        <td><span style="font-size:11px;color:var(--muted);">${esc(m.cidName)}</span></td>
+        <td>${esc(m.name||'이름없음')}</td>
+        <td><span class="badge ${statusBadge}">${esc(m.status||'대기')}</span></td>
+        <td>${(m._members||m.members||[]).length}명</td>
+        <td><span style="font-size:11px;color:var(--muted);">${fmtDate(m.createdAt)}</span></td>
+      </tr>`;
+    }).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:1.5rem;">데이터 없음</td></tr>';
+
+  } catch(e) {
+    toast('대시보드 로드 오류: ' + e.message, 'err');
+  }
+}
+
+// ── 커뮤니티 관리 ──
+async function loadCommunities() {
+  document.getElementById('communities-table').innerHTML = '<tr class="loading-row"><td colspan="6"><div class="spinner" style="margin:0 auto;"></div></td></tr>';
+  try {
+    const ciData = await dbRead('communities_info') || {};
+    _communities = ciData;
+    const rows = await Promise.all(Object.entries(ciData).map(async ([cid, info]) => {
+      const matches = await dbRead('communities/' + cid + '/matches') || {};
+      return { cid, info, matchCount: Object.keys(matches).length };
+    }));
+    document.getElementById('communities-table').innerHTML = rows.map(({cid, info, matchCount}) => `
+      <tr>
+        <td><span style="font-family:Rajdhani,sans-serif;font-size:11px;color:var(--muted);">${esc(cid)}</span></td>
+        <td><span style="font-weight:600;">${esc(info?.name||'이름없음')}</span></td>
+        <td><span style="font-size:11px;color:var(--muted);">${esc(info?.deeplolServerId||'—')}</span></td>
+        <td><span style="font-size:11px;color:var(--muted);">${esc(info?.discordServerId||'—')}</span></td>
+        <td>${matchCount}</td>
+        <td>
+          <button class="btn-xs btn-blue" onclick="openCommunityDetail('${esc(cid)}')">상세</button>
+        </td>
+      </tr>
+    `).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:1.5rem;">데이터 없음</td></tr>';
+  } catch(e) { toast('커뮤니티 로드 오류: ' + e.message, 'err'); }
+}
+
+function openCommunityDetail(cid) {
+  const info = _communities[cid] || {};
+  alert(`[${cid}]\n이름: ${info.name||'—'}\n딥롤 서버 ID: ${info.deeplolServerId||'—'}\n디스코드 서버 ID: ${info.discordServerId||'—'}\n채널 ID: ${info.discordChannelId||'—'}`);
+}
+
+// ── 운영진 관리 ──
+async function loadOperators() {
+  document.getElementById('operators-table').innerHTML = '<tr class="loading-row"><td colspan="5"><div class="spinner" style="margin:0 auto;"></div></td></tr>';
+  try {
+    const [j, ciData] = await Promise.all([
+      adminApi('/admin-list', {}),
+      dbRead('communities_info').catch(() => ({}))
+    ]);
+    if (!j.ok) { toast(j.error || '권한 오류', 'err'); return; }
+    const ops = j.data || [];
+    const cidToName = {};
+    Object.entries(ciData || {}).forEach(([cid, info]) => { cidToName[cid] = info?.name || cid; });
+    document.getElementById('operators-table').innerHTML = ops.length ? ops.map(op => `
+      <tr>
+        <td><span style="font-family:Rajdhani,sans-serif;font-weight:700;">${esc(op.id)}</span></td>
+        <td><span class="badge ${op.role==='master'?'badge-purple':'badge-gold'}">${esc(op.role)}</span></td>
+        <td><span style="font-size:11px;color:var(--muted);">${op.communityId ? esc(cidToName[op.communityId]||op.communityId) : '전체'}</span></td>
+        <td><span style="font-size:11px;color:var(--muted);">${timeAgo(op.lastLogin)}</span></td>
+        <td>
+          ${op.role !== 'master' ? `<button class="btn-xs btn-red" onclick="removeOperator('${esc(op.id)}')">제거</button>` : '<span style="font-size:10px;color:var(--muted);">보호됨</span>'}
+        </td>
+      </tr>
+    `).join('') : '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:1.5rem;">운영진 없음</td></tr>';
+  } catch(e) { toast('운영진 로드 오류: ' + e.message, 'err'); }
+}
+
+function openAddOperatorModal() {
+  document.getElementById('op-id').value = '';
+  document.getElementById('op-pw').value = '';
+  document.getElementById('op-cid').value = '';
+  document.getElementById('modal-add-operator').classList.add('open');
+}
+
+async function addOperator() {
+  const id = document.getElementById('op-id').value.trim();
+  const pw = document.getElementById('op-pw').value;
+  const role = document.getElementById('op-role').value;
+  const cid = document.getElementById('op-cid').value.trim();
+  if (!id || !pw) { toast('ID와 비밀번호를 입력하세요', 'err'); return; }
+  const j = await adminApi('/admin-add', { adminId: id, adminPw: pw, role, communityId: cid || null });
+  if (j.ok) { toast('운영진 추가 완료'); closeModal('modal-add-operator'); loadOperators(); }
+  else toast(j.error || '추가 실패', 'err');
+}
+
+async function removeOperator(id) {
+  if (!confirm(`정말 ${id} 계정을 제거할까요?`)) return;
+  const j = await adminApi('/admin-remove', { targetId: id });
+  if (j.ok) { toast('제거 완료'); loadOperators(); }
+  else toast(j.error || '제거 실패', 'err');
+}
+
+// ── 시스템 설정 ──
+async function loadSystem() {
+  try {
+    const settings = await dbRead('system') || {};
+    _systemSettings = settings;
+    updateToggle('maintenance', settings.maintenance);
+    updateToggle('signup', settings.allowSignup !== false);
+    updateToggle('public_list', settings.publicList !== false);
+    document.getElementById('notice-text').value = settings.notice || '';
+  } catch(e) { toast('설정 로드 오류: ' + e.message, 'err'); }
+}
+
+function updateToggle(key, isOn) {
+  const btn = document.getElementById('toggle-' + key);
+  if (!btn) return;
+  btn.textContent = isOn ? 'ON' : 'OFF';
+  btn.className = 'toggle-btn ' + (isOn ? 'toggle-on' : 'toggle-off');
+}
+
+async function toggleSetting(key) {
+  const fieldMap = { maintenance: 'maintenance', signup: 'allowSignup', public_list: 'publicList' };
+  const field = fieldMap[key];
+  const btn = document.getElementById('toggle-' + key);
+  const isOn = btn.textContent === 'ON';
+  const newVal = !isOn;
+  updateToggle(key, newVal);
+  const j = await adminApi('/system-setting-write', { field, value: newVal });
+  if (j.ok) toast((newVal ? 'ON' : 'OFF') + '으로 변경됨');
+  else { updateToggle(key, isOn); toast(j.error || '오류', 'err'); }
+}
+
+async function saveNotice() {
+  const text = document.getElementById('notice-text').value.trim();
+  const j = await adminApi('/system-setting-write', { field: 'notice', value: text });
+  if (j.ok) toast('공지 저장 완료');
+  else toast(j.error || '오류', 'err');
+}
+
+async function changePw() {
+  const pw = document.getElementById('new-pw').value;
+  const pw2 = document.getElementById('new-pw2').value;
+  if (!pw) { toast('새 비밀번호를 입력하세요', 'err'); return; }
+  if (pw !== pw2) { toast('비밀번호가 일치하지 않습니다', 'err'); return; }
+  const j = await adminApi('/admin-change-pw', { newPw: pw });
+  if (j.ok) { toast('비밀번호 변경 완료'); document.getElementById('new-pw').value = ''; document.getElementById('new-pw2').value = ''; }
+  else toast(j.error || '오류', 'err');
+}
+
+// ── 모달 ──
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(m => m.addEventListener('click', e => { if(e.target===m) m.classList.remove('open'); }));
+
+// ── 자동 로그인 체크 ──
+if (_token) showAdmin();
+</script>
+</body>
+</html>

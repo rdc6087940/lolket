@@ -453,6 +453,60 @@ tbody td{padding:.55rem 1rem;font-size:12px;vertical-align:middle;}
 .maintenance-badge{font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;color:#e05050;background:rgba(224,80,80,.1);border:1px solid rgba(224,80,80,.3);padding:4px 14px;border-radius:10px;display:flex;align-items:center;gap:6px;}
 .maintenance-badge::before{content:'';width:6px;height:6px;border-radius:50%;background:#e05050;animation:blink 1s infinite;}
 @keyframes blink{0%,100%{opacity:1;}50%{opacity:.2;}}
+
+/* ── 행 이펙트 ── */
+@keyframes fire-glow {
+  0%,100% { box-shadow: 0 0 8px 2px rgba(255,80,0,.6), inset 0 0 8px rgba(255,120,0,.15); }
+  50%      { box-shadow: 0 0 18px 5px rgba(255,50,0,.9), inset 0 0 14px rgba(255,80,0,.25); }
+}
+@keyframes lightning-pulse {
+  0%,100% { box-shadow: 0 0 8px 2px rgba(100,120,255,.5), inset 0 0 6px rgba(120,100,255,.1); }
+  50%      { box-shadow: 0 0 20px 6px rgba(140,100,255,.9), inset 0 0 12px rgba(100,120,255,.2); }
+}
+@keyframes crown-shimmer {
+  0%,100% { box-shadow: 0 0 8px 2px rgba(200,160,0,.5), inset 0 0 8px rgba(255,200,0,.08); }
+  50%      { box-shadow: 0 0 20px 6px rgba(255,200,0,.8), inset 0 0 14px rgba(255,220,0,.18); }
+}
+@keyframes wave-flow {
+  0%,100% { box-shadow: 0 0 8px 2px rgba(0,200,180,.4), inset 0 0 6px rgba(0,200,185,.08); }
+  50%      { box-shadow: 0 0 18px 5px rgba(0,220,200,.8), inset 0 0 12px rgba(0,200,185,.18); }
+}
+@keyframes purple-glow {
+  0%,100% { box-shadow: 0 0 8px 2px rgba(160,100,255,.5), inset 0 0 6px rgba(167,139,250,.08); }
+  50%      { box-shadow: 0 0 20px 6px rgba(180,120,255,.9), inset 0 0 12px rgba(167,139,250,.2); }
+}
+@keyframes rainbow-cycle {
+  0%   { box-shadow: 0 0 12px 3px rgba(255,50,50,.7); }
+  20%  { box-shadow: 0 0 12px 3px rgba(255,180,0,.7); }
+  40%  { box-shadow: 0 0 12px 3px rgba(50,220,50,.7); }
+  60%  { box-shadow: 0 0 12px 3px rgba(50,120,255,.7); }
+  80%  { box-shadow: 0 0 12px 3px rgba(180,50,255,.7); }
+  100% { box-shadow: 0 0 12px 3px rgba(255,50,50,.7); }
+}
+tr.effect-fire      { animation: fire-glow 1.5s ease-in-out infinite; border-radius:4px; }
+tr.effect-lightning { animation: lightning-pulse 1.2s ease-in-out infinite; }
+tr.effect-crown     { animation: crown-shimmer 2s ease-in-out infinite; }
+tr.effect-wave      { animation: wave-flow 1.8s ease-in-out infinite; }
+tr.effect-purple    { animation: purple-glow 1.5s ease-in-out infinite; }
+tr.effect-rainbow   { animation: rainbow-cycle 2s linear infinite; }
+
+/* ── 배경 이펙트 오버레이 ── */
+.bg-effect-canvas {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  opacity: 0.3;
+  z-index: 0;
+}
+tr.has-bg-effect {
+  position: relative;
+  overflow: hidden;
+}
+tr.has-bg-effect td {
+  position: relative;
+  z-index: 1;
+}
 </style>
 </head>
 <body>
@@ -646,7 +700,7 @@ tbody td{padding:.55rem 1rem;font-size:12px;vertical-align:middle;}
           <th class="c7 sortable sort-asc" data-sort="games">게임 수</th>
           <th class="c8 sortable" data-sort="recent">최근 게임</th>
           <th class="sortable" data-sort="rating" style="color:var(--gold);">레이팅</th>
-          <th style="width:60px;text-align:center;cursor:pointer;" onclick="sortBy('mmr')">MMR <span id="th-mmr-arrow"></span></th>
+          <th style="width:60px;text-align:center;cursor:pointer;" onclick="sortByCol('mmr')">MMR <span id="th-mmr-arrow"></span></th>
           <th></th>
         </tr>
       </thead>
@@ -986,7 +1040,8 @@ function applyAll(){
       case 'games': va=a.cnt||0;vb=b.cnt||0;break;
       case 'recent': va=a.creation_timestamp||0;vb=b.creation_timestamp||0;break;
       case 'rating': va=(a.cnt>=10&&a._rating)?a._rating:-Infinity;vb=(b.cnt>=10&&b._rating)?b._rating:-Infinity;break;
-      case 'mmr': var ma=calcMMR(a,allData),mb=calcMMR(b,allData); va=ma?ma.mmr:-Infinity;vb=mb?mb.mmr:-Infinity;break;
+      case 'mmr': var _ma=calcMMR(a,allData),_mb=calcMMR(b,allData); va=_ma?_ma.mmr:-Infinity;vb=_mb?_mb.mmr:-Infinity;break;
+      
       case 'peakTier': return (peakTierOrder(a)-peakTierOrder(b))*sortDir;
       case 'tempTier': return (_tempTierSortOrder(a)-_tempTierSortOrder(b));
       default: va=0;vb=0;
@@ -1031,7 +1086,7 @@ function renderPage(){
     const pctS=t?pct.toFixed(1)+'%':'—';
     const wp=t?(w/t*100).toFixed(1):0;
     const lp=t?(l/t*100).toFixed(1):0;
-    return `<tr>
+    return `<tr data-puu="${m.puu_id}" class="${_rowEffects[m.puu_id] ? 'effect-'+_rowEffects[m.puu_id] : ''}">
       <td class="col-rank">${rank}</td>
       <td><span class="s-name">${esc(m.riot_name)}</span> <span class="s-tag">#${esc(m.riot_tag)}</span>${_weeklyEmojis&&_weeklyEmojis[m.puu_id]?' '+_weeklyEmojis[m.puu_id].map(function(e){return '<span title="'+e.label+'" style="font-size:12px;cursor:default;">'+e.emoji+'</span>';}).join(''):''}</td>
       <td><span class="pos-txt" style="color:${posC}">${posS}</span></td>
@@ -1060,10 +1115,13 @@ function renderPage(){
       <td style="width:68px;text-align:center;">${buildRatingCell(m._rating, m._ratingBreakdown, m.cnt)}</td>
       <td style="width:60px;text-align:center;">${(function(){ var r=calcMMR(m, allData); return r ? '<span style="font-size:11px;font-weight:700;color:#A78BFA;">'+r.mmr+'</span><div style="font-size:9px;color:var(--muted);">MMR</div>' : '<span style="color:var(--muted);font-size:10px;">—</span>'; })()}</td>
       <td style="width:52px;text-align:center;">
-        <button class="detail-btn" data-puu="${m.puu_id}"
-          style="padding:3px 7px;border-radius:2px;border:1px solid rgba(10,200,185,.3);background:rgba(10,200,185,.06);color:var(--blue);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:.5px;cursor:pointer;white-space:nowrap;">
-          상세
-        </button>
+        <div style="display:flex;gap:3px;justify-content:center;align-items:center;">
+          <button class="detail-btn" data-puu="${m.puu_id}"
+            style="padding:3px 7px;border-radius:2px;border:1px solid rgba(10,200,185,.3);background:rgba(10,200,185,.06);color:var(--blue);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:.5px;cursor:pointer;white-space:nowrap;">
+            상세
+          </button>
+          ${_statsAdminRole==='master'?'<button class="effect-pick-btn" data-puu="'+m.puu_id+'" data-name="'+esc(m.riot_name||m.name||'')+'" style="padding:3px 5px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--muted);font-size:10px;cursor:pointer;" title="이펙트 설정">✨</button><button class="bg-effect-pick-btn" data-puu="'+m.puu_id+'" data-name="'+esc(m.riot_name||m.name||'')+'" style="padding:3px 5px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--muted);font-size:10px;cursor:pointer;" title="배경 이펙트">🎨</button>':''}
+        </div>
       </td>
     </tr>`;
   }).join('');
@@ -1132,6 +1190,8 @@ function renderMobileCards(slice, start) {
       if (member) openDetail(member);
     });
   });
+  // 배경 이펙트 적용
+  setTimeout(function(){ applyBgEffects(); }, 300);
 }
 
 function renderPagination(pages){
@@ -2836,6 +2896,17 @@ document.addEventListener('click', function(e) {
   openTempTierPopup(cell.dataset.puu, cell.dataset.name);
 });
 
+document.addEventListener('click', function(e) {
+  var efBtn = e.target.closest('.effect-pick-btn');
+  if (efBtn) { openEffectPicker(efBtn.dataset.puu, efBtn.dataset.name); return; }
+  var efApply = e.target.closest('.effect-apply-btn');
+  if (efApply) { applyEffect(efApply.dataset.puu, efApply.dataset.effect); return; }
+  var bgBtn = e.target.closest('.bg-effect-pick-btn');
+  if (bgBtn) { openBgEffectPicker(bgBtn.dataset.puu, bgBtn.dataset.name); return; }
+  var bgApply = e.target.closest('.bg-effect-apply-btn');
+  if (bgApply) { applyBgEffect(bgApply.dataset.puu, bgApply.dataset.effect); return; }
+});
+
 // 임시 티어 전체 로드
 async function loadTempTiers() {
   if (!COMMUNITY_ID) return;
@@ -3633,7 +3704,6 @@ function sortByCol(col) {
     else _tempTierSortDir = 0;
     var arrow = document.getElementById('th-temp-tier-arrow');
     if (arrow) arrow.textContent = _tempTierSortDir === 1 ? ' ▲' : _tempTierSortDir === -1 ? ' ▼' : '';
-    // sortKey를 tempTier로 설정해서 applyFilter 재적용
     if (_tempTierSortDir !== 0) {
       sortKey = 'tempTier';
       sortDir = _tempTierSortDir;
@@ -3641,6 +3711,16 @@ function sortByCol(col) {
       sortKey = 'games';
       sortDir = 1;
     }
+    applyAll();
+  } else if (col === 'mmr') {
+    if (sortKey === 'mmr') {
+      sortDir = -sortDir;
+    } else {
+      sortKey = 'mmr';
+      sortDir = -1; // 높은 MMR 먼저
+    }
+    var mmrArrow = document.getElementById('th-mmr-arrow');
+    if (mmrArrow) mmrArrow.textContent = sortDir > 0 ? ' ▲' : ' ▼';
     applyAll();
   }
 }
@@ -5663,6 +5743,8 @@ document.addEventListener('DOMContentLoaded', function() {
     await loadChampMap();
     await loadData();
     await loadAllRatings();
+    await loadRowEffects();
+    await loadBgEffects();
     if (COMMUNITY_ID) {
       await loadTempTiers();
       var loginBtn = document.getElementById('btn-admin-login');
@@ -6177,6 +6259,333 @@ function calcMMR(member, allData) {
     tierBase, divBonus, lpBonus, ratingBonus,
     tierStr, divStr, tempTier: tempTierObj
   };
+}
+
+
+// ── 행 이펙트 ──
+var _rowEffects = {}; // puuId → effect name
+
+async function loadRowEffects() {
+  if (!COMMUNITY_ID) return;
+  try {
+    var res = await fetch(WORKER_URL + '/db-public-read', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ path: 'communities/' + COMMUNITY_ID + '/row_effects' })
+    });
+    var j = await res.json();
+    _rowEffects = j.data || {};
+  } catch(e) { _rowEffects = {}; }
+}
+
+async function saveRowEffect(puuId, effect) {
+  if (!COMMUNITY_ID) return;
+  _rowEffects[puuId] = effect || null;
+  await fetch(WORKER_URL + '/row-effect-write', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ communityId: COMMUNITY_ID, puuId, effect: effect || null })
+  });
+}
+
+function applyRowEffects() {
+  document.querySelectorAll('tr[data-puu]').forEach(function(tr) {
+    var puu = tr.getAttribute('data-puu');
+    // 기존 이펙트 클래스 제거
+    tr.classList.remove('effect-fire','effect-lightning','effect-crown','effect-wave','effect-purple','effect-rainbow');
+    if (puu && _rowEffects[puu]) {
+      tr.classList.add('effect-' + _rowEffects[puu]);
+    }
+  });
+}
+
+function openEffectPicker(puuId, name) {
+  var existing = _rowEffects[puuId] || 'none';
+  var effects = [
+    { key:'fire',      label:'🔥 불꽃',    color:'#FF5500' },
+    { key:'lightning', label:'⚡ 번개',    color:'#7B68EE' },
+    { key:'crown',     label:'👑 왕관',    color:'#FFD700' },
+    { key:'wave',      label:'🌊 물결',    color:'#00C8B9' },
+    { key:'purple',    label:'💜 보라',    color:'#A47BFA' },
+    { key:'rainbow',   label:'🌈 무지개',  color:'#FF69B4' },
+    { key:'none',      label:'✕ 제거',     color:'#5B6474' },
+  ];
+  var modal = document.getElementById('effect-picker-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'effect-picker-modal';
+    modal.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:2000;align-items:center;justify-content:center;';
+    modal.innerHTML = '<div style="background:var(--bg-panel);border:1px solid var(--border);border-radius:8px;padding:1.25rem;width:90%;max-width:320px;" id="effect-picker-inner"></div>';
+    modal.onclick = function(e){ if(e.target===modal) modal.style.display='none'; };
+    document.body.appendChild(modal);
+  }
+  var inner = document.getElementById('effect-picker-inner');
+  inner.innerHTML = '<div style="font-size:13px;font-weight:700;color:var(--white);margin-bottom:.75rem;">✨ ' + esc(name) + ' 이펙트 설정</div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;">' +
+    effects.map(function(ef) {
+      var isActive = existing === ef.key || (ef.key === 'none' && !_rowEffects[puuId]);
+      var btn2=document.createElement('button');
+      btn2.className='effect-apply-btn';
+      btn2.dataset.puu=puuId;
+      btn2.dataset.effect=ef.key;
+      btn2.textContent=ef.label;
+      btn2.style.cssText='padding:.5rem;border-radius:5px;border:1px solid '+(isActive?ef.color:'var(--border-subtle)')+';background:'+(isActive?'rgba(255,255,255,.06)':'transparent')+';color:'+ef.color+';font-size:12px;font-weight:700;cursor:pointer;';
+      return btn2.outerHTML;
+    }).join('') +
+    '</div>';
+  modal.style.display = 'flex';
+  modal._puuId = puuId;
+}
+
+async function applyEffect(puuId, effect) {
+  if (effect === 'none') effect = null;
+  await saveRowEffect(puuId, effect);
+  document.getElementById('effect-picker-modal').style.display = 'none';
+  applyRowEffects();
+  setTimeout(function(){ applyBgEffects(); }, 300);
+}
+
+
+// ── 배경 이펙트 (Canvas 애니메이션) ──
+var _bgEffects = {};
+var _bgAnimFrames = {}; // puuId → animationFrameId
+
+async function loadBgEffects() {
+  if (!COMMUNITY_ID) return;
+  try {
+    var res = await fetch(WORKER_URL + '/db-public-read', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ path: 'communities/' + COMMUNITY_ID + '/bg_effects' })
+    });
+    var j = await res.json();
+    _bgEffects = j.data || {};
+  } catch(e) { _bgEffects = {}; }
+}
+
+async function saveBgEffect(puuId, effect) {
+  if (!COMMUNITY_ID) return;
+  _bgEffects[puuId] = effect || null;
+  await fetch(WORKER_URL + '/row-effect-write', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ communityId: COMMUNITY_ID, puuId, effect: effect||null, type:'bg' })
+  });
+}
+
+function applyBgEffects() {
+  var rows = document.querySelectorAll('tr[data-puu]');
+  console.log('[bgEffect] rows:', rows.length, 'effects:', JSON.stringify(_bgEffects));
+  rows.forEach(function(tr) {
+    var puu = tr.getAttribute('data-puu');
+    var effect = puu && _bgEffects[puu];
+    if (effect) console.log('[bgEffect] applying', effect, 'to', puu.slice(0,10), 'offsetWidth:', tr.offsetWidth);
+    // 기존 캔버스 제거
+    var old = tr.querySelector('.bg-effect-canvas');
+    if (old) { old.remove(); }
+    // td position 초기화
+    var ftd = tr.querySelector('td');
+    if (ftd && !_bgEffects[puu]) { ftd.style.position=''; ftd.style.overflow=''; }
+    if (_bgAnimFrames[puu]) { cancelAnimationFrame(_bgAnimFrames[puu]); delete _bgAnimFrames[puu]; }
+    tr.classList.remove('has-bg-effect');
+    if (!effect) return;
+    tr.classList.add('has-bg-effect');
+    var canvas = document.createElement('canvas');
+    canvas.className = 'bg-effect-canvas';
+    // 첫 번째 td에 넣되 tr 전체 너비를 커버하도록 left offset 보정
+    var firstTd = tr.querySelector('td');
+    if (!firstTd) return;
+    var trRect = tr.getBoundingClientRect();
+    var tdRect = firstTd.getBoundingClientRect();
+    var offsetLeft = tdRect.left - trRect.left; // td가 tr 안에서 얼마나 들어와있는지
+    firstTd.style.position = 'relative';
+    firstTd.style.overflow = 'visible';
+    firstTd.insertBefore(canvas, firstTd.firstChild);
+    canvas.style.position = 'absolute';
+    canvas.style.left = (-offsetLeft) + 'px';
+    canvas.style.top = '0';
+    canvas.style.width = trRect.width + 'px';
+    canvas.style.height = Math.max(trRect.height, 40) + 'px';
+    canvas.style.pointerEvents = 'none';
+    canvas.style.zIndex = '0';
+    canvas.width = Math.round(trRect.width) || 1200;
+    canvas.height = Math.max(Math.round(trRect.height), 40);
+    var ctx = canvas.getContext('2d');
+    if (effect === 'fire') startFireEffect(canvas, ctx, puu);
+    else if (effect === 'wave') startWaveEffect(canvas, ctx, puu);
+    else if (effect === 'coin') startCoinEffect(canvas, ctx, puu);
+  });
+}
+
+// 🔥 불타는 효과
+function startFireEffect(canvas, ctx, puu) {
+  var particles = [];
+  for (var i = 0; i < 40; i++) {
+    particles.push({
+      x: Math.random() * canvas.width,
+      y: canvas.height + Math.random() * 20,
+      vx: (Math.random()-0.5) * 1.5,
+      vy: -(Math.random() * 2 + 1),
+      life: Math.random(),
+      maxLife: 0.6 + Math.random() * 0.4,
+      size: Math.random() * 6 + 2
+    });
+  }
+  function draw() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    particles.forEach(function(p) {
+      p.x += p.vx; p.y += p.vy; p.life -= 0.015;
+      if (p.life <= 0) {
+        p.x = Math.random() * canvas.width;
+        p.y = canvas.height + 5;
+        p.vx = (Math.random()-0.5) * 1.5;
+        p.vy = -(Math.random() * 2 + 1);
+        p.life = p.maxLife;
+      }
+      var t = p.life / p.maxLife;
+      var r = Math.floor(255);
+      var g = Math.floor(t * 150);
+      var b = 0;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size * t, 0, Math.PI*2);
+      ctx.fillStyle = 'rgba('+r+','+g+','+b+','+(t*0.8)+')';
+      ctx.fill();
+    });
+    _bgAnimFrames[puu] = requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+// 🌊 파도치는 효과
+function startWaveEffect(canvas, ctx, puu) {
+  var t = 0;
+  function draw() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    for (var w = 0; w < 3; w++) {
+      ctx.beginPath();
+      var offset = (t * (1+w*0.3) + w * 2) % (Math.PI * 2);
+      for (var x = 0; x <= canvas.width; x += 2) {
+        var y = canvas.height/2 + Math.sin(x * 0.02 + offset) * (canvas.height * 0.3) * (1-w*0.25);
+        if (x === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.lineTo(canvas.width, canvas.height);
+      ctx.lineTo(0, canvas.height);
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(0,'+(180-w*30)+','+(200-w*30)+','+(0.4-w*0.1)+')';
+      ctx.fill();
+    }
+    t += 0.03;
+    _bgAnimFrames[puu] = requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+// 🪙 코인 쌓이는 효과
+function startCoinEffect(canvas, ctx, puu) {
+  var coins = [];
+  var stacked = [];
+  function spawnCoin() {
+    coins.push({
+      x: Math.random() * canvas.width,
+      y: -10,
+      vy: 1.5 + Math.random() * 2,
+      r: 5 + Math.random() * 4,
+      rot: Math.random() * Math.PI,
+      rotV: (Math.random()-0.5) * 0.15,
+      landed: false
+    });
+  }
+  var spawnTimer = 0;
+  function draw() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    // 쌓인 코인
+    stacked.forEach(function(c) {
+      ctx.save();
+      ctx.translate(c.x, c.y);
+      ctx.beginPath();
+      ctx.ellipse(0, 0, c.r, c.r*0.3, 0, 0, Math.PI*2);
+      ctx.fillStyle = 'rgba(255,200,0,0.7)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(200,150,0,0.8)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.restore();
+    });
+    // 떨어지는 코인
+    coins.forEach(function(c, i) {
+      if (c.landed) return;
+      c.y += c.vy; c.rot += c.rotV;
+      // 바닥 근처에 쌓임
+      var stackY = canvas.height - 8 - stacked.filter(function(s){ return Math.abs(s.x-c.x)<c.r*2; }).length * 5;
+      if (c.y >= stackY) {
+        c.y = stackY; c.landed = true;
+        stacked.push({x:c.x, y:c.y, r:c.r});
+        if (stacked.length > 30) stacked.shift();
+      }
+      ctx.save();
+      ctx.translate(c.x, c.y);
+      ctx.rotate(c.rot);
+      ctx.beginPath();
+      ctx.ellipse(0, 0, c.r, c.r * Math.abs(Math.cos(c.rot * 3)) + 1, 0, 0, Math.PI*2);
+      ctx.fillStyle = 'rgba(255,210,0,0.8)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(200,160,0,0.9)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      // ₩ 텍스트
+      if (c.r > 6) {
+        ctx.fillStyle = 'rgba(150,100,0,0.9)';
+        ctx.font = 'bold '+(c.r)+'px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('₩', 0, 0);
+      }
+      ctx.restore();
+    });
+    spawnTimer++;
+    if (spawnTimer % 30 === 0 && coins.filter(function(c){return !c.landed;}).length < 5) spawnCoin();
+    _bgAnimFrames[puu] = requestAnimationFrame(draw);
+  }
+  spawnCoin();
+  draw();
+}
+
+function openBgEffectPicker(puuId, name) {
+  var existing = _bgEffects[puuId] || 'none';
+  var effects = [
+    { key:'fire', label:'🔥 불타는', color:'#FF5500' },
+    { key:'wave', label:'🌊 파도치는', color:'#00C8B9' },
+    { key:'coin', label:'🪙 코인 쌓이는', color:'#FFD700' },
+    { key:'none', label:'✕ 제거', color:'#5B6474' },
+  ];
+  var modal = document.getElementById('bg-effect-picker-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'bg-effect-picker-modal';
+    modal.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:2000;align-items:center;justify-content:center;';
+    modal.innerHTML = '<div style="background:var(--bg-panel);border:1px solid var(--border);border-radius:8px;padding:1.25rem;width:90%;max-width:320px;" id="bg-effect-inner"></div>';
+    modal.onclick = function(e){ if(e.target===modal) modal.style.display='none'; };
+    document.body.appendChild(modal);
+  }
+  var inner = document.getElementById('bg-effect-inner');
+  inner.innerHTML = '<div style="font-size:13px;font-weight:700;color:var(--white);margin-bottom:.75rem;">🎨 ' + esc(name) + ' 배경 이펙트</div>' +
+    '<div style="font-size:10px;color:var(--muted);margin-bottom:.75rem;">투명도 30% 배경 애니메이션</div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;">' +
+    effects.map(function(ef) {
+      var isActive = existing === ef.key || (ef.key === 'none' && !_bgEffects[puuId]);
+      var btn = document.createElement('button');
+      btn.className = 'bg-effect-apply-btn';
+      btn.dataset.puu = puuId;
+      btn.dataset.effect = ef.key;
+      btn.textContent = ef.label;
+      btn.style.cssText = 'padding:.5rem;border-radius:5px;border:1px solid '+(isActive?ef.color:'var(--border-subtle)')+';background:'+(isActive?'rgba(255,255,255,.06)':'transparent')+';color:'+ef.color+';font-size:12px;font-weight:700;cursor:pointer;';
+      return btn.outerHTML;
+    }).join('') + '</div>';
+  modal.style.display = 'flex';
+}
+
+async function applyBgEffect(puuId, effect) {
+  if (effect === 'none') effect = null;
+  await saveBgEffect(puuId, effect);
+  document.getElementById('bg-effect-picker-modal').style.display = 'none';
+  applyBgEffects();
 }
 
 </script>

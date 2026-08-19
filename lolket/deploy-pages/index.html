@@ -1776,7 +1776,7 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
 </div>
 <div id="list-grid" class="list-grid"></div> <div id="list-empty" class="list-empty" style="display:none;"> <div class="list-empty-hex">◇</div> <div style="font-size:14px;">생성된 내전이 없습니다</div> <button class="btn-primary admin-only" onclick="openNewMatchFlow()" style="display:none;">첫 내전 생성하기</button> </div> </div> </div>
 </div> <div id="screen-1" class="screen">
-<div class="main"> <div class="match-bar section-full"> <div class="match-bar-field" style="flex-direction:row;align-items:center;gap:8px;"> <span class="match-bar-label">🎮 디스코드 참가</span> <button id="btn-discord-joinable" onclick="toggleDiscordJoinable()" style="padding:3px 10px;border-radius:3px;border:1px solid var(--border-subtle);background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;">OFF</button> </div> <div class="match-bar-divider"></div> <div class="match-bar-field" style="flex-direction:row;align-items:center;gap:8px;"> <span class="match-bar-label">🚫 빼기 불가</span> <button id="btn-discord-leave-disabled" onclick="toggleDiscordLeaveDisabled()" style="padding:3px 10px;border-radius:3px;border:1px solid var(--border-subtle);background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;">OFF</button> </div> <div class="match-bar-divider"></div> <div class="match-bar-field"> <div class="match-bar-label">내전명</div> <div class="match-bar-value" id="bar-name">—</div> </div> <div class="match-bar-divider"></div> <div class="match-bar-field" style="flex-direction:row;align-items:center;gap:10px;"> <div> <div class="match-bar-label">시작 시간</div> <div class="match-bar-value" id="bar-time">—</div> </div> <button id="btn-edit-time" onclick="openEditTimeModal()" style="display:none;padding:3px 9px;background:transparent;border:1px solid var(--border-subtle);border-radius:2px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all .15s;white-space:nowrap;" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'" onmouseout="this.style.borderColor='var(--border-subtle)';this.style.color='var(--text-muted)'">수정</button> </div> <div class="match-bar-divider"></div> <div class="match-bar-field"> <div class="match-bar-label">상태</div> <div class="status-badge" id="bar-status">내전 모집</div> </div> <div class="match-bar-divider"></div> <div class="match-bar-field"> <div class="match-bar-label">진행 관리자</div> <div class="match-bar-value" id="bar-admin">—</div> </div> <div class="match-bar-spacer"></div> <div class="progress-block"> <div class="progress-label"> <span>출석 현황</span> <span id="prog-text">0 / 0</span> </div> <div class="progress-bar-bg"> <div class="progress-bar-fill" id="prog-fill" style="width:0%"></div> </div> </div> </div> <div class="panel" style="display:flex;flex-direction:column;height:calc(100vh - 200px);"> <div class="panel-header"> <div class="panel-title"> <div class="panel-title-dot"></div>
+<div class="main"> <div class="match-bar section-full"> <div class="match-bar-field" style="flex-direction:row;align-items:center;gap:8px;"> <span class="match-bar-label">❄️ 칼바람</span> <button id="btn-aram" onclick="toggleAram()" style="padding:3px 10px;border-radius:3px;border:1px solid var(--border-subtle);background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;">OFF</button> </div> <div class="match-bar-divider"></div> <div class="match-bar-field" style="flex-direction:row;align-items:center;gap:8px;"> <span class="match-bar-label">🎮 디스코드 참가</span> <button id="btn-discord-joinable" onclick="toggleDiscordJoinable()" style="padding:3px 10px;border-radius:3px;border:1px solid var(--border-subtle);background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;">OFF</button> </div> <div class="match-bar-divider"></div> <div class="match-bar-field" style="flex-direction:row;align-items:center;gap:8px;"> <span class="match-bar-label">🚫 빼기 불가</span> <button id="btn-discord-leave-disabled" onclick="toggleDiscordLeaveDisabled()" style="padding:3px 10px;border-radius:3px;border:1px solid var(--border-subtle);background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;">OFF</button> </div> <div class="match-bar-divider"></div> <div class="match-bar-field"> <div class="match-bar-label">내전명</div> <div class="match-bar-value" id="bar-name">—</div> </div> <div class="match-bar-divider"></div> <div class="match-bar-field" style="flex-direction:row;align-items:center;gap:10px;"> <div> <div class="match-bar-label">시작 시간</div> <div class="match-bar-value" id="bar-time">—</div> </div> <button id="btn-edit-time" onclick="openEditTimeModal()" style="display:none;padding:3px 9px;background:transparent;border:1px solid var(--border-subtle);border-radius:2px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all .15s;white-space:nowrap;" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'" onmouseout="this.style.borderColor='var(--border-subtle)';this.style.color='var(--text-muted)'">수정</button> </div> <div class="match-bar-divider"></div> <div class="match-bar-field"> <div class="match-bar-label">상태</div> <div class="status-badge" id="bar-status">내전 모집</div> </div> <div class="match-bar-divider"></div> <div class="match-bar-field"> <div class="match-bar-label">진행 관리자</div> <div class="match-bar-value" id="bar-admin">—</div> </div> <div class="match-bar-spacer"></div> <div class="progress-block"> <div class="progress-label"> <span>출석 현황</span> <span id="prog-text">0 / 0</span> </div> <div class="progress-bar-bg"> <div class="progress-bar-fill" id="prog-fill" style="width:0%"></div> </div> </div> </div> <div class="panel" style="display:flex;flex-direction:column;height:calc(100vh - 200px);"> <div class="panel-header"> <div class="panel-title"> <div class="panel-title-dot"></div>
  내전 대기 멤버
  </div> <div style="display:flex;align-items:center;gap:6px;"> <div class="filter-active-dot" id="s1-filter-dot"></div> <div id="member-count" class="count-badge">0명</div> </div> </div> <div class="filter-bar"> <div class="filter-search-row"> <input class="filter-search-input" id="s1-search" placeholder="닉네임 검색..." oninput="applyFilter('s1')"> <button class="filter-search-clear" id="s1-search-clear" onclick="clearSearch('s1')">✕</button> </div> <div class="filter-row"> <span class="filter-label">포지션</span> <button class="lane-filter-btn" data-lane="top" onclick="toggleLaneFilter('s1','top')">TOP</button> <button class="lane-filter-btn" data-lane="jg" onclick="toggleLaneFilter('s1','jg')">JG</button> <button class="lane-filter-btn" data-lane="mid" onclick="toggleLaneFilter('s1','mid')">MID</button> <button class="lane-filter-btn" data-lane="bot" onclick="toggleLaneFilter('s1','bot')">BOT</button> <button class="lane-filter-btn" data-lane="sup" onclick="toggleLaneFilter('s1','sup')">SUP</button> </div> <div class="filter-row" style="flex-wrap:wrap;"> <span class="filter-label">티어</span> <button class="lane-filter-btn" data-tier-filter="s1" data-tier="MASTER+" onclick="toggleTierFilter('s1','MASTER+')" style="color:var(--tier-master);">마스터+</button> <button class="lane-filter-btn" data-tier-filter="s1" data-tier="DIAMOND" onclick="toggleTierFilter('s1','DIAMOND')" style="color:var(--tier-diamond);">다이아</button> <button class="lane-filter-btn" data-tier-filter="s1" data-tier="EMERALD" onclick="toggleTierFilter('s1','EMERALD')" style="color:var(--tier-emerald);">에메랄드</button> <button class="lane-filter-btn" data-tier-filter="s1" data-tier="PLATINUM" onclick="toggleTierFilter('s1','PLATINUM')" style="color:var(--tier-plat);">플레티넘</button> <button class="lane-filter-btn" data-tier-filter="s1" data-tier="GOLD" onclick="toggleTierFilter('s1','GOLD')" style="color:var(--tier-gold);">골드</button> <button class="lane-filter-btn" data-tier-filter="s1" data-tier="SILVER" onclick="toggleTierFilter('s1','SILVER')" style="color:var(--tier-silver);">실버</button> <button class="lane-filter-btn" data-tier-filter="s1" data-tier="BRONZE" onclick="toggleTierFilter('s1','BRONZE')" style="color:var(--tier-bronze);">브론즈</button> <button class="lane-filter-btn" data-tier-filter="s1" data-tier="IRON" onclick="toggleTierFilter('s1','IRON')" style="color:var(--tier-iron);">아이언</button> <button onclick="resetTierFilter('s1')" style="padding:3px 8px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--text-muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;margin-left:2px;">↺ 초기화</button> </div> <div class="filter-row"> <span class="filter-label">정렬</span> <select class="sort-select" id="s1-sort" onchange="applyFilter('s1')"> <option value="">기본</option> <option value="tier-asc">티어 낮은순</option> <option value="tier-desc">티어 높은순</option> <option value="name-asc">이름 ㄱ→ㅎ</option> <option value="name-desc">이름 ㅎ→ㄱ</option> </select> </div> </div> <div id="balance-score-info" style="padding:.4rem .5rem .2rem;"><div class="score-info-box" style="font-size:10px;line-height:1.7;"><span class="score-info-title" style="font-size:10px;">⚖️ 밸런스 점수</span><strong>티어점수</strong>(아이언100~에메랄드675, 다이아700~775, 마스터+800~) + <strong>승률보정</strong>((승률-50%)×1.0, 30판↑부터 반영) + <strong>내전전적</strong>(3단계 선택). <strong style="color:#E05050;">언랭 계산불가.</strong></div></div>
  <div class="member-grid" id="member-grid" style="flex:1;overflow-y:auto;max-height:none;"> <div class="empty-state" id="empty-state"> <div class="empty-hex">◇</div> <div class="empty-text">우측 패널에서 소환사를 검색해 추가하세요</div> </div> </div> </div>
@@ -3616,7 +3616,7 @@ if (!time) return toast('시작 시간을 설정하세요', 'err');
 if (new Date(time) <= new Date()) return toast('시작 시간은 현재 시간 이후여야 합니다', 'err');
 members=[]; matchType=null; teams=[]; bracketRounds=[]; extraMatches=[]; resultMatches=[];
 nextTeamId=1; _0xB2=1; _0xB1=1;
-match={id: 'match_'+Date.now(), name, time, admin: admin || '—', status: '내전 모집', createdAt: Date.now(), communityId: window._currentCommunityId || 'default', communityName: (window._currentCommunity && window._currentCommunity.name) || ''};
+match={id: 'match_'+Date.now(), name, time, admin: admin || '—', status: '내전 모집', createdAt: Date.now(), communityId: window._currentCommunityId || 'default', communityName: (window._currentCommunity && window._currentCommunity.name) || '', isAram: false};
 closeCreateModal();
 await saveCurrentMatch();
 // 알람 예약 생성
@@ -3762,7 +3762,7 @@ document.querySelectorAll('#main-lanes .lane-btn, #sub-lanes .lane-btn').forEach
 b.classList.remove('selected');
 b.disabled=false; b.style.opacity=''; b.style.cursor='';
 });
-document.getElementById('btn-add').disabled=true;
+document.getElementById('btn-add').disabled = !(match && match.isAram);
 document.getElementById('search-result').style.display='block';
 // 임시티어 자동 적용 (비동기)
 _applyTempTierFromCommunity();
@@ -3800,7 +3800,7 @@ document.querySelectorAll('#main-lanes .lane-btn, #sub-lanes .lane-btn').forEach
 b.classList.remove('selected');
 b.disabled=false; b.style.opacity=''; b.style.cursor='';
 });
-document.getElementById('btn-add').disabled=true;
+document.getElementById('btn-add').disabled = !(match && match.isAram);
 document.getElementById('search-result').style.display='block';
 if (typeof _hookRenderForParsed === 'function') _hookRenderForParsed();
 toast('⚠ Functions 미배포 — Mock 데이터 사용 중', 'ok');
@@ -3839,7 +3839,7 @@ b.style.opacity = isMain ? '0.3' : '';
 b.style.cursor = isMain ? 'not-allowed' : '';
 b.classList.toggle('selected', selectedSubLanes.has(b.dataset.lane));
 });
-document.getElementById('btn-add').disabled = !selectedMainLane;
+document.getElementById('btn-add').disabled = !selectedMainLane && !(match && match.isAram);
 }
 let _tierOverride = null;
 
@@ -3999,7 +3999,7 @@ tag: searchResult.tag,
 icon: searchResult.icon,
 tier: tierStr,
 tierFull: _buildTierFull(overrideTier, detailVal, solo),
-mainLane: selectedMainLane,
+mainLane: (match && match.isAram) ? null : selectedMainLane,
 subLane: selectedSubLanes.size === 1 ? [...selectedSubLanes][0] : [...selectedSubLanes],
 level: searchResult.level,
 puuid: searchResult.puuid || null,
@@ -4099,7 +4099,7 @@ onerror="this.style.display=&quot;none&quot;"> <div class="avatar-rank-border"><
     <span class="tier-badge" style="color:${color};background:${color}18;border:1px solid ${color}44">${tierKo}${tierSuffix}</span>${m.prevSeasonHighest ? `<span style="font-size:9px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;font-weight:700;padding:1px 4px;border-radius:2px;background:rgba(200,170,110,0.06);border:1px solid var(--border-subtle);white-space:nowrap;" title="전 시즌 최고 티어">↑${m.prevSeasonHighest}</span>` : ''}
   </div>
   <div style="display:flex;align-items:center;gap:2px;flex-wrap:nowrap;overflow:hidden;">
-    <span class="lane-icon" title="주 라인">${LANE_KO[m.mainLane]||'?'}</span><span class="lane-sep" style="font-size:8px;color:var(--text-muted);margin:0 1px;">/</span>${_subLaneBadges(m.subLane)}
+    ${m.mainLane ? `<span class="lane-icon" title="주 라인">${LANE_KO[m.mainLane]||m.mainLane}</span>` : ''}${m.mainLane && _subLaneBadges(m.subLane) ? `<span class="lane-sep" style="font-size:8px;color:var(--text-muted);margin:0 1px;">/</span>` : ''}${_subLaneBadges(m.subLane)}
   </div>
 </div> ${_scoreRow} </div> <div class="member-actions"> <button class="btn-attend ${m.present ? 'on' : 'off'}" onclick="toggleAttend(${m.id})">
 ${m.present ? '출석' : '미출'}
@@ -5022,7 +5022,7 @@ div.innerHTML=`
 onerror="this.style.display=&quot;none&quot;"> </div> <div class="mini-info" style="min-width:0;flex:1;"> <div class="mini-name" style="display:flex;align-items:center;gap:3px;"> <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${m.name}</span>
 ${isCaptain ? '<span class="captain-badge">C</span>' : ''}
 ${bidBadge}
-</div> <div class="mini-meta"> <span class="mini-tier" style="color:${color};background:${color}18">${(()=>{const tf=m.tierFull||'';const isHT=['MASTER','GRANDMASTER','CHALLENGER'].includes(m.tier);const lp=tf.match(/(\d+)LP/);const detail=tf&&tf!==m.tier?tf.replace(m.tier,'').trim():'';const suffix=isHT?(lp?` ${lp[1]}LP`:(detail?` ${detail}`:'')):(detail?` ${detail}`:'');return (TIER_KO[m.tier]||m.tier)+suffix;})()} </span> <span class="mini-lane">${LANE_KO[m.mainLane]||'?'}</span>${_subLaneText(m.subLane)?`<span style="color:var(--border-subtle);font-size:8px;margin:0 1px;">/</span><span class="mini-lane sub">${_subLaneText(m.subLane)}</span>`:''} </div> ${_miniScoreHtml} ${_champRowHtml}</div>`;
+</div> <div class="mini-meta"> <span class="mini-tier" style="color:${color};background:${color}18">${(()=>{const tf=m.tierFull||'';const isHT=['MASTER','GRANDMASTER','CHALLENGER'].includes(m.tier);const lp=tf.match(/(\d+)LP/);const detail=tf&&tf!==m.tier?tf.replace(m.tier,'').trim():'';const suffix=isHT?(lp?` ${lp[1]}LP`:(detail?` ${detail}`:'')):(detail?` ${detail}`:'');return (TIER_KO[m.tier]||m.tier)+suffix;})()} </span> ${m.mainLane ? `<span class="mini-lane">${LANE_KO[m.mainLane]||m.mainLane}</span>` : ''}${_subLaneText(m.subLane)?`<span style="color:var(--border-subtle);font-size:8px;margin:0 1px;">/</span><span class="mini-lane sub">${_subLaneText(m.subLane)}</span>`:''} </div> ${_miniScoreHtml} ${_champRowHtml}</div>`;
 return div;
 }
 function filterCaptainList(listId, searchId) {
@@ -5054,7 +5054,7 @@ opt.setAttribute('data-id', m.id);
 opt.setAttribute('data-name', m.name);
 opt.innerHTML=`
 <div class="mini-avatar" style="width:32px;height:32px;"> <img src="https://ddragon.leagueoflegends.com/cdn/16.14.1/img/profileicon/${m.icon}.png"
-onerror="this.style.display=&quot;none&quot;"> </div> <div style="flex:1;min-width:0;"> <div class="mini-name" style="font-size:13px;color:var(--text-white);">${m.name}</div> <div style="font-size:11px;color:${color};font-family:'Rajdhani',sans-serif;">${TIER_KO[m.tier]||m.tier} · ${LANE_KO[m.mainLane]}</div> </div>`;
+onerror="this.style.display=&quot;none&quot;"> </div> <div style="flex:1;min-width:0;"> <div class="mini-name" style="font-size:13px;color:var(--text-white);">${m.name}</div> <div style="font-size:11px;color:${color};font-family:'Rajdhani',sans-serif;">${TIER_KO[m.tier]||m.tier}${m.mainLane ? ' · '+(LANE_KO[m.mainLane]||m.mainLane) : ''}</div> </div>`;
 opt.onclick=() =>{
 document.querySelectorAll('.captain-option').forEach(o => o.classList.remove('picked'));
 opt.classList.add('picked');
@@ -5179,7 +5179,7 @@ const m=onSaleMember;
 const color=TIER_COLORS[m.tier] || '#5B6474';
 document.getElementById('bid-member-info').innerHTML=`
 <div class="on-sale-avatar" style="width:44px;height:44px;flex-shrink:0;"> <img src="https://ddragon.leagueoflegends.com/cdn/16.14.1/img/profileicon/${m.icon}.png"
-onerror="this.style.display=&quot;none&quot;"> </div> <div> <div style="font-size:14px;font-weight:500;color:var(--text-white);">${m.name}</div> <div style="display:flex;gap:5px;margin-top:3px;"> <span class="mini-tier" style="color:${color};background:${color}18;border:1px solid ${color}33">${TIER_KO[m.tier]||m.tier}</span> <span class="mini-lane">${LANE_KO[m.mainLane]||'?'}</span>${_subLaneText(m.subLane)?`<span style="color:var(--border-subtle);font-size:8px;margin:0 1px;">/</span><span class="mini-lane sub">${_subLaneText(m.subLane)}</span>`:''} </div> </div>`;
+onerror="this.style.display=&quot;none&quot;"> </div> <div> <div style="font-size:14px;font-weight:500;color:var(--text-white);">${m.name}</div> <div style="display:flex;gap:5px;margin-top:3px;"> <span class="mini-tier" style="color:${color};background:${color}18;border:1px solid ${color}33">${TIER_KO[m.tier]||m.tier}</span> ${m.mainLane ? `<span class="mini-lane">${LANE_KO[m.mainLane]||m.mainLane}</span>` : ''}${_subLaneText(m.subLane)?`<span style="color:var(--border-subtle);font-size:8px;margin:0 1px;">/</span><span class="mini-lane sub">${_subLaneText(m.subLane)}</span>`:''} </div> </div>`;
 const list=document.getElementById('bid-team-list');
 list.innerHTML='';
 const eligible=teams.filter(t => t.members.length<5);
@@ -7160,7 +7160,7 @@ const _uvScHtml = '<div class="member-score-row"><span class="member-score-label
 const _uvChampHtml = (_uvShowChamp && m.topChampions && m.topChampions.length)
   ? (typeof _makeChampRow === 'function' ? _makeChampRow(m.topChampions) : '')
   : '';
-card.innerHTML = '<div class="avatar" style="color:'+color+'"><img src="https://ddragon.leagueoflegends.com/cdn/16.14.1/img/profileicon/'+m.icon+'.png" onerror="this.style.display=\'none\'"><div class="avatar-rank-border"></div></div><div class="member-info"><div class="member-name">'+m.name+'<span style="color:var(--text-muted);font-size:11px;margin-left:3px;">#'+m.tag+'</span></div><div class="member-meta"><span class="tier-badge" style="color:'+color+';background:'+color+'18;border:1px solid '+color+'44">'+tierKo+tierSuffix+'</span><span class="lane-icon">'+(LANE_KO[m.mainLane]||'?')+'</span>'+(_uvSubBadge?'<span class="lane-sep">/</span>'+_uvSubBadge:'')+' </div>'+_uvScHtml+'</div><div style="font-size:10px;font-family:Rajdhani,sans-serif;font-weight:700;color:'+(m.present?'var(--blue-bright)':'var(--text-muted)')+'">'+(m.present?'출석':'미출')+'</div>';
+card.innerHTML = '<div class="avatar" style="color:'+color+'"><img src="https://ddragon.leagueoflegends.com/cdn/16.14.1/img/profileicon/'+m.icon+'.png" onerror="this.style.display=\'none\'"><div class="avatar-rank-border"></div></div><div class="member-info"><div class="member-name">'+m.name+'<span style="color:var(--text-muted);font-size:11px;margin-left:3px;">#'+m.tag+'</span></div><div class="member-meta"><span class="tier-badge" style="color:'+color+';background:'+color+'18;border:1px solid '+color+'44">'+tierKo+tierSuffix+'</span>'+(m.mainLane ? '<span class="lane-icon">'+(LANE_KO[m.mainLane]||m.mainLane)+'</span>' : '')+''+(_uvSubBadge?'<span class="lane-sep">/</span>'+_uvSubBadge:'')+' </div>'+_uvScHtml+'</div><div style="font-size:10px;font-family:Rajdhani,sans-serif;font-weight:700;color:'+(m.present?'var(--blue-bright)':'var(--text-muted)')+'">'+(m.present?'출석':'미출')+'</div>';
 card.onmouseover = () => { card.style.borderColor = 'var(--border-gold)'; card.style.background = 'var(--bg-card-hover)'; };
 card.onmouseout = () => { card.style.borderColor = ''; card.style.background = ''; };
 grid.appendChild(card);
@@ -8579,7 +8579,7 @@ function renderSwapOutList() {
       <div style="width:28px;height:28px;border-radius:2px;flex-shrink:0;background:var(--bg-dark);border:1px solid var(--border-subtle);overflow:hidden;"><img src="https://ddragon.leagueoflegends.com/cdn/16.14.1/img/profileicon/${m.icon||0}.png" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.visibility=&apos;hidden&apos;"></div>
       <div style="flex:1;min-width:0;">
         <div style="font-size:12px;color:var(--text-white);font-weight:500;">${_escHtml(m.name)}<span style="color:var(--text-muted);font-size:10px;margin-left:3px;">#${_escHtml(m.tag||'')}</span>${teamTag}</div>
-        <div style="font-size:10px;font-family:'Rajdhani',sans-serif;font-weight:700;color:${color};">${tierKo} · ${LANE_KO[m.mainLane]||'?'}</div>
+        <div style="font-size:10px;font-family:'Rajdhani',sans-serif;font-weight:700;color:${color};">${tierKo} · ${m.mainLane ? (LANE_KO[m.mainLane]||m.mainLane) : ''}</div>
       </div>
       ${isSelected ? '<span style="color:#B97EEA;font-size:14px;">✓</span>' : ''}
     </div>`;
@@ -11174,7 +11174,7 @@ try {
 }
 }
 function restoreMatch(snapshot) {
-match = { id: snapshot.id, name: snapshot.name, time: snapshot.time, admin: snapshot.admin, status: snapshot.status, discordJoinable: snapshot.discordJoinable || false, discordLeaveDisabled: snapshot.discordLeaveDisabled || false };
+match = { id: snapshot.id, name: snapshot.name, time: snapshot.time, admin: snapshot.admin, status: snapshot.status, discordJoinable: snapshot.discordJoinable || false, discordLeaveDisabled: snapshot.discordLeaveDisabled || false, isAram: snapshot.isAram || false };
 members = snapshot._members || [];
 matchType = snapshot._matchType || null;
 teams = snapshot._teams || [];
@@ -16966,6 +16966,7 @@ async function toggleDiscordJoinable() {
 function updateDiscordJoinableBtn() {
   const btn = document.getElementById('btn-discord-joinable');
   if (!btn || !match) return;
+  updateAramBtn(); // 칼바람 버튼도 함께 업데이트
   const on = !!match.discordJoinable;
   btn.textContent = on ? 'ON' : 'OFF';
   btn.style.color = on ? 'var(--blue-bright)' : 'var(--muted)';
@@ -17036,6 +17037,50 @@ async function syncDiscordMembersBeforeSave() {
       if (!exists) { members.push(rm); }
     });
   } catch(e) {}
+}
+
+
+// ── 칼바람 내전 토글 ──
+async function toggleAram() {
+  const btn = document.getElementById('btn-aram');
+  if (!btn) return;
+  const newVal = !(match && match.isAram);
+  if (match) match.isAram = newVal;
+  btn.textContent = newVal ? 'ON' : 'OFF';
+  btn.style.color = newVal ? '#7DD3FC' : 'var(--muted)';
+  btn.style.borderColor = newVal ? 'rgba(125,211,252,.4)' : 'var(--border-subtle)';
+  // 포지션 UI 표시/숨김
+  updateAramUI();
+  await saveCurrentMatch();
+  toast(newVal ? '❄️ 칼바람 내전 활성화' : '일반 내전으로 변경', 'ok');
+}
+
+function updateAramUI() {
+  var isAram = !!(match && match.isAram);
+  var laneSection = document.querySelector('.select-label')?.closest('.section-block') ||
+                    document.getElementById('main-lanes')?.closest('.section-block');
+  // 포지션 섹션 숨기기
+  var mainLanesEl = document.getElementById('main-lanes');
+  var subLanesEl  = document.getElementById('sub-lanes');
+  var laneLabels  = document.querySelectorAll('.select-label');
+  if (mainLanesEl) mainLanesEl.style.display = isAram ? 'none' : '';
+  if (subLanesEl)  subLanesEl.style.display  = isAram ? 'none' : '';
+  laneLabels.forEach(function(el) {
+    if (el.textContent.includes('포지션')) el.style.display = isAram ? 'none' : '';
+  });
+  // 추가 버튼 활성화 상태 업데이트
+  var btnAdd = document.getElementById('btn-add');
+  if (btnAdd && isAram && searchResult) btnAdd.disabled = false;
+}
+
+function updateAramBtn() {
+  const btn = document.getElementById('btn-aram');
+  if (!btn || !match) return;
+  const on = !!match.isAram;
+  btn.textContent = on ? 'ON' : 'OFF';
+  btn.style.color = on ? '#7DD3FC' : 'var(--muted)';
+  btn.style.borderColor = on ? 'rgba(125,211,252,.4)' : 'var(--border-subtle)';
+  updateAramUI();
 }
 
 </script>
