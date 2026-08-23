@@ -100,6 +100,8 @@ export default {
     }
     // ── 어드민 API ──
     if (path === '/admin-login' && request.method === 'POST') return handleLogin(request, env);
+    if (path === '/system-connect-write' && request.method === 'POST') return handleConnectWrite(request, env);
+    if (path === '/system-connect-cache-write' && request.method === 'POST') return handleConnectCacheWrite(request, env);
     if (path === '/admin-list' && request.method === 'POST') return handleAdminList(request, env);
     if (path === '/admin-add' && request.method === 'POST') return handleAdminAdd(request, env);
     if (path === '/admin-remove' && request.method === 'POST') return handleAdminRemove(request, env);
@@ -640,6 +642,7 @@ async function handleDbPublicRead(request, env) {
     /^communities\/[^/]+\/matches\/[^/]+\/auctionLog($|\/)/,
     /^system\/patch_mode$/,
     /^communities\/[^/]+\/nickname_history\/[^/]+$/,
+    /^communities\/[^/]+\/nickname_history$/,
     /^communities\/[^/]+\/matches$/,
     /^communities\/[^/]+\/scout_targets$/,
     /^communities\/[^/]+\/scout_allowed_discord$/,
@@ -648,6 +651,9 @@ async function handleDbPublicRead(request, env) {
     /^communities\/[^/]+\/bg_effects$/,
     /^communities\/[^/]+\/doom_scores$/,
     /^system$/,
+    /^system\/tracked_connects$/,
+    /^system\/connect_cache$/,
+    /^system\/connect_cache\/[^/]+$/,
   ];
   if (!publicRead.some(r => r.test(dbPath))) {
     return json({ ok: false, error: '허용되지 않는 경로입니다' }, 403);
@@ -3858,12 +3864,15 @@ async function requireMaster(request, env) {
     if (parts.length >= 3) {
       const adminId = parts[1];
       const pwHash  = parts.slice(2).join(':');
-      const res = await fetch(`${dbUrl}/superadmin.json${authQ}`);
+      // admin/{id} 경로에서 검증
+      const res = await fetch(`${dbUrl}/admin/${adminId}.json${authQ}`);
       if (res.ok) {
         const data = await res.json();
-        if (data && data.id === adminId && data.password === pwHash) {
-          // 재발급
-          issueSession(adminId, { role: 'master' });
+        if (data && data.role === 'master' && data.pw === pwHash) {
+          // 세션 재발급
+          const newToken = crypto.randomUUID();
+          _sessions.set(newToken, { id: adminId, role: 'master', createdAt: Date.now() });
+          _idToToken.set(adminId, newToken);
           return [body, null];
         }
       }
@@ -4040,5 +4049,39 @@ async function handleDiscordNotify(request, env) {
     return json({ok:false,error:`디스코드 전송 실패 (${res.status})`},500);
   }
 
+  return json({ ok: true });
+}
+
+// ── 소속 분석 커넥트 관리 ──
+async function handleConnectWrite(request, env) {
+  const [body, err] = await requireMaster(request, env);
+  if (err) return err;
+  const { action, id, name, serverId } = body;
+  if (!action || !id) return json({ok:false,error:'필수 파라미터 없음'},400);
+  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth='+secret : '';
+  if (action === 'add') {
+    if (!name || !serverId) return json({ok:false,error:'name/serverId 필수'},400);
+    await fetch(`${dbUrl}/system/tracked_connects/${id}.json${authQ}`, {
+      method: 'PUT', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ name, serverId, addedAt: Date.now() })
+    });
+  } else if (action === 'remove') {
+    await fetch(`${dbUrl}/system/tracked_connects/${id}.json${authQ}`, { method: 'DELETE' });
+  }
+  return json({ ok: true });
+}
+
+async function handleConnectCacheWrite(request, env) {
+  const [body, err] = await requireMaster(request, env);
+  if (err) return err;
+  const { key, data } = body;
+  if (!key || !data) return json({ok:false,error:'key/data 필수'},400);
+  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth='+secret : '';
+  await fetch(`${dbUrl}/system/connect_cache/${key}.json${authQ}`, {
+    method: 'PUT', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(data)
+  });
   return json({ ok: true });
 }

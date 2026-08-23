@@ -626,11 +626,40 @@ tr.has-bg-effect td {
       style="padding:5px 14px;border-radius:2px 2px 0 0;border:1px solid var(--border);border-bottom:none;background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">
       🔍 관찰 분석
     </button>
+    <button id="tab-nickname-log" onclick="switchMainTab('nickname-log')"
+      style="padding:5px 14px;border-radius:2px 2px 0 0;border:1px solid var(--border);border-bottom:none;background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">
+      🏷️ 닉네임 변경 이력
+    </button>
   </div>
 
   <!-- ── 관찰 분석 뷰 ── -->
   <div id="scout-view" style="display:none;padding:1rem;">
     <div id="scout-content"></div>
+  </div>
+
+  <!-- ── 닉네임 변경 이력 뷰 ── -->
+  <div id="nickname-log-view" style="display:none;padding:1rem;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:1rem;flex-wrap:wrap;">
+      <input id="nickname-log-search" type="text" placeholder="닉네임 또는 이전 닉네임 검색..."
+        style="flex:1;min-width:200px;max-width:360px;background:var(--bg-panel);border:1px solid var(--border);border-radius:3px;padding:7px 12px;color:var(--white);font-size:12px;font-family:'Noto Sans KR',sans-serif;outline:none;"
+        oninput="filterNicknameLog()">
+      <span id="nickname-log-count" style="font-family:'Rajdhani',sans-serif;font-size:11px;color:var(--muted);"></span>
+    </div>
+    <div id="nickname-log-table-wrap" style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;font-family:'Rajdhani',sans-serif;font-size:12px;" id="nickname-log-table">
+        <thead>
+          <tr style="border-bottom:1px solid var(--border);">
+            <th style="padding:8px 10px;text-align:left;color:var(--muted);font-size:10px;letter-spacing:1.5px;font-weight:700;">변경 시각</th>
+            <th style="padding:8px 10px;text-align:left;color:var(--muted);font-size:10px;letter-spacing:1.5px;font-weight:700;">이전 닉네임</th>
+            <th style="padding:8px 10px;text-align:left;color:var(--muted);font-size:10px;letter-spacing:1.5px;font-weight:700;">현재 닉네임</th>
+            <th style="padding:8px 10px;text-align:left;color:var(--muted);font-size:10px;letter-spacing:1.5px;font-weight:700;">티어</th>
+          </tr>
+        </thead>
+        <tbody id="nickname-log-tbody">
+          <tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--muted);">로딩 중...</td></tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 
   <!-- ── 커뮤니티 통계 뷰 ── -->
@@ -1423,6 +1452,8 @@ function syncTableWidth(){} // 단일 테이블 구조에서 불필요
         style="padding:4px 10px;border-radius:2px 2px 0 0;border:1px solid var(--border);border-bottom:none;background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:.5px;">📝 메모</button>
       <button id="dm-tab-nickname" onclick="switchDetailTab('nickname')"
         style="padding:4px 10px;border-radius:2px 2px 0 0;border:1px solid var(--border);border-bottom:none;background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:.5px;">🏷️ 닉 변경</button>
+      <button id="dm-tab-heatmap" onclick="switchDetailTab('heatmap')"
+        style="padding:4px 10px;border-radius:2px 2px 0 0;border:1px solid var(--border);border-bottom:none;background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:.5px;">🕐 활동패턴</button>
     </div>
     <div id="dm-content">
       <div class="dm-loading"><div class="spinner"></div> 분석 중...</div>
@@ -1435,6 +1466,7 @@ function syncTableWidth(){} // 단일 테이블 구조에서 불필요
       <div style="padding:2rem;text-align:center;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:12px;">로딩 중...</div>
     </div>
     <div id="dm-nickname" style="display:none;overflow-y:auto;max-height:500px;padding:.75rem;"></div>
+    <div id="dm-heatmap" style="display:none;overflow-y:auto;max-height:500px;padding:.75rem;"></div>
     <div id="dm-memo" style="display:none;padding:.75rem;">
       <div id="dm-memo-content">
         <div style="padding:2rem;text-align:center;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:12px;">로딩 중...</div>
@@ -2960,9 +2992,11 @@ function switchDetailTab(tab) {
   var commEl       = document.getElementById('dm-comments');
   var memoEl       = document.getElementById('dm-memo');
   var nicknameEl   = document.getElementById('dm-nickname');
+  var heatmapEl    = document.getElementById('dm-heatmap');
   if (!analysisTab) return;
 
-  [analysisTab, logTab, weeklyTab, commTab, memoTab, nicknameTab].forEach(function(t) {
+  var heatmapTab = document.getElementById('dm-tab-heatmap');
+  [analysisTab, logTab, weeklyTab, commTab, memoTab, nicknameTab, heatmapTab].forEach(function(t) {
     if (t) { t.style.borderBottom='none'; t.style.background='transparent'; t.style.color='var(--muted)'; }
   });
   if (contentEl)   contentEl.style.display  = 'none';
@@ -2971,6 +3005,7 @@ function switchDetailTab(tab) {
   if (commEl)      commEl.style.display     = 'none';
   if (memoEl)      memoEl.style.display     = 'none';
   if (nicknameEl)  nicknameEl.style.display = 'none';
+  if (heatmapEl)   heatmapEl.style.display  = 'none';
 
   if (tab === 'analysis') {
     analysisTab.style.borderBottom = '2px solid var(--blue)';
@@ -3002,6 +3037,13 @@ function switchDetailTab(tab) {
     nicknameTab.style.background   = 'rgba(167,139,250,.08)';
     nicknameTab.style.color        = '#A78BFA';
     if (nicknameEl) { nicknameEl.style.display = ''; loadNicknameHistory(_detailCurrentMemberForLog); }
+  } else if (tab === 'heatmap') {
+    if (heatmapTab) {
+      heatmapTab.style.borderBottom = '2px solid #FB923C';
+      heatmapTab.style.background   = 'rgba(251,146,60,.08)';
+      heatmapTab.style.color        = '#FB923C';
+    }
+    if (heatmapEl) { heatmapEl.style.display = ''; renderActivityHeatmap(_currentMember); }
   }
 }
 window.switchDetailTab = switchDetailTab;
@@ -3221,7 +3263,8 @@ function switchMainTab(tab) {
   var communityTab = document.getElementById('tab-community');
   var communityView = document.getElementById('community-stats-view');
   var scoutTab = document.getElementById('tab-scout');
-  [statsTab, ratingTab, communityTab, scoutTab].forEach(function(t) {
+  var nickLogTab2 = document.getElementById('tab-nickname-log');
+  [statsTab, ratingTab, communityTab, scoutTab, nickLogTab2].forEach(function(t) {
     if (t) { t.style.borderBottom='none'; t.style.background='transparent'; t.style.color='var(--muted)'; }
   });
   var pagination = document.getElementById('pagination');
@@ -3230,6 +3273,8 @@ function switchMainTab(tab) {
   if (rankView) rankView.style.display = 'none';
   if (communityView) communityView.style.display = 'none';
   if (scoutViewEl) scoutViewEl.style.display = 'none';
+  var nickLogViewEl = document.getElementById('nickname-log-view');
+  if (nickLogViewEl) nickLogViewEl.style.display = 'none';
   if (filterBar) filterBar.style.display = 'none';
   if (mobileCards) mobileCards.style.display = 'none';
   if (pagination) pagination.style.display = 'none';
@@ -3263,6 +3308,18 @@ function switchMainTab(tab) {
     if (scoutView) {
       scoutView.style.display = '';
       initScoutView();
+    }
+  } else if (tab === 'nickname-log') {
+    var nickLogTab  = document.getElementById('tab-nickname-log');
+    var nickLogView = document.getElementById('nickname-log-view');
+    if (nickLogTab) {
+      nickLogTab.style.borderBottom = '2px solid #A78BFA';
+      nickLogTab.style.background   = 'rgba(167,139,250,.08)';
+      nickLogTab.style.color        = '#A78BFA';
+    }
+    if (nickLogView) {
+      nickLogView.style.display = '';
+      loadNicknameLog();
     }
   }
 }
@@ -6586,6 +6643,219 @@ async function applyBgEffect(puuId, effect) {
   await saveBgEffect(puuId, effect);
   document.getElementById('bg-effect-picker-modal').style.display = 'none';
   applyBgEffects();
+}
+
+
+// ── 활동 시간대 히트맵 ──
+function renderActivityHeatmap(member) {
+  var el = document.getElementById('dm-heatmap');
+  if (!el || !member) return;
+
+  // 내전 기록에서 타임스탬프 수집
+  var puuId = member.puu_id;
+  // detailCache[mode][puuId].matches 구조
+  var cache = (detailCache['custom'] && detailCache['custom'][puuId])
+           || (detailCache[_queueMode] && detailCache[_queueMode][puuId])
+           || null;
+  var custom = (cache && cache.matches) ? cache.matches : [];
+
+  if (!custom.length) {
+    el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--muted);font-size:12px;">내전 기록이 없습니다. 먼저 분석 탭에서 상세 버튼을 눌러 데이터를 로드해주세요.</div>';
+    return;
+  }
+
+  // 요일×시간 2D 배열 집계 (0=월 ~ 6=일, 0~23시)
+  var grid = [];
+  for (var d = 0; d < 7; d++) {
+    grid[d] = new Array(24).fill(0);
+  }
+  var total = 0;
+  custom.forEach(function(md) {
+    var ts = ((md.match_basic_dict || {}).creation_timestamp || 0) * 1000;
+    if (!ts) return;
+    var dt = new Date(ts);
+    var dow = (dt.getDay() + 6) % 7; // 0=월 ~ 6=일
+    var hour = dt.getHours();
+    grid[dow][hour]++;
+    total++;
+  });
+
+  if (!total) {
+    el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--muted);font-size:12px;">시간 데이터가 없습니다.</div>';
+    return;
+  }
+
+  var maxVal = 0;
+  for (var d = 0; d < 7; d++) for (var h = 0; h < 24; h++) if (grid[d][h] > maxVal) maxVal = grid[d][h];
+
+  var DAYS = ['월','화','수','목','금','토','일'];
+  var HOURS = [];
+  for (var h = 0; h < 24; h++) HOURS.push(h + '시');
+
+  // HTML 테이블 생성
+  var html = '<div style="padding:.5rem 0;">';
+  html += '<div style="font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;color:var(--muted);margin-bottom:.75rem;">🕐 활동 시간대 패턴 <span style="font-weight:400;font-size:10px;">(내전 ' + total + '판 기준)</span></div>';
+  html += '<div style="overflow-x:auto;">';
+  html += '<table style="border-collapse:collapse;font-family:Rajdhani,sans-serif;font-size:10px;">';
+
+  // 헤더 (시간)
+  html += '<tr><th style="padding:2px 4px;color:var(--muted);font-weight:400;min-width:24px;"></th>';
+  for (var h = 0; h < 24; h++) {
+    html += '<th style="padding:2px 3px;color:var(--muted);font-weight:400;text-align:center;min-width:22px;">' + h + '</th>';
+  }
+  html += '</tr>';
+
+  // 각 요일
+  for (var d = 0; d < 7; d++) {
+    var isSat = d === 5, isSun = d === 6;
+    var dayColor = isSun ? '#F87171' : isSat ? '#93C5FD' : 'var(--white)';
+    html += '<tr>';
+    html += '<td style="padding:2px 6px 2px 2px;font-weight:700;color:' + dayColor + ';white-space:nowrap;">' + DAYS[d] + '</td>';
+    for (var h = 0; h < 24; h++) {
+      var val = grid[d][h];
+      var ratio = maxVal > 0 ? val / maxVal : 0;
+      // 강도에 따라 색상
+      var alpha = ratio > 0 ? Math.max(0.08, ratio) : 0;
+      var bg = val > 0
+        ? 'rgba(251,146,60,' + alpha.toFixed(2) + ')'
+        : 'rgba(255,255,255,.02)';
+      var textColor = ratio > 0.6 ? '#fff' : ratio > 0.3 ? 'rgba(255,255,255,.7)' : 'transparent';
+      var title = val > 0 ? DAYS[d] + ' ' + h + '시: ' + val + '판' : '';
+      html += '<td title="' + title + '" style="width:22px;height:22px;background:' + bg + ';border-radius:2px;text-align:center;vertical-align:middle;color:' + textColor + ';font-size:9px;font-weight:700;cursor:' + (val>0?'default':'default') + ';">' + (val > 0 ? val : '') + '</td>';
+    }
+    html += '</tr>';
+  }
+
+  html += '</table></div>';
+
+  // 피크 타임 요약
+  var peakSlots = [];
+  for (var d = 0; d < 7; d++) {
+    for (var h = 0; h < 24; h++) {
+      if (grid[d][h] > 0) peakSlots.push({ d, h, v: grid[d][h] });
+    }
+  }
+  peakSlots.sort(function(a,b){ return b.v - a.v; });
+  var top3 = peakSlots.slice(0, 3);
+  if (top3.length) {
+    html += '<div style="margin-top:.75rem;font-size:11px;color:var(--muted);">🔥 주요 활동 시간대: ';
+    html += top3.map(function(s){
+      return '<span style="color:#FB923C;font-weight:700;">' + DAYS[s.d] + ' ' + s.h + '시</span>(' + s.v + '판)';
+    }).join(' &middot; ');
+    html += '</div>';
+  }
+
+  // 범례
+  html += '<div style="display:flex;align-items:center;gap:4px;margin-top:.5rem;font-size:10px;color:var(--muted);">';
+  html += '낮음 ';
+  [0.08, 0.25, 0.5, 0.75, 1.0].forEach(function(a) {
+    html += '<div style="width:14px;height:14px;background:rgba(251,146,60,' + a + ');border-radius:2px;"></div>';
+  });
+  html += ' 높음</div>';
+  html += '</div>';
+
+  el.innerHTML = html;
+}
+
+
+// ── 닉네임 변경 이력 전체 조회 (마스터 전용) ──
+var _nicknameLogAll = []; // 전체 이력
+
+async function loadNicknameLog() {
+  var tbody = document.getElementById('nickname-log-tbody');
+  var countEl = document.getElementById('nickname-log-count');
+  if (!tbody) return;
+  // 마스터 권한 확인
+  if (_statsAdminRole !== 'master') {
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--muted);font-size:12px;">🔒 마스터 관리자만 조회 가능합니다.<br><span style="font-size:10px;opacity:.6;">관리자 로그인 후 이용하세요</span></td></tr>';
+    return;
+  }
+  tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--muted);">로딩 중...</td></tr>';
+
+  try {
+    // communities/{cid}/nickname_history 전체 로드
+    var res = await fetch(WORKER_URL + '/db-public-read', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ path: 'communities/' + COMMUNITY_ID + '/nickname_history' })
+    });
+    var j = await res.json();
+    var histMap = (j.ok && j.data) ? j.data : {};
+
+    // 각 유저의 이력을 펼쳐서 단일 배열로 합치기
+    // 구조: [{date:'2026-08-06', label:'초기 닉네임', name:'닉#태그'}, {date:'2026-08-10', name:'새닉#태그'}, ...]
+    _nicknameLogAll = [];
+    Object.entries(histMap).forEach(function(entry) {
+      var puuId = entry[0];
+      var records = entry[1];
+      if (!Array.isArray(records) || records.length < 2) return;
+      // index 0 = 초기 닉네임, 1 이후 = 변경 이력
+      records.forEach(function(r, idx) {
+        if (idx === 0) return; // 초기 닉네임 제외
+        if (r.hidden) return;  // 숨겨진 항목 제외
+        var prev = records[idx - 1];
+        var prevParts = (prev.name || '').split('#');
+        var curParts  = (r.name   || '').split('#');
+        _nicknameLogAll.push({
+          puuId:    puuId,
+          date:     r.date || '',
+          prevName: prevParts[0] || '',
+          prevTag:  prevParts[1] || '',
+          curName:  curParts[0]  || '',
+          curTag:   curParts[1]  || '',
+          tier:     r.tier || ''
+        });
+      });
+    });
+
+    // 최신순 정렬 (date 문자열 역순)
+    _nicknameLogAll.sort(function(a,b){ return b.date.localeCompare(a.date); });
+    renderNicknameLog(_nicknameLogAll);
+  } catch(e) {
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:2rem;color:#E05050;font-size:12px;">로드 오류: ' + esc(e.message) + '</td></tr>';
+  }
+}
+
+function filterNicknameLog() {
+  var q = (document.getElementById('nickname-log-search').value || '').toLowerCase().trim();
+  if (!q) { renderNicknameLog(_nicknameLogAll); return; }
+  var filtered = _nicknameLogAll.filter(function(r) {
+    return (r.prevName + '#' + r.prevTag).toLowerCase().includes(q) ||
+           (r.curName  + '#' + r.curTag ).toLowerCase().includes(q);
+  });
+  renderNicknameLog(filtered);
+}
+
+function renderNicknameLog(list) {
+  var tbody = document.getElementById('nickname-log-tbody');
+  var countEl = document.getElementById('nickname-log-count');
+  if (!tbody) return;
+  if (countEl) countEl.textContent = list.length + '건';
+
+  if (!list.length) {
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--muted);font-size:12px;">이력이 없습니다.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = list.map(function(r, i) {
+    var dateStr = r.date || '—';
+    var bg = i % 2 === 0 ? '' : 'background:rgba(255,255,255,.015);';
+    var tierBadge = r.tier ? '<span style="font-size:10px;color:var(--gold);margin-left:4px;">' + esc(r.tier) + '</span>' : '';
+    return '<tr style="' + bg + 'border-bottom:1px solid rgba(255,255,255,.04);">'
+      + '<td style="padding:8px 10px;color:var(--muted);font-size:11px;white-space:nowrap;">' + dateStr + '</td>'
+      + '<td style="padding:8px 10px;">'
+        + (r.prevName
+          ? '<span style="font-family:Rajdhani,sans-serif;font-weight:700;color:var(--muted);">' + esc(r.prevName) + '</span>'
+            + '<span style="color:var(--muted);font-size:10px;"> #' + esc(r.prevTag) + '</span>'
+          : '<span style="color:var(--muted);font-size:10px;">—</span>')
+        + '</td>'
+      + '<td style="padding:8px 10px;">'
+        + '<span style="font-family:Rajdhani,sans-serif;font-weight:700;color:var(--white);">' + esc(r.curName) + '</span>'
+        + '<span style="color:var(--muted);font-size:10px;"> #' + esc(r.curTag) + '</span>'
+        + tierBadge
+        + '</td>'
+      + '<td style="padding:8px 10px;font-size:11px;color:var(--muted);">' + esc(r.tier||'—') + '</td>'
+      + '</tr>';
+  }).join('');
 }
 
 </script>

@@ -1776,7 +1776,7 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
 </div>
 <div id="list-grid" class="list-grid"></div> <div id="list-empty" class="list-empty" style="display:none;"> <div class="list-empty-hex">◇</div> <div style="font-size:14px;">생성된 내전이 없습니다</div> <button class="btn-primary admin-only" onclick="openNewMatchFlow()" style="display:none;">첫 내전 생성하기</button> </div> </div> </div>
 </div> <div id="screen-1" class="screen">
-<div class="main"> <div class="match-bar section-full"> <div class="match-bar-field" style="flex-direction:row;align-items:center;gap:8px;"> <span class="match-bar-label">❄️ 칼바람</span> <button id="btn-aram" onclick="toggleAram()" style="padding:3px 10px;border-radius:3px;border:1px solid var(--border-subtle);background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;">OFF</button> </div> <div class="match-bar-divider"></div> <div class="match-bar-field" style="flex-direction:row;align-items:center;gap:8px;"> <span class="match-bar-label">🎮 디스코드 참가</span> <button id="btn-discord-joinable" onclick="toggleDiscordJoinable()" style="padding:3px 10px;border-radius:3px;border:1px solid var(--border-subtle);background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;">OFF</button> </div> <div class="match-bar-divider"></div> <div class="match-bar-field" style="flex-direction:row;align-items:center;gap:8px;"> <span class="match-bar-label">🚫 빼기 불가</span> <button id="btn-discord-leave-disabled" onclick="toggleDiscordLeaveDisabled()" style="padding:3px 10px;border-radius:3px;border:1px solid var(--border-subtle);background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;">OFF</button> </div> <div class="match-bar-divider"></div> <div class="match-bar-field" style="flex-direction:row;align-items:center;gap:8px;"> <button onclick="openDiscordNotifyModal()" style="padding:3px 10px;border-radius:3px;border:1px solid rgba(88,101,242,.4);background:rgba(88,101,242,.08);color:#8B9CF4;font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;">📢 디스코드 호출</button> </div> <div class="match-bar-divider"></div> <div class="match-bar-field"> <div class="match-bar-label">내전명</div> <div class="match-bar-value" id="bar-name">—</div> </div> <div class="match-bar-divider"></div> <div class="match-bar-field" style="flex-direction:row;align-items:center;gap:10px;"> <div> <div class="match-bar-label">시작 시간</div> <div class="match-bar-value" id="bar-time">—</div> </div> <button id="btn-edit-time" onclick="openEditTimeModal()" style="display:none;padding:3px 9px;background:transparent;border:1px solid var(--border-subtle);border-radius:2px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all .15s;white-space:nowrap;" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'" onmouseout="this.style.borderColor='var(--border-subtle)';this.style.color='var(--text-muted)'">수정</button> </div> <div class="match-bar-divider"></div> <div class="match-bar-field"> <div class="match-bar-label">상태</div> <div class="status-badge" id="bar-status">내전 모집</div> </div> <div class="match-bar-divider"></div> <div class="match-bar-field"> <div class="match-bar-label">진행 관리자</div> <div class="match-bar-value" id="bar-admin">—</div> </div> <div class="match-bar-spacer"></div> <div class="progress-block"> <div class="progress-label"> <span>출석 현황</span> <span id="prog-text">0 / 0</span> </div> <div class="progress-bar-bg"> <div class="progress-bar-fill" id="prog-fill" style="width:0%"></div> </div> </div> </div> <div class="panel" style="display:flex;flex-direction:column;height:calc(100vh - 200px);"> <div class="panel-header"> <div class="panel-title"> <div class="panel-title-dot"></div>
+<div class="main"> <div class="match-bar section-full"> <div class="match-bar-field" style="flex-direction:row;align-items:center;gap:8px;"> <span class="match-bar-label">❄️ 칼바람</span> <button id="btn-aram" onclick="toggleAram()" style="padding:3px 10px;border-radius:3px;border:1px solid var(--border-subtle);background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;">OFF</button> </div> <div class="match-bar-divider"></div> <div class="match-bar-field" style="flex-direction:row;align-items:center;gap:8px;"> <span class="match-bar-label">🎮 디스코드 참가</span> <button id="btn-discord-joinable" onclick="toggleDiscordJoinable()" style="padding:3px 10px;border-radius:3px;border:1px solid var(--border-subtle);background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;">OFF</button> </div> <div class="match-bar-divider"></div> <div class="match-bar-field" style="flex-direction:row;align-items:center;gap:8px;"> <span class="match-bar-label">🚫 빼기 불가</span> <button id="btn-discord-leave-disabled" onclick="toggleDiscordLeaveDisabled()" style="padding:3px 10px;border-radius:3px;border:1px solid var(--border-subtle);background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;">OFF</button> </div> <div class="match-bar-divider"></div> <div class="match-bar-field" style="flex-direction:row;align-items:center;gap:8px;"> <button onclick="openDiscordNotifyModal()" style="padding:3px 10px;border-radius:3px;border:1px solid rgba(88,101,242,.4);background:rgba(88,101,242,.08);color:#8B9CF4;font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;">📢 디스코드 호출</button> </div> <div class="match-bar-divider"></div> <div class="match-bar-field" style="flex-direction:row;align-items:center;gap:8px;"> <button onclick="refreshDiscordMembers()" id="btn-refresh-discord" style="padding:3px 10px;border-radius:3px;border:1px solid var(--border-subtle);background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;" title="디스코드 참가 멤버 새로고침">🔄 새로고침</button> </div> <div class="match-bar-divider"></div> <div class="match-bar-field"> <div class="match-bar-label">내전명</div> <div class="match-bar-value" id="bar-name">—</div> </div> <div class="match-bar-divider"></div> <div class="match-bar-field" style="flex-direction:row;align-items:center;gap:10px;"> <div> <div class="match-bar-label">시작 시간</div> <div class="match-bar-value" id="bar-time">—</div> </div> <button id="btn-edit-time" onclick="openEditTimeModal()" style="display:none;padding:3px 9px;background:transparent;border:1px solid var(--border-subtle);border-radius:2px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all .15s;white-space:nowrap;" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'" onmouseout="this.style.borderColor='var(--border-subtle)';this.style.color='var(--text-muted)'">수정</button> </div> <div class="match-bar-divider"></div> <div class="match-bar-field"> <div class="match-bar-label">상태</div> <div class="status-badge" id="bar-status">내전 모집</div> </div> <div class="match-bar-divider"></div> <div class="match-bar-field"> <div class="match-bar-label">진행 관리자</div> <div class="match-bar-value" id="bar-admin">—</div> </div> <div class="match-bar-spacer"></div> <div class="progress-block"> <div class="progress-label"> <span>출석 현황</span> <span id="prog-text">0 / 0</span> </div> <div class="progress-bar-bg"> <div class="progress-bar-fill" id="prog-fill" style="width:0%"></div> </div> </div> </div> <div class="panel" style="display:flex;flex-direction:column;height:calc(100vh - 200px);"> <div class="panel-header"> <div class="panel-title"> <div class="panel-title-dot"></div>
  내전 대기 멤버
  </div> <div style="display:flex;align-items:center;gap:6px;"> <div class="filter-active-dot" id="s1-filter-dot"></div> <div id="member-count" class="count-badge">0명</div> </div> </div> <div class="filter-bar"> <div class="filter-search-row"> <input class="filter-search-input" id="s1-search" placeholder="닉네임 검색..." oninput="applyFilter('s1')"> <button class="filter-search-clear" id="s1-search-clear" onclick="clearSearch('s1')">✕</button> </div> <div class="filter-row"> <span class="filter-label">포지션</span> <button id="s1-lane-mode-main" onclick="setLaneMode('s1','main')" style="padding:2px 7px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:9px;font-weight:700;cursor:pointer;letter-spacing:.5px;">주라인</button><button id="s1-lane-mode-both" onclick="setLaneMode('s1','both')" style="padding:2px 7px;border-radius:2px;border:1px solid rgba(10,200,185,.4);background:rgba(10,200,185,.1);color:var(--blue-bright);font-family:'Rajdhani',sans-serif;font-size:9px;font-weight:700;cursor:pointer;letter-spacing:.5px;margin-right:4px;">주+보조</button><button class="lane-filter-btn" data-lane="top" onclick="toggleLaneFilter('s1','top')">TOP</button> <button class="lane-filter-btn" data-lane="jg" onclick="toggleLaneFilter('s1','jg')">JG</button> <button class="lane-filter-btn" data-lane="mid" onclick="toggleLaneFilter('s1','mid')">MID</button> <button class="lane-filter-btn" data-lane="bot" onclick="toggleLaneFilter('s1','bot')">BOT</button> <button class="lane-filter-btn" data-lane="sup" onclick="toggleLaneFilter('s1','sup')">SUP</button> </div> <div class="filter-row" style="flex-wrap:wrap;"> <span class="filter-label">티어</span> <button class="lane-filter-btn" data-tier-filter="s1" data-tier="MASTER+" onclick="toggleTierFilter('s1','MASTER+')" style="color:var(--tier-master);">마스터+</button> <button class="lane-filter-btn" data-tier-filter="s1" data-tier="DIAMOND" onclick="toggleTierFilter('s1','DIAMOND')" style="color:var(--tier-diamond);">다이아</button> <button class="lane-filter-btn" data-tier-filter="s1" data-tier="EMERALD" onclick="toggleTierFilter('s1','EMERALD')" style="color:var(--tier-emerald);">에메랄드</button> <button class="lane-filter-btn" data-tier-filter="s1" data-tier="PLATINUM" onclick="toggleTierFilter('s1','PLATINUM')" style="color:var(--tier-plat);">플레티넘</button> <button class="lane-filter-btn" data-tier-filter="s1" data-tier="GOLD" onclick="toggleTierFilter('s1','GOLD')" style="color:var(--tier-gold);">골드</button> <button class="lane-filter-btn" data-tier-filter="s1" data-tier="SILVER" onclick="toggleTierFilter('s1','SILVER')" style="color:var(--tier-silver);">실버</button> <button class="lane-filter-btn" data-tier-filter="s1" data-tier="BRONZE" onclick="toggleTierFilter('s1','BRONZE')" style="color:var(--tier-bronze);">브론즈</button> <button class="lane-filter-btn" data-tier-filter="s1" data-tier="IRON" onclick="toggleTierFilter('s1','IRON')" style="color:var(--tier-iron);">아이언</button> <button onclick="resetTierFilter('s1')" style="padding:3px 8px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--text-muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;margin-left:2px;">↺ 초기화</button> </div> <div class="filter-row"> <span class="filter-label">정렬</span> <select class="sort-select" id="s1-sort" onchange="applyFilter('s1')"> <option value="">기본</option> <option value="tier-asc">티어 낮은순</option> <option value="tier-desc">티어 높은순</option> <option value="name-asc">이름 ㄱ→ㅎ</option> <option value="name-desc">이름 ㅎ→ㄱ</option> </select> </div> </div> <div id="balance-score-info" style="padding:.4rem .5rem .2rem;"><div class="score-info-box" style="font-size:10px;line-height:1.7;"><span class="score-info-title" style="font-size:10px;">⚖️ 밸런스 점수</span><strong>티어점수</strong>(아이언100~에메랄드675, 다이아700~775, 마스터+800~) + <strong>승률보정</strong>((승률-50%)×1.0, 30판↑부터 반영) + <strong>내전전적</strong>(3단계 선택). <strong style="color:#E05050;">언랭 계산불가.</strong></div></div>
  <div class="member-grid" id="member-grid" style="flex:1;overflow-y:auto;max-height:none;"> <div class="empty-state" id="empty-state"> <div class="empty-hex">◇</div> <div class="empty-text">우측 패널에서 소환사를 검색해 추가하세요</div> </div> </div> </div>
@@ -4912,10 +4912,18 @@ const teamName=captain?captain.name+'팀':`팀 ${team.id}`;
 const div=document.createElement('div');
 div.className='team-panel';
 div.id=`panel-${prefix}-${team.id}`;
+div.draggable=true;
+div.dataset.teamId=team.id;
+div.dataset.mode=mode;
+div.addEventListener('dragstart', _teamDragStart);
+div.addEventListener('dragover', _teamDragOver);
+div.addEventListener('drop', _teamDrop);
+div.addEventListener('dragend', _teamDragEnd);
 const hdr=document.createElement('div');
 hdr.className='team-header';
+hdr.style.cursor='grab';
 hdr.innerHTML=`
-<div class="team-name">${teamName}</div> <div style="display:flex;align-items:center;gap:5px;"> <div class="team-count">${team.members.length}/5</div> <button onclick="openSetCaptainModal(${team.id},'${mode}')"
+<span style="font-size:12px;color:var(--text-muted);margin-right:4px;cursor:grab;" title="드래그해서 순서 변경">⠿</span><div class="team-name">${teamName}</div> <div style="display:flex;align-items:center;gap:5px;"> <div class="team-count">${team.members.length}/5</div> <button onclick="openSetCaptainModal(${team.id},'${mode}')"
 style="font-size:9px;padding:2px 6px;border:1px solid var(--border-subtle);background:transparent;color:var(--text-muted);border-radius:2px;cursor:pointer;font-family:'Rajdhani',sans-serif;font-weight:700;letter-spacing:.5px;"
 onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'"
 onmouseout="this.style.borderColor='var(--border-subtle)';this.style.color='var(--text-muted)'">팀장</button> <button onclick="deleteTeam(${team.id},'${mode}')"
@@ -5447,6 +5455,7 @@ function generateBracket(){
 const shuffled=[...teams].sort(() => Math.random()-.5);
 bracketRounds=buildSingleElim(shuffled);
 drawBracket();
+saveCurrentMatch(); // 재추첨 후 Firebase 저장
 }
 function buildSingleElim(teamList){
   let n = 1;
@@ -6715,6 +6724,11 @@ function _uvSubscribe(communityId, matchId) {
     // 경매 플로팅 패널 업데이트
     if (typeof _uvApUpdate === 'function') _uvApUpdate(data);
     openUserView(data);
+    // 대진표 탭이 열려있으면 실시간 재렌더링
+    var bracketTab = document.getElementById('uv-panel-bracket');
+    if (bracketTab && bracketTab.style.display !== 'none' && data._bracketRounds) {
+      _uvRenderBracket(data);
+    }
   });
 }
 
@@ -17438,6 +17452,77 @@ window.saveDoomScores = async function saveDoomScores() {
     }
   } catch(e) {
     toast('❌ 오류: ' + e.message, 'err');
+  }
+}
+
+
+// ── 팀 순서 드래그 앤 드롭 ──
+var _teamDragSrcId = null;
+var _teamDragMode = null;
+
+function _teamDragStart(e) {
+  _teamDragSrcId = parseInt(this.dataset.teamId);
+  _teamDragMode = this.dataset.mode;
+  this.style.opacity = '0.5';
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', _teamDragSrcId);
+}
+
+function _teamDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  var targetId = parseInt(this.dataset.teamId);
+  if (targetId !== _teamDragSrcId) {
+    this.style.borderColor = 'rgba(10,200,185,.5)';
+    this.style.background = 'rgba(10,200,185,.04)';
+  }
+  return false;
+}
+
+function _teamDrop(e) {
+  e.stopPropagation();
+  var targetId = parseInt(this.dataset.teamId);
+  if (targetId === _teamDragSrcId) return;
+  // teams 배열에서 순서 변경
+  var srcIdx = teams.findIndex(function(t){ return t.id === _teamDragSrcId; });
+  var tgtIdx = teams.findIndex(function(t){ return t.id === targetId; });
+  if (srcIdx < 0 || tgtIdx < 0) return;
+  var moved = teams.splice(srcIdx, 1)[0];
+  teams.splice(tgtIdx, 0, moved);
+  // 그리드 다시 렌더
+  var mode = _teamDragMode || 'normal';
+  if (mode === 'normal') { renderNormalPool(); renderNormalTeams(); }
+  else { renderAuctionPool(); renderAuctionTeams(); }
+  saveCurrentMatch();
+  return false;
+}
+
+function _teamDragEnd(e) {
+  this.style.opacity = '1';
+  // 모든 팀 패널 스타일 초기화
+  document.querySelectorAll('.team-panel').forEach(function(p) {
+    p.style.borderColor = '';
+    p.style.background = '';
+  });
+  _teamDragSrcId = null;
+  _teamDragMode = null;
+}
+
+
+// ── 디스코드 멤버 새로고침 ──
+async function refreshDiscordMembers() {
+  var btn = document.getElementById('btn-refresh-discord');
+  if (btn) { btn.textContent = '⏳ 로딩...'; btn.disabled = true; }
+  try {
+    await syncDiscordMembersBeforeSave();
+    renderMembers();
+    if (typeof updateProgress === 'function') updateProgress();
+    if (typeof updateConditions === 'function') updateConditions();
+    toast('✅ 디스코드 멤버 새로고침 완료', 'ok');
+  } catch(e) {
+    toast('❌ 새로고침 실패: ' + e.message, 'err');
+  } finally {
+    if (btn) { btn.textContent = '🔄 새로고침'; btn.disabled = false; }
   }
 }
 

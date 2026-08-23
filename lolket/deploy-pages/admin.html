@@ -179,6 +179,9 @@ body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg-darkest); c
     <div class="nav-item" onclick="switchTab('system')">
       <span class="nav-icon">⚙️</span> 시스템 설정
     </div>
+    <div class="nav-item" onclick="switchTab('connect')">
+      <span class="nav-icon">🔍</span> 소속 분석
+    </div>
     <div class="sidebar-bottom">
       <div class="admin-badge">MASTER</div>
       <div class="admin-id" id="sidebar-admin-id">—</div>
@@ -262,6 +265,46 @@ body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg-darkest); c
               <tr class="loading-row"><td colspan="5"><div class="spinner" style="margin:0 auto;"></div></td></tr>
             </tbody>
           </table>
+        </div>
+      </div>
+
+      <!-- 🔍 소속 분석 -->
+      <div class="tab-panel" id="tab-connect">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;align-items:start;">
+
+          <!-- 커넥트 서버 등록 -->
+          <div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;">
+              <div class="section-title" style="margin-bottom:0;flex:1;">등록된 커넥트 서버</div>
+              <button class="btn-sm btn-blue" onclick="openAddConnectModal()">+ 추가</button>
+            </div>
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead><tr>
+                  <th>서버명</th><th>서버 ID</th><th>액션</th>
+                </tr></thead>
+                <tbody id="connect-list-tbody">
+                  <tr class="loading-row"><td colspan="3"><div class="spinner" style="margin:0 auto;"></div></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- 유저 소속 분석 -->
+          <div>
+            <div class="section-title">유저 소속 분석</div>
+            <div class="table-wrap" style="padding:1rem;">
+              <div class="form-group">
+                <label class="form-label">소환사명#태그</label>
+                <div style="display:flex;gap:6px;">
+                  <input class="form-input" type="text" id="connect-search-query" placeholder="예) Roonging#KR1" style="flex:1;" onkeydown="if(event.key==='Enter')analyzeConnect()">
+                  <button class="btn-sm btn-blue" onclick="analyzeConnect()" style="white-space:nowrap;">분석</button>
+                </div>
+              </div>
+              <div id="connect-result" style="margin-top:.75rem;"></div>
+            </div>
+          </div>
+
         </div>
       </div>
 
@@ -398,7 +441,7 @@ async function doLogin() {
     if (!j.ok || j.role !== 'master') { err.textContent = j.error || '마스터 권한이 없습니다'; return; }
     _token = j.token; _adminId = id;
     // pwHash를 직접 계산해서 영구 토큰 생성 (Worker 재시작 대비)
-    const pwBuf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw + 'lolket_v1'));
+    const pwBuf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw));
     const pwHex = Array.from(new Uint8Array(pwBuf)).map(b=>b.toString(16).padStart(2,'0')).join('');
     _masterToken = 'master:' + id + ':' + pwHex;
     sessionStorage.setItem('admin_token', _token);
@@ -442,6 +485,7 @@ function switchTab(tab) {
   else if (tab === 'communities') loadCommunities();
   else if (tab === 'operators') loadOperators();
   else if (tab === 'system') loadSystem();
+  else if (tab === 'connect') loadConnectTab();
 }
 
 function refreshCurrentTab() {
@@ -674,6 +718,205 @@ document.querySelectorAll('.modal-overlay').forEach(m => m.addEventListener('cli
 
 // ── 자동 로그인 체크 ──
 if (_token) showAdmin();
+
+// ── 소속 분석 ──
+var _trackedConnects = {}; // { id: { name, serverId } }
+var _connectCache = {};    // { puuId: { ts, results: [...] } }
+const DEEPLOL_API = 'https://b2c-api-cdn.deeplol.gg';
+const CONNECT_CACHE_TTL = 24 * 60 * 60 * 1000; // 24시간
+
+async function loadConnectTab() {
+  document.getElementById('connect-list-tbody').innerHTML =
+    '<tr class="loading-row"><td colspan="3"><div class="spinner" style="margin:0 auto;"></div></td></tr>';
+  try {
+    const j = await dbRead('system/tracked_connects');
+    _trackedConnects = j || {};
+    const rows = Object.entries(_trackedConnects);
+    document.getElementById('connect-list-tbody').innerHTML = rows.length
+      ? rows.map(([id, c]) => `
+          <tr>
+            <td><span style="font-weight:600;">${esc(c.name||'—')}</span></td>
+            <td><span style="font-family:Rajdhani,sans-serif;font-size:11px;color:var(--muted);">${esc(c.serverId||id)}</span></td>
+            <td><button class="btn-xs btn-red" onclick="removeConnect('${esc(id)}')">제거</button></td>
+          </tr>`)
+        .join('')
+      : '<tr><td colspan="3" style="text-align:center;color:var(--muted);padding:1.5rem;">등록된 커넥트 없음</td></tr>';
+    // 캐시 로드 (connectName 없는 구캐시 무효화)
+    const cache = await dbRead('system/connect_cache');
+    _connectCache = {};
+    if (cache) {
+      Object.entries(cache).forEach(([k,v]) => {
+        if (v && v.results && v.results.every && v.results.every(r => r.connectName)) {
+          _connectCache[k] = v;
+        }
+      });
+    }
+  } catch(e) { toast('로드 오류: ' + e.message, 'err'); }
+}
+
+function openAddConnectModal() {
+  document.getElementById('connect-name').value = '';
+  document.getElementById('connect-server-id').value = '';
+  document.getElementById('modal-add-connect').classList.add('open');
+}
+
+async function addConnect() {
+  const name = document.getElementById('connect-name').value.trim();
+  const serverId = document.getElementById('connect-server-id').value.trim();
+  if (!name || !serverId) { toast('서버명과 서버 ID를 입력하세요', 'err'); return; }
+  const id = 'c_' + serverId;
+  const j = await adminApi('/system-connect-write', { action: 'add', id, name, serverId });
+  if (j.ok) { toast('추가 완료'); closeModal('modal-add-connect'); loadConnectTab(); }
+  else toast(j.error || '오류', 'err');
+}
+
+async function removeConnect(id) {
+  if (!confirm('제거할까요?')) return;
+  const j = await adminApi('/system-connect-write', { action: 'remove', id });
+  if (j.ok) { toast('제거 완료'); loadConnectTab(); }
+  else toast(j.error || '오류', 'err');
+}
+
+async function analyzeConnect() {
+  const query = (document.getElementById('connect-search-query').value || '').trim();
+  if (!query) { toast('소환사명#태그를 입력하세요', 'err'); return; }
+  const parts = query.split('#');
+  const name = parts[0].trim();
+  const tag  = (parts[1] || 'KR1').trim();
+  const resultEl = document.getElementById('connect-result');
+  resultEl.innerHTML = '<div style="display:flex;align-items:center;gap:8px;color:var(--muted);font-size:12px;"><div class="spinner"></div> 소환사 검색 중...</div>';
+
+  try {
+    // 1. 소환사 puuId 조회 (index.html searchSummoner와 동일)
+    const RIOT_URL = 'https://api.roonging.com';
+    const searchUrl = RIOT_URL + '?gameName=' + encodeURIComponent(name) + '&tagLine=' + encodeURIComponent(tag) + '&region=KR';
+    const searchResp = await fetch(searchUrl);
+    const searchData = await searchResp.json();
+    if (!searchResp.ok) {
+      resultEl.innerHTML = '<div style="color:#E05050;font-size:12px;">❌ ' + esc(searchData.error || '소환사를 찾을 수 없습니다') + '</div>';
+      return;
+    }
+    // 딥롤 puu_id는 Riot puuid와 다른 형식 → riot_name+tag로 매칭
+    const riotName = (searchData.name || name).toLowerCase().trim();
+    const riotTag  = (searchData.tag  || tag).toLowerCase().trim();
+    if (!riotName) {
+      resultEl.innerHTML = '<div style="color:#E05050;font-size:12px;">❌ 소환사 정보를 가져올 수 없습니다.</div>';
+      return;
+    }
+
+    // 2. 캐시 확인
+    const cacheKey = (riotName + '_' + riotTag).replace(/[^a-zA-Z0-9]/g, '_').slice(0, 50);
+    const cached = _connectCache[cacheKey];
+    if (cached && Date.now() - cached.ts < CONNECT_CACHE_TTL) {
+      renderConnectResult(cached.results, name, tag, cached.ts, true);
+      return;
+    }
+
+    // 3. 등록된 커넥트 서버 목록에서 멤버 조회
+    const connects = Object.values(_trackedConnects);
+    if (!connects.length) {
+      resultEl.innerHTML = '<div style="color:var(--muted);font-size:12px;">등록된 커넥트 서버가 없습니다.</div>';
+      return;
+    }
+    resultEl.innerHTML = '<div style="display:flex;align-items:center;gap:8px;color:var(--muted);font-size:12px;"><div class="spinner"></div> ' + connects.length + '개 커넥트 분석 중...</div>';
+
+    const results = await Promise.all(connects.map(async c => {
+      try {
+        // Worker /server-info 사용 (stats.html과 동일한 방식)
+        const res = await fetch('https://api.roonging.com/server-info', {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ serverId: c.serverId })
+        });
+        const j = await res.json();
+        if (!j.ok || !j.data) return null;
+        const members = j.data?.tournament_stats?.tournament_stats_all_list || [];
+        const member = members.find(function(m){
+          return m.riot_name?.toLowerCase().trim() === riotName &&
+                 m.riot_tag?.toLowerCase().trim()  === riotTag;
+        });
+        if (!member) return null;
+
+        return {
+          connectName: c.name,
+          serverId: c.serverId,
+          tier: member.tier || '—',
+          cnt: member.cnt || 0,
+          win: member.win || 0,
+          lastAt: member.creation_timestamp || null
+        };
+      } catch(e) {
+        console.warn('[connect] 서버 조회 실패:', c.serverId, e.message);
+        return null;
+      }
+    }));
+
+    const found = results.filter(Boolean);
+    // 4. Firebase 캐시 저장
+    const cacheData = { ts: Date.now(), results: found, name: riotName, tag: riotTag };
+    _connectCache[cacheKey] = cacheData;
+    await adminApi('/system-connect-cache-write', { key: cacheKey, data: cacheData });
+    renderConnectResult(found, name, tag, Date.now(), false);
+  } catch(e) {
+    resultEl.innerHTML = '<div style="color:#E05050;font-size:12px;">❌ 오류: ' + esc(e.message) + '</div>';
+  }
+}
+
+function renderConnectResult(results, name, tag, ts, fromCache) {
+  const resultEl = document.getElementById('connect-result');
+  const cacheStr = fromCache
+    ? '<span style="font-size:10px;color:var(--muted);">📦 캐시 (' + timeAgo(ts) + ')</span>'
+    : '<span style="font-size:10px;color:var(--blue);">✨ 새로 분석</span>';
+
+  if (!results.length) {
+    resultEl.innerHTML = '<div style="text-align:center;padding:1rem;color:var(--muted);font-size:12px;">등록된 커넥트 서버에 소속 없음</div>' + cacheStr;
+    return;
+  }
+
+  resultEl.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem;">
+      <div style="font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;color:var(--white);">
+        ${esc(name)}<span style="color:var(--muted);font-size:11px;">#${esc(tag)}</span>
+        <span style="color:var(--blue);font-size:11px;margin-left:6px;">— ${results.length}개 커넥트 소속</span>
+      </div>
+      ${cacheStr}
+    </div>
+    <table class="data-table" style="font-size:11px;">
+      <thead><tr>
+        <th>서버명</th><th>서버 ID</th><th>티어</th><th>전적</th><th>마지막 활동</th>
+      </tr></thead>
+      <tbody>
+        ${results.map(r => `
+          <tr>
+            <td><span style="font-weight:700;">${esc(r.connectName||r.name)}</span></td>
+            <td><span style="color:var(--muted);">${esc(r.serverId)}</span></td>
+            <td><span class="badge badge-gold">${esc(r.tier)}</span></td>
+            <td>${r.win}W / ${r.cnt - r.win}L (${r.cnt}게임)</td>
+            <td><span style="color:var(--muted);">${r.lastAt ? timeAgo(r.lastAt > 1e12 ? r.lastAt : r.lastAt * 1000) : '—'}</span></td>
+          </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
 </script>
+
+<!-- 커넥트 추가 모달 -->
+<div class="modal-overlay" id="modal-add-connect">
+  <div class="modal-box">
+    <div class="modal-title">🔍 커넥트 서버 추가</div>
+    <div class="form-group">
+      <label class="form-label">서버명 (표시용)</label>
+      <input class="form-input" type="text" id="connect-name" placeholder="예) 룽잉 내전">
+    </div>
+    <div class="form-group">
+      <label class="form-label">딥롤 서버 ID</label>
+      <input class="form-input" type="text" id="connect-server-id" placeholder="예) 156">
+      <div style="font-size:10px;color:var(--muted);margin-top:4px;">딥롤 커넥트 URL에서 확인 가능</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-sm btn-red" onclick="closeModal('modal-add-connect')">취소</button>
+      <button class="btn-sm btn-blue" onclick="addConnect()">추가</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
