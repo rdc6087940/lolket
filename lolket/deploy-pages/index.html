@@ -7080,6 +7080,8 @@ function _uvRenderTeams(snapshot) {
     const _uvSc = document.getElementById('uv-show-score')?.checked || false;
     let _teamTotal = 0;
     let _teamUnranked = 0;
+    let _teamDoom = 0;
+    let _teamDoomMissing = 0;
     const memberRows = tm.map(m => {
       const color = TIER_COLORS[m.tier] || 'var(--text-muted)';
       const tierKo = TIER_KO[m.tier] || m.tier;
@@ -7092,13 +7094,21 @@ function _uvRenderTeams(snapshot) {
       const bidTag = isAuction && m.bidPrice ? `<span style="font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;color:var(--blue-bright);background:rgba(10,200,185,.1);border:1px solid rgba(10,200,185,.3);border-radius:2px;padding:1px 5px;margin-left:4px;">${m.bidPrice}pt</span>` : '';
       const deepUrl = `https://www.deeplol.gg/summoner/kr/${(m.name||'').replace(/ /g,'%20')}-${m.tag||'KR1'}`;
       const subLaneText = _subLaneText(m.subLane);
+      // 멸망전 합산
+      if (typeof getDoomScore === 'function') {
+        var _ds = getDoomScore(m);
+        if (_ds && _ds !== '—') _teamDoom += Number(_ds);
+        else _teamDoomMissing++;
+      }
       // 레이팅 점수
       const _rtKey = (m.name||'').toLowerCase() + '#' + (m.tag||'').toLowerCase();
       const _rtDpId = _communityPuuMap[_rtKey];
       const _rtR = _rtDpId ? _communityRatings[_rtDpId] : null;
-      const scTag = _rtR
+      const _doomSc = typeof getDoomScore === 'function' ? getDoomScore(m) : null;
+      const _doomScTag = (_doomSc && _doomSc !== '—') ? `<span style="font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;color:#A78BFA;margin-left:4px;flex-shrink:0;">💀${_doomSc}</span>` : '';
+      const scTag = (_rtR
         ? `<span style="font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;color:var(--gold);margin-left:auto;flex-shrink:0;">⭐ ${Math.round(_rtR.current)}</span>`
-        : `<span style="font-family:'Rajdhani',sans-serif;font-size:9px;color:var(--text-muted);margin-left:auto;flex-shrink:0;">배치중</span>`;
+        : `<span style="font-family:'Rajdhani',sans-serif;font-size:9px;color:var(--text-muted);margin-left:auto;flex-shrink:0;">배치중</span>`) + _doomScTag;
       return `<div onclick="window.open('${deepUrl}','_blank')" style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid rgba(30,45,64,.4);${isCap?'border-left:2px solid var(--gold);':'border-left:2px solid transparent;'}cursor:pointer;transition:background .12s;" onmouseover="this.style.background='rgba(200,170,110,.04)'" onmouseout="this.style.background='transparent'">
         <div style="width:28px;height:28px;border-radius:2px;flex-shrink:0;background:var(--bg-dark);border:1px solid var(--border-subtle);overflow:hidden;"><img src="https://ddragon.leagueoflegends.com/cdn/16.14.1/img/profileicon/${m.icon||0}.png" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.visibility=&apos;hidden&apos;"></div>
         <div style="flex:1;min-width:0;">
@@ -7113,7 +7123,7 @@ function _uvRenderTeams(snapshot) {
     return `<div style="background:var(--bg-panel);border:1px solid var(--border-subtle);border-radius:4px;overflow:hidden;">
       <div style="padding:.6rem 1rem;border-bottom:1px solid var(--border-subtle);background:rgba(200,170,110,.05);display:flex;align-items:center;justify-content:space-between;">
         <span style="font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;color:var(--gold);">${_escHtml(teamName)}</span>
-        <div style="display:flex;align-items:center;gap:8px;">${totalScoreTag}${isAuction?`<span style="font-size:11px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;">${tm.length}명</span>`:''} ${pointsTag}</div>
+        <div style="display:flex;align-items:center;gap:8px;">${totalScoreTag}${isAuction?`<span style="font-size:11px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;">${tm.length}명</span>`:''} ${pointsTag}${tm.length > 0 && typeof getDoomScore === 'function' ? `<span style="font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;color:#A78BFA;background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.2);border-radius:2px;padding:1px 6px;">💀${_teamDoom}점${_teamDoomMissing>0?'+?':''}</span>` : ''}</div>
       </div>
       <div>${memberRows || '<div style="padding:12px;font-size:11px;color:var(--text-muted);text-align:center;">비어 있음</div>'}</div>
     </div>`;
@@ -17391,7 +17401,9 @@ async function loadDoomScores() {
 
 function getDoomScore(member) {
   var table = _doomScores || _DOOM_DEFAULT;
-  var tier = (member.tier || 'UNRANKED').toUpperCase().trim().split(' ')[0];
+  // 임시티어 → 최고티어 → 현재티어 순 우선
+  var rawTier = member.highTier || member._tempTier || member._peakTier || member.tier || 'UNRANKED';
+  var tier = rawTier.toUpperCase().trim().split(' ')[0];
   var lane = member.mainLane || 'top';
   var laneKey = {top:'top',jg:'jg',mid:'mid',bot:'bot',sup:'sup',
     Top:'top',Jungle:'jg',Middle:'mid',Bottom:'bot',Support:'sup'}[lane] || 'top';
@@ -17401,8 +17413,8 @@ function getDoomScore(member) {
 
   if (HIGH.includes(tier)) {
     // LP 파악 - tierFull에서 추출
-    var lp = 0;
-    var tierFull = member.tierFull || member.tier || '';
+    var lp = member.highLp || member._peakLp || 0;
+    var tierFull = member.highTier || member._peakTier || member.tierFull || member.tier || '';
     var lpMatch = tierFull.match(/(\d+)\s*LP/i) || tierFull.match(/(\d+)$/);
     if (lpMatch) lp = parseInt(lpMatch[1]) || 0;
     // _tempTier에서도 확인
@@ -17425,6 +17437,14 @@ function getDoomScore(member) {
       // 해당 티어의 마지막 row (div 가장 높은 것) 사용 - 골드2 이하는 골드2와 동일
       var tierRows = table.filter(function(r){ return r.tier===tier; });
       if (tierRows.length > 0) row2 = tierRows[tierRows.length - 1];
+    }
+    // 골드 이하 티어(실버/브론즈/아이언/언랭)는 골드2 점수 적용
+    if (!row2) {
+      var BELOW_GOLD = ['SILVER','BRONZE','IRON','UNRANKED'];
+      if (BELOW_GOLD.includes(tier)) {
+        var goldRows = table.filter(function(r){ return r.tier==='GOLD'; });
+        row2 = goldRows.length > 0 ? goldRows[goldRows.length - 1] : null;
+      }
     }
     return row2 ? (row2[laneKey] || '—') : '—';
   }

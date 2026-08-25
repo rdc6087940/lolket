@@ -360,6 +360,9 @@ export default {
       return handleNicknameHistoryRead(request, env);
     }
     // 피크티어 경량 읽기
+    if (path === '/peak-tiers-write' && request.method === 'POST') {
+      return handlePeakTiersWrite(request, env);
+    }
     if (path === '/peak-tiers-read' && request.method === 'POST') {
       return handlePeakTiersRead(request, env);
     }
@@ -479,8 +482,13 @@ export default {
       ctx.waitUntil(runAlarmCheck(env));
     } else if (cron === '0 */3 * * *') {
       ctx.waitUntil(runScheduledRatingCalc(env));
+    } else if (cron === '0 15 * * *') {
+      // 매일 자정(KST) - 닉네임 변경 이력 체크
+      ctx.waitUntil(runDailyNicknameCheck(env));
+    } else if (cron === '0 15 * * 0') {
+      // 매주 일요일 자정(KST)
+      ctx.waitUntil(runScheduledRatingCalc(env));
     } else {
-      // 알 수 없는 cron - 둘 다 실행
       ctx.waitUntil(Promise.all([runAlarmCheck(env), runScheduledRatingCalc(env)]));
     }
   },
@@ -2560,13 +2568,23 @@ async function handlePeakTiersRead(request, env) {
       if (!res.ok) return {};
       const raw = await res.json();
       if (!raw) return {};
-      // peak_tier, peak_lp만 추출 → 크기 대폭 축소
+      // peakTier, peakLp 추출 (custom 또는 all 모드에서 저장됨)
       const result = {};
-      Object.entries(raw).forEach(([puuId, d]) => {
-        if (d && d.peak_tier) {
+      console.log('[peak-tiers-read] raw keys sample:', Object.keys(raw).slice(0,2));
+      const firstKey = Object.keys(raw)[0];
+      const firstVal = raw[firstKey];
+      console.log('[peak-tiers-read] first value keys:', firstVal ? Object.keys(firstVal) : 'null');
+      Object.entries(raw).forEach(([puuId, modes]) => {
+        if (!modes || typeof modes !== 'object') return;
+        // custom > all 순으로 확인
+        const d = modes.custom || modes.all || null;
+        if (d && d.peakTier) {
+          result[puuId] = { tier: d.peakTier, lp: d.peakLp || 0 };
+        } else if (d && d.peak_tier) {
           result[puuId] = { tier: d.peak_tier, lp: d.peak_lp || 0 };
         }
       });
+      console.log('[peak-tiers-read] result count:', Object.keys(result).length);
       return result;
     },
     1800 // 30분
@@ -3418,6 +3436,7 @@ async function handleListMatches(interaction, env) {
 
 // ── /내전참가 처리 ──
 async function handleJoinMatch(riotName, riotTag, laneInput, subLanesInput, matchId, discordUserId, discordName, appId, token, env, highTierInput) {
+  console.log('[joinMatch] start', {riotName, riotTag, laneInput, matchId});
   const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
   const authQ = secret ? '?auth='+secret : '';
 
@@ -3501,6 +3520,7 @@ async function handleJoinMatch(riotName, riotTag, laneInput, subLanesInput, matc
   const maxMembersVal = matchData.maxMembers ? parseInt(matchData.maxMembers) : null;
   const isWaitlist = !!(maxMembersVal && existingMembers.length >= maxMembersVal);
   const waitNum = isWaitlist ? (existingMembers.length - maxMembersVal + 1) : null;
+  console.log('[joinMatch] maxMembers:', maxMembersVal, 'members:', existingMembers.length, 'isWaitlist:', isWaitlist);
 
   // 딥롤 API로 소환사 정보 조회
   const ddRes = await fetch(
@@ -3542,7 +3562,7 @@ async function handleJoinMatch(riotName, riotTag, laneInput, subLanesInput, matc
   // 대기자인 경우 waitlist에 저장 후 리턴
   if (isWaitlist) {
     const curWaitlist = [...existWaitlist];
-    curWaitlist.push({ ...newMember, waitNum, registeredAt: Date.now() });
+    curWaitlist.push({ ...newMember, riotName: riotName, riotTag: riotTag, waitNum, registeredAt: Date.now() });
     await fetch(`${dbUrl}/communities/${targetCid}/matches/${targetMatchId}/_waitlist.json${authQ}`, {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(curWaitlist)
@@ -3800,6 +3820,23 @@ async function handleJoinMatchDirect(riotName, riotTag, laneInput, subLanesInput
     discordName,
     joinedAt: Date.now(),
   };
+
+  // 정원 초과 시 대기번호 발급
+  if (isWaitlist) {
+    console.log('[joinDirect] waitlist! waitNum:', waitNum);
+    const curWaitlistDirect = Array.isArray(matchData._waitlist) ? [...matchData._waitlist] : [];
+    curWaitlistDirect.push({ ...newMember, riotName: name, riotTag: tag, waitNum, registeredAt: Date.now() });
+    await fetch(`${dbUrl}/communities/${cid}/matches/${matchId}/_waitlist.json${authQ}`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(curWaitlistDirect)
+    });
+    return discordFollowup(appId, token,
+      `🎫 **${name}#${tag}**\n\n` +
+      `> ⚠️ 현재 내전 인원이 **${maxMembers}명**으로 가득 찼습니다.\n\n` +
+      `> 🎟️ **대기 번호: ${waitNum}번**\n` +
+      `📋 내전: **${matchData.name || matchId}**\n` +
+      `자리가 나면 룽봇이 디스코드 DM으로 알려드려요 🔔`, env);
+  }
 
   const updatedMembers = [...existingMembers, newMember];
   console.log('[joinDirect] saving member:', name, tag, tierStr, 'total:', updatedMembers.length);
@@ -4245,8 +4282,8 @@ async function handleNotifyWaitlist(request, env) {
     // waiter에 전체 멤버 정보가 있으면 그대로 활용
     members.push({
       id: waiter.id || (Date.now() + Math.floor(Math.random()*9999)),
-      name: waiter.name || waiter.riotName,
-      tag: waiter.tag || waiter.riotTag,
+      name: waiter.riotName || waiter.name,
+      tag: waiter.riotTag || waiter.tag,
       discordId: waiter.discordId,
       discordName: waiter.discordName || '',
       icon: waiter.icon || '0',
@@ -4287,7 +4324,7 @@ async function handleNotifyWaitlist(request, env) {
             method: 'POST',
             headers: { 'Authorization': `Bot ${BOT_TOKEN}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({ content:
-              `🎉 **${waiter.riotName}#${waiter.riotTag}** 님!\n\n` +
+              `🎉 **${waiter.riotName||waiter.name}#${waiter.riotTag||waiter.tag}** 님!\n\n` +
               `자리가 나서 자동으로 내전에 참가 처리되었어요!\n\n` +
               `📋 내전: **${matchData.name || '내전'}**\n` +
               `👤 진행자: **${matchData.admin || '—'}**\n` +
@@ -4357,4 +4394,49 @@ async function handleNotifyWaitlistBatch(request, env) {
   }
 
   return json({ ok: true, notified });
+}
+
+// ── 매일 자정 닉네임 변경 이력 체크 ──
+async function runDailyNicknameCheck(env) {
+  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth='+secret : '';
+  console.log('[dailyNickname] 시작');
+  try {
+    // 모든 커뮤니티 목록 가져오기
+    const ciRes = await fetch(`${dbUrl}/communities_info.json${authQ}`);
+    if (!ciRes.ok) { console.error('[dailyNickname] communities_info 로드 실패'); return; }
+    const ciData = await ciRes.json() || {};
+    const cids = Object.keys(ciData);
+    console.log('[dailyNickname] 커뮤니티 수:', cids.length);
+    for (const cid of cids) {
+      try {
+        await runNicknameHistoryCheckForCommunity(env, cid, false);
+        console.log('[dailyNickname] 완료:', cid);
+      } catch(e) {
+        console.error('[dailyNickname] 오류:', cid, e.message);
+      }
+    }
+    console.log('[dailyNickname] 전체 완료');
+  } catch(e) {
+    console.error('[dailyNickname] 전체 오류:', e.message);
+  }
+}
+
+// ── 최고티어 일괄 저장 ──
+async function handlePeakTiersWrite(request, env) {
+  let body; try { body = await request.json(); } catch { return json({ok:false},400); }
+  const { communityId, data } = body;
+  if (!communityId || !data) return json({ok:false,error:'필수값 없음'},400);
+  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth='+secret : '';
+  // 각 puuId의 member_analysis/custom에 peakTier, peakLp PATCH
+  const entries = Object.entries(data);
+  await Promise.all(entries.map(async ([puuId, val]) => {
+    await fetch(`${dbUrl}/communities/${communityId}/member_analysis/${puuId}/custom.json${authQ}`, {
+      method: 'PATCH',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ peakTier: val.tier, peakLp: val.lp || 0 })
+    });
+  }));
+  return json({ ok: true, count: entries.length });
 }

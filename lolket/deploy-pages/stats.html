@@ -507,6 +507,49 @@ tr.has-bg-effect td {
   position: relative;
   z-index: 1;
 }
+
+/* 멸망전 시뮬레이션 */
+.doom-lane-slot {
+  background: var(--bg-panel);
+  border: 2px dashed rgba(167,139,250,.3);
+  border-radius: 4px;
+  padding: 8px 12px;
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+  position: relative;
+}
+.doom-lane-slot.drag-over {
+  border-color: rgba(167,139,250,.8);
+  background: rgba(167,139,250,.08);
+}
+.doom-lane-slot.filled {
+  border: 1px solid rgba(167,139,250,.3);
+  background: rgba(167,139,250,.05);
+  color: var(--white);
+  cursor: default;
+}
+.doom-sim-member-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 6px 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: grab;
+  transition: border-color .15s, opacity .15s;
+  user-select: none;
+}
+.doom-sim-member-card:hover { border-color: rgba(167,139,250,.5); }
+.doom-sim-member-card.dragging { opacity: 0.4; }
+
 </style>
 </head>
 <body>
@@ -545,6 +588,10 @@ tr.has-bg-effect td {
         <button id="btn-nickname-run" onclick="runNicknameCheck()"
           style="padding:5px 12px;border-radius:3px;border:1px solid rgba(167,139,250,.3);background:rgba(167,139,250,.06);color:#A78BFA;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:.5px;cursor:pointer;display:none;">
           🏷️ 닉변경 체크
+        </button>
+        <button id="btn-update-all-peak" onclick="updateAllPeakTiers()"
+          style="padding:5px 12px;border-radius:3px;border:1px solid rgba(10,200,185,.3);background:rgba(10,200,185,.06);color:var(--blue-bright);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:.5px;cursor:pointer;display:none;">
+          🔄 최고티어 전체 업데이트
         </button>
         <button id="discord-login-btn" onclick="discordHeaderLogin()"
           style="padding:5px 10px;border-radius:3px;border:1px solid rgba(114,137,218,.4);background:rgba(114,137,218,.08);color:#7289da;font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;">
@@ -630,11 +677,69 @@ tr.has-bg-effect td {
       style="padding:5px 14px;border-radius:2px 2px 0 0;border:1px solid var(--border);border-bottom:none;background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">
       🏷️ 닉네임 변경 이력
     </button>
+    <button id="tab-doom-sim" onclick="switchMainTab('doom-sim')"
+      style="padding:5px 14px;border-radius:2px 2px 0 0;border:1px solid var(--border);border-bottom:none;background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">
+      💀 멸망전 시뮬레이션
+    </button>
   </div>
 
   <!-- ── 관찰 분석 뷰 ── -->
   <div id="scout-view" style="display:none;padding:1rem;">
     <div id="scout-content"></div>
+  </div>
+
+  <!-- ── 멸망전 팀 시뮬레이션 뷰 ── -->
+  <div id="doom-sim-view" style="display:none;padding:1rem;">
+    <div id="doom-sim-topbar" style="display:none;margin-bottom:.75rem;display:flex;align-items:center;gap:10px;">
+      <button onclick="updateAllPeakTiers()"
+        style="padding:5px 14px;border-radius:3px;border:1px solid rgba(167,139,250,.4);background:rgba(167,139,250,.08);color:#A78BFA;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;">
+        🔄 전체 최고티어 업데이트
+      </button>
+      <div id="doom-sim-update-progress" style="font-size:11px;color:var(--muted);font-family:'Rajdhani',sans-serif;"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:280px 1fr 1fr;gap:1rem;align-items:start;">
+
+      <!-- 멤버 검색 패널 -->
+      <div style="background:var(--bg-panel);border:1px solid var(--border);border-radius:4px;padding:.75rem;">
+        <div style="font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1.5px;color:var(--muted);margin-bottom:.5rem;">멤버 검색</div>
+        <div style="display:flex;gap:6px;margin-bottom:.5rem;">
+          <input id="doom-sim-search" type="text" placeholder="닉네임 검색..." oninput="doomSimSearch()" onkeydown="if(event.key==='Enter')doomSimSearch()"
+            style="flex:1;background:var(--bg-dark);border:1px solid var(--border);border-radius:3px;padding:6px 8px;color:var(--white);font-size:12px;outline:none;">
+        </div>
+        <div id="doom-sim-results" style="max-height:400px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;"></div>
+      </div>
+
+      <!-- 팀 A -->
+      <div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem;">
+          <div style="font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;color:var(--blue-bright);">🔵 팀 A</div>
+          <div id="doom-sim-a-total" style="font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;color:#A78BFA;">합산: 0점</div>
+        </div>
+        <div id="doom-sim-team-a" style="display:flex;flex-direction:column;gap:6px;">
+          <div class="doom-lane-slot" data-team="a" data-lane="top">🛡️ 탑</div>
+          <div class="doom-lane-slot" data-team="a" data-lane="jg">🌲 정글</div>
+          <div class="doom-lane-slot" data-team="a" data-lane="mid">⚡ 미드</div>
+          <div class="doom-lane-slot" data-team="a" data-lane="bot">🏹 원딜</div>
+          <div class="doom-lane-slot" data-team="a" data-lane="sup">🌟 서폿</div>
+        </div>
+      </div>
+
+      <!-- 팀 B -->
+      <div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem;">
+          <div style="font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;color:#E05050;">🔴 팀 B</div>
+          <div id="doom-sim-b-total" style="font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;color:#A78BFA;">합산: 0점</div>
+        </div>
+        <div id="doom-sim-team-b" style="display:flex;flex-direction:column;gap:6px;">
+          <div class="doom-lane-slot" data-team="b" data-lane="top">🛡️ 탑</div>
+          <div class="doom-lane-slot" data-team="b" data-lane="jg">🌲 정글</div>
+          <div class="doom-lane-slot" data-team="b" data-lane="mid">⚡ 미드</div>
+          <div class="doom-lane-slot" data-team="b" data-lane="bot">🏹 원딜</div>
+          <div class="doom-lane-slot" data-team="b" data-lane="sup">🌟 서폿</div>
+        </div>
+      </div>
+
+    </div>
   </div>
 
   <!-- ── 닉네임 변경 이력 뷰 ── -->
@@ -1015,7 +1120,7 @@ async function loadData(){
       if (adminLoginBtn) adminLoginBtn.style.display = 'none';
       // 마스터 전용 버튼 복원
       if (_statsAdminRole === 'master') {
-        ['btn-weekly-mission','btn-nickname-run','btn-init-rating','btn-cron-test'].forEach(function(bid) {
+        ['btn-weekly-mission','btn-nickname-run','btn-init-rating','btn-cron-test','btn-update-all-peak'].forEach(function(bid) {
           var el = document.getElementById(bid);
           if (el) el.style.display = '';
         });
@@ -1033,7 +1138,7 @@ async function loadData(){
       var saText = document.getElementById('admin-status-text');
       if (saText) saText.textContent = (_statsAdminRole==='master'?'👑 마스터':'🔑 관리자')+' '+_statsAdminId;
       if (_statsAdminRole === 'master') {
-        ['btn-weekly-mission','btn-nickname-run','btn-init-rating','btn-cron-test'].forEach(function(bid) {
+        ['btn-weekly-mission','btn-nickname-run','btn-init-rating','btn-cron-test','btn-update-all-peak'].forEach(function(bid) {
           var el = document.getElementById(bid); if (el) el.style.display = '';
         });
       }
@@ -1043,6 +1148,8 @@ async function loadData(){
     currentPage=1;
     applyAll();
     loadAllWeeklyEmojis();
+    loadAllPeakTiers();
+    loadAllTempTiers();
   }catch(e){
     document.getElementById('stats-body').innerHTML=`<tr><td colspan="13"><div class="state" style="color:var(--red);">⚠ ${esc(e.message)}</div></td></tr>`;
   }finally{
@@ -2505,7 +2612,7 @@ async function doMasterAuth() {
     sessionStorage.setItem('master_token', _masterSessionToken);
     sessionStorage.setItem('master_id', id);
     sessionStorage.setItem('master_pw', pw);
-    ['btn-weekly-mission','btn-nickname-run','btn-init-rating','btn-cron-test'].forEach(function(bid) {
+    ['btn-weekly-mission','btn-nickname-run','btn-init-rating','btn-cron-test','btn-update-all-peak'].forEach(function(bid) {
       var el = document.getElementById(bid);
       if (el) el.style.display = '';
     });
@@ -2805,7 +2912,7 @@ function statsAdminLogout() {
   document.getElementById('btn-admin-login').style.display = '';
   document.getElementById('admin-status').style.display = 'none';
   // 마스터 전용 버튼 숨기기
-  ['btn-weekly-mission','btn-nickname-run','btn-init-rating','btn-cron-test'].forEach(function(id) {
+  ['btn-weekly-mission','btn-nickname-run','btn-init-rating','btn-cron-test','btn-update-all-peak'].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
@@ -3264,7 +3371,8 @@ function switchMainTab(tab) {
   var communityView = document.getElementById('community-stats-view');
   var scoutTab = document.getElementById('tab-scout');
   var nickLogTab2 = document.getElementById('tab-nickname-log');
-  [statsTab, ratingTab, communityTab, scoutTab, nickLogTab2].forEach(function(t) {
+  var doomSimTab2 = document.getElementById('tab-doom-sim');
+  [statsTab, ratingTab, communityTab, scoutTab, nickLogTab2, doomSimTab2].forEach(function(t) {
     if (t) { t.style.borderBottom='none'; t.style.background='transparent'; t.style.color='var(--muted)'; }
   });
   var pagination = document.getElementById('pagination');
@@ -3275,6 +3383,8 @@ function switchMainTab(tab) {
   if (scoutViewEl) scoutViewEl.style.display = 'none';
   var nickLogViewEl = document.getElementById('nickname-log-view');
   if (nickLogViewEl) nickLogViewEl.style.display = 'none';
+  var doomSimViewEl = document.getElementById('doom-sim-view');
+  if (doomSimViewEl) doomSimViewEl.style.display = 'none';
   if (filterBar) filterBar.style.display = 'none';
   if (mobileCards) mobileCards.style.display = 'none';
   if (pagination) pagination.style.display = 'none';
@@ -3309,6 +3419,13 @@ function switchMainTab(tab) {
       scoutView.style.display = '';
       initScoutView();
     }
+  } else if (tab === 'doom-sim') {
+    if (doomSimTab2) {
+      doomSimTab2.style.borderBottom = '2px solid #A78BFA';
+      doomSimTab2.style.background   = 'rgba(167,139,250,.08)';
+      doomSimTab2.style.color        = '#A78BFA';
+    }
+    if (doomSimViewEl) { doomSimViewEl.style.display = ''; initDoomSim(); }
   } else if (tab === 'nickname-log') {
     var nickLogTab  = document.getElementById('tab-nickname-log');
     var nickLogView = document.getElementById('nickname-log-view');
@@ -6856,6 +6973,324 @@ function renderNicknameLog(list) {
       + '<td style="padding:8px 10px;font-size:11px;color:var(--muted);">' + esc(r.tier||'—') + '</td>'
       + '</tr>';
   }).join('');
+}
+
+
+// ══════════════════════════════════════
+// 멸망전 팀 시뮬레이션
+// ══════════════════════════════════════
+var _doomSimData = {}; // puuId → { name, tag, tier, peakTier, peakLp }
+var _doomSimDragMember = null;
+var _doomSimTeams = { a: {}, b: {} }; // lane → memberObj
+
+var DOOM_LANE_EMOJI = { top:'🛡️ 탑', jg:'🌲 정글', mid:'⚡ 미드', bot:'🏹 원딜', sup:'🌟 서폿' };
+
+function initDoomSim() {
+  // allData에서 멤버 캐시 구성
+  _doomSimData = {};
+  allData.forEach(function(m) {
+    _doomSimData[m.puu_id] = {
+      puu_id: m.puu_id,
+      name: m.riot_name || m.name,
+      tag: m.riot_tag || m.tag,
+      tier: m.tier,
+      tierFull: m.tierFull || m.tier,
+      peakTier: m._peakTier || null,
+      peakLp: m._peakLp || 0,
+      _tempTier: (typeof m._tempTier === 'string') ? m._tempTier : (m._tempTier ? m._tempTier.tier || null : null),
+      _tempLp: m._tempLp || 0,
+      platform: m.platform_id || 'KR'
+    };
+  });
+  // 슬롯 이벤트 등록
+  document.querySelectorAll('.doom-lane-slot').forEach(function(slot) {
+    slot.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      slot.classList.add('drag-over');
+    });
+    slot.addEventListener('dragleave', function() {
+      slot.classList.remove('drag-over');
+    });
+    slot.addEventListener('drop', function(e) {
+      e.preventDefault();
+      slot.classList.remove('drag-over');
+      if (!_doomSimDragMember) return;
+      var team = slot.dataset.team;
+      var lane = slot.dataset.lane;
+      // 기존 슬롯에서 제거
+      for (var t in _doomSimTeams) {
+        for (var l in _doomSimTeams[t]) {
+          if (_doomSimTeams[t][l] && _doomSimTeams[t][l].puu_id === _doomSimDragMember.puu_id) {
+            delete _doomSimTeams[t][l];
+          }
+        }
+      }
+      _doomSimTeams[team][lane] = _doomSimDragMember;
+      _doomSimDragMember = null;
+      renderDoomSimTeams();
+    });
+  });
+  renderDoomSimTeams();
+  doomSimSearch();
+}
+
+function doomSimSearch() {
+  var DOOM_TIER_COLORS = {CHALLENGER:'#F4C842',GRANDMASTER:'#E05050',MASTER:'#9B59B6',DIAMOND:'#4A90D9',EMERALD:'#27AE60',PLATINUM:'#1ABC9C',GOLD:'#F39C12',SILVER:'#95A5A6',BRONZE:'#CD6133',IRON:'#7F8C8D'};
+  var q = (document.getElementById('doom-sim-search').value || '').toLowerCase().trim();
+  var results = Object.values(_doomSimData).filter(function(m) {
+    if (!q) return true;
+    return (m.name + '#' + m.tag).toLowerCase().includes(q);
+  }).slice(0, 30);
+
+  var el = document.getElementById('doom-sim-results');
+  if (!el) return;
+
+  if (!results.length) {
+    el.innerHTML = '<div style="font-size:11px;color:var(--muted);text-align:center;padding:.5rem;">검색 결과 없음</div>';
+    return;
+  }
+
+  el.innerHTML = results.map(function(m) {
+    var _dispTier = m._tempTier ? m._tempTier : (m.peakTier || m._peakTier || m.tier || 'UNRANKED');
+    var _dispLabel = m._tempTier ? '임시: ' : (m.peakTier || m._peakTier ? '최고: ' : '');
+    var tierColor = DOOM_TIER_COLORS[_dispTier.split(' ')[0]] || 'var(--muted)';
+    var tierText = _dispLabel + _dispTier;
+    return '<div class="doom-sim-member-card" draggable="true" data-puu="' + m.puu_id + '" ' +
+      'ondragstart="doomSimDragStart(event,&quot;' + m.puu_id + '&quot;)">' +
+      '<div style="flex:1;min-width:0;">' +
+      '<div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(m.name) + '<span style="color:var(--muted);font-size:10px;"> #' + esc(m.tag) + '</span></div>' +
+      '<div style="font-size:10px;font-weight:700;color:' + tierColor + ';">' + esc(tierText) + ((m._tempTier && m._tempLp) ? ' ' + m._tempLp + 'LP' : (m.peakTier && m.peakLp ? ' ' + m.peakLp + 'LP' : '')) + '</div>' +
+      '</div>' +
+      '<button onclick="doomSimFetchPeak(event,&quot;' + m.puu_id + '&quot;)" style="padding:2px 6px;border-radius:2px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:10px;cursor:pointer;flex-shrink:0;" title="최고티어 갱신">🔄</button>' +
+      '</div>';
+  }).join('');
+}
+
+function doomSimDragStart(e, puuId) {
+  _doomSimDragMember = _doomSimData[puuId];
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', puuId);
+  var _dragEl = e.currentTarget;
+  if (_dragEl) _dragEl.classList.add('dragging');
+  setTimeout(function() { if (_dragEl) _dragEl.classList.remove('dragging'); }, 100);
+}
+
+async function doomSimFetchPeak(e, puuId) {
+  e.stopPropagation();
+  var btn = e.currentTarget;
+  btn.textContent = '⏳';
+  btn.disabled = true;
+  var m = _doomSimData[puuId];
+  if (!m) return;
+  try {
+    var url = API_BASE + '/summoner/summoner-realtime?platform_id=' + (m.platform || 'KR') + '&summoner_id=&puu_id=' + encodeURIComponent(puuId);
+    var res = await fetch(url);
+    if (res.ok) {
+      var json = await res.json();
+      var solo = json.season_tier_info_dict && json.season_tier_info_dict.ranked_solo_5x5;
+      if (solo && solo.high_tier) {
+        m.peakTier = solo.high_tier;
+        m.peakLp = solo.high_lp || 0;
+        // allData에도 반영
+        var ad = allData.find(function(x){ return x.puu_id === puuId; });
+        if (ad) { ad._peakTier = m.peakTier; ad._peakLp = m.peakLp; }
+      }
+    }
+  } catch(e2) {}
+  btn.textContent = '🔄'; btn.disabled = false;
+  doomSimSearch();
+  renderDoomSimTeams();
+}
+
+function _doomSimGetScore(m, lane) {
+  // 최고 티어 기준으로 멸망전 점수 직접 계산
+  // _tempTiersCache에서 직접 조회 (임시티어 우선)
+  var _cachedTemp = m.puu_id && _tempTiersCache[m.puu_id];
+  var _tempTierStr = _cachedTemp ? (typeof _cachedTemp === 'string' ? _cachedTemp : (_cachedTemp.tier || null)) : (m._tempTier || null);
+  var _tempLpVal = _cachedTemp && typeof _cachedTemp === 'object' ? (_cachedTemp.lp || 0) : (m._tempLp || 0);
+  var tierStr = String(_tempTierStr || m.peakTier || m._peakTier || m.tier || 'UNRANKED').toUpperCase().trim();
+  var tierName = tierStr.split(' ')[0];
+  var laneKey = lane || 'top';
+  var HIGH = ['MASTER','GRANDMASTER','CHALLENGER'];
+  var DIV_MAP = {'I':1,'II':2,'III':3,'IV':4,'1':1,'2':2,'3':3,'4':4};
+  // 멸망전 기본 점수 테이블
+  var DOOM_TABLE = [
+    {tier:'MASTER+',minLp:1500,maxLp:99999,top:64,jg:69,mid:67,bot:68,sup:58},
+    {tier:'MASTER+',minLp:1400,maxLp:1499,top:62,jg:67,mid:65,bot:66,sup:57},
+    {tier:'MASTER+',minLp:1300,maxLp:1399,top:60,jg:65,mid:63,bot:64,sup:55},
+    {tier:'MASTER+',minLp:1200,maxLp:1299,top:58,jg:63,mid:61,bot:62,sup:53},
+    {tier:'MASTER+',minLp:1100,maxLp:1199,top:55,jg:61,mid:59,bot:60,sup:51},
+    {tier:'MASTER+',minLp:1000,maxLp:1099,top:53,jg:59,mid:57,bot:58,sup:48},
+    {tier:'MASTER+',minLp:900,maxLp:999,top:51,jg:56,mid:54,bot:55,sup:46},
+    {tier:'MASTER+',minLp:800,maxLp:899,top:48,jg:54,mid:52,bot:53,sup:44},
+    {tier:'MASTER+',minLp:700,maxLp:799,top:47,jg:52,mid:50,bot:51,sup:43},
+    {tier:'MASTER+',minLp:600,maxLp:699,top:45,jg:50,mid:48,bot:49,sup:42},
+    {tier:'MASTER+',minLp:500,maxLp:599,top:43,jg:48,mid:46,bot:47,sup:40},
+    {tier:'MASTER+',minLp:400,maxLp:499,top:41,jg:46,mid:44,bot:45,sup:39},
+    {tier:'MASTER+',minLp:300,maxLp:399,top:40,jg:44,mid:42,bot:43,sup:37},
+    {tier:'MASTER+',minLp:200,maxLp:299,top:39,jg:43,mid:41,bot:42,sup:36},
+    {tier:'MASTER+',minLp:100,maxLp:199,top:38,jg:42,mid:40,bot:41,sup:35},
+    {tier:'MASTER+',minLp:0,maxLp:99,top:37,jg:41,mid:39,bot:40,sup:34},
+    {tier:'DIAMOND',div:1,top:36,jg:40,mid:38,bot:39,sup:33},
+    {tier:'DIAMOND',div:2,top:35,jg:38,mid:36,bot:38,sup:32},
+    {tier:'DIAMOND',div:3,top:33,jg:36,mid:35,bot:36,sup:31},
+    {tier:'DIAMOND',div:4,top:31,jg:35,mid:33,bot:34,sup:30},
+    {tier:'EMERALD',div:1,top:29,jg:32,mid:30,bot:31,sup:28},
+    {tier:'EMERALD',div:2,top:28,jg:31,mid:29,bot:30,sup:27},
+    {tier:'EMERALD',div:3,top:27,jg:30,mid:28,bot:29,sup:26},
+    {tier:'EMERALD',div:4,top:26,jg:29,mid:27,bot:28,sup:25},
+    {tier:'PLATINUM',div:1,top:25,jg:26,mid:24,bot:25,sup:24},
+    {tier:'PLATINUM',div:2,top:24,jg:24,mid:23,bot:24,sup:23},
+    {tier:'PLATINUM',div:3,top:23,jg:22,mid:22,bot:21,sup:22},
+    {tier:'PLATINUM',div:4,top:22,jg:20,mid:21,bot:19,sup:21},
+    {tier:'GOLD',div:1,top:20,jg:17,mid:18,bot:16,sup:19},
+    {tier:'GOLD',div:2,top:19,jg:14,mid:16,bot:13,sup:19}
+  ];
+  var row = null;
+  if (HIGH.includes(tierName)) {
+    // 임시티어 사용 중이면 임시LP, 아니면 peakLp
+    var lp = _tempTierStr ? _tempLpVal : (m.peakLp || m._peakLp || 0);
+    row = DOOM_TABLE.find(function(r){ return r.tier==='MASTER+' && lp>=r.minLp && lp<=r.maxLp; });
+    if (!row) row = DOOM_TABLE.find(function(r){ return r.tier==='MASTER+' && r.minLp===0; });
+  } else {
+    var divNum = 4;
+    var parts = tierStr.split(/\s+/);
+    if (parts.length > 1) divNum = DIV_MAP[parts[1]] || 4;
+    row = DOOM_TABLE.find(function(r){ return r.tier===tierName && (r.div===divNum||r.div===String(divNum)); });
+    if (!row) {
+      var tierRows = DOOM_TABLE.filter(function(r){ return r.tier===tierName; });
+      if (tierRows.length) row = tierRows[tierRows.length-1];
+    }
+    if (!row) {
+      // 골드 이하
+      var BELOW = ['SILVER','BRONZE','IRON','UNRANKED'];
+      if (BELOW.includes(tierName)) {
+        var gRows = DOOM_TABLE.filter(function(r){ return r.tier==='GOLD'; });
+        row = gRows.length ? gRows[gRows.length-1] : null;
+      }
+    }
+  }
+  return row ? (row[laneKey] || '—') : '—';
+}
+
+function renderDoomSimTeams() {
+  ['a', 'b'].forEach(function(team) {
+    var grid = document.getElementById('doom-sim-team-' + team);
+    if (!grid) return;
+    var total = 0;
+    var missing = 0;
+    grid.querySelectorAll('.doom-lane-slot').forEach(function(slot) {
+      var lane = slot.dataset.lane;
+      var m = _doomSimTeams[team][lane];
+      if (m) {
+        var score = _doomSimGetScore(m, lane);
+        var numScore = (score && score !== '—') ? Number(score) : null;
+        if (numScore) total += numScore; else missing++;
+        var DOOM_TC = {CHALLENGER:'#F4C842',GRANDMASTER:'#E05050',MASTER:'#9B59B6',DIAMOND:'#4A90D9',EMERALD:'#27AE60',PLATINUM:'#1ABC9C',GOLD:'#F39C12',SILVER:'#95A5A6',BRONZE:'#CD6133',IRON:'#7F8C8D'};
+      var tierColor = DOOM_TC[(m.peakTier || m.tier || '').split(' ')[0]] || 'var(--muted)';
+        slot.classList.add('filled');
+        slot.innerHTML =
+          '<div style="flex:1;min-width:0;">' +
+          '<div style="display:flex;align-items:center;gap:4px;">' +
+          '<span style="font-size:10px;color:var(--muted);">' + DOOM_LANE_EMOJI[lane] + '</span>' +
+          '<span style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(m.name) + '</span>' +
+          '</div>' +
+          '<div style="display:flex;align-items:center;gap:6px;margin-top:2px;">' +
+          '<span style="font-size:10px;color:' + tierColor + ';font-weight:700;">' + esc(m.peakTier || m.tier || '?') + '</span>' +
+          '<span style="font-size:11px;font-weight:700;color:#A78BFA;">' + (numScore ? numScore + '점' : '?점') + '</span>' +
+          '</div>' +
+          '</div>' +
+          '<button onclick="doomSimRemove(&quot;' + team + '&quot;,&quot;' + lane + '&quot;)" style="padding:2px 5px;border-radius:2px;border:1px solid rgba(192,48,48,.3);background:transparent;color:#E05050;font-size:10px;cursor:pointer;flex-shrink:0;">✕</button>';
+      } else {
+        slot.classList.remove('filled');
+        slot.innerHTML = DOOM_LANE_EMOJI[lane];
+      }
+    });
+    var totalEl = document.getElementById('doom-sim-' + team + '-total');
+    if (totalEl) totalEl.textContent = '합산: ' + total + '점' + (missing > 0 ? ' (+미산정' + missing + '명)' : '');
+  });
+}
+
+function doomSimRemove(team, lane) {
+  delete _doomSimTeams[team][lane];
+  renderDoomSimTeams();
+}
+
+
+// ── 전체 최고티어 업데이트 (마스터 전용) ──
+async function updateAllPeakTiers() {
+  if (_statsAdminRole !== 'master') { alert('마스터 권한 필요'); return; }
+  var btn = document.getElementById('btn-update-all-peak');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ 업데이트 중...'; }
+  var total = allData.length;
+  var done = 0, updated = 0, failed = 0;
+  for (var i = 0; i < allData.length; i++) {
+    var m = allData[i];
+    if (!m.puu_id) { done++; continue; }
+    try {
+      var url = API_BASE + '/summoner/summoner-realtime?platform_id=' + (m.platform_id || 'KR') + '&summoner_id=&puu_id=' + encodeURIComponent(m.puu_id);
+      var res = await fetch(url);
+      if (res.ok) {
+        var json = await res.json();
+        var solo = json.season_tier_info_dict && json.season_tier_info_dict.ranked_solo_5x5;
+        if (solo && solo.high_tier) {
+          m._peakTier = solo.high_tier;
+          m._peakLp = solo.high_lp || 0;
+          updated++;
+        }
+      }
+    } catch(e) { failed++; }
+    done++;
+    if (btn) btn.textContent = '⏳ ' + done + '/' + total + '...';
+    // 10명마다 저장
+    if (done % 10 === 0 || done === total) {
+      try {
+        await fetch(WORKER_URL + '/peak-tiers-write', {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({
+            communityId: COMMUNITY_ID,
+            data: allData.filter(function(x){ return x._peakTier; }).reduce(function(acc, x){
+              acc[x.puu_id] = { tier: x._peakTier, lp: x._peakLp || 0 };
+              return acc;
+            }, {})
+          })
+        });
+      } catch(e) {}
+    }
+    // Rate limit 방지
+    await new Promise(function(r){ setTimeout(r, 100); });
+  }
+  renderPage();
+  if (btn) { btn.disabled = false; btn.textContent = '🔄 최고티어 전체 업데이트'; }
+  alert('완료! 업데이트: ' + updated + '명, 실패: ' + failed + '명');
+}
+
+
+// ── 임시티어 로드 ──
+var _tempTiersCache = {}; // puu_id → { tier, lp }
+
+async function loadAllTempTiers() {
+  if (!COMMUNITY_ID) return;
+  try {
+    var res = await fetch(WORKER_URL + '/temp-tiers-read', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ communityId: COMMUNITY_ID })
+    });
+    var j = await res.json();
+    if (j.ok && j.data) {
+      _tempTiersCache = j.data;
+      // allData에 반영
+      allData.forEach(function(m) {
+        var t = _tempTiersCache[m.puu_id];
+        if (t) {
+          // t가 문자열이면 그대로, 객체면 .tier 추출
+          var tierVal = (typeof t === 'string') ? t : (t.tier || null);
+          var lpVal = (typeof t === 'object') ? (t.lp || 0) : 0;
+          if (tierVal) { m._tempTier = tierVal; m._tempLp = lpVal; }
+        }
+      });
+    }
+  } catch(e) {}
 }
 
 </script>
