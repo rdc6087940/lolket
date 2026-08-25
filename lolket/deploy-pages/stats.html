@@ -864,6 +864,7 @@ tr.has-bg-effect td {
 
 <script>
 var _statsAdminToken = (function(){ try{ return localStorage.getItem('sa_token')||''; }catch(e){ return ''; } })();
+var _statsMasterToken = (function(){ try{ return localStorage.getItem('sa_master_token')||''; }catch(e){ return ''; } })();
 var _statsAdminRole  = (function(){ try{ return localStorage.getItem('sa_role')||''; }catch(e){ return ''; } })();
 var _statsAdminId    = (function(){ try{ return localStorage.getItem('sa_id')||''; }catch(e){ return ''; } })();
 var _statsAdminPw    = (function(){ try{ return localStorage.getItem('sa_pw')||''; }catch(e){ return ''; } })();
@@ -2872,6 +2873,17 @@ async function doStatsAdminLogin() {
     _statsAdminRole  = data.role;
     _statsAdminId    = id;
     _statsAdminPw    = pw;
+    // 마스터인 경우 영구 토큰 생성 (master:id:pwHash)
+    if (data.role === 'master') {
+      // sha256(pw + salt)로 영구 토큰 생성 (Worker와 동일한 방식)
+      (async function() {
+        var salt = 'lolket_v1';
+        var buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw + salt));
+        var hex = Array.from(new Uint8Array(buf)).map(function(b){ return b.toString(16).padStart(2,'0'); }).join('');
+        _statsMasterToken = 'master:' + id + ':' + hex;
+        try { localStorage.setItem('sa_master_token', _statsMasterToken); } catch(e) {}
+      })();
+    }
     // sessionStorage 저장
     try {
       localStorage.setItem('sa_token', _statsAdminToken);
@@ -3008,7 +3020,7 @@ async function saveTempTier(override) {
     var res = await fetch(WORKER_URL + '/temp-tier-write', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ communityId: COMMUNITY_ID, puuId: puuId, tier: saveData, token: _statsAdminToken, adminId: _statsAdminId, adminPw: _statsAdminPw })
+      body: JSON.stringify({ communityId: COMMUNITY_ID, puuId: puuId, tier: saveData, token: _statsMasterToken || _statsAdminToken, adminId: _statsAdminId, adminPw: _statsAdminPw })
     });
     var json = await res.json();
     if (!json.ok) { alert('저장 실패: ' + (json.error||'')); return; }

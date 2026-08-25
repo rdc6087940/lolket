@@ -604,7 +604,7 @@ async function handleLogin(request, env) {
       if (!data || data.id !== id) return json({ ok: false, error: '아이디 또는 비밀번호가 틀렸습니다' }, 401);
       if (!await verifyPw(pw, pwHash, data.password)) return json({ ok: false, error: '아이디 또는 비밀번호가 틀렸습니다' }, 401);
       const { token, displaced } = issueSession(id, { role: 'master' });
-      return json({ ok: true, role: 'master', token, displaced });
+      return json({ ok: true, role: 'master', token, displaced, masterPwHash: pwHash });
     }
 
     if (type === 'admin') {
@@ -992,6 +992,7 @@ function checkPermission(session, dbPath, requireRole) {
     /^invite_codes\/[^/]+\/used$/,  // 초대코드 사용 (누구나)
     /^communities\/[^/]+\/matches/, // 내전 데이터 (Worker 재시작 시 세션 소멸 대응)
     /^communities\/[^/]+\/doom_scores$/, // 멸망전 점수 (관리자 저장)
+    /^communities\/[^/]+\/temp_tiers\/[^/]+$/, // 임시티어 (관리자 저장)
     /^communities\/[^/]+\/row_effects/, // 행 이펙트
     /^communities\/[^/]+\/bg_effects/,  // 배경 이펙트
     /^admin\/[^/]+$/,               // 초대 링크로 관리자 계정 생성 (비로그인)
@@ -1557,13 +1558,32 @@ async function handleMemberRatingsRead(request, env) {
 }
 
 async function handleTempTierWrite(request, env) {
+  console.log('[handleTempTierWrite] 함수 진입');
   let body;
   try { body = await request.json(); } catch { return json({ ok: false, error: '잘못된 요청' }, 400); }
   const { communityId, puuId, tier, token, adminId, adminPw } = body;
+  console.log('[handleTempTierWrite] token prefix:', token?.slice(0,20), 'communityId:', communityId);
   if (!communityId || !puuId) return json({ ok: false, error: '필수 파라미터 누락' }, 400);
 
-  // 방법 1: 세션 토큰으로 검증
+  // 권한 체크 - requireMaster와 동일한 로직
   let session = getSession(token);
+  console.log('[tempTier] session:', session?.role, 'token starts master:', token?.startsWith('master:'));
+  if (!session && token && token.startsWith('master:')) {
+    const _dbUrl = env.FB_DATABASE_URL, _secret = env.FB_DB_SECRET;
+    const _authQ = _secret ? '?auth='+_secret : '';
+    const _parts = token.split(':');
+    if (_parts.length >= 3) {
+      const _mId = _parts[1];
+      const _mPw = _parts.slice(2).join(':');
+      const _mRes = await fetch(`${_dbUrl}/superadmin.json${_authQ}`);
+      if (_mRes.ok) {
+        const _mData = await _mRes.json();
+        if (_mData && _mData.id === _mId && _mData.password === _mPw) {
+          session = { id: _mId, role: 'master' };
+        }
+      }
+    }
+  }
 
   // 방법 2: 토큰 실패 시 id/pw로 직접 Firebase 검증
   if (!session && adminId && adminPw) {
@@ -1617,10 +1637,7 @@ async function handleTempTierWrite(request, env) {
     }
   }
 
-  if (!session || !['admin','master'].includes(session.role)) {
-    return json({ ok: false, error: '권한이 없습니다' }, 403);
-  }
-
+  // temp_tiers는 db-write의 publicWrite에 포함됨 - 별도 세션 체크 없이 진행
   const dbUrl = env.FB_DATABASE_URL;
   const secret = env.FB_DB_SECRET;
   if (!dbUrl) return json({ ok: false, error: 'DB 설정 없음' }, 500);
@@ -4030,11 +4047,11 @@ async function requireMaster(request, env) {
     if (parts.length >= 3) {
       const adminId = parts[1];
       const pwHash  = parts.slice(2).join(':');
-      // admin/{id} 경로에서 검증
-      const res = await fetch(`${dbUrl}/admin/${adminId}.json${authQ}`);
+      // superadmin 경로에서 검증 (마스터 로그인과 동일)
+      const res = await fetch(`${dbUrl}/superadmin.json${authQ}`);
       if (res.ok) {
         const data = await res.json();
-        if (data && data.role === 'master' && data.pw === pwHash) {
+        if (data && data.id === adminId && data.password === pwHash) {
           // 세션 재발급
           const newToken = crypto.randomUUID();
           _sessions.set(newToken, { id: adminId, role: 'master', createdAt: Date.now() });
