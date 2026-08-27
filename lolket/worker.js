@@ -2812,8 +2812,13 @@ function isCrawler(userAgent) {
 const COMMUNITY_OG = {
   'c_1786029938203': {
     image: 'https://roonging.com/og-hyeokgo.png',
-    title: '협곡 지통실',
+    title: '협곡 지통실 전적',
     description: '협곡 지통실 LoL 내전 전적 페이지'
+  },
+  'c_1778500089386': {
+    image: 'https://roonging.com/og-banner.jpg',
+    title: '롤하냥 내전전적',
+    description: '내전 전적 | 통계 | 분석 플랫폼'
   }
 };
 
@@ -2824,8 +2829,8 @@ async function handleOgProxy(request, env) {
 
   // 커뮤니티별 OG 설정 확인
   const og = COMMUNITY_OG[cid];
-  const ogImage = og ? og.image : 'https://roonging.com/og-banner.jpg';
-  const ogTitle = og ? og.title + ' 전적' : '룽잉 전적';
+  const ogImage = og ? og.image : 'https://roonging.com/og-image-v2.png';
+  const ogTitle = og ? og.title : '룽잉닷컴 전적 사이트';
   const ogDesc = og ? og.description : 'LoL 내전 전적 통계 플랫폼';
   const pageUrl = 'https://roonging.com/stats?server_id=' + serverId + '&cid=' + cid;
 

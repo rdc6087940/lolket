@@ -17575,6 +17575,23 @@ var _teamDragSrcId = null;
 var _teamDragMode = null;
 
 function _teamDragStart(e) {
+  // 멤버 카드 드래그 영역이면 팀 그룹 드래그 무시
+  var target = e.target;
+  while (target && target !== this) {
+    if (target.classList && (target.classList.contains('mini-card') || target.classList.contains('team-slots') || target.classList.contains('team-slot-empty'))) {
+      e.stopPropagation();
+      return;
+    }
+    target = target.parentElement;
+  }
+  // team-header 영역에서만 팀 그룹 드래그 허용
+  var fromHeader = false;
+  var t = e.target;
+  while (t && t !== this) {
+    if (t.classList && t.classList.contains('team-header')) { fromHeader = true; break; }
+    t = t.parentElement;
+  }
+  if (!fromHeader) { e.preventDefault(); return; }
   _teamDragSrcId = parseInt(this.dataset.teamId);
   _teamDragMode = this.dataset.mode;
   this.style.opacity = '0.5';
