@@ -1756,7 +1756,7 @@ async function handleRatingRead(request, env) {
       if (!res.ok) return {};
       return await res.json();
     },
-    1800 // 30분
+    21600 // 6시간
   );
   return json({ ok: true, data: data || {} });
 }
@@ -2403,7 +2403,7 @@ async function handleWeeklyMissionConfigRead(request, env) {
       const res = await fetch(`${dbUrl}/communities/${communityId}/weekly_missions/config.json${authQ}`);
       return await res.json();
     },
-    1800 // 30분
+    21600 // 6시간
   );
   return json({ ok:true, data: data || [] });
 }
@@ -2604,7 +2604,7 @@ async function handlePeakTiersRead(request, env) {
       console.log('[peak-tiers-read] result count:', Object.keys(result).length);
       return result;
     },
-    1800 // 30분
+    21600 // 6시간
   );
   return json({ ok: true, data: data || {} });
 }
@@ -2625,7 +2625,7 @@ async function handleServerInfo(request, env) {
       if (!res.ok) return null;
       return await res.json();
     },
-    1800 // 30분
+    21600 // 6시간
   );
   if (!data) return json({ok:false,error:'서버 정보 조회 실패'},500);
   return json({ ok:true, data });

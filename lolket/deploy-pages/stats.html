@@ -1396,7 +1396,7 @@ var _peakTierCacheTs = 0;
 async function loadAllPeakTiers() {
   if (!COMMUNITY_ID || !allData.length) return;
   // 15분 캐시
-  if (Date.now() - _peakTierCacheTs < 15 * 60 * 1000) return;
+  if (Date.now() - _peakTierCacheTs < 6 * 60 * 60 * 1000) return; // 6시간 캐시
   try {
     const res = await fetch(WORKER_URL + '/peak-tiers-read', {
       method: 'POST',
@@ -3024,6 +3024,8 @@ async function saveTempTier(override) {
     });
     var json = await res.json();
     if (!json.ok) { alert('저장 실패: ' + (json.error||'')); return; }
+    // 임시티어 캐시 초기화 (수정 시 즉시 반영)
+    _tempTierCacheTs = 0;
     // 로컬 캐시 업데이트
     if (saveData) {
       _tempTiers[puuId] = saveData;
@@ -7280,9 +7282,11 @@ async function updateAllPeakTiers() {
 
 // ── 임시티어 로드 ──
 var _tempTiersCache = {}; // puu_id → { tier, lp }
+var _tempTierCacheTs = 0;
 
 async function loadAllTempTiers() {
   if (!COMMUNITY_ID) return;
+  if (Date.now() - _tempTierCacheTs < 6 * 60 * 60 * 1000) return; // 6시간 캐시
   try {
     var res = await fetch(WORKER_URL + '/temp-tiers-read', {
       method: 'POST', headers: {'Content-Type':'application/json'},
