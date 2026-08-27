@@ -1441,6 +1441,26 @@ const bodyWrap=document.getElementById('table-body-wrap');
 function syncTableWidth(){} // 단일 테이블 구조에서 불필요
 
 
+
+// ── 클라이언트 사이드 간단 캐시 ──
+var _clientCache = {};
+function _cacheGet(key) {
+  var c = _clientCache[key];
+  if (!c) return null;
+  if (Date.now() > c.exp) { delete _clientCache[key]; return null; }
+  return c.val;
+}
+function _cacheSet(key, val, ttlSec) {
+  _clientCache[key] = { val: val, exp: Date.now() + ttlSec * 1000 };
+  return val;
+}
+async function _cachedFetch(key, ttlSec, fetchFn) {
+  var cached = _cacheGet(key);
+  if (cached !== null) return cached;
+  var val = await fetchFn();
+  return _cacheSet(key, val, ttlSec);
+}
+
 </script>
 
 
@@ -4144,11 +4164,13 @@ async function loadWeeklyMission(member) {
   try {
     // 미션 설정 로드 (캐시 우선)
     if (!_weeklyMissionConfig || !_weeklyMissionConfig.length) {
-      var cfgRes = await fetch(WORKER_URL + '/weekly-mission-config-read', {
-        method: 'POST', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ communityId: COMMUNITY_ID })
+      var cfgJson = await _cachedFetch('wm_config_' + COMMUNITY_ID, 21600, async () => {
+        var r = await fetch(WORKER_URL + '/weekly-mission-config-read', {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ communityId: COMMUNITY_ID })
+        });
+        return await r.json();
       });
-      var cfgJson = await cfgRes.json();
       _weeklyMissionConfig = Array.isArray(cfgJson.data) ? cfgJson.data : [];
     }
 
@@ -4300,9 +4322,12 @@ async function loadAllWeeklyEmojis(force) {
         method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({ communityId: COMMUNITY_ID })
       }),
-      fetch(WORKER_URL + '/weekly-mission-rewards-read', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ communityId: COMMUNITY_ID })
+      _cachedFetch('wm_rewards_' + COMMUNITY_ID, 21600, async () => {
+        var r = await fetch(WORKER_URL + '/weekly-mission-rewards-read', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ communityId: COMMUNITY_ID })
+        });
+        return await r.json();
       })
     ]);
     var cfg = await cfgRes.json();
@@ -4339,11 +4364,13 @@ async function openWeeklyMissionModal() {
   if (!modal) return;
   modal.style.display = 'flex';
   // 현재 설정 로드
-  var res = await fetch(WORKER_URL + '/weekly-mission-config-read', {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ communityId: COMMUNITY_ID })
+  var j = await _cachedFetch('wm_config_' + COMMUNITY_ID, 21600, async () => {
+    var r = await fetch(WORKER_URL + '/weekly-mission-config-read', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ communityId: COMMUNITY_ID })
+    });
+    return await r.json();
   });
-  var j = await res.json();
   _weeklyMissionEditList = Array.isArray(j.data) ? j.data.slice() : [];
   renderWeeklyMissionEditor();
 }
@@ -4513,11 +4540,13 @@ var _maintenanceMode = false;
 
 async function checkMaintenanceMode() {
   try {
-    var res = await fetch(WORKER_URL + '/db-public-read', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ path: 'system/patch_mode' })
+    var j = await _cachedFetch('system_patch_mode', 21600, async () => {
+      var r = await fetch(WORKER_URL + '/db-public-read', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: 'system/patch_mode' })
+      });
+      return await r.json();
     });
-    var j = await res.json();
     var isOn = j.ok && (j.data === true || j.data === 'true');
     if (isOn !== _maintenanceMode) {
       _maintenanceMode = isOn;
@@ -4998,11 +5027,13 @@ async function initScoutView() {
 async function loadScoutTargets() {
   if (!COMMUNITY_ID) return;
   try {
-    var res = await fetch(WORKER_URL + '/db-public-read', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ path: 'communities/' + COMMUNITY_ID + '/scout_targets' })
+    var j = await _cachedFetch('scout_targets_' + COMMUNITY_ID, 3600, async () => {
+      var r = await fetch(WORKER_URL + '/db-public-read', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ path: 'communities/' + COMMUNITY_ID + '/scout_targets' })
+      });
+      return await r.json();
     });
-    var j = await res.json();
     _scoutTargets = Array.isArray(j.data) ? j.data : [];
   } catch(e) { _scoutTargets = []; }
   renderScoutLayout();
@@ -6196,11 +6227,13 @@ function isScoutAllowed() {
 async function loadScoutAllowList() {
   if (!COMMUNITY_ID) return;
   try {
-    var res = await fetch(WORKER_URL + '/db-public-read', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ path: 'communities/' + COMMUNITY_ID + '/scout_allowed_discord' })
+    var j = await _cachedFetch('scout_allow_' + COMMUNITY_ID, 3600, async () => {
+      var r = await fetch(WORKER_URL + '/db-public-read', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ path: 'communities/' + COMMUNITY_ID + '/scout_allowed_discord' })
+      });
+      return await r.json();
     });
-    var j = await res.json();
     _scoutAllowList = Array.isArray(j.data) ? j.data : [];
     _scoutAllowLoaded = true;
   } catch(e) { _scoutAllowList = []; }
@@ -6288,11 +6321,13 @@ async function saveScoutCategories() {
 async function loadScoutCategories() {
   if (!COMMUNITY_ID) return;
   try {
-    var res = await fetch(WORKER_URL + '/db-public-read', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ path: 'communities/' + COMMUNITY_ID + '/scout_categories' })
+    var j = await _cachedFetch('scout_cats_' + COMMUNITY_ID, 3600, async () => {
+      var r = await fetch(WORKER_URL + '/db-public-read', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ path: 'communities/' + COMMUNITY_ID + '/scout_categories' })
+      });
+      return await r.json();
     });
-    var j = await res.json();
     window._scoutExtraCategories = Array.isArray(j.data) ? j.data : [];
   } catch(e) { window._scoutExtraCategories = []; }
 }
@@ -6456,11 +6491,13 @@ var _rowEffects = {}; // puuId → effect name
 async function loadRowEffects() {
   if (!COMMUNITY_ID) return;
   try {
-    var res = await fetch(WORKER_URL + '/db-public-read', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ path: 'communities/' + COMMUNITY_ID + '/row_effects' })
+    var j = await _cachedFetch('row_effects_' + COMMUNITY_ID, 21600, async () => {
+      var r = await fetch(WORKER_URL + '/db-public-read', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ path: 'communities/' + COMMUNITY_ID + '/row_effects' })
+      });
+      return await r.json();
     });
-    var j = await res.json();
     _rowEffects = j.data || {};
   } catch(e) { _rowEffects = {}; }
 }
@@ -6539,11 +6576,13 @@ var _bgAnimFrames = {}; // puuId → animationFrameId
 async function loadBgEffects() {
   if (!COMMUNITY_ID) return;
   try {
-    var res = await fetch(WORKER_URL + '/db-public-read', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ path: 'communities/' + COMMUNITY_ID + '/bg_effects' })
+    var j = await _cachedFetch('bg_effects_' + COMMUNITY_ID, 21600, async () => {
+      var r = await fetch(WORKER_URL + '/db-public-read', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ path: 'communities/' + COMMUNITY_ID + '/bg_effects' })
+      });
+      return await r.json();
     });
-    var j = await res.json();
     _bgEffects = j.data || {};
   } catch(e) { _bgEffects = {}; }
 }

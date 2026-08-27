@@ -2053,8 +2053,7 @@ async function runScheduledRatingCalc(env) {
 
     for (const cid of cidList) {
       try {
-        const sidRes = await fetch(`${dbUrl}/communities_info/${cid}/deeplolServerId.json${authQ}`);
-        const sidData = sidRes.ok ? await sidRes.json() : null;
+        const sidData = await cachedFetch(`deeplol-sid-${cid}`, async () => { const r = await fetch(`${dbUrl}/communities_info/${cid}/deeplolServerId.json${authQ}`); return r.ok ? await r.json() : null; }, 3600);
         const serverId = sidData ? String(sidData) : null;
         console.log(`[cron] ${cid} serverId:`, serverId);
         if (!serverId) continue;
@@ -2360,8 +2359,8 @@ async function verifyAdmin(token, adminId, adminPw, communityId, env) {
   // 3. community admin 검증
   if (communityId) {
     try {
-      const adminListRes = await fetch(`${dbUrl}/communities_info/${communityId}/adminList.json${authQ}`);
-      if (adminListRes.ok) {
+      const _adminListData = await cachedFetch(`admin-list-${communityId}`, async () => { const r = await fetch(`${dbUrl}/communities_info/${communityId}/adminList.json${authQ}`); return r.ok ? await r.json() : null; }, 1800);
+      if (_adminListData !== null) { const adminListRes = { ok: true, _data: _adminListData };
         const adminList = await adminListRes.json();
         if (adminList && Array.isArray(adminList)) {
           const enc = new TextEncoder();
@@ -2452,8 +2451,7 @@ async function handleWeeklyMissionCount(request, env) {
   // 커뮤니티 멤버 puu_id 목록 (딥롤 server_info)
   let communityPuuIds = new Set();
   try {
-    const sidRes = await fetch(`${dbUrl}/communities_info/${communityId}/deeplolServerId.json${authQ}`);
-    const serverId = await sidRes.json();
+    const serverId = await cachedFetch(`deeplol-sid-${communityId}`, async () => { const r = await fetch(`${dbUrl}/communities_info/${communityId}/deeplolServerId.json${authQ}`); return r.ok ? await r.json() : null; }, 3600);
     if (serverId) {
       const sRes = await fetch(`https://b2c-api-cdn.deeplol.gg/tournament/server_info?server_id=${serverId}`, {
         headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://www.deeplol.gg/' }
@@ -2556,7 +2554,8 @@ async function runWeeklyMissionReset(env) {
   const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
   const authQ = secret ? '?auth='+secret : '';
   const shallowQ = authQ ? authQ+'&shallow=true' : '?shallow=true';
-  const commRes = await fetch(`${dbUrl}/communities_info.json${shallowQ}`);
+  const commRes = { ok: true, json: async () => await cachedFetch('communities-info-shallow', async () => { const r = await fetch(`${dbUrl}/communities_info.json${shallowQ}`);
+    return r.ok ? await r.json() : null; }, 1800) };
   if (!commRes.ok) return;
   const commKeys = await commRes.json();
   if (!commKeys) return;
@@ -2662,8 +2661,7 @@ async function runNicknameHistoryCheckForCommunity(env, cid, isManual) {
   try {
     // 1. deeplolServerId 확인
     console.log('[nickname-check] cid:', cid);
-    const sidRes = await fetch(`${dbUrl}/communities_info/${cid}/deeplolServerId.json${authQ}`);
-    const serverId = await sidRes.json();
+    const serverId = await cachedFetch(`deeplol-sid-${cid}`, async () => { const r = await fetch(`${dbUrl}/communities_info/${cid}/deeplolServerId.json${authQ}`); return r.ok ? await r.json() : null; }, 3600);
     console.log('[nickname-check] serverId:', serverId);
     if (!serverId) return { cid, skipped: 'no serverId' };
 
@@ -2734,7 +2732,8 @@ async function runNicknameHistoryCheck(env, isManual) {
   const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
   const authQ = secret ? '?auth='+secret : '';
   const shallowQ = authQ ? authQ+'&shallow=true' : '?shallow=true';
-  const commRes = await fetch(`${dbUrl}/communities_info.json${shallowQ}`);
+  const commRes = { ok: true, json: async () => await cachedFetch('communities-info-shallow', async () => { const r = await fetch(`${dbUrl}/communities_info.json${shallowQ}`);
+    return r.ok ? await r.json() : null; }, 1800) };
   if (!commRes.ok) return;
   const commKeys = await commRes.json();
   if (!commKeys) return;
@@ -3367,8 +3366,7 @@ async function handleListMatches(interaction, env) {
   const channelId = interaction.channel_id;
 
   // 커뮤니티 찾기
-  const ciRes = await fetch(`${dbUrl}/communities_info.json${authQ}`);
-  const ciData = await ciRes.json() || {};
+  const ciData = await cachedFetch('communities-info-all', async () => { const r = await fetch(`${dbUrl}/communities_info.json${authQ}`); return r.ok ? await r.json() : {}; }, 1800) || {};
   let targetCid = null;
   for (const [cid, info] of Object.entries(ciData)) {
     if (info && (
@@ -3477,8 +3475,7 @@ async function handleJoinMatch(riotName, riotTag, laneInput, subLanesInput, matc
 
   // 디스코드 서버 → 커뮤니티 찾기
   // communities_info에서 discordServerId 매칭
-  const ciRes = await fetch(`${dbUrl}/communities_info.json${authQ}`);
-  const ciData = await ciRes.json() || {};
+  const ciData = await cachedFetch('communities-info-all', async () => { const r = await fetch(`${dbUrl}/communities_info.json${authQ}`); return r.ok ? await r.json() : {}; }, 1800) || {};
 
   // Discord 유저의 서버 ID로 매핑 (interaction.guild_id 없으므로 전체 검색)
   // 대신 discordUserId로 매핑된 커뮤니티 찾기
@@ -4162,8 +4159,7 @@ async function handleMatchWinRate(interaction, env) {
   const authQ = secret ? '?auth='+secret : '';
 
   // 커뮤니티 찾기
-  const ciRes = await fetch(`${dbUrl}/communities_info.json${authQ}`);
-  const ciData = await ciRes.json() || {};
+  const ciData = await cachedFetch('communities-info-all', async () => { const r = await fetch(`${dbUrl}/communities_info.json${authQ}`); return r.ok ? await r.json() : {}; }, 1800) || {};
   let targetCid = null, deeplolServerId = null;
   for (const [cid, info] of Object.entries(ciData)) {
     if (info && (
