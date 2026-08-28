@@ -1767,7 +1767,7 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
   <div id="champ-rank-body"><div class="champ-empty">내전 기록이 없습니다</div></div>
   <button class="champ-more-btn" id="champ-more-btn" onclick="openChampModal()" style="display:none;">더보기 ▶</button>
 </div>
-</div> <div style="flex:1;min-width:0;"> <div class="list-topbar" style="margin-bottom:.5rem;"> <div class="list-heading">내전 목록</div> <div style="display:flex;align-items:center;gap:8px;"> <input id="match-search-input" type="text" placeholder="내전 제목 검색..." oninput="renderMatchList()" style="padding:6px 10px;background:var(--bg-dark);border:1px solid var(--border-subtle);border-radius:3px;color:var(--text-white);font-family:'Rajdhani',sans-serif;font-size:12px;outline:none;width:180px;"> <button class="btn-primary admin-only" onclick="openNewMatchFlow()" id="btn-list-new" style="display:none;">+ 새 내전 생성</button> <button class="btn-secondary admin-only" id="btn-manage-cats-main" onclick="openManageCategories()" style="display:none;">🏷 내전 카테고리 관리</button> <button class="btn-secondary admin-only" id="btn-rules-list" onclick="openRulesListModal()" style="display:none;">📋 가이드/룰 목록</button> </div> </div>
+</div> <div style="flex:1;min-width:0;"> <div class="list-topbar" style="margin-bottom:.5rem;"> <div class="list-heading">내전 목록</div> <div style="display:flex;align-items:center;gap:8px;"> <input id="match-search-input" type="text" placeholder="내전명·진행자 검색..." oninput="renderMatchList()" style="padding:6px 10px;background:var(--bg-dark);border:1px solid var(--border-subtle);border-radius:3px;color:var(--text-white);font-family:'Rajdhani',sans-serif;font-size:12px;outline:none;width:180px;"> <button class="btn-primary admin-only" onclick="openNewMatchFlow()" id="btn-list-new" style="display:none;">+ 새 내전 생성</button> <button class="btn-secondary admin-only" id="btn-manage-cats-main" onclick="openManageCategories()" style="display:none;">🏷 내전 카테고리 관리</button> <button class="btn-secondary admin-only" id="btn-rules-list" onclick="openRulesListModal()" style="display:none;">📋 가이드/룰 목록</button> </div> </div>
 <div id="match-cat-bar" style="margin-bottom:.6rem;display:none;">
   <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
     <div id="match-cat-tabs" style="display:flex;gap:5px;flex-wrap:wrap;"></div>
@@ -11591,7 +11591,7 @@ const catFiltered = catFilter === '__none__'
     : allList;
 // 검색 필터
 const list = query
-  ? catFiltered.filter(m => (m.name || '').toLowerCase().includes(query))
+  ? catFiltered.filter(m => (m.name || '').toLowerCase().includes(query) || (m.admin || '').toLowerCase().includes(query))
   : catFiltered;
 const grid = document.getElementById('list-grid');
 const empty = document.getElementById('list-empty');
