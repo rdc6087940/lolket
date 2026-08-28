@@ -8331,6 +8331,8 @@ const writeBtn = document.getElementById('btn-notice-write');
 if (writeBtn) writeBtn.style.display = isMaster ? '' : 'none';
 const patchEditBtn = document.getElementById('btn-patch-edit');
 if (patchEditBtn) patchEditBtn.style.display = isMaster ? '' : 'none';
+// 패치 버전 삭제 버튼도 동일하게
+document.querySelectorAll('.patch-ver-del').forEach(function(el) { el.style.display = isMaster ? '' : 'none'; });
 if (btnMasterLogin) { btnMasterLogin.style.display = loggedIn ? 'none' : ''; }
 if (btnAdminLogin) { btnAdminLogin.style.display = loggedIn ? 'none' : ''; }
 document.querySelectorAll('.admin-only').forEach(el => {
@@ -18115,6 +18117,9 @@ function renderPatchList(elId, list, type) {
   var sorted = list.slice().sort(function(a,b) {
     return (typeOrder[a.type]||0) - (typeOrder[b.type]||0);
   });
+  // 정렬된 배열을 전역에 저장해서 팝업도 동일 순서 참조
+  if (type === 'champion') window._sortedPatchChamps = sorted;
+  else window._sortedPatchItems = sorted;
   el.innerHTML = sorted.map(function(item, idx) {
     var cfg = PATCH_TYPE_CFG[item.type] || PATCH_TYPE_CFG.adjust;
     var imgSrc = type === 'champion'
@@ -18137,7 +18142,9 @@ async function showPatchPopup(e, type, idx) {
   var popup = document.getElementById('patch-popup');
   if (!popup) return;
   var data = _patchVersion && _patchData[_patchVersion];
-  var list = data ? (type === 'champion' ? data.champions : data.items) : [];
+  // 정렬된 배열 참조 (renderPatchList에서 저장)
+  var sorted = type === 'champion' ? window._sortedPatchChamps : window._sortedPatchItems;
+  var list = sorted || (data ? (type === 'champion' ? data.champions : data.items) : []);
   var item = list[idx];
   if (!item) return;
 
@@ -18213,13 +18220,31 @@ function openPatchVersionSelect() {
   var modal = document.getElementById('patch-version-modal');
   var list = document.getElementById('patch-version-list');
   if (!list) return;
+  var patchEditBtn = document.getElementById('btn-patch-edit');
+  var showDel = patchEditBtn && patchEditBtn.style.display !== 'none';
+  list.innerHTML = '';
   if (!_patchVersions.length) {
     list.innerHTML = '<div style="font-size:12px;color:var(--text-muted);">등록된 버전 없음</div>';
   } else {
-    list.innerHTML = _patchVersions.map(function(v) {
+    _patchVersions.forEach(function(v) {
       var active = v === _patchVersion;
-      return '<div onclick="selectPatchVersion(\'' + v + '\')" style="padding:8px 12px;border-radius:3px;border:1px solid ' + (active ? 'rgba(10,200,185,.4)' : 'var(--border-subtle)') + ';background:' + (active ? 'rgba(10,200,185,.08)' : 'transparent') + ';color:' + (active ? 'var(--blue-bright)' : 'var(--text-white)') + ';font-family:Rajdhani,sans-serif;font-size:13px;font-weight:700;cursor:pointer;">' + v + (active ? ' ✓' : '') + '</div>';
-    }).join('');
+      var dispV = v.replace(/_/g, '.');
+      var row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;gap:6px;margin-bottom:4px;';
+      var btn = document.createElement('div');
+      btn.style.cssText = 'flex:1;padding:8px 12px;border-radius:3px;border:1px solid ' + (active ? 'rgba(10,200,185,.4)' : 'var(--border-subtle)') + ';background:' + (active ? 'rgba(10,200,185,.08)' : 'transparent') + ';color:' + (active ? 'var(--blue-bright)' : 'var(--text-white)') + ';font-family:Rajdhani,sans-serif;font-size:13px;font-weight:700;cursor:pointer;';
+      btn.textContent = dispV + (active ? ' ✓' : '');
+      btn.addEventListener('click', (function(ver){ return function(){ selectPatchVersion(ver); }; })(v));
+      row.appendChild(btn);
+      if (showDel) {
+        var delBtn = document.createElement('button');
+        delBtn.textContent = '✕';
+        delBtn.style.cssText = 'padding:4px 8px;border-radius:2px;border:1px solid rgba(192,48,48,.3);background:transparent;color:#E05050;font-size:11px;cursor:pointer;flex-shrink:0;';
+        delBtn.addEventListener('click', (function(ver){ return function(){ deletePatchVersion(ver); }; })(v));
+        row.appendChild(delBtn);
+      }
+      list.appendChild(row);
+    });
   }
   modal.style.display = 'flex';
 }
@@ -18228,6 +18253,25 @@ function selectPatchVersion(v) {
   _patchVersion = v;
   document.getElementById('patch-version-modal').style.display = 'none';
   renderPatchSection();
+}
+
+async function deletePatchVersion(v) {
+  var dispV = v.replace(/_/g, '.');
+  if (!confirm(dispV + ' 패치노트를 삭제할까요?')) return;
+  try {
+    await _workerDelete('system/patch_notes/' + v, 'master');
+    delete _patchData[v];
+    _patchVersions = _patchVersions.filter(function(x){ return x !== v; });
+    if (_patchVersion === v) _patchVersion = _patchVersions[0] || '';
+    // 캐시 초기화
+    _patchNoteCacheTs = 0;
+    try { localStorage.removeItem('patch_global'); } catch(e) {}
+    document.getElementById('patch-version-modal').style.display = 'none';
+    renderPatchSection();
+    toast('🗑️ 패치노트 삭제 완료', 'ok');
+  } catch(e) {
+    alert('삭제 실패: ' + e.message);
+  }
 }
 
 // ── 편집 ──
