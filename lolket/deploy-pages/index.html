@@ -1033,15 +1033,27 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
  }
  
  async function fbGetCommunities() {
+   const CACHE_KEY = 'comm_list_cache';
+   const CACHE_TTL = 30 * 60 * 1000; // 30분
+   try {
+     const cached = localStorage.getItem(CACHE_KEY);
+     if (cached) {
+       const c = JSON.parse(cached);
+       if (Date.now() - c.ts < CACHE_TTL) return c.data;
+     }
+   } catch(e) {}
    try {
      const url = _workerBase + '/db-public-read';
      const res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ path: 'communities_info' }) });
      const result = await res.json();
      if (!result.ok || !result.data) return [];
-     return Object.values(result.data).filter(c => c && c.id);
+     const list = Object.values(result.data).filter(c => c && c.id);
+     try { localStorage.setItem(CACHE_KEY, JSON.stringify({ data: list, ts: Date.now() })); } catch(e2) {}
+     return list;
    } catch(e) { return []; }
  }
  async function fbSaveCommunity(cObj) {
+   try { localStorage.removeItem('comm_list_cache'); } catch(e) {}
    const bannerImage = cObj.bannerImage;
    const cObjSmall = Object.assign({}, cObj);
    delete cObjSmall.bannerImage;
@@ -1066,6 +1078,7 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
    return Promise.all([p1, p2]);
  }
  async function fbDeleteCommunity(cid) {
+   try { localStorage.removeItem('comm_list_cache'); } catch(e) {}
  await Promise.all([
  _workerDelete(`communities_info/${cid}`, 'master'),
  _workerDelete(`communities/${cid}`, 'master'),
@@ -1560,7 +1573,31 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
 <div id="community-show-more" class="community-show-more" style="display:none;">
   <button class="community-show-more-btn" id="community-show-more-btn" onclick="toggleCommunityExpand()">▼ 더보기</button>
 </div>
-<div id="community-empty" class="list-empty" style="display:none;"> <div class="list-empty-hex">◇</div> <div style="font-size:14px;">등록된 커뮤니티가 없습니다</div> </div> 
+<div id="community-empty" class="list-empty" style="display:none;"> <div class="list-empty-hex">◇</div>
+ <div style="font-size:14px;">등록된 커뮤니티가 없습니다</div> </div>
+
+<!-- ── 챔피언/아이템 패치 섹션 ── -->
+<div id="patch-section" style="margin-top:1.5rem;padding:0;">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;flex-wrap:wrap;gap:8px;">
+    <div style="display:flex;align-items:baseline;gap:10px;">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:3px;color:var(--gold);">챔피언 / 아이템 패치</div>
+      <div id="patch-version-btn" onclick="openPatchVersionSelect()" title="클릭하여 버전 변경" style="font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;color:var(--blue-bright);cursor:pointer;border-bottom:1px solid rgba(10,200,185,.3);padding-bottom:1px;letter-spacing:.5px;"></div>
+    </div>
+    <button id="btn-patch-edit" onclick="openPatchEditor()" style="display:none;padding:4px 12px;border-radius:3px;border:1px solid rgba(200,170,110,.4);background:rgba(200,170,110,.08);color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">✏️ 패치노트 편집</button>
+  </div>
+  <div style="background:var(--bg-panel);border:1px solid var(--border-subtle);border-radius:4px;overflow:hidden;">
+    <!-- 챔피언 패치 -->
+    <div style="padding:.75rem 1rem;border-bottom:1px solid var(--border-subtle);">
+      <div style="font-family:'Rajdhani',sans-serif;font-size:9px;font-weight:700;letter-spacing:2px;color:var(--text-muted);margin-bottom:.6rem;">CHAMPION</div>
+      <div id="patch-champions-list" style="display:flex;flex-wrap:wrap;gap:8px;min-height:20px;"></div>
+    </div>
+    <!-- 아이템 패치 -->
+    <div style="padding:.75rem 1rem;">
+      <div style="font-family:'Rajdhani',sans-serif;font-size:9px;font-weight:700;letter-spacing:2px;color:var(--text-muted);margin-bottom:.6rem;">ITEM</div>
+      <div id="patch-items-list" style="display:flex;flex-wrap:wrap;gap:8px;min-height:20px;"></div>
+    </div>
+  </div>
+</div> 
 <div id="apply-req-section" style="display:none;margin-top:2rem;">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;">
     <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:3px;color:var(--gold);">커뮤니티 신청 목록</div>
@@ -2000,6 +2037,8 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
  onkeydown="if(event.key==='Enter')doLogin()"> </div> </div> <div id="login-err" style="font-size:12px;color:#E05050;min-height:18px;margin-bottom:.5rem;
  display:flex;align-items:center;gap:6px;"></div> <div class="modal-actions" style="margin-top:.75rem;"> <button class="btn-secondary" onclick="closeLoginModal()">취소</button> <button class="btn-primary" id="btn-do-login" onclick="doLogin()"
  style="padding:9px 24px;font-size:13px;letter-spacing:2px;">로그인</button> </div> </div>
+
+
 </div> <div id="screen-blacklist" class="screen">
 <div class="bl-wrap">
   <div class="bl-topbar">
@@ -7848,6 +7887,10 @@ document.querySelectorAll('.stage-pip').forEach(p => p.classList.remove('active'
 document.getElementById('pip-1').classList.add('active');
 showScreenRaw('screen-community');
 renderCommunityList();
+(async function() {
+  await loadDDVersion();
+  await loadPatchNotes();
+})();
 }
 function enterCommunity(community) {
 // 일반 관리자는 자신의 커뮤니티만 진입 가능
@@ -7913,6 +7956,10 @@ communities = await window._fb.fbGetCommunities();
 }
 _allCommunities = communities;
 renderCommunityGrid(communities);
+// 패치노트 로드 (비동기 - 화면 렌더링과 병렬)
+if (typeof loadDDVersion === 'function' && typeof loadPatchNotes === 'function') {
+  loadDDVersion().then(loadPatchNotes);
+}
 }
 function filterCommunityList() {
 const q = (document.getElementById('community-search')?.value || '').trim().toLowerCase();
@@ -8282,6 +8329,8 @@ btnLogout.onclick = loggedIn ? doLogout : openLoginModal;
 }
 const writeBtn = document.getElementById('btn-notice-write');
 if (writeBtn) writeBtn.style.display = isMaster ? '' : 'none';
+const patchEditBtn = document.getElementById('btn-patch-edit');
+if (patchEditBtn) patchEditBtn.style.display = isMaster ? '' : 'none';
 if (btnMasterLogin) { btnMasterLogin.style.display = loggedIn ? 'none' : ''; }
 if (btnAdminLogin) { btnAdminLogin.style.display = loggedIn ? 'none' : ''; }
 document.querySelectorAll('.admin-only').forEach(el => {
@@ -16560,6 +16609,16 @@ function _calcRatingDelta(S, aiScore, kda, streak) {
 async function loadCommunityRatings() {
   const cid = window._currentCommunityId;
   if (!cid) return;
+  // 6시간 캐시
+  const CACHE_KEY = 'rating_' + cid;
+  const CACHE_TTL = 6 * 60 * 60 * 1000;
+  try {
+    const cached = localStorage.getItem(CACHE_KEY);
+    if (cached) {
+      const c = JSON.parse(cached);
+      if (Date.now() - c.ts < CACHE_TTL) { _communityRatings = c.data; return; }
+    }
+  } catch(e2) {}
   try {
     const res = await fetch(RIOT_PROXY_URL + '/rating-read', {
       method: 'POST',
@@ -16568,7 +16627,8 @@ async function loadCommunityRatings() {
     });
     const j = await res.json();
     if (j.ok && j.data) {
-      _communityRatings = j.data; // { deeplol_puu_id: { current, initial } }
+      _communityRatings = j.data;
+      try { localStorage.setItem(CACHE_KEY, JSON.stringify({ data: j.data, ts: Date.now() })); } catch(e3) {}
     } else {
       _communityRatings = {};
     }
@@ -17822,6 +17882,644 @@ async function removeWaitlistEntry(idx) {
   } catch(e) { toast('오류: ' + e.message, 'err'); }
 }
 
+
+</script>
+<script>
+// ══════════════════════════════════════
+// 챔피언/아이템 패치노트
+// ══════════════════════════════════════
+var _patchData = {};        // { version: { champions:[], items:[] } }
+var _champSkillCache = {};  // { champId: { spells:[{id,name,image}], passive:{name,image} } }
+var _ddItems = {};          // { itemId: { name, image } }
+var _patchVersion = '';     // 현재 표시 버전
+var _patchVersions = [];    // 전체 버전 목록
+var _patchDDVersion = '14.24.1'; // DD Dragon 버전 (자동 로드)
+var _ddChampions = {};      // { id: { name, key } }
+
+var PATCH_SKILL_KEYS = ['기본지속효과','Q','W','E','R','P','기본능력치'];
+var PATCH_TYPE_CFG = {
+  buff:   { color:'#27AE60', arrow:'▲', label:'상향' },
+  nerf:   { color:'#E05050', arrow:'▼', label:'하향' },
+  adjust: { color:'#8FA3B4', arrow:'◆', label:'조정' }
+};
+
+// DataDragon 아이템 목록 로드 (버전별 1년 캐시)
+async function loadDDItems() {
+  if (Object.keys(_ddItems).length) return;
+  var ckey = 'dd_items_' + _patchDDVersion;
+  try {
+    var cached = localStorage.getItem(ckey);
+    if (cached) { _ddItems = JSON.parse(cached); return; }
+  } catch(e) {}
+  try {
+    var r = await fetch('https://ddragon.leagueoflegends.com/cdn/' + _patchDDVersion + '/data/ko_KR/item.json');
+    var j = await r.json();
+    var data = j.data || {};
+    _ddItems = {};
+    Object.entries(data).forEach(function(entry) {
+      var id = entry[0], item = entry[1];
+      // 실제 구매 가능한 아이템만 (hideFromAll 제외, gold.purchasable)
+      if (item.gold && item.gold.purchasable && !item.hideFromAll) {
+        _ddItems[id] = { name: item.name, image: item.image.full };
+      }
+    });
+    try { localStorage.setItem(ckey, JSON.stringify(_ddItems)); } catch(e2) {}
+  } catch(e) {}
+}
+
+// 챔피언 스킬 데이터 로드 (버전별 1년 캐시)
+async function loadChampSkills(champId) {
+  if (_champSkillCache[champId]) return _champSkillCache[champId];
+  var ckey = 'dd_skills_' + _patchDDVersion + '_' + champId;
+  try {
+    var cached = localStorage.getItem(ckey);
+    if (cached) {
+      _champSkillCache[champId] = JSON.parse(cached);
+      return _champSkillCache[champId];
+    }
+  } catch(e) {}
+  try {
+    var r = await fetch('https://ddragon.leagueoflegends.com/cdn/' + _patchDDVersion + '/data/ko_KR/champion/' + champId + '.json');
+    var j = await r.json();
+    var c = j.data && j.data[champId];
+    if (!c) return null;
+    var skillData = {
+      spells: c.spells.map(function(s) { return { id: s.id, name: s.name, image: s.image.full }; }),
+      passive: { name: c.passive.name, image: c.passive.image.full }
+    };
+    _champSkillCache[champId] = skillData;
+    try { localStorage.setItem(ckey, JSON.stringify(skillData)); } catch(e2) {}
+    return skillData;
+  } catch(e) { return null; }
+}
+
+function getSkillImgUrl(champId, skill) {
+  var skills = _champSkillCache[champId];
+  if (!skills) return '';
+  var map = { Q: 0, W: 1, E: 2, R: 3 };
+  if (skill === 'P' || skill === '패시브' || skill === '기본지속효과') {
+    return 'https://ddragon.leagueoflegends.com/cdn/' + _patchDDVersion + '/img/passive/' + skills.passive.image;
+  }
+  if (map[skill] !== undefined && skills.spells[map[skill]]) {
+    return 'https://ddragon.leagueoflegends.com/cdn/' + _patchDDVersion + '/img/spell/' + skills.spells[map[skill]].image;
+  }
+  return '';
+}
+
+function getSkillName(champId, skill) {
+  var skills = _champSkillCache[champId];
+  if (!skills) return '';
+  var map = { Q: 0, W: 1, E: 2, R: 3 };
+  if (skill === 'P' || skill === '패시브') return skills.passive.name;
+  if (map[skill] !== undefined && skills.spells[map[skill]]) return skills.spells[map[skill]].name;
+  return '';
+}
+
+// DataDragon 버전 로드 (1주일 캐시)
+async function loadDDVersion() {
+  try {
+    var cached = localStorage.getItem('dd_version');
+    if (cached) {
+      var c = JSON.parse(cached);
+      if (Date.now() - c.ts < 7 * 24 * 60 * 60 * 1000) {
+        _patchDDVersion = c.v;
+        return;
+      }
+    }
+  } catch(e) {}
+  try {
+    var r = await fetch('https://ddragon.leagueoflegends.com/api/versions.json');
+    var v = await r.json();
+    if (v && v[0]) {
+      _patchDDVersion = v[0];
+      try { localStorage.setItem('dd_version', JSON.stringify({ v: v[0], ts: Date.now() })); } catch(e2) {}
+    }
+  } catch(e) {}
+}
+
+// DataDragon 챔피언 목록 로드 (버전별 1년 캐시)
+async function loadDDChampions() {
+  try {
+    var ckey = 'dd_champs_' + _patchDDVersion;
+    var cached = localStorage.getItem(ckey);
+    if (cached) {
+      _ddChampions = JSON.parse(cached);
+      return;
+    }
+  } catch(e) {}
+  try {
+    var r = await fetch('https://ddragon.leagueoflegends.com/cdn/' + _patchDDVersion + '/data/ko_KR/champion.json');
+    var j = await r.json();
+    _ddChampions = j.data || {};
+    try { localStorage.setItem('dd_champs_' + _patchDDVersion, JSON.stringify(_ddChampions)); } catch(e2) {}
+  } catch(e) {}
+}
+
+function getDDChampImgUrl(champId) {
+  return 'https://ddragon.leagueoflegends.com/cdn/' + _patchDDVersion + '/img/champion/' + champId + '.png';
+}
+
+function getDDItemImgUrl(itemId) {
+  return 'https://ddragon.leagueoflegends.com/cdn/' + _patchDDVersion + '/img/item/' + itemId + '.png';
+}
+
+// Firebase에서 패치노트 로드
+var _patchNoteCacheTs = 0;
+async function loadPatchNotes() {
+  // 1년 캐시 (수정 시 savePatchNote에서 초기화)
+  var PATCH_CACHE_TTL = 365 * 24 * 60 * 60 * 1000;
+  var cacheKey = 'patch_global';
+  if (Date.now() - _patchNoteCacheTs < PATCH_CACHE_TTL && Object.keys(_patchData).length > 0) {
+    renderPatchSection();
+    return;
+  }
+  // localStorage 캐시 확인
+  try {
+    var cached = localStorage.getItem(cacheKey);
+    if (cached) {
+      var c = JSON.parse(cached);
+      if (Date.now() - c.ts < PATCH_CACHE_TTL) {
+        _patchData = c.data;
+        _patchVersions = Object.keys(_patchData).sort((a,b) => {
+          var pa = a.replace(/_/g,'.').split('.').map(Number);
+          var pb = b.replace(/_/g,'.').split('.').map(Number);
+          for (var i=0; i<Math.max(pa.length,pb.length); i++) {
+            if ((pa[i]||0) !== (pb[i]||0)) return (pb[i]||0) - (pa[i]||0);
+          }
+          return 0;
+        });
+        _patchVersion = _patchVersions[0] || '';
+        _patchNoteCacheTs = c.ts;
+        renderPatchSection();
+        if (_statsAdminRole === 'master') document.getElementById('btn-patch-edit').style.display = '';
+        return;
+      }
+    }
+  } catch(e) {}
+  try {
+    var res = await fetch('https://api.roonging.com/db-public-read', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ path: 'system/patch_notes' })
+    });
+    var j = await res.json();
+    if (j.ok && j.data) {
+      _patchData = j.data;
+      _patchVersions = Object.keys(_patchData).sort((a,b) => {
+        var pa = a.replace(/_/g,'.').split('.').map(Number);
+        var pb = b.replace(/_/g,'.').split('.').map(Number);
+        for (var i=0; i<Math.max(pa.length,pb.length); i++) {
+          if ((pa[i]||0) !== (pb[i]||0)) return (pb[i]||0) - (pa[i]||0);
+        }
+        return 0;
+      });
+      _patchVersion = _patchVersions[0] || '';
+      // localStorage에 캐시 저장
+      try {
+        localStorage.setItem('patch_global', JSON.stringify({ data: _patchData, ts: Date.now() }));
+      } catch(e2) {}
+      _patchNoteCacheTs = Date.now();
+    }
+    renderPatchSection();
+    // 현재 버전 챔피언 스킬 미리 로드
+    if (_patchVersion && _patchData[_patchVersion]) {
+      (_patchData[_patchVersion].champions || []).forEach(function(c) {
+        if (c.champId) loadChampSkills(c.champId);
+      });
+    }
+    if (_statsAdminRole === 'master' || (window._communityAdminRole === 'master')) {
+      document.getElementById('btn-patch-edit').style.display = '';
+    }
+  } catch(e) {}
+}
+
+function renderPatchSection() {
+  var verBtn = document.getElementById('patch-version-btn');
+  var _dispVer = _patchVersion && _patchData[_patchVersion] && _patchData[_patchVersion].version
+    ? _patchData[_patchVersion].version : (_patchVersion || '—').replace(/_/g, '.');
+  if (verBtn) verBtn.textContent = _dispVer + ' ▾';
+
+  var data = _patchVersion && _patchData[_patchVersion];
+  renderPatchList('patch-champions-list', data ? (data.champions || []) : [], 'champion');
+  renderPatchList('patch-items-list', data ? (data.items || []) : [], 'item');
+}
+
+function renderPatchList(elId, list, type) {
+  var el = document.getElementById(elId);
+  if (!el) return;
+  if (!list || !list.length) {
+    el.innerHTML = '<span style="font-size:11px;color:var(--text-muted);font-family:Rajdhani,sans-serif;">등록된 내용 없음</span>';
+    return;
+  }
+  // 상향→하향→조정 순 정렬
+  var typeOrder = { buff: 0, nerf: 1, adjust: 2 };
+  var sorted = list.slice().sort(function(a,b) {
+    return (typeOrder[a.type]||0) - (typeOrder[b.type]||0);
+  });
+  el.innerHTML = sorted.map(function(item, idx) {
+    var cfg = PATCH_TYPE_CFG[item.type] || PATCH_TYPE_CFG.adjust;
+    var imgSrc = type === 'champion'
+      ? (item.champId ? getDDChampImgUrl(item.champId) : '')
+      : (item.itemId ? getDDItemImgUrl(item.itemId) : '');
+    return '<div class="patch-icon-wrap" data-ptype="' + type + '" data-pidx="' + idx + '" ' +
+      'style="position:relative;display:inline-flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;"' +
+      'onmouseenter="showPatchPopup(event,\'' + type + '\',' + idx + ')"' +
+      'onmouseleave="hidePatchPopup()">' +
+      '<div style="position:relative;width:60px;height:60px;border-radius:4px;overflow:hidden;border:1px solid ' + cfg.color + '44;">' +
+      '<img src="' + imgSrc + '" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display=\'none\'">' +
+      '<div style="position:absolute;bottom:2px;right:2px;width:16px;height:16px;border-radius:50%;background:' + cfg.color + ';display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:900;color:#fff;line-height:1;">' + cfg.arrow + '</div>' +
+      '</div>' +
+      '<span style="font-size:10px;font-family:Rajdhani,sans-serif;font-weight:700;color:#ddd;max-width:60px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (item.nameKo || item.name || '') + '</span>' +
+      '</div>';
+  }).join('');
+}
+
+async function showPatchPopup(e, type, idx) {
+  var popup = document.getElementById('patch-popup');
+  if (!popup) return;
+  var data = _patchVersion && _patchData[_patchVersion];
+  var list = data ? (type === 'champion' ? data.champions : data.items) : [];
+  var item = list[idx];
+  if (!item) return;
+
+  // 챔피언 스킬 이미지 미리 로드
+  if (type === 'champion' && item.champId) {
+    await loadChampSkills(item.champId);
+  }
+
+  var cfg = PATCH_TYPE_CFG[item.type] || PATCH_TYPE_CFG.adjust;
+  var html = '<div style="font-family:Rajdhani,sans-serif;font-size:13px;font-weight:700;color:' + cfg.color + ';margin-bottom:.5rem;display:flex;align-items:center;gap:6px;">' +
+    '<span>' + (item.nameKo || item.name) + '</span>' +
+    '<span style="font-size:10px;background:' + cfg.color + '22;border:1px solid ' + cfg.color + '44;border-radius:2px;padding:1px 6px;">' + cfg.label + '</span>' +
+    '</div>';
+
+  (item.changes || []).forEach(function(change) {
+    var skillColor = {Q:'#4FC3F7',W:'#81C784',E:'#FF8A65',R:'#CE93D8',P:'#FFD54F'}[change.skill] || '#8FA3B4';
+    var skillImgUrl = type === 'champion' && item.champId ? getSkillImgUrl(item.champId, change.skill) : '';
+    html += '<div style="margin-bottom:.5rem;">';
+    if (change.skill) {
+      html += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">';
+      if (skillImgUrl) {
+        html += '<img src="' + skillImgUrl + '" style="width:22px;height:22px;border-radius:3px;border:1px solid ' + skillColor + '55;">';
+      } else if (change.skill !== '기본능력치') {
+        html += '<span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:4px;background:' + skillColor + '33;border:1px solid ' + skillColor + '66;font-size:10px;font-weight:700;color:' + skillColor + ';">' + change.skill + '</span>';
+      }
+      var displaySkillName = change.skillName || (type === 'champion' && item.champId ? getSkillName(item.champId, change.skill) : '');
+      if (displaySkillName) {
+        html += '<span style="font-size:11px;font-weight:700;color:#ddd;">' + displaySkillName + '</span>';
+      }
+      html += '</div>';
+    }
+    (change.entries || []).forEach(function(entry) {
+      var entryColor = entry.type === 'buff' ? '#27AE60' : entry.type === 'nerf' ? '#E05050' : '#8FA3B4';
+      html += '<div style="margin-left:' + (change.skill ? '28px' : '0') + ';margin-bottom:3px;">';
+      if (entry.label) {
+        html += '<div style="font-size:9px;color:#8FA3B4;letter-spacing:1px;margin-bottom:1px;">' + entry.label + '</div>';
+      }
+      if (entry.before) {
+        html += '<div style="font-size:11px;color:#555;text-decoration:line-through;line-height:1.4;">' + entry.before + '</div>';
+        html += '<div style="font-size:9px;color:#444;margin:1px 0;">⇒</div>';
+      }
+      html += '<div style="font-size:11px;color:' + entryColor + ';font-weight:600;line-height:1.4;">' + (entry.after || '') + '</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+  });
+
+  popup.innerHTML = html;
+  popup.style.display = 'block';
+  positionPatchPopup(e, popup);
+}
+
+function positionPatchPopup(e, popup) {
+  popup.style.display = 'block';
+  var rect = e.currentTarget.getBoundingClientRect();
+  var pw = popup.offsetWidth || 280;
+  var ph = popup.offsetHeight || 200;
+  var left = rect.left + rect.width/2 - pw/2;
+  var top = rect.bottom + 8;
+  if (left + pw > window.innerWidth - 8) left = window.innerWidth - pw - 8;
+  if (left < 8) left = 8;
+  if (top + ph > window.innerHeight - 8) top = rect.top - ph - 8;
+  popup.style.left = left + 'px';
+  popup.style.top = top + 'px';
+}
+
+function hidePatchPopup() {
+  var popup = document.getElementById('patch-popup');
+  if (popup) popup.style.display = 'none';
+}
+
+function openPatchVersionSelect() {
+  var modal = document.getElementById('patch-version-modal');
+  var list = document.getElementById('patch-version-list');
+  if (!list) return;
+  if (!_patchVersions.length) {
+    list.innerHTML = '<div style="font-size:12px;color:var(--text-muted);">등록된 버전 없음</div>';
+  } else {
+    list.innerHTML = _patchVersions.map(function(v) {
+      var active = v === _patchVersion;
+      return '<div onclick="selectPatchVersion(\'' + v + '\')" style="padding:8px 12px;border-radius:3px;border:1px solid ' + (active ? 'rgba(10,200,185,.4)' : 'var(--border-subtle)') + ';background:' + (active ? 'rgba(10,200,185,.08)' : 'transparent') + ';color:' + (active ? 'var(--blue-bright)' : 'var(--text-white)') + ';font-family:Rajdhani,sans-serif;font-size:13px;font-weight:700;cursor:pointer;">' + v + (active ? ' ✓' : '') + '</div>';
+    }).join('');
+  }
+  modal.style.display = 'flex';
+}
+
+function selectPatchVersion(v) {
+  _patchVersion = v;
+  document.getElementById('patch-version-modal').style.display = 'none';
+  renderPatchSection();
+}
+
+// ── 편집 ──
+var _editChamps = [];
+var _editItems = [];
+
+async function openPatchEditor() {
+  // 챔피언/아이템 데이터 미리 로드
+  if (!Object.keys(_ddChampions).length || !Object.keys(_ddItems).length) {
+    await loadDDVersion();
+    await Promise.all([loadDDChampions(), loadDDItems()]);
+  }
+  var data = _patchVersion && _patchData[_patchVersion];
+  _editChamps = data ? JSON.parse(JSON.stringify(data.champions || [])) : [];
+  _editItems = data ? JSON.parse(JSON.stringify(data.items || [])) : [];
+  document.getElementById('patch-editor-version').value = _patchVersion || '';
+  renderEditorChamps();
+  renderEditorItems();
+  document.getElementById('patch-editor-modal').style.display = 'flex';
+}
+
+
+// 챔피언 검색 자동완성
+async function searchPatchChamp(input, etype, idx) {
+  if (!Object.keys(_ddChampions).length) {
+    await loadDDVersion();
+    await loadDDChampions();
+  }
+  var q = input.value.trim().toLowerCase();
+  var drop = document.getElementById('champ-drop-' + etype + '-' + idx);
+  if (!drop) return;
+
+  var results = Object.values(_ddChampions).filter(function(c) {
+    return !q ||
+      (c.name && c.name.toLowerCase().includes(q)) ||
+      (c.id && c.id.toLowerCase().includes(q));
+  }).slice(0, 12);
+
+  if (!results.length) { drop.style.display = 'none'; return; }
+
+  drop.innerHTML = '';
+  results.forEach(function(c) {
+    var imgUrl = getDDChampImgUrl(c.id);
+    var el = document.createElement('div');
+    el.style.cssText = 'display:flex;align-items:center;gap:8px;padding:5px 8px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.05);';
+    el.innerHTML = '<img src="' + imgUrl + '" style="width:24px;height:24px;border-radius:3px;object-fit:cover;">' +
+      '<span style="font-size:12px;color:var(--white);font-family:Rajdhani,sans-serif;font-weight:600;">' + c.name + '</span>' +
+      '<span style="font-size:10px;color:var(--text-muted);margin-left:auto;">' + c.id + '</span>';
+    el.addEventListener('mouseover', function(){ this.style.background='rgba(10,200,185,.12)'; });
+    el.addEventListener('mouseout', function(){ this.style.background=''; });
+    el.addEventListener('mousedown', function(e){ e.preventDefault(); selectPatchChamp(etype, idx, c.id, c.name); });
+    drop.appendChild(el);
+  });
+  drop.style.display = 'block';
+}
+
+function selectPatchChamp(etype, idx, champId, nameKo) {
+  var list = getEditList(etype);
+  if (list[idx]) {
+    list[idx].champId = champId;
+    list[idx].nameKo = nameKo;
+  }
+  // 스킬 이미지 미리 로드
+  if (champId) loadChampSkills(champId);
+  var drop = document.getElementById('champ-drop-' + etype + '-' + idx);
+  if (drop) drop.style.display = 'none';
+  // 입력창 값 업데이트
+  var inputs = document.querySelectorAll('#patch-editor-champions input[placeholder="챔피언 검색 (한글/영문)"]');
+  if (inputs[idx]) inputs[idx].value = nameKo;
+  // 이미지 업데이트
+  if (etype === 'champ') renderEditorChamps();
+}
+
+// 아이템 검색 자동완성
+async function searchPatchItem(input, idx) {
+  if (!Object.keys(_ddItems).length) {
+    await loadDDVersion();
+    await loadDDItems();
+  }
+  var q = input.value.trim().toLowerCase();
+  var drop = document.getElementById('item-drop-' + idx);
+  if (!drop) return;
+
+  var results = Object.entries(_ddItems).filter(function(e) {
+    return !q || e[1].name.toLowerCase().includes(q) || e[0].includes(q);
+  }).slice(0, 12);
+
+  if (!results.length) { drop.style.display = 'none'; return; }
+
+  drop.innerHTML = '';
+  results.forEach(function(entry) {
+    var itemId = entry[0], item = entry[1];
+    var imgUrl = getDDItemImgUrl(itemId);
+    var el = document.createElement('div');
+    el.style.cssText = 'display:flex;align-items:center;gap:8px;padding:5px 8px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.05);';
+    el.innerHTML = '<img src="' + imgUrl + '" style="width:24px;height:24px;border-radius:3px;object-fit:cover;">' +
+      '<span style="font-size:12px;color:var(--white);font-family:Rajdhani,sans-serif;font-weight:600;">' + item.name + '</span>' +
+      '<span style="font-size:10px;color:var(--text-muted);margin-left:auto;">' + itemId + '</span>';
+    el.addEventListener('mouseover', function(){ this.style.background='rgba(200,170,110,.12)'; });
+    el.addEventListener('mouseout', function(){ this.style.background=''; });
+    el.addEventListener('mousedown', function(e){ e.preventDefault(); selectPatchItem(idx, itemId, item.name); });
+    drop.appendChild(el);
+  });
+  drop.style.display = 'block';
+}
+
+function selectPatchItem(idx, itemId, nameKo) {
+  if (_editItems[idx]) {
+    _editItems[idx].itemId = itemId;
+    _editItems[idx].nameKo = nameKo;
+  }
+  var drop = document.getElementById('item-drop-' + idx);
+  if (drop) drop.style.display = 'none';
+  renderEditorItems();
+}
+
+function closePatchItemDrop(idx) {
+  var drop = document.getElementById('item-drop-' + idx);
+  if (drop) drop.style.display = 'none';
+}
+
+function closePatchChampDrop(etype, idx) {
+  var drop = document.getElementById('champ-drop-' + etype + '-' + idx);
+  if (drop) drop.style.display = 'none';
+}
+
+function closePatchEditor() {
+  document.getElementById('patch-editor-modal').style.display = 'none';
+}
+
+function renderEditorChamps() {
+  var el = document.getElementById('patch-editor-champions');
+  if (!el) return;
+  el.innerHTML = _editChamps.map(function(c, i) {
+    return renderEditorEntry(c, i, 'champ');
+  }).join('');
+}
+
+function renderEditorItems() {
+  var el = document.getElementById('patch-editor-items');
+  if (!el) return;
+  el.innerHTML = _editItems.map(function(item, i) {
+    return renderEditorEntry(item, i, 'item');
+  }).join('');
+}
+
+function renderEditorEntry(entry, idx, etype) {
+  var cfg = PATCH_TYPE_CFG[entry.type] || PATCH_TYPE_CFG.buff;
+  var imgSrc = etype === 'champ'
+    ? (entry.champId ? getDDChampImgUrl(entry.champId) : '')
+    : (entry.itemId ? getDDItemImgUrl(entry.itemId) : '');
+
+  var changesHtml = (entry.changes || []).map(function(ch, ci) {
+    var entriesHtml = (ch.entries || []).map(function(en, ei) {
+      var entryColor = en.color || (en.type === 'buff' ? '#27AE60' : en.type === 'nerf' ? '#E05050' : '#8FA3B4');
+      return '<div style="background:rgba(255,255,255,.03);border:1px solid var(--border-subtle);border-radius:3px;padding:6px 8px;margin-top:4px;">' +
+        '<div style="display:flex;gap:4px;margin-bottom:4px;flex-wrap:wrap;">' +
+        '<input placeholder="라벨 (예: 피해량)" value="' + (en.label||'') + '" oninput="updateEntryField(\'' + etype + '\',' + idx + ',' + ci + ',' + ei + ',\'label\',this.value)" style="flex:1;min-width:80px;background:var(--bg-dark);border:1px solid var(--border-subtle);border-radius:2px;padding:3px 6px;color:var(--white);font-size:10px;outline:none;">' +
+        '<select onchange="updateEntryField(\'' + etype + '\',' + idx + ',' + ci + ',' + ei + ',\'type\',this.value)" style="background:var(--bg-dark);border:1px solid var(--border-subtle);border-radius:2px;padding:3px 5px;color:var(--white);font-size:10px;outline:none;">' +
+        '<option value="buff"' + (en.type==='buff'?' selected':'') + '>상향색</option>' +
+        '<option value="nerf"' + (en.type==='nerf'?' selected':'') + '>하향색</option>' +
+        '<option value="neutral"' + (en.type==='neutral'?' selected':'') + '>기본색</option>' +
+        '</select>' +
+        '<button onclick="removeEntry(\'' + etype + '\',' + idx + ',' + ci + ',' + ei + ')" style="padding:2px 6px;border-radius:2px;border:1px solid rgba(192,48,48,.3);background:transparent;color:#E05050;font-size:10px;cursor:pointer;">✕</button>' +
+        '</div>' +
+        '<input placeholder="이전 값 (없으면 비워두세요)" value="' + (en.before||'') + '" oninput="updateEntryField(\'' + etype + '\',' + idx + ',' + ci + ',' + ei + ',\'before\',this.value)" style="width:100%;background:var(--bg-dark);border:1px solid var(--border-subtle);border-radius:2px;padding:3px 6px;color:#888;font-size:11px;outline:none;margin-bottom:3px;">' +
+        '<input placeholder="이후 값" value="' + (en.after||'') + '" oninput="updateEntryField(\'' + etype + '\',' + idx + ',' + ci + ',' + ei + ',\'after\',this.value)" style="width:100%;background:var(--bg-dark);border:1px solid var(--border-subtle);border-radius:2px;padding:3px 6px;color:' + entryColor + ';font-size:11px;outline:none;">' +
+        '</div>';
+    }).join('');
+
+    var skillOptions = PATCH_SKILL_KEYS.map(function(k) {
+      return '<option value="' + k + '"' + (ch.skill===k?' selected':'') + '>' + k + '</option>';
+    }).join('');
+
+    return '<div style="background:rgba(255,255,255,.02);border:1px solid var(--border-subtle);border-radius:3px;padding:6px 8px;margin-top:4px;">' +
+      '<div style="display:flex;gap:4px;margin-bottom:4px;flex-wrap:wrap;">' +
+      '<select onchange="updateChangeField(\'' + etype + '\',' + idx + ',' + ci + ',\'skill\',this.value)" style="background:var(--bg-dark);border:1px solid var(--border-subtle);border-radius:2px;padding:3px 5px;color:var(--white);font-size:11px;outline:none;">' +
+      skillOptions + '</select>' +
+      '<input placeholder="스킬명" value="' + (ch.skillName||'') + '" oninput="updateChangeField(\'' + etype + '\',' + idx + ',' + ci + ',\'skillName\',this.value)" style="flex:1;min-width:80px;background:var(--bg-dark);border:1px solid var(--border-subtle);border-radius:2px;padding:3px 6px;color:var(--white);font-size:11px;outline:none;">' +
+      '<button onclick="removeChange(\'' + etype + '\',' + idx + ',' + ci + ')" style="padding:2px 6px;border-radius:2px;border:1px solid rgba(192,48,48,.3);background:transparent;color:#E05050;font-size:10px;cursor:pointer;">✕</button>' +
+      '</div>' +
+      entriesHtml +
+      '<button onclick="addEntry(\'' + etype + '\',' + idx + ',' + ci + ')" style="margin-top:4px;width:100%;padding:4px;border:1px dashed rgba(10,200,185,.3);border-radius:2px;background:transparent;color:var(--blue-bright);font-size:10px;cursor:pointer;">+ 항목 추가</button>' +
+      '</div>';
+  }).join('');
+
+  var typeOptions = ['buff','nerf','adjust'].map(function(t) {
+    var label = PATCH_TYPE_CFG[t].label;
+    return '<option value="' + t + '"' + (entry.type===t?' selected':'') + '>' + label + '</option>';
+  }).join('');
+
+  return '<div style="background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:4px;padding:.6rem .75rem;position:relative;">' +
+    '<div style="display:flex;gap:8px;align-items:center;margin-bottom:.5rem;">' +
+    (imgSrc ? '<img src="' + imgSrc + '" style="width:32px;height:32px;border-radius:3px;object-fit:cover;">' : '') +
+    (etype==='champ' ?
+      '<div style="position:relative;display:inline-block;"><input id="champ-input-' + idx + '" placeholder="챔피언 검색 (한글/영문)" value="' + (entry.nameKo||entry.champId||'') + '" oninput="searchPatchChamp(this,\'champ\',' + idx + ')" onfocus="searchPatchChamp(this,\'champ\',' + idx + ')" onblur="setTimeout(function(){closePatchChampDrop(\'champ\',' + idx + ')},200)" style="width:160px;background:var(--bg-dark);border:1px solid var(--border-subtle);border-radius:2px;padding:4px 8px;color:var(--white);font-size:12px;outline:none;"><div id="champ-drop-champ-' + idx + '" style="display:none;position:absolute;top:100%;left:0;width:220px;background:#0D1B2E;border:1px solid var(--border-subtle);border-radius:3px;z-index:99999;max-height:180px;overflow-y:auto;"></div></div>'
+      :
+      '<div style="position:relative;display:inline-block;"><input id="item-input-' + idx + '" placeholder="아이템 검색 (한글/영문)" value="' + (entry.nameKo||entry.itemId||'') + '" oninput="searchPatchItem(this,' + idx + ')" onfocus="searchPatchItem(this,' + idx + ')" onblur="setTimeout(function(){closePatchItemDrop(' + idx + ')},200)" style="width:160px;background:var(--bg-dark);border:1px solid var(--border-subtle);border-radius:2px;padding:4px 8px;color:var(--white);font-size:12px;outline:none;"><div id="item-drop-' + idx + '" style="display:none;position:absolute;top:100%;left:0;width:220px;background:#0D1B2E;border:1px solid var(--border-subtle);border-radius:3px;z-index:99999;max-height:180px;overflow-y:auto;"></div></div>'
+    ) +
+    '<select onchange="updateMainField(\'' + etype + '\',' + idx + ',\'type\',this.value)" style="background:var(--bg-dark);border:1px solid var(--border-subtle);border-radius:2px;padding:4px 6px;color:var(--white);font-size:11px;outline:none;">' +
+    typeOptions + '</select>' +
+    '<button onclick="removeEditorEntry(\'' + etype + '\',' + idx + ')" style="padding:3px 8px;border-radius:2px;border:1px solid rgba(192,48,48,.3);background:transparent;color:#E05050;font-size:11px;cursor:pointer;">✕</button>' +
+    '</div>' +
+    changesHtml +
+    '<button onclick="addChange(\'' + etype + '\',' + idx + ')" style="margin-top:4px;width:100%;padding:4px;border:1px dashed rgba(200,170,110,.3);border-radius:2px;background:transparent;color:var(--gold);font-size:10px;cursor:pointer;">+ 스킬/변경 추가</button>' +
+    '</div>';
+}
+
+function getEditList(etype) { return etype === 'champ' ? _editChamps : _editItems; }
+
+function updateMainField(etype, idx, field, val) {
+  var list = getEditList(etype);
+  if (list[idx]) list[idx][field] = val;
+}
+function updateChangeField(etype, idx, ci, field, val) {
+  var list = getEditList(etype);
+  if (list[idx] && list[idx].changes && list[idx].changes[ci]) list[idx].changes[ci][field] = val;
+}
+function updateEntryField(etype, idx, ci, ei, field, val) {
+  var list = getEditList(etype);
+  if (list[idx] && list[idx].changes && list[idx].changes[ci] && list[idx].changes[ci].entries && list[idx].changes[ci].entries[ei])
+    list[idx].changes[ci].entries[ei][field] = val;
+}
+function addChange(etype, idx) {
+  var list = getEditList(etype);
+  if (!list[idx].changes) list[idx].changes = [];
+  list[idx].changes.push({ skill:'Q', skillName:'', entries:[] });
+  if (etype==='champ') renderEditorChamps(); else renderEditorItems();
+}
+function removeChange(etype, idx, ci) {
+  var list = getEditList(etype);
+  if (list[idx] && list[idx].changes) list[idx].changes.splice(ci,1);
+  if (etype==='champ') renderEditorChamps(); else renderEditorItems();
+}
+function addEntry(etype, idx, ci) {
+  var list = getEditList(etype);
+  if (!list[idx].changes[ci].entries) list[idx].changes[ci].entries = [];
+  list[idx].changes[ci].entries.push({ label:'', before:'', after:'', type:'buff' });
+  if (etype==='champ') renderEditorChamps(); else renderEditorItems();
+}
+function removeEntry(etype, idx, ci, ei) {
+  var list = getEditList(etype);
+  if (list[idx] && list[idx].changes && list[idx].changes[ci]) list[idx].changes[ci].entries.splice(ei,1);
+  if (etype==='champ') renderEditorChamps(); else renderEditorItems();
+}
+function removeEditorEntry(etype, idx) {
+  var list = getEditList(etype);
+  list.splice(idx,1);
+  if (etype==='champ') renderEditorChamps(); else renderEditorItems();
+}
+function addPatchChampion() {
+  _editChamps.push({ champId:'', nameKo:'', type:'buff', changes:[] });
+  renderEditorChamps();
+}
+function addPatchItem() {
+  _editItems.push({ itemId:'', nameKo:'', type:'buff', changes:[] });
+  renderEditorItems();
+}
+
+async function savePatchNote() {
+  var version = (document.getElementById('patch-editor-version').value || '').trim();
+  if (!version) { alert('패치 버전을 입력하세요'); return; }
+  var versionKey = version.replace(/\./g, '_'); // Firebase 경로에 . 불가 → _ 변환
+  var payload = { champions: _editChamps, items: _editItems, version: version };
+  try {
+    var j = await _workerWrite('system/patch_notes/' + versionKey, payload, 'master');
+    _patchData[versionKey] = payload;
+    if (!_patchVersions.includes(versionKey)) {
+      _patchVersions.unshift(versionKey);
+      _patchVersions.sort((a,b) => {
+        var pa = a.split('.').map(Number), pb = b.split('.').map(Number);
+        for (var i=0; i<Math.max(pa.length,pb.length); i++) {
+          if ((pa[i]||0) !== (pb[i]||0)) return (pb[i]||0) - (pa[i]||0);
+        }
+        return 0;
+      });
+    }
+    _patchVersion = versionKey;
+    // 캐시 초기화 (새 버전 반영)
+    _patchNoteCacheTs = 0;
+    try { localStorage.removeItem('patch_global'); } catch(e2) {}
+    closePatchEditor();
+    renderPatchSection();
+    toast('✅ 패치노트 저장 완료', 'ok');
+  } catch(e) {
+    alert('오류: ' + e.message);
+  }
+}
+
+// 커뮤니티 진입 시 패치노트 로드
+var _origEnterCommunity = typeof enterCommunity === 'function' ? enterCommunity : null;
+
 </script>
 
 <!-- ── 카테고리 관리 모달 ── -->
@@ -17925,6 +18623,47 @@ async function removeWaitlistEntry(idx) {
       <button onclick="document.getElementById('waitlist-modal').style.display='none'" style="padding:3px 8px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--text-muted);font-family:'Rajdhani',sans-serif;font-size:11px;cursor:pointer;">✕</button>
     </div>
     <div id="waitlist-modal-body"></div>
+  </div>
+</div>
+
+
+
+<!-- 패치 호버 팝업 -->
+<div id="patch-popup" style="display:none;position:fixed;z-index:9999;background:#0D1B2E;border:1px solid #1E2D40;border-radius:6px;padding:.75rem 1rem;max-width:320px;min-width:220px;box-shadow:0 8px 32px rgba(0,0,0,.6);pointer-events:none;"></div>
+
+<!-- 패치 버전 선택 모달 -->
+<div id="patch-version-modal" onclick="if(event.target===this)this.style.display='none'" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:3000;align-items:center;justify-content:center;">
+  <div style="background:var(--bg-panel);border:1px solid var(--border-gold);border-radius:6px;padding:1.25rem;width:90%;max-width:280px;max-height:70vh;overflow-y:auto;">
+    <div style="font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;color:var(--gold);margin-bottom:.75rem;">패치 버전 선택</div>
+    <div id="patch-version-list" style="display:flex;flex-direction:column;gap:6px;"></div>
+  </div>
+</div>
+
+<!-- 패치노트 편집 모달 -->
+<div id="patch-editor-modal" onclick="if(event.target===this)closePatchEditor()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:3000;align-items:flex-start;justify-content:center;overflow-y:auto;padding:2rem 1rem;">
+  <div style="background:var(--bg-panel);border:1px solid var(--border-gold);border-radius:6px;padding:1.5rem;width:100%;max-width:680px;margin:auto;" onclick="event.stopPropagation()">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+      <div style="font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;color:var(--gold);">패치노트 편집</div>
+      <button onclick="closePatchEditor()" style="background:transparent;border:none;color:var(--text-muted);font-size:18px;cursor:pointer;">✕</button>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:1rem;">
+      <label style="font-size:11px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;white-space:nowrap;flex-shrink:0;">패치 버전</label>
+      <input id="patch-editor-version" type="text" placeholder="26.17" style="width:100px;background:var(--bg-dark);border:1px solid var(--border-subtle);border-radius:3px;padding:6px 10px;color:var(--white);font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;outline:none;">
+    </div>
+    <div style="margin-bottom:1rem;">
+      <div style="font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--text-muted);margin-bottom:.5rem;">CHAMPION</div>
+      <div id="patch-editor-champions" style="display:flex;flex-direction:column;gap:6px;"></div>
+      <button onclick="addPatchChampion()" style="margin-top:6px;width:100%;padding:7px;border:1px dashed rgba(10,200,185,.4);border-radius:3px;background:transparent;color:var(--blue-bright);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;">+ 챔피언 추가</button>
+    </div>
+    <div style="margin-bottom:1.25rem;">
+      <div style="font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--text-muted);margin-bottom:.5rem;">ITEM</div>
+      <div id="patch-editor-items" style="display:flex;flex-direction:column;gap:6px;"></div>
+      <button onclick="addPatchItem()" style="margin-top:6px;width:100%;padding:7px;border:1px dashed rgba(200,170,110,.4);border-radius:3px;background:transparent;color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;">+ 아이템 추가</button>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <button onclick="closePatchEditor()" style="padding:8px 16px;border-radius:3px;border:1px solid var(--border-subtle);background:transparent;color:var(--text-muted);font-family:'Rajdhani',sans-serif;font-size:12px;cursor:pointer;">취소</button>
+      <button onclick="savePatchNote()" style="padding:8px 20px;border-radius:3px;border:1px solid rgba(10,200,185,.4);background:rgba(10,200,185,.1);color:var(--blue-bright);font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;cursor:pointer;">저장</button>
+    </div>
   </div>
 </div>
 </body>

@@ -652,6 +652,7 @@ async function handleDbPublicRead(request, env) {
     /^communities\/[^/]+\/ratings($|\/)/,
     /^communities\/[^/]+\/rating_logs($|\/)/,
     /^communities\/[^/]+\/rating_history($|\/)/,
+    /^system\/patch_notes($|\/)/,  // 글로벌 패치노트
     /^communities\/[^/]+\/matches\/[^/]+\/chat($|\/)/,
     /^communities\/[^/]+\/matches\/[^/]+\/auctionLog($|\/)/,
     /^system\/patch_mode$/,
@@ -992,7 +993,11 @@ function checkPermission(session, dbPath, requireRole) {
     /^invite_codes\/[^/]+\/used$/,  // 초대코드 사용 (누구나)
     /^communities\/[^/]+\/matches/, // 내전 데이터 (Worker 재시작 시 세션 소멸 대응)
     /^communities\/[^/]+\/doom_scores$/, // 멸망전 점수 (관리자 저장)
+    /^communities\/[^/]+\/patch_notes($|\/)/,  // 패치노트 (1년 캐시)
+    /^system\/patch_notes($|\/)/,               // 글로벌 패치노트
     /^communities\/[^/]+\/temp_tiers\/[^/]+$/, // 임시티어 (관리자 저장)
+    /^communities\/[^/]+\/patch_notes\/[^/]+$/, // 패치노트 (관리자 저장)
+    /^system\/patch_notes\/[^/]+$/,              // 글로벌 패치노트 (관리자 저장)
     /^communities\/[^/]+\/row_effects/, // 행 이펙트
     /^communities\/[^/]+\/bg_effects/,  // 배경 이펙트
     /^admin\/[^/]+$/,               // 초대 링크로 관리자 계정 생성 (비로그인)
