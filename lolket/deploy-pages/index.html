@@ -11611,8 +11611,9 @@ document.getElementById('stage-indicator').classList.add('hidden');
 document.getElementById('btn-back').classList.remove('visible');
 document.querySelectorAll('.stage-pip').forEach(p => p.classList.remove('active','done'));
 document.getElementById('pip-1').classList.add('active');
-if (currentCommunity && _fbReady && window._fb.fbSubscribeAll) {
+if (currentCommunity && _fbReady && window._fb.fbSubscribeAll && !window._matchListSubActive) {
 _listCache = [];
+window._matchListSubActive = true;
 window._fb.fbSubscribeAll(list => {
 _listCache = list;
 if (currentScreen === 'screen-0') renderMatchList();
