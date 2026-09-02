@@ -550,6 +550,17 @@ tr.has-bg-effect td {
 .doom-sim-member-card:hover { border-color: rgba(167,139,250,.5); }
 .doom-sim-member-card.dragging { opacity: 0.4; }
 
+
+/* ── 커뮤니티 통계 모바일 레이아웃 ── */
+@media (max-width: 700px) {
+  .stats-layout {
+    flex-direction: column !important;
+  }
+  .donation-sidebar-wrap {
+    width: 100% !important;
+    flex-shrink: unset !important;
+  }
+}
 </style>
 </head>
 <body>
@@ -769,12 +780,12 @@ tr.has-bg-effect td {
 
   <!-- ── 커뮤니티 통계 뷰 ── -->
   <div id="community-stats-view" style="display:none;padding:1rem;">
-    <div style="display:flex;gap:1rem;align-items:flex-start;max-width:1100px;margin:0 auto;">
+    <div class="stats-layout" style="display:flex;gap:1rem;align-items:flex-start;max-width:1100px;margin:0 auto;">
       <div id="community-stats-content" style="flex:1;min-width:0;">
         <div style="text-align:center;color:var(--muted);padding:3rem;font-family:'Rajdhani',sans-serif;">로딩 중...</div>
       </div>
       <!-- 후원 목록 사이드바 -->
-      <div id="donation-sidebar" style="width:240px;flex-shrink:0;">
+      <div id="donation-sidebar" class="donation-sidebar-wrap" style="width:240px;flex-shrink:0;">
         <div style="background:var(--bg-panel);border:1px solid var(--border-subtle);border-radius:8px;padding:1rem;">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;">
             <div style="font-size:12px;font-weight:700;color:var(--white);">💝 후원 목록</div>
