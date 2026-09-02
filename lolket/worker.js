@@ -687,9 +687,42 @@ async function handleDbPublicRead(request, env) {
         const res = await fetch(`${dbUrl}/${dbPath}.json${authQ}`);
         if (!res.ok) return null;
         return await res.json();
-      }, 1800);
+      }, 21600);
       return json({ ok: true, data });
     }
+
+    // 경로별 CF 캐시 규칙
+    const CACHEABLE_PATHS = [
+      { pattern: /^communities_info$/, ttl: 1800 },
+      { pattern: /^communities_info\/[^/]+$/, ttl: 1800 },
+      { pattern: /^communities\/[^/]+\/scout_/, ttl: 3600 },
+      { pattern: /^communities\/[^/]+\/row_effects$/, ttl: 21600 },
+      { pattern: /^communities\/[^/]+\/bg_effects$/, ttl: 21600 },
+      { pattern: /^communities\/[^/]+\/patch_notes/, ttl: 31536000 },
+      { pattern: /^system\/patch_notes/, ttl: 31536000 },
+      { pattern: /^system\/patch_mode$/, ttl: 21600 },
+    ];
+    const cacheRule = !shallow && CACHEABLE_PATHS.find(c => c.pattern.test(dbPath));
+    if (cacheRule) {
+      const cacheKey = 'pub-' + dbPath.replace(/\//g, '-');
+      let data = await cachedFetch(cacheKey, async () => {
+        const r = await fetch(`${dbUrl}/${dbPath}.json${authQ}`);
+        return r.ok ? await r.json() : null;
+      }, cacheRule.ttl);
+      // communities_info 전체 읽기 시 bannerImage 제거
+      if (dbPath === 'communities_info' && data && typeof data === 'object') {
+        const stripped = {};
+        for (const [k, v] of Object.entries(data)) {
+          if (v && typeof v === 'object') {
+            const { bannerImage, ...rest } = v;
+            stripped[k] = rest;
+          } else { stripped[k] = v; }
+        }
+        data = stripped;
+      }
+      return json({ ok: true, data });
+    }
+
     const res = await fetch(`${dbUrl}/${dbPath}.json${authQ}${shallowParam}`);
     if (!res.ok) return json({ ok: false, error: 'DB 읽기 실패: ' + res.status }, 500);
     const data = await res.json();
@@ -831,9 +864,42 @@ async function handleDbRead(request, env) {
         const res = await fetch(`${dbUrl}/${dbPath}.json${authQ}`);
         if (!res.ok) return null;
         return await res.json();
-      }, 1800);
+      }, 21600);
       return json({ ok: true, data });
     }
+
+    // 경로별 CF 캐시 규칙
+    const CACHEABLE_PATHS = [
+      { pattern: /^communities_info$/, ttl: 1800 },
+      { pattern: /^communities_info\/[^/]+$/, ttl: 1800 },
+      { pattern: /^communities\/[^/]+\/scout_/, ttl: 3600 },
+      { pattern: /^communities\/[^/]+\/row_effects$/, ttl: 21600 },
+      { pattern: /^communities\/[^/]+\/bg_effects$/, ttl: 21600 },
+      { pattern: /^communities\/[^/]+\/patch_notes/, ttl: 31536000 },
+      { pattern: /^system\/patch_notes/, ttl: 31536000 },
+      { pattern: /^system\/patch_mode$/, ttl: 21600 },
+    ];
+    const cacheRule = !shallow && CACHEABLE_PATHS.find(c => c.pattern.test(dbPath));
+    if (cacheRule) {
+      const cacheKey = 'pub-' + dbPath.replace(/\//g, '-');
+      let data = await cachedFetch(cacheKey, async () => {
+        const r = await fetch(`${dbUrl}/${dbPath}.json${authQ}`);
+        return r.ok ? await r.json() : null;
+      }, cacheRule.ttl);
+      // communities_info 전체 읽기 시 bannerImage 제거
+      if (dbPath === 'communities_info' && data && typeof data === 'object') {
+        const stripped = {};
+        for (const [k, v] of Object.entries(data)) {
+          if (v && typeof v === 'object') {
+            const { bannerImage, ...rest } = v;
+            stripped[k] = rest;
+          } else { stripped[k] = v; }
+        }
+        data = stripped;
+      }
+      return json({ ok: true, data });
+    }
+
     const res = await fetch(`${dbUrl}/${dbPath}.json${authQ}${shallowParam}`);
     if (!res.ok) return json({ ok: false, error: 'DB 읽기 실패: ' + res.status }, 500);
     const data = await res.json();
@@ -2058,7 +2124,7 @@ async function runScheduledRatingCalc(env) {
 
     for (const cid of cidList) {
       try {
-        const sidData = await cachedFetch(`deeplol-sid-${cid}`, async () => { const r = await fetch(`${dbUrl}/communities_info/${cid}/deeplolServerId.json${authQ}`); return r.ok ? await r.json() : null; }, 3600);
+        const sidData = await cachedFetch(`deeplol-sid-${cid}`, async () => { const r = await fetch(`${dbUrl}/communities_info/${cid}/deeplolServerId.json${authQ}`); return r.ok ? await r.json() : null; }, 21600);
         const serverId = sidData ? String(sidData) : null;
         console.log(`[cron] ${cid} serverId:`, serverId);
         if (!serverId) continue;
@@ -2456,7 +2522,7 @@ async function handleWeeklyMissionCount(request, env) {
   // 커뮤니티 멤버 puu_id 목록 (딥롤 server_info)
   let communityPuuIds = new Set();
   try {
-    const serverId = await cachedFetch(`deeplol-sid-${communityId}`, async () => { const r = await fetch(`${dbUrl}/communities_info/${communityId}/deeplolServerId.json${authQ}`); return r.ok ? await r.json() : null; }, 3600);
+    const serverId = await cachedFetch(`deeplol-sid-${communityId}`, async () => { const r = await fetch(`${dbUrl}/communities_info/${communityId}/deeplolServerId.json${authQ}`); return r.ok ? await r.json() : null; }, 21600);
     if (serverId) {
       const sRes = await fetch(`https://b2c-api-cdn.deeplol.gg/tournament/server_info?server_id=${serverId}`, {
         headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://www.deeplol.gg/' }
@@ -2669,7 +2735,7 @@ async function runNicknameHistoryCheckForCommunity(env, cid, isManual) {
   try {
     // 1. deeplolServerId 확인
     console.log('[nickname-check] cid:', cid);
-    const serverId = await cachedFetch(`deeplol-sid-${cid}`, async () => { const r = await fetch(`${dbUrl}/communities_info/${cid}/deeplolServerId.json${authQ}`); return r.ok ? await r.json() : null; }, 3600);
+    const serverId = await cachedFetch(`deeplol-sid-${cid}`, async () => { const r = await fetch(`${dbUrl}/communities_info/${cid}/deeplolServerId.json${authQ}`); return r.ok ? await r.json() : null; }, 21600);
     console.log('[nickname-check] serverId:', serverId);
     if (!serverId) return { cid, skipped: 'no serverId' };
 

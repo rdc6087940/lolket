@@ -3585,16 +3585,33 @@ async function loadRatingRank() {
   var fromDate = (document.getElementById('rating-rank-from') || {}).value || '';
   var toDate   = (document.getElementById('rating-rank-to')   || {}).value || '';
 
+  var _rhCacheKey = 'rating_hist_all_' + COMMUNITY_ID;
+  var _rhCacheTTL = 6 * 60 * 60 * 1000; // 6시간
+  var _rhCached = null;
   try {
-    var res = await fetch(WORKER_URL + '/db-public-read', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ path: 'communities/' + COMMUNITY_ID + '/rating_history' })
-    });
-    var json = await res.json();
-    if (!json.ok || !json.data) {
-      body.innerHTML = '<div style="text-align:center;color:var(--muted);padding:2rem;">데이터가 없습니다</div>';
-      return;
+    var _rhc = localStorage.getItem(_rhCacheKey);
+    if (_rhc) {
+      var _rhco = JSON.parse(_rhc);
+      if (Date.now() - _rhco.ts < _rhCacheTTL) _rhCached = _rhco.data;
     }
+  } catch(e2) {}
+
+  try {
+    var _rhData = _rhCached;
+    if (!_rhData) {
+      var res = await fetch(WORKER_URL + '/db-public-read', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: 'communities/' + COMMUNITY_ID + '/rating_history' })
+      });
+      var json = await res.json();
+      if (!json.ok || !json.data) {
+        body.innerHTML = '<div style="text-align:center;color:var(--muted);padding:2rem;">데이터가 없습니다</div>';
+        return;
+      }
+      _rhData = json.data;
+      try { localStorage.setItem(_rhCacheKey, JSON.stringify({ data: _rhData, ts: Date.now() })); } catch(e3) {}
+    }
+    var json = { ok: true, data: _rhData };
 
     // 날짜 필터링
     var history = json.data;
@@ -5203,7 +5220,7 @@ async function initScoutView() {
 async function loadScoutTargets() {
   if (!COMMUNITY_ID) return;
   try {
-    var j = await _cachedFetch('scout_targets_' + COMMUNITY_ID, 3600, async () => {
+    var j = await _cachedFetch('scout_targets_' + COMMUNITY_ID, 21600, async () => {
       var r = await fetch(WORKER_URL + '/db-public-read', {
         method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({ path: 'communities/' + COMMUNITY_ID + '/scout_targets' })
@@ -6403,7 +6420,7 @@ function isScoutAllowed() {
 async function loadScoutAllowList() {
   if (!COMMUNITY_ID) return;
   try {
-    var j = await _cachedFetch('scout_allow_' + COMMUNITY_ID, 3600, async () => {
+    var j = await _cachedFetch('scout_allow_' + COMMUNITY_ID, 21600, async () => {
       var r = await fetch(WORKER_URL + '/db-public-read', {
         method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({ path: 'communities/' + COMMUNITY_ID + '/scout_allowed_discord' })
@@ -6497,7 +6514,7 @@ async function saveScoutCategories() {
 async function loadScoutCategories() {
   if (!COMMUNITY_ID) return;
   try {
-    var j = await _cachedFetch('scout_cats_' + COMMUNITY_ID, 3600, async () => {
+    var j = await _cachedFetch('scout_cats_' + COMMUNITY_ID, 21600, async () => {
       var r = await fetch(WORKER_URL + '/db-public-read', {
         method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({ path: 'communities/' + COMMUNITY_ID + '/scout_categories' })
