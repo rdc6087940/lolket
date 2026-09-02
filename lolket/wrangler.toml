@@ -3,7 +3,7 @@ main = "worker.js"
 compatibility_date = "2024-01-01"
 
 [triggers]
-crons = ["*/5 * * * *", "0 */3 * * *", "0 15 * * 0", "0 15 * * *"]
+crons = ["*/5 * * * *", "0 */6 * * *", "0 15 * * 0", "0 15 * * *"]
 
 [vars]
 DISCORD_APP_ID = "1500717088984010883"

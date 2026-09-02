@@ -1032,14 +1032,17 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
  });
  }
  
+ var _commListMemCache = null; // 인메모리 캐시
  async function fbGetCommunities() {
+   // 인메모리 캐시 (같은 세션 내 중복 호출 방지)
+   if (_commListMemCache) return _commListMemCache;
    const CACHE_KEY = 'comm_list_cache';
    const CACHE_TTL = 30 * 60 * 1000; // 30분
    try {
      const cached = localStorage.getItem(CACHE_KEY);
      if (cached) {
        const c = JSON.parse(cached);
-       if (Date.now() - c.ts < CACHE_TTL) return c.data;
+       if (Date.now() - c.ts < CACHE_TTL) { _commListMemCache = c.data; return c.data; }
      }
    } catch(e) {}
    try {
@@ -1049,11 +1052,13 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
      if (!result.ok || !result.data) return [];
      const list = Object.values(result.data).filter(c => c && c.id);
      try { localStorage.setItem(CACHE_KEY, JSON.stringify({ data: list, ts: Date.now() })); } catch(e2) {}
+     _commListMemCache = list;
      return list;
    } catch(e) { return []; }
  }
  async function fbSaveCommunity(cObj) {
    try { localStorage.removeItem('comm_list_cache'); } catch(e) {}
+   _commListMemCache = null;
    const bannerImage = cObj.bannerImage;
    const cObjSmall = Object.assign({}, cObj);
    delete cObjSmall.bannerImage;
@@ -1079,6 +1084,7 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
  }
  async function fbDeleteCommunity(cid) {
    try { localStorage.removeItem('comm_list_cache'); } catch(e) {}
+   _commListMemCache = null;
  await Promise.all([
  _workerDelete(`communities_info/${cid}`, 'master'),
  _workerDelete(`communities/${cid}`, 'master'),
@@ -13652,10 +13658,15 @@ function _msgFmtTime(ts) {
   return dt.toLocaleDateString('ko-KR', {month:'numeric',day:'numeric'});
 }
 
-// fb-ready 이후 커뮤니티 목록 미리 로드
+// fb-ready 이후 커뮤니티 목록 미리 로드 (이미 로드됐으면 skip)
 window.addEventListener('fb-ready', function() {
   if (window._fb?.fbGetCommunities) {
-    window._fb.fbGetCommunities().then(list => { _msgAllCommunities = list || []; }).catch(()=>{});
+    // _allCommunities에 이미 있으면 재사용
+    if (_allCommunities && _allCommunities.length > 0) {
+      _msgAllCommunities = _allCommunities;
+    } else {
+      window._fb.fbGetCommunities().then(list => { _msgAllCommunities = list || []; }).catch(()=>{});
+    }
   }
   // 페이지 로드 시 Worker 세션 자동 복구
   if (!localStorage.getItem('injeong_admin')) return;
@@ -16797,17 +16808,31 @@ async function applyMatchRating(rm) {
     });
   }
 
-  // 현재 레이팅 로드
+  // 현재 레이팅 로드 (6시간 캐시)
   var ratingData = {};
+  var _rCacheKey = 'rating_' + cid + '_' + (season || 'default');
+  var _rCacheTTL = 6 * 60 * 60 * 1000;
   try {
-    var rRes = await fetch(RIOT_PROXY_URL + '/rating-read', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ communityId: cid, season: season })
-    });
-    var rj = await rRes.json();
-    if (rj.ok && rj.data) ratingData = rj.data;
-    console.log('[rating] 현재 레이팅 로드:', Object.keys(ratingData).length, '명');
-  } catch(e) { console.warn('[rating] 레이팅 로드 실패:', e.message); }
+    var _rc = localStorage.getItem(_rCacheKey);
+    if (_rc) {
+      var _rco = JSON.parse(_rc);
+      if (Date.now() - _rco.ts < _rCacheTTL) { ratingData = _rco.data; }
+    }
+  } catch(e2) {}
+  if (!Object.keys(ratingData).length) {
+    try {
+      var rRes = await fetch(RIOT_PROXY_URL + '/rating-read', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ communityId: cid, season: season })
+      });
+      var rj = await rRes.json();
+      if (rj.ok && rj.data) {
+        ratingData = rj.data;
+        try { localStorage.setItem(_rCacheKey, JSON.stringify({ data: ratingData, ts: Date.now() })); } catch(e3) {}
+      }
+      console.log('[rating] 현재 레이팅 로드:', Object.keys(ratingData).length, '명');
+    } catch(e) { console.warn('[rating] 레이팅 로드 실패:', e.message); }
+  }
 
   // 각 멤버 레이팅 계산
   var newRatings = {};

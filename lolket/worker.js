@@ -480,7 +480,7 @@ export default {
     const cron = event.cron;
     if (cron === '*/5 * * * *') {
       ctx.waitUntil(runAlarmCheck(env));
-    } else if (cron === '0 */3 * * *') {
+    } else if (cron === '0 */6 * * *') {
       ctx.waitUntil(runScheduledRatingCalc(env));
     } else if (cron === '0 15 * * *') {
       // 매일 자정(KST) - 닉네임 변경 이력 체크
@@ -2584,33 +2584,36 @@ async function handlePeakTiersRead(request, env) {
     async () => {
       const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
       const authQ = secret ? '?auth='+secret : '';
-      // 전체 member_analysis를 읽되 Worker에서 peak_tier만 추출
+      // peak_tiers_cache 별도 경로 먼저 시도 (가볍고 빠름)
+      const cacheRes = await fetch(`${dbUrl}/communities/${communityId}/peak_tiers_cache.json${authQ}`);
+      if (cacheRes.ok) {
+        const cacheData = await cacheRes.json();
+        if (cacheData && Object.keys(cacheData).length > 0) return cacheData;
+      }
+      // fallback: member_analysis 전체에서 추출 (최초 1회만)
       const res = await fetch(`${dbUrl}/communities/${communityId}/member_analysis.json${authQ}`);
       if (!res.ok) return {};
       const raw = await res.json();
       if (!raw) return {};
-      // peakTier, peakLp 추출 (custom 또는 all 모드에서 저장됨)
       const result = {};
-      console.log('[peak-tiers-read] raw keys sample:', Object.keys(raw).slice(0,2));
-      const firstKey = Object.keys(raw)[0];
-      const firstVal = raw[firstKey];
-      console.log('[peak-tiers-read] first value keys:', firstVal ? Object.keys(firstVal) : 'null');
-      Object.entries(raw).forEach(([puuId, modes]) => {
-        if (!modes || typeof modes !== 'object') return;
-        // custom > all 순으로 확인
-        const d = modes.custom || modes.all || null;
-        if (d && d.peakTier) {
-          result[puuId] = { tier: d.peakTier, lp: d.peakLp || 0 };
-        } else if (d && d.peak_tier) {
-          result[puuId] = { tier: d.peak_tier, lp: d.peak_lp || 0 };
+      for (const [puuId, data] of Object.entries(raw)) {
+        const custom = data?.custom;
+        if (custom?.peakTier) {
+          result[puuId] = { tier: custom.peakTier, lp: custom.peakLp || 0 };
         }
-      });
-      console.log('[peak-tiers-read] result count:', Object.keys(result).length);
+      }
+      // 추출 결과를 peak_tiers_cache에 저장 (다음부터 가볍게 읽기)
+      if (Object.keys(result).length > 0) {
+        await fetch(`${dbUrl}/communities/${communityId}/peak_tiers_cache.json${authQ}`, {
+          method: 'PUT', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify(result)
+        });
+      }
       return result;
     },
-    21600 // 6시간
+    21600 // 6시간 CF 캐시
   );
-  return json({ ok: true, data: data || {} });
+  return json({ ok: true, data });
 }
 
 // ── 딥롤 서버 정보 프록시 (10분 Cloudflare 캐시) ──
@@ -2681,27 +2684,47 @@ async function runNicknameHistoryCheckForCommunity(env, cid, isManual) {
     console.log('[nickname-check] members:', members.length);
     if (!members.length) return { cid, skipped: 'no members' };
 
-    // 3. 기존 히스토리 전체를 한 번에 읽기
-    const histRes = await fetch(`${dbUrl}/communities/${cid}/nickname_history.json${authQ}`);
-    const allHistory = (await histRes.json()) || {};
+    // 3-a. nickname_current에서 현재 닉네임 빠르게 읽기 (용량 절감)
+    const curRes = await fetch(`${dbUrl}/communities/${cid}/nickname_current.json${authQ}`);
+    const nickCurrent = (curRes.ok ? await curRes.json() : null) || {};
+
+    // 3-b. 변경된 멤버 puu_id 목록 추출
+    const changedPuuIds = members
+      .filter(m => m.puu_id && m.riot_name && m.riot_tag)
+      .filter(m => {
+        const cur = nickCurrent[m.puu_id];
+        return !cur || cur !== `${m.riot_name}#${m.riot_tag}`;
+      })
+      .map(m => m.puu_id);
+
+    // 3-c. 변경된 멤버만 nickname_history 개별 읽기
+    const allHistory = {};
+    await Promise.all(changedPuuIds.slice(0, 20).map(async (puuId) => {
+      const r = await fetch(`${dbUrl}/communities/${cid}/nickname_history/${puuId}.json${authQ}`);
+      if (r.ok) allHistory[puuId] = await r.json();
+    }));
 
     // 4. 메모리에서 비교 후 변경된 것만 Firebase 쓰기
     const writes = [];
     for (const m of members) {
       if (!m.puu_id || !m.riot_name || !m.riot_tag) continue;
       const currentNick = `${m.riot_name}#${m.riot_tag}`;
+      // 변경 안 된 멤버는 allHistory에 없으므로 skip
+      if (!changedPuuIds.includes(m.puu_id)) continue;
       const history = allHistory[m.puu_id];
 
       if (!history || !Array.isArray(history) || history.length === 0) {
         // 히스토리 없으면 초기 닉네임 저장
         writes.push({ path: `communities/${cid}/nickname_history/${m.puu_id}`,
           data: [{ name: currentNick, date: dateStr, label: '초기 닉네임' }] });
+        writes.push({ path: `communities/${cid}/nickname_current/${m.puu_id}`, data: currentNick });
       } else {
         const lastNick = history[history.length - 1].name;
         if (lastNick !== currentNick) {
           // 변경 감지
           const updated = [...history, { name: currentNick, date: dateStr }];
           writes.push({ path: `communities/${cid}/nickname_history/${m.puu_id}`, data: updated });
+          writes.push({ path: `communities/${cid}/nickname_current/${m.puu_id}`, data: currentNick });
           console.log(`[nickname-check] ${cid} / ${m.puu_id}: ${lastNick} → ${currentNick}`);
         }
       }
@@ -2761,8 +2784,7 @@ async function handleNicknameHistoryRun(request, env) {
   if (!targetCid && serverId) {
     const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
     const authQ = secret ? '?auth='+secret : '';
-    const ciRes = await fetch(`${dbUrl}/communities_info.json${authQ}`);
-    const ciData = await ciRes.json() || {};
+    const ciData = await cachedFetch('communities-info-all', async () => { const r = await fetch(`${dbUrl}/communities_info.json${authQ}`); return r.ok ? await r.json() : {}; }, 1800) || {};
     for (const [cid, info] of Object.entries(ciData)) {
       if (info && String(info.deeplolServerId) === String(serverId)) {
         targetCid = cid; break;
