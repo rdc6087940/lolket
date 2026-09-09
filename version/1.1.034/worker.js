@@ -360,7 +360,6 @@ export default {
       return handleNicknameHistoryRead(request, env);
     }
     // 피크티어 경량 읽기
-
     if (path === '/peak-tiers-write' && request.method === 'POST') {
       return handlePeakTiersWrite(request, env);
     }
@@ -467,23 +466,6 @@ export default {
       return handleDbDelete(request, env);
     }
 
-    // ── 시즌 관리 ──
-    if (path === '/season-list' && request.method === 'POST') {
-      return handleSeasonList(request, env);
-    }
-    if (path === '/season-write' && request.method === 'POST') {
-      return handleSeasonWrite(request, env);
-    }
-    if (path === '/season-delete' && request.method === 'POST') {
-      return handleSeasonDelete(request, env);
-    }
-    if (path === '/season-snapshot' && request.method === 'POST') {
-      return handleSeasonSnapshot(request, env);
-    }
-    if (path === '/season-stats' && request.method === 'POST') {
-      return handleSeasonStats(request, env);
-    }
-
     const key = env.RIOT_API_KEY;
     if (!key) return json({ error: 'RIOT_API_KEY 환경변수가 설정되지 않았습니다' }, 500);
 
@@ -501,9 +483,8 @@ export default {
     } else if (cron === '0 */6 * * *') {
       ctx.waitUntil(runScheduledRatingCalc(env));
     } else if (cron === '0 15 * * *') {
-      // 매일 자정(KST) - 닉네임 변경 이력 체크 + 시즌 자동 처리
+      // 매일 자정(KST) - 닉네임 변경 이력 체크
       ctx.waitUntil(runDailyNicknameCheck(env));
-      ctx.waitUntil(runSeasonAutoProcess(env));
     } else if (cron === '0 15 * * 0') {
       // 매주 일요일 자정(KST)
       ctx.waitUntil(runScheduledRatingCalc(env));
@@ -1079,9 +1060,6 @@ function checkPermission(session, dbPath, requireRole) {
     /^communities\/[^/]+\/matches/, // 내전 데이터 (Worker 재시작 시 세션 소멸 대응)
     /^communities\/[^/]+\/doom_scores$/, // 멸망전 점수 (관리자 저장)
     /^communities\/[^/]+\/patch_notes($|\/)/,  // 패치노트 (1년 캐시)
-    /^communities\/[^/]+\/seasons($|\/)/,      // 시즌 목록
-    /^communities\/[^/]+\/season_final\/[^/]+$/, // 시즌 최종 데이터
-    /^communities\/[^/]+\/season_snapshots\/[^/]+$/, // 스냅샷
     /^system\/patch_notes($|\/)/,               // 글로벌 패치노트
     /^communities\/[^/]+\/temp_tiers\/[^/]+$/, // 임시티어 (관리자 저장)
     /^communities\/[^/]+\/patch_notes\/[^/]+$/, // 패치노트 (관리자 저장)
@@ -2912,239 +2890,6 @@ async function handleDonationWrite(request, env) {
 }
 
 
-
-
-// ══════════════════════════════════════════════════
-// 시즌 관리
-// ══════════════════════════════════════════════════
-
-// 시즌 목록 조회 (공개)
-async function handleSeasonList(request, env) {
-  let body; try { body = await request.json(); } catch { return json({ ok: false, error: '잘못된 요청' }, 400); }
-  const { communityId } = body;
-  if (!communityId) return json({ ok: false, error: 'communityId 누락' }, 400);
-  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
-  const authQ = secret ? '?auth=' + secret : '';
-  const data = await cachedFetch('seasons-' + communityId, async () => {
-    const r = await fetch(`${dbUrl}/communities/${communityId}/seasons.json${authQ}`);
-    return r.ok ? await r.json() : null;
-  }, 1800); // 30분 캐시
-  return json({ ok: true, data: data || {} });
-}
-
-// 시즌 생성/수정
-async function handleSeasonWrite(request, env) {
-  let body; try { body = await request.json(); } catch { return json({ ok: false, error: '잘못된 요청' }, 400); }
-  const { communityId, seasonId, name, startDate, endDate } = body;
-  if (!communityId || !seasonId || !name || !startDate || !endDate) {
-    return json({ ok: false, error: '필수 파라미터 누락' }, 400);
-  }
-  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
-  const authQ = secret ? '?auth=' + secret : '';
-  const seasonData = { name, startDate, endDate, createdAt: Date.now() };
-  const r = await fetch(`${dbUrl}/communities/${communityId}/seasons/${seasonId}.json${authQ}`, {
-    method: 'PUT', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(seasonData)
-  });
-  if (!r.ok) return json({ ok: false, error: '저장 실패' }, 500);
-  await invalidateCache('seasons-' + communityId);
-  return json({ ok: true });
-}
-
-// 시즌 삭제
-async function handleSeasonDelete(request, env) {
-  let body; try { body = await request.json(); } catch { return json({ ok: false, error: '잘못된 요청' }, 400); }
-  const { communityId, seasonId } = body;
-  if (!communityId || !seasonId) return json({ ok: false, error: '필수 파라미터 누락' }, 400);
-  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
-  const authQ = secret ? '?auth=' + secret : '';
-  await fetch(`${dbUrl}/communities/${communityId}/seasons/${seasonId}.json${authQ}`, { method: 'DELETE' });
-  await invalidateCache('seasons-' + communityId);
-  return json({ ok: true });
-}
-
-// 스냅샷 저장
-async function handleSeasonSnapshot(request, env) {
-  let body; try { body = await request.json(); } catch { return json({ ok: false, error: '잘못된 요청' }, 400); }
-  const { communityId, seasonId, members } = body;
-  if (!communityId || !seasonId || !members) return json({ ok: false, error: '필수 파라미터 누락' }, 400);
-  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
-  const authQ = secret ? '?auth=' + secret : '';
-  // members: [{ puu_id, cnt, win, kda, ... }]
-  const snapshot = {};
-  members.forEach(m => {
-    if (m.puu_id) {
-      snapshot[m.puu_id] = {
-        cnt: m.cnt || 0,
-        win: m.win || 0,
-        kda: m.kda || 0,
-        ts: Date.now()
-      };
-    }
-  });
-  const r = await fetch(`${dbUrl}/communities/${communityId}/season_snapshots/${seasonId}.json${authQ}`, {
-    method: 'PUT', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(snapshot)
-  });
-  if (!r.ok) return json({ ok: false, error: '스냅샷 저장 실패' }, 500);
-  return json({ ok: true, saved: Object.keys(snapshot).length });
-}
-
-// 시즌 통계 조회
-async function handleSeasonStats(request, env) {
-  let body; try { body = await request.json(); } catch { return json({ ok: false, error: '잘못된 요청' }, 400); }
-  const { communityId, seasonId } = body;
-  if (!communityId || !seasonId) return json({ ok: false, error: '필수 파라미터 누락' }, 400);
-  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
-  const authQ = secret ? '?auth=' + secret : '';
-  const cacheKey = 'season-stats-' + communityId + '-' + seasonId;
-
-  const data = await cachedFetch(cacheKey, async () => {
-    // 시즌 정보 + 스냅샷 + 종료 데이터 병렬 조회
-    const [seasonRes, snapshotRes, finalRes] = await Promise.all([
-      fetch(`${dbUrl}/communities/${communityId}/seasons/${seasonId}.json${authQ}`),
-      fetch(`${dbUrl}/communities/${communityId}/season_snapshots/${seasonId}.json${authQ}`),
-      fetch(`${dbUrl}/communities/${communityId}/season_final/${seasonId}.json${authQ}`)
-    ]);
-    const season = seasonRes.ok ? await seasonRes.json() : null;
-    const snapshot = snapshotRes.ok ? await snapshotRes.json() : null;
-    const final = finalRes.ok ? await finalRes.json() : null;
-    return { season, snapshot, final };
-  }, 21600); // 6시간 캐시
-
-  return json({ ok: true, data });
-}
-
-// 시즌 종료 시 최종 데이터 저장 (cron에서 호출)
-async function saveSeasonFinal(env, communityId, seasonId, currentMembers) {
-  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
-  const authQ = secret ? '?auth=' + secret : '';
-  // 스냅샷 읽기
-  const snapRes = await fetch(`${dbUrl}/communities/${communityId}/season_snapshots/${seasonId}.json${authQ}`);
-  const snapshot = snapRes.ok ? await snapRes.json() : null;
-  if (!snapshot) return;
-  // 현재값 - 스냅샷 = 시즌 값
-  const final = {};
-  currentMembers.forEach(m => {
-    const snap = snapshot[m.puu_id];
-    if (!snap) return; // 스냅샷 없는 멤버 skip
-    const cntDiff = (m.cnt || 0) - (snap.cnt || 0);
-    if (cntDiff <= 0) return; // 게임 없으면 skip
-    const totalKda = (m.kda || 0) * (m.cnt || 0);
-    const snapKda = (snap.kda || 0) * (snap.cnt || 0);
-    const kdaDiff = totalKda - snapKda;
-    const winDiff = (m.win || 0) - (snap.win || 0);
-    final[m.puu_id] = {
-      puu_id: m.puu_id,
-      riot_name: m.riot_name,
-      riot_tag: m.riot_tag,
-      cnt: cntDiff,
-      win: winDiff,
-      loss: cntDiff - winDiff,
-      winRate: cntDiff > 0 ? Math.round(winDiff / cntDiff * 100) : 0,
-      kda: cntDiff > 0 ? Math.round((kdaDiff / cntDiff) * 100) / 100 : 0,
-      tier: m.tier || ''
-    };
-  });
-  await fetch(`${dbUrl}/communities/${communityId}/season_final/${seasonId}.json${authQ}`, {
-    method: 'PUT', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(final)
-  });
-  await invalidateCache('season-stats-' + communityId + '-' + seasonId);
-  console.log(`[season] ${communityId}/${seasonId} 최종 저장 완료: ${Object.keys(final).length}명`);
-}
-
-
-// 시즌 자동 처리 (매일 자정 cron)
-async function runSeasonAutoProcess(env) {
-  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
-  const authQ = secret ? '?auth=' + secret : '';
-  const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD (UTC)
-  // KST 기준 날짜
-  const kstDate = new Date(Date.now() + 9*60*60*1000).toISOString().slice(0, 10);
-  console.log('[season cron] 날짜 체크:', kstDate);
-
-  // 모든 커뮤니티 조회
-  const ciRes = await fetch(`${dbUrl}/communities_info.json${authQ}`);
-  const ciData = ciRes.ok ? await ciRes.json() : {};
-  const cids = Object.keys(ciData || {});
-
-  for (const cid of cids) {
-    try {
-      const seasonsRes = await fetch(`${dbUrl}/communities/${cid}/seasons.json${authQ}`);
-      if (!seasonsRes.ok) continue;
-      const seasons = await seasonsRes.json();
-      if (!seasons) continue;
-
-      for (const [sid, season] of Object.entries(seasons)) {
-        if (!season || !season.endDate) continue;
-
-        // 시즌 시작일 도달 시 스냅샷 자동 저장
-        if (season.startDate === kstDate && !season.snapshotSaved) {
-          console.log(`[season] ${cid}/${sid} 시작일 도달, 스냅샷 저장`);
-          const sidRes2 = await fetch(`${dbUrl}/communities_info/${cid}/deeplolServerId.json${authQ}`);
-          if (sidRes2.ok) {
-            const serverId2 = await sidRes2.json();
-            if (serverId2) {
-              const deeplolUrl2 = `https://api.deeplol.gg/statistics/custom/list?server_id=${serverId2}`;
-              const dlRes2 = await fetch(deeplolUrl2, { headers: { 'Accept': 'application/json' } });
-              if (dlRes2.ok) {
-                const dlData2 = await dlRes2.json();
-                const members2 = dlData2?.data?.list || [];
-                if (members2.length > 0) {
-                  const snapshot = {};
-                  members2.forEach(m => {
-                    if (m.puu_id) {
-                      snapshot[m.puu_id] = { cnt: m.cnt || 0, win: m.win || 0, kda: m.kda || 0, ts: Date.now() };
-                    }
-                  });
-                  await fetch(`${dbUrl}/communities/${cid}/season_snapshots/${sid}.json${authQ}`, {
-                    method: 'PUT', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(snapshot)
-                  });
-                  // snapshotSaved 플래그 저장
-                  await fetch(`${dbUrl}/communities/${cid}/seasons/${sid}/snapshotSaved.json${authQ}`, {
-                    method: 'PUT', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(true)
-                  });
-                  await invalidateCache('seasons-' + cid);
-                  console.log(`[season] ${cid}/${sid} 스냅샷 저장 완료: ${Object.keys(snapshot).length}명`);
-                }
-              }
-            }
-          }
-        }
-
-        // 시즌 종료일 도달 시 최종 데이터 저장
-        if (season.endDate === kstDate && !season.finalized) {
-          console.log(`[season] ${cid}/${sid} 종료일 도달, 최종 데이터 저장`);
-          // deeplolServerId로 현재 멤버 데이터 가져오기
-          const sidRes = await fetch(`${dbUrl}/communities_info/${cid}/deeplolServerId.json${authQ}`);
-          if (!sidRes.ok) continue;
-          const serverId = await sidRes.json();
-          if (!serverId) continue;
-          // 현재 딥롤 데이터 조회
-          const deeplolUrl = `https://api.deeplol.gg/statistics/custom/list?server_id=${serverId}`;
-          const dlRes = await fetch(deeplolUrl, { headers: { 'Accept': 'application/json' } });
-          if (!dlRes.ok) continue;
-          const dlData = await dlRes.json();
-          const members = dlData?.data?.list || [];
-          if (members.length > 0) {
-            await saveSeasonFinal(env, cid, sid, members);
-          }
-          // 시즌 finalized 플래그 저장
-          await fetch(`${dbUrl}/communities/${cid}/seasons/${sid}/finalized.json${authQ}`, {
-            method: 'PUT', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(true)
-          });
-          await invalidateCache('seasons-' + cid);
-        }
-      }
-    } catch(e) {
-      console.error('[season cron] error:', cid, e.message);
-    }
-  }
-}
 
 // ── OG 이미지 동적 처리 ──
 const CRAWLERS = ['Twitterbot','facebookexternalhit','LinkedInBot','Slackbot','TelegramBot',
