@@ -483,6 +483,14 @@ export default {
     if (path === '/season-stats' && request.method === 'POST') {
       return handleSeasonStats(request, env);
     }
+    if (path === '/season-cache-clear' && request.method === 'POST') {
+      let body; try { body = await request.json(); } catch { return json({ ok: false }, 400); }
+      const { communityId, seasonId } = body;
+      if (communityId && seasonId) {
+        await invalidateCache('season-stats-' + communityId + '-' + seasonId);
+      }
+      return json({ ok: true });
+    }
 
     const key = env.RIOT_API_KEY;
     if (!key) return json({ error: 'RIOT_API_KEY 환경변수가 설정되지 않았습니다' }, 500);
@@ -2785,53 +2793,42 @@ async function runNicknameHistoryCheckForCommunity(env, cid, isManual) {
       })
       .map(m => m.puu_id);
 
-    // 3-c. 변경된 멤버만 nickname_history 개별 읽기
-    const allHistory = {};
-    await Promise.all(changedPuuIds.slice(0, 20).map(async (puuId) => {
-      const r = await fetch(`${dbUrl}/communities/${cid}/nickname_history/${puuId}.json${authQ}`);
-      if (r.ok) allHistory[puuId] = await r.json();
-    }));
+    // 3-c. 변경된 멤버 nickname_current 업데이트 + history append (개별 읽기 없이)
+    // nickname_current에 없으면 초기 닉 저장, 있으면 변경 이력만 append
+    const historyPatch = {};   // nickname_history PATCH용
+    const currentPatch = {};   // nickname_current PATCH용
 
-    // 4. 메모리에서 비교 후 변경된 것만 Firebase 쓰기
-    const writes = [];
     for (const m of members) {
       if (!m.puu_id || !m.riot_name || !m.riot_tag) continue;
-      const currentNick = `${m.riot_name}#${m.riot_tag}`;
-      // 변경 안 된 멤버는 allHistory에 없으므로 skip
       if (!changedPuuIds.includes(m.puu_id)) continue;
-      const history = allHistory[m.puu_id];
+      const currentNick = `${m.riot_name}#${m.riot_tag}`;
+      const prevNick = nickCurrent[m.puu_id];
 
-      if (!history || !Array.isArray(history) || history.length === 0) {
-        // 히스토리 없으면 초기 닉네임 저장
-        writes.push({ path: `communities/${cid}/nickname_history/${m.puu_id}`,
-          data: [{ name: currentNick, date: dateStr, label: '초기 닉네임' }] });
-        writes.push({ path: `communities/${cid}/nickname_current/${m.puu_id}`, data: currentNick });
+      if (!prevNick) {
+        // 최초 등록
+        historyPatch[m.puu_id] = [{ name: currentNick, date: dateStr, label: '초기 닉네임' }];
       } else {
-        const lastNick = history[history.length - 1].name;
-        if (lastNick !== currentNick) {
-          // 변경 감지
-          const updated = [...history, { name: currentNick, date: dateStr }];
-          writes.push({ path: `communities/${cid}/nickname_history/${m.puu_id}`, data: updated });
-          writes.push({ path: `communities/${cid}/nickname_current/${m.puu_id}`, data: currentNick });
-          console.log(`[nickname-check] ${cid} / ${m.puu_id}: ${lastNick} → ${currentNick}`);
-        }
+        // 변경 감지 - history 개별 읽기 없이 append (Firebase array-union 대신 timestamp key 사용)
+        const changeKey = dateStr.replace(/-/g, '');
+        historyPatch[m.puu_id] = { [changeKey]: { name: currentNick, date: dateStr, prev: prevNick } };
+        console.log(`[nickname-check] ${cid}: ${prevNick} → ${currentNick}`);
       }
+      currentPatch[m.puu_id] = currentNick;
     }
 
-    // 5. 변경된 것 모두 PATCH 1번으로 묶어서 쓰기
-    if (writes.length > 0) {
-      const patchBody = {};
-      writes.forEach(w => {
-        const puuId = w.path.split('/').pop();
-        patchBody[puuId] = w.data;
+    // nickname_history PATCH (1번 요청)
+    if (Object.keys(historyPatch).length > 0) {
+      await fetch(`${dbUrl}/communities/${cid}/nickname_history.json${authQ}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(historyPatch)
       });
-      const patchRes = await fetch(`${dbUrl}/communities/${cid}/nickname_history.json${authQ}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(patchBody)
+    }
+    // nickname_current PATCH (1번 요청)
+    if (Object.keys(currentPatch).length > 0) {
+      await fetch(`${dbUrl}/communities/${cid}/nickname_current.json${authQ}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(currentPatch)
       });
-      const patchText = await patchRes.text();
-      console.log(`[nickname-check] PATCH status:${patchRes.status} body:${patchText.slice(0,200)}`);
     }
 
     console.log(`[nickname-check] ${cid} 완료: ${members.length}명 확인, ${writes.length}개 변경`);
@@ -4774,7 +4771,16 @@ async function runDailyNicknameCheck(env) {
     const ciData = await ciRes.json() || {};
     const cids = Object.keys(ciData);
     console.log('[dailyNickname] 커뮤니티 수:', cids.length);
-    for (const cid of cids) {
+    // 커뮤니티당 ~6 subrequest → 안전하게 7개씩 처리
+    // 마지막 처리 인덱스를 Firebase에 저장해서 매일 순환
+    const BATCH_SIZE = 7;
+    const idxRes = await fetch(`${dbUrl}/system/nickname_check_idx.json${authQ}`);
+    const lastIdx = (idxRes.ok ? await idxRes.json() : null) || 0;
+    const startIdx = lastIdx >= cids.length ? 0 : lastIdx;
+    const endIdx = Math.min(startIdx + BATCH_SIZE, cids.length);
+    console.log(`[dailyNickname] 처리 범위: ${startIdx} ~ ${endIdx-1} / 전체 ${cids.length}`);
+    for (let i = startIdx; i < endIdx; i++) {
+      const cid = cids[i];
       try {
         await runNicknameHistoryCheckForCommunity(env, cid, false);
         console.log('[dailyNickname] 완료:', cid);
@@ -4782,7 +4788,13 @@ async function runDailyNicknameCheck(env) {
         console.error('[dailyNickname] 오류:', cid, e.message);
       }
     }
-    console.log('[dailyNickname] 전체 완료');
+    // 다음 시작 인덱스 저장
+    const nextIdx = endIdx >= cids.length ? 0 : endIdx;
+    await fetch(`${dbUrl}/system/nickname_check_idx.json${authQ}`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(nextIdx)
+    });
+    console.log(`[dailyNickname] 완료. 다음 시작 인덱스: ${nextIdx}`);
   } catch(e) {
     console.error('[dailyNickname] 전체 오류:', e.message);
   }

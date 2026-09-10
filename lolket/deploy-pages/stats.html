@@ -7847,7 +7847,13 @@ async function saveSnapshotNow(seasonId) {
     });
     var j = await res.json();
     if (j.ok) {
+      // localStorage 캐시 초기화
       try { localStorage.removeItem('season_stats_' + COMMUNITY_ID + '_' + seasonId); } catch(e) {}
+      // Worker CF 캐시도 무효화 요청
+      await fetch(WORKER_URL + '/season-cache-clear', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ communityId: COMMUNITY_ID, seasonId })
+      }).catch(() => {});
       alert('📸 스냅샷 저장 완료: ' + j.saved + '명');
     } else { alert('스냅샷 저장 실패: ' + (j.error || '')); }
   } catch(e) { alert('오류: ' + e.message); }
