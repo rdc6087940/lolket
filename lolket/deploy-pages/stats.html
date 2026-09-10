@@ -7183,6 +7183,10 @@ async function loadNicknameLog() {
     Object.entries(histMap).forEach(function(entry) {
       var puuId = entry[0];
       var records = entry[1];
+      // 객체 구조로 잘못 저장된 경우 배열로 변환 (cron 버그로 인한 데이터 복구)
+      if (records && !Array.isArray(records) && typeof records === 'object') {
+        records = Object.values(records).sort(function(a,b){ return (a.date||'') > (b.date||'') ? 1 : -1; });
+      }
       if (!Array.isArray(records) || records.length < 2) return;
       // index 0 = 초기 닉네임, 1 이후 = 변경 이력
       records.forEach(function(r, idx) {
