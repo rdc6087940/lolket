@@ -6,15 +6,24 @@ async function cachedFetch(cacheKey, fetchFn, ttlSeconds) {
     const req = new Request('https://cache.roonging.com/' + cacheKey);
     const cached = await cache.match(req);
     if (cached) {
-      console.log('[cache] HIT:', cacheKey);
-      return await cached.json();
+      // TTL 직접 체크 (Cache API가 만료를 자동으로 처리 안 할 수 있음)
+      const cachedAt = cached.headers.get('X-Cached-At');
+      const age = cachedAt ? (Date.now() - parseInt(cachedAt)) / 1000 : 0;
+      if (!cachedAt || age < ttlSeconds) {
+        console.log('[cache] HIT:', cacheKey, '(age:', Math.round(age), 's)');
+        return await cached.json();
+      }
+      // TTL 만료 → 캐시 삭제 후 새로 fetch
+      console.log('[cache] EXPIRED:', cacheKey, '(age:', Math.round(age), 's)');
+      await cache.delete(req);
     }
     console.log('[cache] MISS:', cacheKey);
     const data = await fetchFn();
     const res = new Response(JSON.stringify(data), {
       headers: {
         'Content-Type': 'application/json',
-        'Cache-Control': `public, max-age=${ttlSeconds}`
+        'Cache-Control': `public, max-age=${ttlSeconds}`,
+        'X-Cached-At': String(Date.now())
       }
     });
     await cache.put(req, res);
@@ -974,6 +983,16 @@ async function handleDbWrite(request, env) {
     // 커뮤니티 신청 저장 시 이메일 발송
     if (/^applies\/[^/]+$/.test(dbPath) && data) {
       sendApplyEmail(env, data).catch(() => {});
+    }
+
+    // system/patch_notes 쓰기 시 CF 캐시 무효화
+    if (dbPath.startsWith('system/patch_notes')) {
+      // 전체 목록 캐시 + 개별 버전 캐시 모두 무효화
+      const parts = dbPath.split('/');
+      await invalidateCache('pub-system-patch_notes').catch(() => {});
+      if (parts.length > 2) {
+        await invalidateCache('pub-' + dbPath.replace(/\//g, '-')).catch(() => {});
+      }
     }
 
     return json({ ok: true });
@@ -2721,14 +2740,21 @@ async function handleServerInfo(request, env) {
   const data = await cachedFetch(
     `server-info-${serverId}`,
     async () => {
+      // CDN 캐시 우회를 위해 타임스탬프 추가
+      const _ts = Math.floor(Date.now() / (30 * 60 * 1000)); // 30분 단위
       const res = await fetch(
-        `https://b2c-api-cdn.deeplol.gg/tournament/server_info?server_id=${serverId}`,
-        { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'Referer': 'https://www.deeplol.gg/' } }
+        `https://b2c-api-cdn.deeplol.gg/tournament/server_info?server_id=${serverId}&_t=${_ts}`,
+        { headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          'Referer': 'https://www.deeplol.gg/',
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }}
       );
       if (!res.ok) return null;
       return await res.json();
     },
-    21600 // 6시간
+    1800 // 30분 (전적 데이터 자주 갱신)
   );
   if (!data) return json({ok:false,error:'서버 정보 조회 실패'},500);
   return json({ ok:true, data });

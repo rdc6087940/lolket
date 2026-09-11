@@ -666,11 +666,12 @@ tr.has-bg-effect td {
           🔑 관리자 로그인
         </button>
         <button class="btn-refresh" id="btn-refresh"><span class="ri">↻</span> 새로고침</button>
+    <span id="next-update-time" style="font-family:'Rajdhani',sans-serif;font-size:10px;color:var(--muted);margin-left:8px;white-space:nowrap;"></span>
       </div>
     </div>
 
     <!-- 시즌 필터 -->
-  <div id="season-filter-bar" style="display:flex;align-items:center;gap:8px;padding:.5rem 1rem;background:linear-gradient(135deg,rgba(167,139,250,.08),rgba(10,200,185,.06));border-bottom:1px solid rgba(167,139,250,.2);">
+  <div id="season-filter-bar" style="display:flex;align-items:center;gap:8px;padding:.5rem 1rem;background:var(--bg-darkest,#080E1A);border-bottom:1px solid rgba(167,139,250,.2);position:sticky;top:0;z-index:100;">
     <span style="font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:2px;color:#A78BFA;">🏆 시즌</span>
     <select id="season-select" onchange="onSeasonChange(this.value)" style="background:#0D1B2E;border:1px solid rgba(167,139,250,.4);border-radius:4px;padding:4px 10px;color:#A78BFA;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;cursor:pointer;outline:none;min-width:120px;">
       <option value="">전체 (기본)</option>
@@ -1074,6 +1075,20 @@ function ratingTooltip(bd) {
   } catch(e) { return ''; }
 }
 
+
+function buildSeasonRatingCell(delta, current) {
+  if (current === null || current === undefined) {
+    return '<span style="font-family:Rajdhani,sans-serif;font-size:11px;color:var(--muted);">—</span>';
+  }
+  var deltaColor = delta > 0 ? '#27AE60' : delta < 0 ? '#E05050' : 'var(--muted)';
+  var sign = delta >= 0 ? '+' : '';
+  var deltaStr = (delta !== null && delta !== undefined) ? sign + Math.round(delta) : '';
+  return '<div style="text-align:center;">' +
+    '<span style="font-family:Rajdhani,sans-serif;font-size:13px;font-weight:700;color:var(--gold);">' + Math.round(current) + '</span>' +
+    (deltaStr ? '<div style="font-size:9px;font-family:Rajdhani,sans-serif;color:' + deltaColor + ';font-weight:700;">' + deltaStr + '</div>' : '') +
+    '</div>';
+}
+
 function buildRatingCell(rating, bd, games) {
   if (rating === undefined || rating === null) {
     return '<span style="font-family:Rajdhani,sans-serif;font-size:11px;color:var(--muted);">—</span>';
@@ -1174,12 +1189,13 @@ async function loadData(){
       var _siRaw = sessionStorage.getItem(_siCacheKey);
       if (_siRaw) {
         var _siObj = JSON.parse(_siRaw);
-        if (Date.now() - _siObj.ts < 30 * 60 * 1000) _siCached = _siObj.data;
+        if (Date.now() - _siObj.ts < 10 * 60 * 1000) _siCached = _siObj.data; // 10분
       }
     } catch(e) {}
     var json;
     if (_siCached) {
       json = _siCached;
+      try { var _co = JSON.parse(sessionStorage.getItem(_siCacheKey)); if (_co) _updateNextUpdateTime(_co.ts); } catch(e) {}
     } else {
       const _siRes = await fetch(WORKER_URL + '/server-info', {
         method: 'POST', headers: {'Content-Type':'application/json'},
@@ -1188,7 +1204,9 @@ async function loadData(){
       const _siJson = await _siRes.json();
       if (!_siJson.ok) throw new Error('서버 정보 조회 실패');
       json = _siJson.data;
-      try { sessionStorage.setItem(_siCacheKey, JSON.stringify({ data: json, ts: Date.now() })); } catch(e) {}
+      var _nowTs = Date.now();
+      try { sessionStorage.setItem(_siCacheKey, JSON.stringify({ data: json, ts: _nowTs })); } catch(e) {}
+      _updateNextUpdateTime(_nowTs);
     }
     document.getElementById('server-name').textContent=(json.server_name||'커뮤니티')+' 전적';
     document.title=(json.server_name||'커뮤니티')+' 전적';
@@ -1250,7 +1268,8 @@ async function loadData(){
 }
 
 function applyAll(){
-  let data=allData.slice();
+  // 시즌 모드면 시즌 데이터 기준으로 필터/정렬
+  let data = (_currentSeason && _seasonFilteredData) ? _seasonFilteredData.slice() : allData.slice();
   if(searchQuery){const q=searchQuery.toLowerCase();data=data.filter(m=>(m.riot_name+'#'+m.riot_tag).toLowerCase().includes(q));}
   if(filterPos!=='ALL') data=data.filter(m=>normalizePos(m.most_position)===filterPos);
   if(filterTier!=='ALL') data=data.filter(m=>m.tier&&m.tier.toUpperCase().startsWith(filterTier));
@@ -1340,7 +1359,7 @@ function renderPage(){
       </div></td>
       <td class="col-games">${t}</td>
       <td class="col-recent">${timeAgo(m.creation_timestamp)}</td>
-      <td style="width:68px;text-align:center;">${buildRatingCell(m._rating, m._ratingBreakdown, m.cnt)}</td>
+      <td style="width:68px;text-align:center;">${_currentSeason && m._seasonRating !== undefined && m._seasonRating !== null ? buildSeasonRatingCell(m._seasonRating, m._rating) : buildRatingCell(m._rating, m._ratingBreakdown, m.cnt)}</td>
       <td style="width:60px;text-align:center;">${(function(){ var r=calcMMR(m, allData); return r ? '<span style="font-size:11px;font-weight:700;color:#A78BFA;">'+r.mmr+'</span><div style="font-size:9px;color:var(--muted);">MMR</div>' : '<span style="color:var(--muted);font-size:10px;">—</span>'; })()}</td>
       <td style="width:52px;text-align:center;">
         <div style="display:flex;gap:3px;justify-content:center;align-items:center;">
@@ -7589,6 +7608,7 @@ async function loadAllTempTiers() {
 var _seasons = {};       // { seasonId: { name, startDate, endDate, finalized } }
 var _currentSeason = ''; // 선택된 시즌 ID ('' = 전체)
 var _seasonData = {};    // 시즌별 계산 데이터 캐시
+var _seasonFilteredData = null; // 현재 시즌 데이터 (페이지네이션 유지용)
 
 // 시즌 목록 로드
 async function loadSeasons() {
@@ -7661,8 +7681,10 @@ async function onSeasonChange(seasonId) {
     }
   }
   if (!seasonId) {
-    // 전체 모드 - 기존 allData로 렌더링
-    renderPage();
+    // 전체 모드 - 원본 allData로 복원 후 렌더링
+    _seasonFilteredData = null;
+    currentPage = 1;
+    applyAll();
     return;
   }
   // 시즌 데이터 로드
@@ -7728,6 +7750,10 @@ function computeSeasonStats(data, isFinalized) {
     var kdaTotalNow = (m.kda || 0) * cntNow;
     var kdaTotalSnap = (snap.kda || 0) * cntSnap;
     var kdaDiff = cntDiff > 0 ? Math.round((kdaTotalNow - kdaTotalSnap) / cntDiff * 100) / 100 : 0;
+    // 레이팅 차이 계산 (스냅샷에 rating 있으면)
+    var ratingNow = m._rating || 0;
+    var ratingSnap = snap.rating || 0;
+    var ratingDiff = (ratingNow && ratingSnap) ? ratingNow - ratingSnap : null;
     return {
       puu_id: m.puu_id,
       riot_name: m.riot_name,
@@ -7738,7 +7764,10 @@ function computeSeasonStats(data, isFinalized) {
       loss: cntDiff - winDiff,
       winRate: Math.round(winDiff / cntDiff * 100),
       kda: kdaDiff,
-      most_three_champ: m.most_three_champ || []
+      most_three_champ: m.most_three_champ || [],
+      _rating: ratingDiff !== null ? ratingNow : m._rating,
+      _ratingDelta: ratingDiff,
+      _seasonRating: ratingDiff
     };
   }).filter(Boolean);
 }
@@ -7751,22 +7780,17 @@ function renderSeasonPage(seasonId) {
     if (el) el.innerHTML = '<tr><td colspan="13"><div style="text-align:center;color:var(--muted);padding:3rem;font-family:Rajdhani,sans-serif;">시즌 게임 없음 (스냅샷 이후 게임이 쌓이면 표시됩니다)</div></td></tr>';
     return;
   }
-  // allData를 시즌 데이터로 임시 교체 후 renderPage 호출
-  var _origAllData = allData;
-  var _origFilteredData = filteredData;
-  allData = data.map(function(s) {
-    var orig = _origAllData.find(function(m) { return m.puu_id === s.puu_id; }) || {};
+  // 시즌 데이터를 _seasonFilteredData에 저장하고 renderPage에서 참조
+  _seasonFilteredData = data.map(function(s) {
+    var orig = allData.find(function(m) { return m.puu_id === s.puu_id; }) || {};
     return Object.assign({}, orig, {
       cnt: s.cnt, win: s.win, loss: s.loss,
       winRate: s.winRate, kda: s.kda,
       _seasonMode: true
     });
   });
-  filteredData = allData.slice();
   currentPage = 1;
-  renderPage();
-  allData = _origAllData;
-  filteredData = _origFilteredData;
+  applyAll();
 }
 
 // ── 시즌 관리 (마스터 전용) ──
@@ -7842,7 +7866,7 @@ async function saveSeasonData() {
 async function saveSnapshotNow(seasonId) {
   if (!allData.length) { alert('멤버 데이터 로드 후 시도해주세요'); return; }
   var members = allData.map(function(m) {
-    return { puu_id: m.puu_id, cnt: m.cnt || 0, win: m.win || 0, kda: m.kda || 0 };
+    return { puu_id: m.puu_id, cnt: m.cnt || 0, win: m.win || 0, kda: m.kda || 0, rating: m._rating || 0 };
   });
   try {
     var res = await fetch(WORKER_URL + '/season-snapshot', {
@@ -7877,6 +7901,28 @@ async function deleteSeasonData(seasonId) {
     renderSeasonSelect();
     renderSeasonList();
   } catch(e) { alert('오류: ' + e.message); }
+}
+
+
+function _updateNextUpdateTime(ts) {
+  var el = document.getElementById('next-update-time');
+  if (!el) return;
+  var TTL = 10 * 60 * 1000;
+  var nextMs = ts + TTL;
+  if (window._nextUpdateTimer) clearInterval(window._nextUpdateTimer);
+  window._nextUpdateTimer = setInterval(function() {
+    var diff = Math.max(0, Math.round((nextMs - Date.now()) / 1000));
+    if (diff <= 0) {
+      el.textContent = '⟳ 업데이트 가능';
+      el.style.color = 'var(--blue-bright)';
+      clearInterval(window._nextUpdateTimer);
+      return;
+    }
+    var m = Math.floor(diff / 60);
+    var s = diff % 60;
+    el.textContent = '업데이트까지 ' + m + ':' + (s < 10 ? '0' : '') + s;
+    el.style.color = 'var(--muted)';
+  }, 1000);
 }
 
 </script>
