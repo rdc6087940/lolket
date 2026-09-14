@@ -1335,7 +1335,7 @@ function renderPage(){
     const lp=t?(l/t*100).toFixed(1):0;
     return `<tr data-puu="${m.puu_id}" class="${_rowEffects[m.puu_id] ? 'effect-'+_rowEffects[m.puu_id] : ''}">
       <td class="col-rank">${rank}</td>
-      <td><span class="s-name">${esc(m.riot_name)}</span> <span class="s-tag">#${esc(m.riot_tag)}</span>${_weeklyEmojis&&_weeklyEmojis[m.puu_id]?' '+_weeklyEmojis[m.puu_id].map(function(e){return '<span title="'+e.label+'" style="font-size:12px;cursor:default;">'+e.emoji+'</span>';}).join(''):''}</td>
+      <td><span class="s-name" onclick="copyNickname('${esc(m.riot_name)}','${esc(m.riot_tag)}')" style="cursor:pointer;" title="클릭하여 복사">${esc(m.riot_name)}</span> <span class="s-tag">#${esc(m.riot_tag)}</span>${_weeklyEmojis&&_weeklyEmojis[m.puu_id]?' '+_weeklyEmojis[m.puu_id].map(function(e){return '<span title="'+e.label+'" style="font-size:12px;cursor:default;">'+e.emoji+'</span>';}).join(''):''}</td>
       <td><span class="pos-txt" style="color:${posC}">${posS}</span></td>
       <td>${(function(){
         var lp = undefined;
@@ -2301,8 +2301,16 @@ async function loadDetailData(memberData, isUpdate) {
     if (!detailCache[_queueMode][puuId]) {
       detailCache[_queueMode][puuId] = { matchIds: new Set(), matches: [] };
     }
+    // 중복 매치 제거 후 캐시에 추가
+    var existingMatchIds = new Set(detailCache[_queueMode][puuId].matches.map(function(m){ return m.match_basic_dict && m.match_basic_dict.match_id; }));
+    var dedupedNewMatches = newMatches.filter(function(m){ 
+      var mid = m.match_basic_dict && m.match_basic_dict.match_id;
+      return mid && !existingMatchIds.has(mid);
+    });
     newIds.forEach(function(id){ detailCache[_queueMode][puuId].matchIds.add(id); });
-    detailCache[_queueMode][puuId].matches.unshift.apply(detailCache[_queueMode][puuId].matches, newMatches);
+    if (dedupedNewMatches.length > 0) {
+      detailCache[_queueMode][puuId].matches.unshift.apply(detailCache[_queueMode][puuId].matches, dedupedNewMatches);
+    }
 
     const analysis = analyzeMatches(detailCache[_queueMode][puuId].matches, puuId);
     detailCache[_queueMode][puuId].analysis = analysis;
@@ -7929,6 +7937,28 @@ function _updateNextUpdateTime(ts) {
     el.textContent = '업데이트까지 ' + m + ':' + (s < 10 ? '0' : '') + s;
     el.style.color = 'var(--muted)';
   }, 1000);
+}
+
+
+function copyNickname(name, tag) {
+  var text = name + '#' + tag;
+  var _showCopyToast = function() {
+    var t = document.createElement('div');
+    t.textContent = '📋 ' + text + ' 복사됨';
+    t.style.cssText = 'position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);background:#0D3B2E;border:1px solid #27AE60;color:#27AE60;padding:8px 16px;border-radius:6px;font-family:Rajdhani,sans-serif;font-size:13px;font-weight:700;z-index:99999;pointer-events:none;white-space:nowrap;';
+    document.body.appendChild(t);
+    setTimeout(function(){ t.remove(); }, 2000);
+  };
+  navigator.clipboard.writeText(text).then(_showCopyToast).catch(function() {
+    var el = document.createElement('textarea');
+    el.value = text;
+    el.style.cssText = 'position:fixed;opacity:0;';
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+    _showCopyToast();
+  });
 }
 
 </script>

@@ -283,6 +283,17 @@ export default {
       } catch(e) { return json({ ok: false, error: e.message }, 500); }
     }
 
+    // 임시 디버그
+    if (path === '/debug-master' && request.method === 'POST') {
+      let body; try { body = await request.json(); } catch { return json({ok:false},400); }
+      const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+      const authQ = secret ? '?auth='+secret : '';
+      const res = await fetch(`${dbUrl}/superadmin.json${authQ}`);
+      const data = res.ok ? await res.json() : null;
+      const parts = (body.token||'').split(':');
+      const pwHash = parts.slice(2).join(':');
+      return json({ superadmin_id: data?.id, superadmin_pw: data?.password, token_id: parts[1], token_hash: pwHash, match: data?.password === pwHash });
+    }
     // DB 공개 읽기 프록시 (인증 불필요)
     if (path === '/db-public-read' && request.method === 'POST') {
       return handleDbPublicRead(request, env);
@@ -492,6 +503,7 @@ export default {
     if (path === '/season-stats' && request.method === 'POST') {
       return handleSeasonStats(request, env);
     }
+
     if (path === '/season-cache-clear' && request.method === 'POST') {
       let body; try { body = await request.json(); } catch { return json({ ok: false }, 400); }
       const { communityId, seasonId } = body;
@@ -2840,7 +2852,12 @@ async function runNicknameHistoryCheckForCommunity(env, cid, isManual) {
       const history = allHistory[m.puu_id];
 
       if (!history || !Array.isArray(history) || history.length === 0) {
-        // 히스토리 없으면 초기 닉네임 배열로 저장
+        // 히스토리 없을 때 - nickname_current에도 없는 신규 멤버만 초기 닉네임 저장
+        // nickname_current에 있으면 이미 등록된 멤버 → history 읽기 실패한 것이므로 skip
+        if (nickCurrent[m.puu_id]) {
+          // 기존 멤버인데 history 못 읽음 → 안전하게 skip (덮어쓰지 않음)
+          continue;
+        }
         historyPatch[m.puu_id] = [{ name: currentNick, date: dateStr, label: '초기 닉네임' }];
         currentPatch[m.puu_id] = currentNick;
       } else {
@@ -4428,21 +4445,29 @@ async function requireMaster(request, env) {
   // 토큰은 "id:pwHash" base64 형태로 저장 (admin.html에서 발급)
   if (body.token && body.token.startsWith('master:')) {
     const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+    const salt = env.PW_SALT || 'lolket_v1';
     const authQ = secret ? '?auth='+secret : '';
     const parts = body.token.split(':');
     if (parts.length >= 3) {
       const adminId = parts[1];
-      const pwHash  = parts.slice(2).join(':');
-      // superadmin 경로에서 검증 (마스터 로그인과 동일)
+      const pwHashNoSalt = parts.slice(2).join(':'); // admin.html에서 salt 없이 해시
+      // superadmin 경로에서 검증
       const res = await fetch(`${dbUrl}/superadmin.json${authQ}`);
       if (res.ok) {
         const data = await res.json();
-        if (data && data.id === adminId && data.password === pwHash) {
-          // 세션 재발급
-          const newToken = crypto.randomUUID();
-          _sessions.set(newToken, { id: adminId, role: 'master', createdAt: Date.now() });
-          _idToToken.set(adminId, newToken);
-          return [body, null];
+        if (data && data.id === adminId) {
+          // DB password가 평문인 경우: sha256(pw+salt) 해시를 역으로 검증 불가
+          // 대신 로그인 시 받은 j.masterPwHash (서버가 계산한 해시)를 저장해두고 쓰는 방식으로 변경
+          // 현재는 평문 저장된 경우도 지원
+          const salt2 = env.PW_SALT || 'lolket_v1';
+          const pwHashWithSalt = await sha256(data.password + salt2); // 평문을 해시화
+          // admin.html 토큰의 해시(sha256(pw+salt))와 비교
+          if (data.password === pwHashNoSalt || pwHashWithSalt === pwHashNoSalt) {
+            const newToken = crypto.randomUUID();
+            _sessions.set(newToken, { id: adminId, role: 'master', createdAt: Date.now() });
+            _idToToken.set(adminId, newToken);
+            return [body, null];
+          }
         }
       }
     }

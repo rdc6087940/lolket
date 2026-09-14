@@ -440,8 +440,9 @@ async function doLogin() {
     const j = await res.json();
     if (!j.ok || j.role !== 'master') { err.textContent = j.error || '마스터 권한이 없습니다'; return; }
     _token = j.token; _adminId = id;
-    // pwHash를 직접 계산해서 영구 토큰 생성 (Worker 재시작 대비)
-    const pwBuf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw));
+    // pwHash를 직접 계산해서 영구 토큰 생성 (Worker 재시작 대비) - salt 포함
+    const SALT = 'lolket_v1';
+    const pwBuf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw + SALT));
     const pwHex = Array.from(new Uint8Array(pwBuf)).map(b=>b.toString(16).padStart(2,'0')).join('');
     _masterToken = 'master:' + id + ':' + pwHex;
     sessionStorage.setItem('admin_token', _token);
@@ -509,6 +510,15 @@ async function adminApi(endpoint, body) {
   const res = await fetch(WORKER_URL + endpoint, {
     method:'POST', headers:{'Content-Type':'application/json'},
     body: JSON.stringify({ ...body, token: _token || _masterToken })
+  });
+  return await res.json();
+}
+
+// 마스터 권한이 필요한 API - _masterToken 우선 사용
+async function masterApi(endpoint, body) {
+  const res = await fetch(WORKER_URL + endpoint, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ ...body, token: _masterToken || _token })
   });
   return await res.json();
 }
@@ -618,7 +628,7 @@ async function loadOperators() {
   document.getElementById('operators-table').innerHTML = '<tr class="loading-row"><td colspan="5"><div class="spinner" style="margin:0 auto;"></div></td></tr>';
   try {
     const [j, ciData] = await Promise.all([
-      adminApi('/admin-list', {}),
+      masterApi('/admin-list', {}),
       dbRead('communities_info').catch(() => ({}))
     ]);
     if (!j.ok) { toast(j.error || '권한 오류', 'err'); return; }
@@ -652,14 +662,14 @@ async function addOperator() {
   const role = document.getElementById('op-role').value;
   const cid = document.getElementById('op-cid').value.trim();
   if (!id || !pw) { toast('ID와 비밀번호를 입력하세요', 'err'); return; }
-  const j = await adminApi('/admin-add', { adminId: id, adminPw: pw, role, communityId: cid || null });
+  const j = await masterApi('/admin-add', { adminId: id, adminPw: pw, role, communityId: cid || null });
   if (j.ok) { toast('운영진 추가 완료'); closeModal('modal-add-operator'); loadOperators(); }
   else toast(j.error || '추가 실패', 'err');
 }
 
 async function removeOperator(id) {
   if (!confirm(`정말 ${id} 계정을 제거할까요?`)) return;
-  const j = await adminApi('/admin-remove', { targetId: id });
+  const j = await masterApi('/admin-remove', { targetId: id });
   if (j.ok) { toast('제거 완료'); loadOperators(); }
   else toast(j.error || '제거 실패', 'err');
 }
@@ -707,7 +717,7 @@ async function changePw() {
   const pw2 = document.getElementById('new-pw2').value;
   if (!pw) { toast('새 비밀번호를 입력하세요', 'err'); return; }
   if (pw !== pw2) { toast('비밀번호가 일치하지 않습니다', 'err'); return; }
-  const j = await adminApi('/admin-change-pw', { newPw: pw });
+  const j = await masterApi('/admin-change-pw', { newPw: pw });
   if (j.ok) { toast('비밀번호 변경 완료'); document.getElementById('new-pw').value = ''; document.getElementById('new-pw2').value = ''; }
   else toast(j.error || '오류', 'err');
 }
@@ -765,14 +775,14 @@ async function addConnect() {
   const serverId = document.getElementById('connect-server-id').value.trim();
   if (!name || !serverId) { toast('서버명과 서버 ID를 입력하세요', 'err'); return; }
   const id = 'c_' + serverId;
-  const j = await adminApi('/system-connect-write', { action: 'add', id, name, serverId });
+  const j = await masterApi('/system-connect-write', { action: 'add', id, name, serverId });
   if (j.ok) { toast('추가 완료'); closeModal('modal-add-connect'); loadConnectTab(); }
   else toast(j.error || '오류', 'err');
 }
 
 async function removeConnect(id) {
   if (!confirm('제거할까요?')) return;
-  const j = await adminApi('/system-connect-write', { action: 'remove', id });
+  const j = await masterApi('/system-connect-write', { action: 'remove', id });
   if (j.ok) { toast('제거 완료'); loadConnectTab(); }
   else toast(j.error || '오류', 'err');
 }
