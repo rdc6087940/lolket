@@ -1359,7 +1359,7 @@ function renderPage(){
       </div></td>
       <td class="col-games">${t}</td>
       <td class="col-recent">${timeAgo(m.creation_timestamp)}</td>
-      <td style="width:68px;text-align:center;">${_currentSeason && m._seasonRating !== undefined && m._seasonRating !== null ? buildSeasonRatingCell(m._seasonRating, m._rating) : buildRatingCell(m._rating, m._ratingBreakdown, m.cnt)}</td>
+      <td style="width:68px;text-align:center;">${buildRatingCell(m._rating, m._ratingBreakdown, m.cnt)}</td>
       <td style="width:60px;text-align:center;">${(function(){ var r=calcMMR(m, allData); return r ? '<span style="font-size:11px;font-weight:700;color:#A78BFA;">'+r.mmr+'</span><div style="font-size:9px;color:var(--muted);">MMR</div>' : '<span style="color:var(--muted);font-size:10px;">—</span>'; })()}</td>
       <td style="width:52px;text-align:center;">
         <div style="display:flex;gap:3px;justify-content:center;align-items:center;">
@@ -2431,12 +2431,12 @@ function analyzeMatches(matches, myPuuId) {
     // 큐 타입 필터
     const basic0 = matchData.match_basic_dict || {};
     if (_queueMode === 'custom' && basic0.queue_id && basic0.queue_id !== CUSTOM_QUEUE_ID) continue;
-    // 커뮤니티 필터: puu_id_list에 커뮤니티 멤버가 4명 이상 포함된 게임만
-    if (_queueMode === 'custom' && communityPuuIds.size > 0 && basic0.puu_id_list) {
-      const overlap = basic0.puu_id_list.filter(function(id){ return communityPuuIds.has(id); }).length;
-      if (overlap < 4) {
-        // 디버그: 필터링된 게임 수 확인용
-        // console.log('[filter] 제외:', basic0.match_id, 'overlap:', overlap);
+    // 커뮤니티 필터: 참여자 10명 중 8명 이상이 커뮤니티 멤버인 게임만 (다른 커뮤니티 내전 제외)
+    if (_queueMode === 'custom' && communityPuuIds.size > 0) {
+      var puuList = basic0.puu_id_list || (matchData.participants_list || []).map(function(p){ return p.puu_id; });
+      var overlap = puuList.filter(function(id){ return communityPuuIds.has(id); }).length;
+      var total = puuList.length || 10;
+      if (overlap < Math.min(8, Math.floor(total * 0.8))) {
         continue;
       }
     }
@@ -7750,10 +7750,14 @@ function computeSeasonStats(data, isFinalized) {
     var kdaTotalNow = (m.kda || 0) * cntNow;
     var kdaTotalSnap = (snap.kda || 0) * cntSnap;
     var kdaDiff = cntDiff > 0 ? Math.round((kdaTotalNow - kdaTotalSnap) / cntDiff * 100) / 100 : 0;
-    // 레이팅 차이 계산 (스냅샷에 rating 있으면)
-    var ratingNow = m._rating || 0;
-    var ratingSnap = snap.rating || 0;
-    var ratingDiff = (ratingNow && ratingSnap) ? ratingNow - ratingSnap : null;
+    // 시즌 레이팅 계산 (ai_score 없이 시즌 diff로만 계산)
+    var sN = cntDiff;
+    var sW = winDiff;
+    var sL = sN - sW;
+    var sS = sW - sL;
+    var sSqrt = sN > 0 ? Math.sqrt(sN) : 1;
+    var sS_adj = sS > 0 ? sS : sS * 0.3;
+    var seasonRating = sN > 0 ? Math.max(500, Math.round(1000 + (sS_adj / sSqrt) * 637)) : null;
     return {
       puu_id: m.puu_id,
       riot_name: m.riot_name,
@@ -7765,9 +7769,8 @@ function computeSeasonStats(data, isFinalized) {
       winRate: Math.round(winDiff / cntDiff * 100),
       kda: kdaDiff,
       most_three_champ: m.most_three_champ || [],
-      _rating: ratingDiff !== null ? ratingNow : m._rating,
-      _ratingDelta: ratingDiff,
-      _seasonRating: ratingDiff
+      _rating: seasonRating,
+      _seasonRating: seasonRating
     };
   }).filter(Boolean);
 }
@@ -7786,6 +7789,9 @@ function renderSeasonPage(seasonId) {
     return Object.assign({}, orig, {
       cnt: s.cnt, win: s.win, loss: s.loss,
       winRate: s.winRate, kda: s.kda,
+      _rating: s._rating,
+      _seasonRating: s._seasonRating,
+      _ratingBreakdown: null,
       _seasonMode: true
     });
   });
