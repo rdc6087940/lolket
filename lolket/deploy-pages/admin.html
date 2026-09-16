@@ -182,6 +182,9 @@ body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg-darkest); c
     <div class="nav-item" onclick="switchTab('connect')">
       <span class="nav-icon">🔍</span> 소속 분석
     </div>
+    <div class="nav-item" onclick="switchTab('cron')">
+      <span class="nav-icon">⚡</span> 수동 실행
+    </div>
     <div class="sidebar-bottom">
       <div class="admin-badge">MASTER</div>
       <div class="admin-id" id="sidebar-admin-id">—</div>
@@ -265,6 +268,46 @@ body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg-darkest); c
               <tr class="loading-row"><td colspan="5"><div class="spinner" style="margin:0 auto;"></div></td></tr>
             </tbody>
           </table>
+        </div>
+      </div>
+
+      <!-- ⚡ 수동 실행 -->
+      <div class="tab-panel" id="tab-cron">
+        <div class="section">
+          <div class="section-title">⚡ Cron 함수 수동 실행</div>
+          <p style="font-size:12px;color:var(--muted);margin-bottom:1.5rem;">Worker에 등록된 스케줄 함수를 수동으로 실행합니다.</p>
+          <div style="display:flex;flex-direction:column;gap:12px;max-width:600px;">
+            <div style="background:var(--card);border:1px solid var(--border);border-radius:6px;padding:1rem;">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+                <div>
+                  <div style="font-family:'Rajdhani',sans-serif;font-weight:700;font-size:14px;">📬 닉네임 변경 이력 체크</div>
+                  <div style="font-size:11px;color:var(--muted);margin-top:2px;">매일 자정 (UTC 15:00) · 커뮤니티 순환 배치 처리</div>
+                </div>
+                <button class="btn-sm btn-blue" onclick="runCron('nickname')">실행</button>
+              </div>
+              <div id="cron-result-nickname" style="font-size:11px;color:var(--muted);font-family:'Rajdhani',sans-serif;margin-top:6px;display:none;"></div>
+            </div>
+            <div style="background:var(--card);border:1px solid var(--border);border-radius:6px;padding:1rem;">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+                <div>
+                  <div style="font-family:'Rajdhani',sans-serif;font-weight:700;font-size:14px;">🏆 시즌 자동 처리</div>
+                  <div style="font-size:11px;color:var(--muted);margin-top:2px;">매일 KST 새벽 1시 (UTC 16:00) · 시즌 시작/종료 처리</div>
+                </div>
+                <button class="btn-sm btn-blue" onclick="runCron('season')">실행</button>
+              </div>
+              <div id="cron-result-season" style="font-size:11px;color:var(--muted);font-family:'Rajdhani',sans-serif;margin-top:6px;display:none;"></div>
+            </div>
+            <div style="background:var(--card);border:1px solid var(--border);border-radius:6px;padding:1rem;">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+                <div>
+                  <div style="font-family:'Rajdhani',sans-serif;font-weight:700;font-size:14px;">⭐ 레이팅 계산</div>
+                  <div style="font-size:11px;color:var(--muted);margin-top:2px;">6시간마다 · 전체 커뮤니티 레이팅 재계산</div>
+                </div>
+                <button class="btn-sm btn-blue" onclick="runCron('rating')">실행</button>
+              </div>
+              <div id="cron-result-rating" style="font-size:11px;color:var(--muted);font-family:'Rajdhani',sans-serif;margin-top:6px;display:none;"></div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -479,7 +522,7 @@ function switchTab(tab) {
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('tab-' + tab).classList.add('active');
-  const titles = {dashboard:'대시보드',communities:'커뮤니티 관리',operators:'운영진 관리',system:'시스템 설정'};
+  const titles = {dashboard:'대시보드',communities:'커뮤니티 관리',operators:'운영진 관리',system:'시스템 설정',cron:'수동 실행'};
   document.getElementById('topbar-title').textContent = titles[tab] || tab;
   event.currentTarget.classList.add('active');
   if (tab === 'dashboard') loadDashboard();
@@ -905,6 +948,43 @@ function renderConnectResult(results, name, tag, ts, fromCache) {
           </tr>`).join('')}
       </tbody>
     </table>`;
+}
+
+
+// ── 수동 Cron 실행 ──
+async function runCron(type) {
+  const endpointMap = {
+    nickname: '/cron-nickname-test',
+    season: '/cron-season-test',
+    rating: '/cron-rating-test'
+  };
+  const endpoint = endpointMap[type];
+  const resultEl = document.getElementById('cron-result-' + type);
+  if (!endpoint || !resultEl) return;
+
+  const btn = event.target;
+  btn.disabled = true;
+  btn.textContent = '실행 중...';
+  resultEl.style.display = 'block';
+  resultEl.style.color = 'var(--muted)';
+  resultEl.textContent = '⏳ 실행 중... (최대 30초 소요)';
+
+  try {
+    const res = await masterApi(endpoint, {});
+    if (res.ok) {
+      resultEl.style.color = '#27AE60';
+      resultEl.textContent = '✅ ' + (res.message || '완료');
+    } else {
+      resultEl.style.color = '#E05050';
+      resultEl.textContent = '❌ ' + (res.error || '오류 발생');
+    }
+  } catch(e) {
+    resultEl.style.color = '#E05050';
+    resultEl.textContent = '❌ ' + e.message;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '실행';
+  }
 }
 
 </script>

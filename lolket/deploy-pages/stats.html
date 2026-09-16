@@ -7210,9 +7210,26 @@ async function loadNicknameLog() {
     Object.entries(histMap).forEach(function(entry) {
       var puuId = entry[0];
       var records = entry[1];
-      // 객체 구조로 잘못 저장된 경우 배열로 변환 (cron 버그로 인한 데이터 복구)
-      if (records && !Array.isArray(records) && typeof records === 'object') {
-        records = Object.values(records).sort(function(a,b){ return (a.date||'') > (b.date||'') ? 1 : -1; });
+      // 배열+객체 혼합 처리 (초기: 배열, 변경이력: 객체키로 추가됨)
+      if (records && typeof records === 'object') {
+        var arr = [];
+        var hasObj = false;
+        Object.entries(records).forEach(function(e) {
+          if (typeof e[1] === 'object' && e[1].name) {
+            if (!isNaN(Number(e[0]))) {
+              // 배열 인덱스 → 배열 요소
+              arr.push({ idx: Number(e[0]), ...e[1] });
+            } else {
+              // 변경이력 객체 키
+              arr.push({ date: e[1].date || '', name: e[1].name, prev: e[1].prev });
+              hasObj = true;
+            }
+          }
+        });
+        if (hasObj || !Array.isArray(records)) {
+          arr.sort(function(a,b){ return (a.date||'') > (b.date||'') ? 1 : -1; });
+          records = arr;
+        }
       }
       if (!Array.isArray(records) || records.length < 2) return;
       // index 0 = 초기 닉네임, 1 이후 = 변경 이력

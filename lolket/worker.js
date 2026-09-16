@@ -459,6 +459,24 @@ export default {
         return json({ok:false, error: e.message});
       }
     }
+    if (path === '/cron-nickname-test' && request.method === 'POST') {
+      let body; try { body = await request.json(); } catch { return json({ok:false},400); }
+      const [_, err] = await requireMaster({json: async()=>body, headers:{get:()=>null}}, env);
+      if (err) return err;
+      try {
+        await runDailyNicknameCheck(env);
+        return json({ok:true, message:'닉네임 체크 완료'});
+      } catch(e) { return json({ok:false, error: e.message}); }
+    }
+    if (path === '/cron-season-test' && request.method === 'POST') {
+      let body; try { body = await request.json(); } catch { return json({ok:false},400); }
+      const [_, err] = await requireMaster({json: async()=>body, headers:{get:()=>null}}, env);
+      if (err) return err;
+      try {
+        await runSeasonAutoProcess(env);
+        return json({ok:true, message:'시즌 처리 완료'});
+      } catch(e) { return json({ok:false, error: e.message}); }
+    }
     if (path === '/rating-match-revert' && request.method === 'POST') {
       return handleRatingMatchRevert(request, env);
     }
@@ -530,8 +548,10 @@ export default {
     } else if (cron === '0 */6 * * *') {
       ctx.waitUntil(runScheduledRatingCalc(env));
     } else if (cron === '0 15 * * *') {
-      // 매일 자정(KST) - 닉네임 변경 이력 체크 + 시즌 자동 처리
+      // 매일 자정(KST) - 닉네임 변경 이력 체크
       ctx.waitUntil(runDailyNicknameCheck(env));
+    } else if (cron === '0 16 * * *') {
+      // 매일 KST 새벽 1시 - 시즌 자동 처리 (별도 invocation)
       ctx.waitUntil(runSeasonAutoProcess(env));
     } else if (cron === '0 15 * * 0') {
       // 매주 일요일 자정(KST)
@@ -2822,24 +2842,29 @@ async function runNicknameHistoryCheckForCommunity(env, cid, isManual) {
     const curRes = await fetch(`${dbUrl}/communities/${cid}/nickname_current.json${authQ}`);
     const nickCurrent = (curRes.ok ? await curRes.json() : null) || {};
 
-    // 3-b. 변경된 멤버 puu_id 목록 추출
+    // 3-a-2. nickname_history 없는 멤버 확인 (shallow)
+    const histShallowRes = await fetch(`${dbUrl}/communities/${cid}/nickname_history.json${authQ}&shallow=true`);
+    const histShallow = (histShallowRes.ok ? await histShallowRes.json() : null) || {};
+
+    // 3-b. 변경된 멤버 puu_id 목록 추출 (닉변 + 히스토리 없는 멤버 포함)
     const changedPuuIds = members
       .filter(m => m.puu_id && m.riot_name && m.riot_tag)
       .filter(m => {
         const cur = nickCurrent[m.puu_id];
-        return !cur || cur !== `${m.riot_name}#${m.riot_tag}`;
+        const hasHistory = histShallow[m.puu_id];
+        // 닉변 감지 또는 히스토리 없는 멤버
+        return !cur || cur !== `${m.riot_name}#${m.riot_tag}` || !hasHistory;
       })
       .map(m => m.puu_id);
 
-    // 3-c. 변경된 멤버만 nickname_history 개별 읽기 (최대 20개씩)
+    console.log(`[nickname-check] ${cid} changedPuuIds:`, changedPuuIds.length, changedPuuIds.slice(0,3));
+    // 3-c. 변경된 멤버 history 읽기 (배치 2개씩, subrequest 절약)
     const allHistory = {};
-    for (let i = 0; i < changedPuuIds.length; i += 20) {
-      const batch = changedPuuIds.slice(i, i + 20);
-      await Promise.all(batch.map(async (puuId) => {
-        const r = await fetch(`${dbUrl}/communities/${cid}/nickname_history/${puuId}.json${authQ}`);
-        if (r.ok) allHistory[puuId] = await r.json();
-      }));
-    }
+    const histReadBatch = changedPuuIds.slice(0, 2); // 최대 2개만 읽기
+    await Promise.all(histReadBatch.map(async (puuId) => {
+      const r = await fetch(`${dbUrl}/communities/${cid}/nickname_history/${puuId}.json${authQ}`);
+      if (r.ok) allHistory[puuId] = await r.json();
+    }));
 
     // 4. 변경된 것만 배열로 append 후 저장
     const historyPatch = {};
@@ -2849,41 +2874,47 @@ async function runNicknameHistoryCheckForCommunity(env, cid, isManual) {
       if (!m.puu_id || !m.riot_name || !m.riot_tag) continue;
       if (!changedPuuIds.includes(m.puu_id)) continue;
       const currentNick = `${m.riot_name}#${m.riot_tag}`;
+      const prevNick = nickCurrent[m.puu_id];
       const history = allHistory[m.puu_id];
 
-      if (!history || !Array.isArray(history) || history.length === 0) {
-        // 히스토리 없을 때 - nickname_current에도 없는 신규 멤버만 초기 닉네임 저장
-        // nickname_current에 있으면 이미 등록된 멤버 → history 읽기 실패한 것이므로 skip
-        if (nickCurrent[m.puu_id]) {
-          // 기존 멤버인데 history 못 읽음 → 안전하게 skip (덮어쓰지 않음)
-          continue;
-        }
-        historyPatch[m.puu_id] = [{ name: currentNick, date: dateStr, label: '초기 닉네임' }];
-        currentPatch[m.puu_id] = currentNick;
-      } else {
-        const lastNick = history[history.length - 1].name;
-        if (lastNick !== currentNick) {
-          // 기존 배열에 append
-          historyPatch[m.puu_id] = [...history, { name: currentNick, date: dateStr }];
+      if (!prevNick) {
+        // 신규 멤버
+        if (!history || !Array.isArray(history) || history.length === 0) {
+          historyPatch[m.puu_id] = [{ name: currentNick, date: dateStr, label: '초기 닉네임' }];
           currentPatch[m.puu_id] = currentNick;
-          console.log(`[nickname-check] ${cid}: ${lastNick} → ${currentNick}`);
         }
+      } else if (prevNick !== currentNick) {
+        // 기존 멤버 변경 - history 읽었으면 배열 append, 못 읽었으면 [prev, current]
+        if (history && Array.isArray(history) && history.length > 0) {
+          historyPatch[m.puu_id] = [...history, { name: currentNick, date: dateStr }];
+        } else {
+          // history 못 읽음 - prev/current 기록
+          historyPatch[m.puu_id] = [
+            { name: prevNick, date: dateStr, label: '이전 닉네임' },
+            { name: currentNick, date: dateStr }
+          ];
+        }
+        currentPatch[m.puu_id] = currentNick;
+        console.log(`[nickname-check] ${cid}: ${prevNick} → ${currentNick}`);
       }
     }
 
     // nickname_history PATCH (1번 요청)
+    console.log(`[nickname-check] ${cid} historyPatch 수:`, Object.keys(historyPatch).length, 'currentPatch 수:', Object.keys(currentPatch).length);
     if (Object.keys(historyPatch).length > 0) {
-      await fetch(`${dbUrl}/communities/${cid}/nickname_history.json${authQ}`, {
+      const hRes = await fetch(`${dbUrl}/communities/${cid}/nickname_history.json${authQ}`, {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(historyPatch)
       });
+      console.log(`[nickname-check] ${cid} history PATCH:`, hRes.status);
     }
     // nickname_current PATCH (1번 요청)
     if (Object.keys(currentPatch).length > 0) {
-      await fetch(`${dbUrl}/communities/${cid}/nickname_current.json${authQ}`, {
+      const cRes = await fetch(`${dbUrl}/communities/${cid}/nickname_current.json${authQ}`, {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(currentPatch)
       });
+      console.log(`[nickname-check] ${cid} current PATCH:`, cRes.status);
     }
 
     const totalChanges = Object.keys(historyPatch).length;
@@ -4835,30 +4866,20 @@ async function runDailyNicknameCheck(env) {
     const ciData = await ciRes.json() || {};
     const cids = Object.keys(ciData);
     console.log('[dailyNickname] 커뮤니티 수:', cids.length);
-    // 커뮤니티당 ~6 subrequest → 안전하게 7개씩 처리
-    // 마지막 처리 인덱스를 Firebase에 저장해서 매일 순환
-    const BATCH_SIZE = 2; // 커뮤니티당 최대 ~24 subrequest → 2개 = 48개로 제한
-    const idxRes = await fetch(`${dbUrl}/system/nickname_check_idx.json${authQ}`);
-    const lastIdx = (idxRes.ok ? await idxRes.json() : null) || 0;
-    const startIdx = lastIdx >= cids.length ? 0 : lastIdx;
-    const endIdx = Math.min(startIdx + BATCH_SIZE, cids.length);
-    console.log(`[dailyNickname] 처리 범위: ${startIdx} ~ ${endIdx-1} / 전체 ${cids.length}`);
-    for (let i = startIdx; i < endIdx; i++) {
+    // 전체 커뮤니티를 순차 처리, 커뮤니티 사이 1초 딜레이로 subrequest 분산
+    for (let i = 0; i < cids.length; i++) {
       const cid = cids[i];
       try {
         await runNicknameHistoryCheckForCommunity(env, cid, false);
-        console.log('[dailyNickname] 완료:', cid);
+        console.log(`[dailyNickname] 완료 (${i+1}/${cids.length}):`, cid);
       } catch(e) {
         console.error('[dailyNickname] 오류:', cid, e.message);
       }
+      if (i < cids.length - 1) {
+        await new Promise(r => setTimeout(r, 1000));
+      }
     }
-    // 다음 시작 인덱스 저장
-    const nextIdx = endIdx >= cids.length ? 0 : endIdx;
-    await fetch(`${dbUrl}/system/nickname_check_idx.json${authQ}`, {
-      method: 'PUT', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(nextIdx)
-    });
-    console.log(`[dailyNickname] 완료. 다음 시작 인덱스: ${nextIdx}`);
+    console.log('[dailyNickname] 전체 완료');
   } catch(e) {
     console.error('[dailyNickname] 전체 오류:', e.message);
   }
