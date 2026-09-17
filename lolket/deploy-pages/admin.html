@@ -663,7 +663,23 @@ async function loadCommunities() {
 
 function openCommunityDetail(cid) {
   const info = _communities[cid] || {};
-  alert(`[${cid}]\n이름: ${info.name||'—'}\n딥롤 서버 ID: ${info.deeplolServerId||'—'}\n디스코드 서버 ID: ${info.discordServerId||'—'}\n채널 ID: ${info.discordChannelId||'—'}`);
+  const newGuildId = prompt(
+    `[${info.name||cid}] 디스코드 서버 ID 설정\n현재: ${info.discordServerId||'미설정'}\n\n디스코드 서버 우클릭 > 서버 ID 복사 후 붙여넣기`,
+    info.discordServerId || ''
+  );
+  if (newGuildId === null) return; // 취소
+  masterApi('/db-write', {
+    path: 'communities_info/' + cid + '/discordServerId',
+    data: newGuildId.trim() || null
+  }).then(j => {
+    if (j.ok) {
+      if (_communities[cid]) _communities[cid].discordServerId = newGuildId.trim();
+      toast('✅ 디스코드 서버 ID 저장됨', 'ok');
+      loadCommunities();
+    } else {
+      toast('저장 실패: ' + (j.error||''), 'err');
+    }
+  });
 }
 
 // ── 운영진 관리 ──

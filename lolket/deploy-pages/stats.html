@@ -1,4 +1,5 @@
-<!DOCTYPE html>
+<!D
+OCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -745,11 +746,43 @@ tr.has-bg-effect td {
       style="padding:5px 14px;border-radius:2px 2px 0 0;border:1px solid var(--border);border-bottom:none;background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;white-space:nowrap;flex-shrink:0;">
       💀 멸망전 시뮬레이션
     </button>
+    <button class="main-tab-btn admin-only" id="tab-temp-tier" onclick="switchMainTab('temp-tier')"
+      style="display:none;padding:5px 14px;border-radius:2px 2px 0 0;border:1px solid var(--border);border-bottom:none;background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;white-space:nowrap;flex-shrink:0;">
+      🎯 임시티어 관리
+    </button>
   </div>
 
   <!-- ── 관찰 분석 뷰 ── -->
   <div id="scout-view" style="display:none;padding:1rem;">
     <div id="scout-content"></div>
+  </div>
+
+  <!-- ── 임시티어 관리 뷰 ── -->
+  <div id="temp-tier-view" style="display:none;">
+    <div style="padding:.5rem 1rem;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border);">
+      <span style="font-size:12px;color:var(--muted);font-family:'Rajdhani',sans-serif;">임시티어 부여된 멤버 목록</span>
+      <span id="temp-tier-count" style="font-size:11px;color:var(--gold);font-family:'Rajdhani',sans-serif;font-weight:700;"></span>
+      <button onclick="loadTempTierTab()" style="margin-left:auto;padding:3px 10px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:11px;font-family:'Rajdhani',sans-serif;cursor:pointer;">↻ 새로고침</button>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="stats-table" style="width:100%;">
+        <thead>
+          <tr>
+            <th style="width:36px;">#</th>
+            <th>소환사</th>
+            <th>현재 티어</th>
+            <th>임시 티어</th>
+            <th>LP</th>
+            <th>게임수</th>
+            <th>승률</th>
+            <th>KDA</th>
+            <th style="width:80px;">관리</th>
+          </tr>
+        </thead>
+        <tbody id="temp-tier-tbody"></tbody>
+      </table>
+    </div>
+    <div id="temp-tier-empty" style="display:none;text-align:center;color:var(--muted);padding:3rem;font-family:'Rajdhani',sans-serif;">임시티어 부여된 멤버가 없습니다</div>
   </div>
 
   <!-- ── 멸망전 팀 시뮬레이션 뷰 ── -->
@@ -953,6 +986,15 @@ tr.has-bg-effect td {
 var _statsAdminToken = (function(){ try{ return localStorage.getItem('sa_token')||''; }catch(e){ return ''; } })();
 var _statsMasterToken = (function(){ try{ return localStorage.getItem('sa_master_token')||''; }catch(e){ return ''; } })();
 var _statsAdminRole  = (function(){ try{ return localStorage.getItem('sa_role')||''; }catch(e){ return ''; } })();
+// 이미 로그인된 경우 임시티어 탭 표시
+(function() {
+  if (_statsAdminRole === 'master' || _statsAdminRole === 'admin') {
+    document.addEventListener('DOMContentLoaded', function() {
+      var _ttTab = document.getElementById('tab-temp-tier');
+      if (_ttTab) _ttTab.style.display = '';
+    });
+  }
+})();
 var _statsAdminId    = (function(){ try{ return localStorage.getItem('sa_id')||''; }catch(e){ return ''; } })();
 var _statsAdminPw    = (function(){ try{ return localStorage.getItem('sa_pw')||''; }catch(e){ return ''; } })();
 // 두 번째 script에서 선언되는 전역 변수 미리 선언 (참조 오류 방지)
@@ -3055,6 +3097,9 @@ async function doStatsAdminLogin() {
     document.getElementById('btn-admin-login').style.display = 'none';
     var statusEl = document.getElementById('admin-status');
     statusEl.style.display = 'flex';
+    // 임시티어 관리 탭 표시 (관리자 이상)
+    var _ttTab = document.getElementById('tab-temp-tier');
+    if (_ttTab) _ttTab.style.display = '';
     document.getElementById('admin-status-text').textContent = (_statsAdminRole === 'master' ? '👑 마스터' : '🔑 관리자') + ' ' + id;
     // 마스터 전용 버튼 표시
     if (_statsAdminRole === 'master') {
@@ -3547,7 +3592,8 @@ function switchMainTab(tab) {
   var scoutTab = document.getElementById('tab-scout');
   var nickLogTab2 = document.getElementById('tab-nickname-log');
   var doomSimTab2 = document.getElementById('tab-doom-sim');
-  [statsTab, ratingTab, communityTab, scoutTab, nickLogTab2, doomSimTab2].forEach(function(t) {
+  var tempTierTab2 = document.getElementById('tab-temp-tier');
+  [statsTab, ratingTab, communityTab, scoutTab, nickLogTab2, doomSimTab2, tempTierTab2].forEach(function(t) {
     if (t) { t.style.borderBottom='none'; t.style.background='transparent'; t.style.color='var(--muted)'; }
   });
   var pagination = document.getElementById('pagination');
@@ -3560,6 +3606,8 @@ function switchMainTab(tab) {
   if (nickLogViewEl) nickLogViewEl.style.display = 'none';
   var doomSimViewEl = document.getElementById('doom-sim-view');
   if (doomSimViewEl) doomSimViewEl.style.display = 'none';
+  var tempTierViewEl = document.getElementById('temp-tier-view');
+  if (tempTierViewEl) tempTierViewEl.style.display = 'none';
   if (filterBar) filterBar.style.display = 'none';
   if (mobileCards) mobileCards.style.display = 'none';
   if (mobileSortBar) mobileSortBar.style.display = 'none';
@@ -3615,6 +3663,16 @@ function switchMainTab(tab) {
     if (nickLogView) {
       nickLogView.style.display = '';
       loadNicknameLog();
+    }
+  } else if (tab === 'temp-tier') {
+    if (tempTierTab2) {
+      tempTierTab2.style.borderBottom = '2px solid #A78BFA';
+      tempTierTab2.style.background   = 'rgba(167,139,250,.08)';
+      tempTierTab2.style.color        = '#A78BFA';
+    }
+    if (tempTierViewEl) {
+      tempTierViewEl.style.display = '';
+      loadTempTierTab();
     }
   }
 }
@@ -7978,6 +8036,553 @@ function copyNickname(name, tag) {
   });
 }
 
+
+// ══════════════════════════════════════════════════
+// 임시티어 관리 탭
+// ══════════════════════════════════════════════════
+async function loadTempTierTab() {
+  var tbody = document.getElementById('temp-tier-tbody');
+  var empty = document.getElementById('temp-tier-empty');
+  var countEl = document.getElementById('temp-tier-count');
+  if (!tbody) return;
+
+  tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--muted);">로드 중...</td></tr>';
+
+  // 임시티어 최신 로드
+  try {
+    var res = await fetch(WORKER_URL + '/temp-tiers-read', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ communityId: COMMUNITY_ID })
+    });
+    var j = await res.json();
+    if (j.ok && j.data) {
+      _tempTiers = j.data;
+      try { localStorage.removeItem('temp_tiers_' + COMMUNITY_ID); } catch(e) {}
+    }
+  } catch(e) {}
+
+  // 임시티어 있는 멤버만 필터
+  var tempMembers = allData.filter(function(m) {
+    return m.puu_id && _tempTiers && _tempTiers[m.puu_id];
+  });
+
+  countEl.textContent = tempMembers.length + '명';
+
+  if (!tempMembers.length) {
+    tbody.innerHTML = '';
+    empty.style.display = '';
+    return;
+  }
+  empty.style.display = 'none';
+
+  // 임시티어 기준으로 정렬
+  var TIER_ORDER = { CHALLENGER:1, GRANDMASTER:2, MASTER:3, DIAMOND:4, EMERALD:5, PLATINUM:6, GOLD:7, SILVER:8, BRONZE:9, IRON:10, UNRANKED:11 };
+  tempMembers.sort(function(a, b) {
+    var ta = ((_tempTiers[a.puu_id] && _tempTiers[a.puu_id].tier) || 'UNRANKED').toUpperCase();
+    var tb = ((_tempTiers[b.puu_id] && _tempTiers[b.puu_id].tier) || 'UNRANKED').toUpperCase();
+    var tierDiff = (TIER_ORDER[ta] || 11) - (TIER_ORDER[tb] || 11);
+    if (tierDiff !== 0) return tierDiff;
+    // 같은 티어면 LP 높은 순
+    var la = (_tempTiers[a.puu_id] && _tempTiers[a.puu_id].lp) || 0;
+    var lb = (_tempTiers[b.puu_id] && _tempTiers[b.puu_id].lp) || 0;
+    return lb - la;
+  });
+
+  tbody.innerHTML = tempMembers.map(function(m, i) {
+    var tt = _tempTiers[m.puu_id];
+    var tierStr = typeof tt === 'string' ? tt : (tt && tt.tier ? tt.tier : '');
+    var lp = typeof tt === 'object' ? (tt && tt.lp !== undefined ? tt.lp : '') : '';
+    var tierColor = TIER_COLOR[tierStr.toUpperCase()] || 'var(--muted)';
+    var curTier = (m.tier || 'UNRANKED').split(' ')[0];
+    var curColor = TIER_COLOR[curTier.toUpperCase()] || 'var(--muted)';
+    var winRate = m.cnt > 0 ? Math.round(m.win / m.cnt * 100) : 0;
+    return '<tr>' +
+      '<td style="text-align:center;color:var(--muted);font-size:11px;">' + (i+1) + '</td>' +
+      '<td><span class="s-name tt-copy" data-name="' + esc(m.riot_name) + '" data-tag="' + esc(m.riot_tag) + '" style="cursor:pointer;text-decoration:underline dotted;">' + esc(m.riot_name) + '</span> <span class="s-tag">#' + esc(m.riot_tag) + '</span></td>' +
+      '<td style="color:' + curColor + ';font-family:Rajdhani,sans-serif;font-size:12px;">' + esc(m.tier || 'UNRANKED') + '</td>' +
+      '<td style="color:' + tierColor + ';font-family:Rajdhani,sans-serif;font-size:13px;font-weight:700;">' + esc(tierStr) + '</td>' +
+      '<td style="text-align:center;font-family:Rajdhani,sans-serif;">' + (lp !== '' ? lp : '-') + '</td>' +
+      '<td style="text-align:center;font-family:Rajdhani,sans-serif;">' + (m.cnt || 0) + '</td>' +
+      '<td style="text-align:center;font-family:Rajdhani,sans-serif;">' + winRate + '%</td>' +
+      '<td style="text-align:center;font-family:Rajdhani,sans-serif;">' + (m.kda || 0).toFixed(2) + '</td>' +
+      '<td style="text-align:center;">' +
+        '<button class="tt-edit-btn" data-puu="' + m.puu_id + '" style="padding:2px 8px;border-radius:2px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:10px;font-family:Rajdhani,sans-serif;cursor:pointer;margin-right:3px;">수정</button>' +
+        '<button class="tt-remove-btn" data-puu="' + m.puu_id + '" data-name="' + esc(m.riot_name) + '" style="padding:2px 8px;border-radius:2px;border:1px solid rgba(192,48,48,.4);background:transparent;color:#E05050;font-size:10px;font-family:Rajdhani,sans-serif;cursor:pointer;">해제</button>' +
+      '</td>' +
+      '</tr>';
+  }).join('');
+}
+
+// 임시티어 탭 이벤트 위임
+document.addEventListener('click', function(e) {
+  if (e.target.classList.contains('tt-copy')) {
+    copyNickname(e.target.dataset.name, e.target.dataset.tag);
+  }
+  if (e.target.classList.contains('tt-edit-btn')) {
+    var member = allData.find(function(m){ return m.puu_id === e.target.dataset.puu; });
+    var name = member ? member.riot_name : '';
+    openTempTierPopup(e.target.dataset.puu, name);
+  }
+  if (e.target.classList.contains('tt-remove-btn')) {
+    removeTempTier(e.target.dataset.puu, e.target.dataset.name);
+  }
+});
+
+async function removeTempTier(puuId, name) {
+  if (!confirm(name + '의 임시티어를 해제할까요?')) return;
+  try {
+    var res = await fetch(WORKER_URL + '/temp-tier-write', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ communityId: COMMUNITY_ID, puuId: puuId, tier: null, token: _statsAdminToken })
+    });
+    var j = await res.json();
+    if (j.ok) {
+      delete _tempTiers[puuId];
+      try { localStorage.removeItem('temp_tiers_' + COMMUNITY_ID); } catch(e) {}
+      loadTempTierTab();
+    } else { alert('해제 실패: ' + (j.error || '')); }
+  } catch(e) { alert('오류: ' + e.message); }
+}
+
+// switchMainTab에서 temp-tier 처리
+var _origSwitchMainTab = typeof switchMainTab === 'function' ? switchMainTab : null;
+
+
+// ══════════════════════════════════════════════════
+// 📅 캘린더 시스템
+// ══════════════════════════════════════════════════
+var _calYear = new Date().getFullYear();
+var _calMonth = new Date().getMonth(); // 0-based
+var _calEvents = {}; // 'YYYY-MM-DD' → [{type, puuId, ...}]
+var _calSelectedDate = null;
+var _calBdSelectedMember = null;
+var _calLoaded = {}; // 로드된 월 캐시
+
+function toggleCalendar() {
+  var modal = document.getElementById('cal-modal');
+  if (modal.style.display === 'flex') {
+    closeCalendar();
+  } else {
+    modal.style.display = 'flex';
+    renderCalendar();
+    loadCalendarMonth(_calYear, _calMonth);
+  }
+}
+
+function closeCalendar() {
+  document.getElementById('cal-modal').style.display = 'none';
+}
+
+function calNavMonth(dir) {
+  _calMonth += dir;
+  if (_calMonth > 11) { _calMonth = 0; _calYear++; }
+  if (_calMonth < 0) { _calMonth = 11; _calYear--; }
+  renderCalendar();
+  loadCalendarMonth(_calYear, _calMonth);
+}
+
+function renderCalendar() {
+  var title = document.getElementById('cal-title');
+  var grid = document.getElementById('cal-grid');
+  var months = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+  title.textContent = _calYear + '년 ' + months[_calMonth];
+
+  var firstDay = new Date(_calYear, _calMonth, 1).getDay();
+  var daysInMonth = new Date(_calYear, _calMonth + 1, 0).getDate();
+  var today = new Date();
+  var todayStr = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
+
+  var html = '';
+  // 빈 칸
+  for (var i = 0; i < firstDay; i++) {
+    html += '<div style="min-height:44px;"></div>';
+  }
+  for (var d = 1; d <= daysInMonth; d++) {
+    var dateStr = _calYear + '-' + String(_calMonth+1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+    var isToday = dateStr === todayStr;
+    var isSelected = dateStr === _calSelectedDate;
+    var isSun = (firstDay + d - 1) % 7 === 0;
+    var isSat = (firstDay + d - 1) % 7 === 6;
+    var events = _calEvents[dateStr] || [];
+    var hasEvents = events.length > 0;
+
+    var bg = isSelected ? 'rgba(167,139,250,.25)' : isToday ? 'rgba(167,139,250,.08)' : 'transparent';
+    var border = isSelected ? '1px solid rgba(167,139,250,.6)' : isToday ? '1px solid rgba(167,139,250,.3)' : '1px solid transparent';
+    var color = isSun ? '#E05050' : isSat ? '#5B9BD5' : 'var(--white)';
+
+    html += '<div class="cal-day-cell" data-date="' + dateStr + '" style="min-height:72px;border-radius:4px;padding:4px 4px 3px;cursor:pointer;background:' + bg + ';border:' + border + ';display:flex;flex-direction:column;align-items:flex-start;gap:1px;transition:background .15s;">' +
+      '<span style="font-family:Rajdhani,sans-serif;font-size:13px;font-weight:700;color:' + color + ';width:100%;text-align:center;">' + d + '</span>';
+
+    // 이벤트 목록 표시
+    if (hasEvents) {
+      events.slice(0, 2).forEach(function(ev) {
+        if (ev.type === 'birthday') {
+          var bMember = allData.find(function(m){ return m.puu_id === ev.puuId; });
+          var bName = bMember ? bMember.riot_name : '?';
+          html += '<div style="width:100%;font-size:9px;font-family:Rajdhani,sans-serif;background:rgba(244,200,116,.15);border-radius:2px;padding:1px 3px;color:#F4C874;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">🎂 ' + bName + '</div>';
+        } else if (ev.type === 'event') {
+          html += '<div style="width:100%;font-size:9px;font-family:Rajdhani,sans-serif;background:rgba(167,139,250,.15);border-radius:2px;padding:1px 3px;color:#A78BFA;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">📌 ' + (ev.title || '') + '</div>';
+        }
+      });
+      if (events.length > 2) {
+        html += '<div style="font-size:9px;color:var(--muted);font-family:Rajdhani,sans-serif;padding-left:2px;">+' + (events.length - 2) + '</div>';
+      }
+    }
+    html += '</div>';
+  }
+  grid.innerHTML = html;
+
+  // 그리드에 직접 이벤트 등록 (stopPropagation 우회)
+  grid.addEventListener('click', function(e) {
+    var cell = e.target.closest('.cal-day-cell');
+    if (cell) calSelectDate(cell.dataset.date);
+  });
+}
+
+// 공통 이벤트 위임 (모달 내부 버튼들)
+document.addEventListener('click', function(e) {
+  if (e.target.classList.contains('cal-del-btn')) {
+    deleteBirthday(e.target.dataset.id, e.target.dataset.date);
+  }
+  if (e.target.classList.contains('cal-bd-open-btn')) {
+    openBirthdayModal(e.target.dataset.date);
+  }
+  var bdItem = e.target.closest('.cal-bd-member-item');
+  if (bdItem) {
+    calBdSelectMember(bdItem.dataset.puu);
+  }
+});
+
+function calSelectDate(dateStr) {
+  _calSelectedDate = dateStr;
+  renderCalendar();
+  showCalActionModal(dateStr);
+  // 캘린더 하단 일정 상세도 함께 표시
+  var eventsEl = document.getElementById('cal-events');
+  if (eventsEl) {
+    eventsEl.style.display = '';
+    showCalEvents(dateStr);
+  }
+}
+
+function showCalActionModal(dateStr) {
+  var modal = document.getElementById('cal-action-modal');
+  var label = document.getElementById('cal-action-date-label');
+  var eventsEl = document.getElementById('cal-action-events');
+
+  var parts = dateStr.split('-');
+  label.textContent = parts[0] + '년 ' + parseInt(parts[1]) + '월 ' + parseInt(parts[2]) + '일';
+  modal.dataset.date = dateStr;
+
+  // 기존 일정 표시
+  var events = _calEvents[dateStr] || [];
+  if (events.length) {
+    eventsEl.innerHTML = events.map(function(ev) {
+      var isOwn = ev.registeredBy === _getDiscordUserId();
+      var canDel = isOwn || _statsAdminRole === 'admin' || _statsAdminRole === 'master';
+      var delBtn = canDel ? '<button class="cal-del-btn" data-id="' + ev.id + '" data-date="' + dateStr + '" style="margin-left:4px;padding:1px 5px;border-radius:2px;border:1px solid rgba(192,48,48,.3);background:transparent;color:#E05050;font-size:9px;cursor:pointer;">삭제</button>' : '';
+      if (ev.type === 'birthday') {
+        var bm = allData.find(function(m){ return m.puu_id === ev.puuId; });
+        var bn = bm ? bm.riot_name : '?';
+        return '<div style="font-size:11px;font-family:Rajdhani,sans-serif;color:#F4C874;padding:2px 0;display:flex;align-items:center;">🎂 ' + bn + delBtn + '</div>';
+      }
+      return '<div style="font-size:11px;font-family:Rajdhani,sans-serif;color:#A78BFA;padding:3px 0;display:flex;flex-direction:column;gap:2px;">' +
+        '<div style="display:flex;align-items:center;">📌 <span style="font-weight:700;margin-left:4px;">' + (ev.title || '') + '</span>' + delBtn + '</div>' +
+        (ev.content ? '<div style="font-size:10px;color:var(--muted);padding-left:18px;line-height:1.4;">' + ev.content + '</div>' : '') +
+        '</div>';
+    }).join('');
+    // 삭제 버튼 직접 이벤트 등록
+    eventsEl.querySelectorAll('.cal-del-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        deleteBirthday(btn.dataset.id, btn.dataset.date);
+      });
+    });
+    eventsEl.style.display = '';
+  } else {
+    eventsEl.innerHTML = '<div style="font-size:11px;color:var(--muted);font-family:Rajdhani,sans-serif;">일정 없음</div>';
+    eventsEl.style.display = '';
+  }
+
+  modal.style.display = 'flex';
+}
+
+function calActionBirthday() {
+  var dateStr = document.getElementById('cal-action-modal').dataset.date;
+  var discordId = _getDiscordUserId();
+  if (!discordId) {
+    // 디스코드 로그인 유도
+    document.getElementById('cal-action-modal').style.display = 'none';
+    // 디스코드 로그인 버튼 클릭
+    var discordBtn = document.getElementById('btn-discord-login') || document.querySelector('[onclick*="discord"]');
+    if (discordBtn) discordBtn.click();
+    else alert('디스코드 로그인이 필요합니다. 우측 상단 디스코드 로그인 버튼을 클릭해주세요.');
+    return;
+  }
+  document.getElementById('cal-action-modal').style.display = 'none';
+  openBirthdayModal(dateStr);
+}
+
+function calActionEvent() {
+  if (!_statsAdminRole || (_statsAdminRole !== 'admin' && _statsAdminRole !== 'master')) {
+    document.getElementById('cal-action-modal').style.display = 'none';
+    var adminBtn = document.getElementById('btn-admin-login');
+    if (adminBtn) adminBtn.click();
+    else alert('관리자 로그인이 필요합니다.');
+    return;
+  }
+  var dateStr = document.getElementById('cal-action-modal').dataset.date;
+  document.getElementById('cal-action-modal').style.display = 'none';
+  openCalEventModal(dateStr);
+}
+
+function openCalEventModal(dateStr) {
+  document.getElementById('cal-event-date-label').textContent = '날짜: ' + dateStr;
+  document.getElementById('cal-event-title').value = '';
+  document.getElementById('cal-event-content').value = '';
+  document.getElementById('cal-event-error').style.display = 'none';
+  document.getElementById('cal-event-modal').dataset.date = dateStr;
+  document.getElementById('cal-event-modal').style.display = 'flex';
+}
+
+async function saveCalEvent() {
+  var title = document.getElementById('cal-event-title').value.trim();
+  var content = document.getElementById('cal-event-content').value.trim();
+  if (!title) {
+    document.getElementById('cal-event-error').style.display = '';
+    document.getElementById('cal-event-error').textContent = '제목을 입력해주세요';
+    return;
+  }
+  var dateStr = document.getElementById('cal-event-modal').dataset.date;
+  var monthKey = dateStr.slice(0, 7);
+  var docId = 'ev_' + Date.now();
+
+  try {
+    var res = await fetch(WORKER_URL + '/calendar-event-write', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        communityId: COMMUNITY_ID,
+        docId: docId,
+        monthKey: monthKey,
+        data: { type: 'event', title: title, content: content, date: dateStr, createdBy: _statsAdminRole, createdAt: Date.now() },
+        token: _statsMasterToken || _statsAdminToken
+      })
+    });
+    var j = await res.json();
+    if (j.ok) {
+      if (!_calEvents[dateStr]) _calEvents[dateStr] = [];
+      _calEvents[dateStr].push({ id: docId, type: 'event', title: title, content: content, date: dateStr });
+      document.getElementById('cal-event-modal').style.display = 'none';
+      renderCalendar();
+      showCalEvents(dateStr);
+    } else {
+      document.getElementById('cal-event-error').style.display = '';
+      document.getElementById('cal-event-error').textContent = '저장 실패: ' + (j.error || '');
+    }
+  } catch(e) {
+    document.getElementById('cal-event-error').style.display = '';
+    document.getElementById('cal-event-error').textContent = '오류: ' + e.message;
+  }
+}
+
+function showCalEvents(dateStr) {
+  var el = document.getElementById('cal-events');
+  var title = document.getElementById('cal-events-title');
+  var list = document.getElementById('cal-events-list');
+  var actions = document.getElementById('cal-events-actions');
+  el.style.display = '';
+
+  var parts = dateStr.split('-');
+  title.textContent = parts[0] + '년 ' + parseInt(parts[1]) + '월 ' + parseInt(parts[2]) + '일';
+
+  var events = _calEvents[dateStr] || [];
+  if (!events.length) {
+    list.innerHTML = '<div style="font-size:11px;color:var(--muted);font-family:Rajdhani,sans-serif;">일정 없음</div>';
+  } else {
+    list.innerHTML = events.map(function(ev) {
+      var canDel = ev.registeredBy === _getDiscordUserId() || _statsAdminRole === 'admin' || _statsAdminRole === 'master';
+      var delBtn = canDel ? '<button class="cal-del-btn" data-id="' + ev.id + '" data-date="' + dateStr + '" style="margin-left:auto;padding:1px 6px;border-radius:2px;border:1px solid rgba(192,48,48,.3);background:transparent;color:#E05050;font-size:9px;cursor:pointer;">삭제</button>' : '';
+      if (ev.type === 'birthday') {
+        var member = allData.find(function(m){ return m.puu_id === ev.puuId; });
+        var name = member ? member.riot_name + '#' + member.riot_tag : '(알 수 없음)';
+        return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">' +
+          '<span style="font-size:13px;">🎂</span>' +
+          '<span style="font-family:Rajdhani,sans-serif;font-size:12px;color:#F4C874;">' + name + '</span>' +
+          delBtn + '</div>';
+      }
+      if (ev.type === 'event') {
+        return '<div style="margin-bottom:6px;">' +
+          '<div style="display:flex;align-items:center;gap:6px;">' +
+            '<span style="font-size:13px;">📌</span>' +
+            '<span style="font-family:Rajdhani,sans-serif;font-size:12px;font-weight:700;color:#A78BFA;">' + (ev.title || '') + '</span>' +
+            delBtn +
+          '</div>' +
+          (ev.content ? '<div style="font-size:11px;color:var(--muted);padding-left:20px;margin-top:2px;line-height:1.5;white-space:pre-wrap;">' + ev.content + '</div>' : '') +
+          '</div>';
+      }
+      return '';
+    }).join('');
+  }
+
+  // 삭제 버튼 직접 이벤트 등록
+  list.querySelectorAll('.cal-del-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      deleteBirthday(btn.dataset.id, btn.dataset.date);
+    });
+  });
+
+  // 액션 버튼
+  var actionsHtml = '';
+  // 생일 등록 - 디스코드 로그인한 경우만
+  actions.innerHTML = actionsHtml;
+}
+
+// 캘린더 데이터 로드
+async function loadCalendarMonth(year, month) {
+  var key = year + '-' + String(month+1).padStart(2,'0');
+  if (_calLoaded[key]) { renderCalendar(); return; }
+  try {
+    var res = await fetch(WORKER_URL + '/db-public-read', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ path: 'communities/' + COMMUNITY_ID + '/calendar/' + key })
+    });
+    var j = await res.json();
+    if (j.ok && j.data) {
+      Object.entries(j.data).forEach(function(entry) {
+        var id = entry[0], ev = entry[1];
+        var dateStr = ev.date;
+        if (!dateStr) return;
+        if (!_calEvents[dateStr]) _calEvents[dateStr] = [];
+        // 중복 방지
+        if (!_calEvents[dateStr].find(function(e){ return e.id === id; })) {
+          _calEvents[dateStr].push(Object.assign({ id: id }, ev));
+        }
+      });
+    }
+    _calLoaded[key] = true;
+    renderCalendar();
+    if (_calSelectedDate) showCalEvents(_calSelectedDate);
+  } catch(e) {}
+}
+
+// 생일 등록 모달
+function openBirthdayModal(dateStr) {
+  // 캘린더 하단 이벤트 패널도 업데이트
+  showCalEvents(dateStr);
+  _calBdSelectedMember = null;
+  document.getElementById('cal-bd-date-label').textContent = '날짜: ' + dateStr;
+  document.getElementById('cal-bd-search').value = '';
+  document.getElementById('cal-bd-results').style.display = 'none';
+  document.getElementById('cal-bd-selected').style.display = 'none';
+  document.getElementById('cal-bd-error').style.display = 'none';
+  document.getElementById('cal-birthday-modal').dataset.date = dateStr;
+  document.getElementById('cal-birthday-modal').style.display = 'flex';
+}
+
+function calBdSearch(q) {
+  var results = document.getElementById('cal-bd-results');
+  if (!q || q.length < 1) { results.style.display = 'none'; return; }
+  var matches = allData.filter(function(m) {
+    return m.riot_name && m.riot_name.toLowerCase().includes(q.toLowerCase());
+  }).slice(0, 8);
+  if (!matches.length) { results.style.display = 'none'; return; }
+  results.style.display = '';
+  results.innerHTML = matches.map(function(m) {
+    return '<div class="cal-bd-member-item" data-puu="' + m.puu_id + '" style="padding:7px 10px;cursor:pointer;border-bottom:1px solid rgba(167,139,250,.1);font-family:Rajdhani,sans-serif;font-size:13px;display:flex;align-items:center;gap:6px;">' +
+      '<span style="color:var(--white);">' + m.riot_name + '</span><span style="color:var(--muted);font-size:11px;">#' + m.riot_tag + '</span>' +
+      '</div>';
+  }).join('');
+  // 직접 이벤트 등록 (stopPropagation 우회)
+  results.querySelectorAll('.cal-bd-member-item').forEach(function(item) {
+    item.addEventListener('click', function() {
+      calBdSelectMember(item.dataset.puu);
+    });
+  });
+}
+
+function calBdSelectMember(puuId) {
+  var member = allData.find(function(m){ return m.puu_id === puuId; });
+  if (!member) return;
+  _calBdSelectedMember = member;
+  document.getElementById('cal-bd-search').value = '';
+  document.getElementById('cal-bd-results').style.display = 'none';
+  document.getElementById('cal-bd-selected').style.display = '';
+  document.getElementById('cal-bd-selected').textContent = '🎂 ' + member.riot_name + ' #' + member.riot_tag;
+}
+
+async function saveBirthday() {
+  if (!_calBdSelectedMember) {
+    document.getElementById('cal-bd-error').style.display = '';
+    document.getElementById('cal-bd-error').textContent = '멤버를 선택해주세요';
+    return;
+  }
+  if (!_getDiscordUserId()) {
+    document.getElementById('cal-bd-error').style.display = '';
+    document.getElementById('cal-bd-error').textContent = '디스코드 로그인이 필요합니다';
+    return;
+  }
+  var dateStr = document.getElementById('cal-birthday-modal').dataset.date;
+  var monthKey = dateStr.slice(0, 7);
+  var docId = 'bd_' + _getDiscordUserId();
+
+  try {
+    var discordId = _getDiscordUserId();
+    var res = await fetch(WORKER_URL + '/calendar-birthday-write', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        communityId: COMMUNITY_ID,
+        discordUserId: discordId,
+        puuId: _calBdSelectedMember.puu_id,
+        date: dateStr
+      })
+    });
+    var j = await res.json();
+    if (j.ok) {
+      var discordId2 = _getDiscordUserId();
+      var newPuuId = _calBdSelectedMember.puu_id;
+      // 클라이언트에서도 중복 제거 (같은 discordId 또는 같은 puuId)
+      Object.keys(_calEvents).forEach(function(d) {
+        _calEvents[d] = _calEvents[d].filter(function(ev) {
+          if (ev.type !== 'birthday') return true;
+          return ev.registeredBy !== discordId2 && ev.puuId !== newPuuId;
+        });
+      });
+      // 새 이벤트 추가
+      if (!_calEvents[dateStr]) _calEvents[dateStr] = [];
+      var newEv = { id: docId, type:'birthday', puuId: newPuuId, date: dateStr, registeredBy: discordId2 };
+      _calEvents[dateStr].push(newEv);
+      document.getElementById('cal-birthday-modal').style.display = 'none';
+      renderCalendar();
+      showCalEvents(dateStr);
+    } else {
+      document.getElementById('cal-bd-error').style.display = '';
+      document.getElementById('cal-bd-error').textContent = '저장 실패: ' + (j.error || '');
+    }
+  } catch(e) {
+    document.getElementById('cal-bd-error').style.display = '';
+    document.getElementById('cal-bd-error').textContent = '오류: ' + e.message;
+  }
+}
+
+async function deleteBirthday(docId, dateStr) {
+  if (!confirm('생일 등록을 삭제할까요?')) return;
+  var monthKey = dateStr.slice(0, 7);
+  try {
+    var res = await fetch(WORKER_URL + '/calendar-birthday-delete', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ communityId: COMMUNITY_ID, discordUserId: _getDiscordUserId(), docId: docId, date: dateStr, token: _statsMasterToken || _statsAdminToken })
+    });
+    var j = await res.json();
+    if (j.ok) {
+      _calEvents[dateStr] = (_calEvents[dateStr] || []).filter(function(e){ return e.id !== docId; });
+      renderCalendar();
+      showCalEvents(dateStr);
+    }
+  } catch(e) {}
+}
+
+// 디스코드 userId (기존 _discordUser 변수 활용)
+function _getDiscordUserId() { return _discordUser && _discordUser.id ? _discordUser.id : ''; }
+
 </script>
 
 
@@ -8142,6 +8747,110 @@ function copyNickname(name, tag) {
           </div>
         </div>
         <button onclick="saveSeasonData()" style="padding:7px;border-radius:3px;border:1px solid rgba(167,139,250,.4);background:rgba(167,139,250,.1);color:#A78BFA;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;">시즌 저장</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- 📅 캘린더 플로팅 버튼 -->
+<button id="cal-float-btn" onclick="toggleCalendar()" title="캘린더"
+  style="position:fixed;bottom:1.5rem;right:5rem;z-index:8000;width:52px;height:52px;border-radius:50%;border:none;background:#0D1B2E;box-shadow:0 4px 16px rgba(0,0,0,.4),0 0 0 1px rgba(167,139,250,.3);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .3s cubic-bezier(.34,1.56,.64,1);">
+  <span style="font-size:24px;">📅</span>
+</button>
+
+<!-- 📅 캘린더 모달 -->
+<div id="cal-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9000;align-items:center;justify-content:center;" onclick="if(event.target===this)closeCalendar()">
+  <div style="background:#0D1B2E;border:1px solid rgba(167,139,250,.3);border-radius:10px;width:95%;max-width:680px;max-height:92vh;overflow:hidden;display:flex;flex-direction:column;" onclick="event.stopPropagation()">
+    <!-- 헤더 -->
+    <div style="display:flex;align-items:center;padding:.75rem 1rem;border-bottom:1px solid rgba(167,139,250,.2);">
+      <button onclick="calNavMonth(-1)" style="background:transparent;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:4px 8px;">‹</button>
+      <div id="cal-title" style="flex:1;text-align:center;font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;color:#A78BFA;"></div>
+      <button onclick="calNavMonth(1)" style="background:transparent;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:4px 8px;">›</button>
+      <button onclick="closeCalendar()" style="background:transparent;border:none;color:var(--muted);font-size:16px;cursor:pointer;margin-left:4px;">✕</button>
+    </div>
+    <!-- 요일 헤더 -->
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);text-align:center;padding:.4rem .5rem 0;gap:2px;">
+      <div style="font-size:10px;color:#E05050;font-family:Rajdhani,sans-serif;font-weight:700;">일</div>
+      <div style="font-size:10px;color:var(--muted);font-family:Rajdhani,sans-serif;font-weight:700;">월</div>
+      <div style="font-size:10px;color:var(--muted);font-family:Rajdhani,sans-serif;font-weight:700;">화</div>
+      <div style="font-size:10px;color:var(--muted);font-family:Rajdhani,sans-serif;font-weight:700;">수</div>
+      <div style="font-size:10px;color:var(--muted);font-family:Rajdhani,sans-serif;font-weight:700;">목</div>
+      <div style="font-size:10px;color:var(--muted);font-family:Rajdhani,sans-serif;font-weight:700;">금</div>
+      <div style="font-size:10px;color:#5B9BD5;font-family:Rajdhani,sans-serif;font-weight:700;">토</div>
+    </div>
+    <!-- 날짜 그리드 -->
+    <div id="cal-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;padding:.3rem .75rem .5rem;overflow-y:auto;flex:1;"></div>
+    <!-- 선택된 날짜 일정 -->
+    <div id="cal-events" style="border-top:1px solid rgba(167,139,250,.15);padding:.75rem 1rem;min-height:60px;max-height:180px;overflow-y:auto;display:none;">
+      <div id="cal-events-title" style="font-size:11px;font-family:Rajdhani,sans-serif;font-weight:700;color:#A78BFA;margin-bottom:6px;"></div>
+      <div id="cal-events-list"></div>
+      <div id="cal-events-actions" style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 생일 등록 모달 -->
+<div id="cal-birthday-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9100;align-items:center;justify-content:center;" onclick="if(event.target===this)this.style.display='none'">
+  <div style="background:#0D1B2E;border:1px solid rgba(167,139,250,.3);border-radius:8px;width:90%;max-width:400px;padding:1.25rem;" onclick="event.stopPropagation()">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:2px;color:#A78BFA;margin-bottom:1rem;">🎂 생일 등록</div>
+    <div id="cal-bd-date-label" style="font-size:12px;color:var(--muted);margin-bottom:.75rem;font-family:Rajdhani,sans-serif;"></div>
+    <input id="cal-bd-search" placeholder="멤버 검색 (닉네임 입력)" oninput="calBdSearch(this.value)"
+      style="width:100%;background:#0a1628;border:1px solid rgba(167,139,250,.3);border-radius:4px;padding:7px 10px;color:var(--white);font-family:'Rajdhani',sans-serif;font-size:13px;outline:none;box-sizing:border-box;margin-bottom:6px;">
+    <div id="cal-bd-results" style="max-height:200px;overflow-y:auto;border:1px solid rgba(167,139,250,.15);border-radius:4px;display:none;"></div>
+    <div id="cal-bd-selected" style="display:none;margin-top:8px;padding:8px 10px;background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.3);border-radius:4px;font-family:Rajdhani,sans-serif;font-size:13px;color:#A78BFA;"></div>
+    <div id="cal-bd-error" style="display:none;margin-top:6px;font-size:11px;color:#E05050;font-family:Rajdhani,sans-serif;"></div>
+    <div style="display:flex;gap:8px;margin-top:1rem;">
+      <button onclick="saveBirthday()" style="flex:1;padding:8px;border-radius:4px;border:1px solid rgba(167,139,250,.4);background:rgba(167,139,250,.1);color:#A78BFA;font-family:Rajdhani,sans-serif;font-size:12px;font-weight:700;cursor:pointer;">등록</button>
+      <button onclick="document.getElementById('cal-birthday-modal').style.display='none'" style="padding:8px 16px;border-radius:4px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:Rajdhani,sans-serif;font-size:12px;cursor:pointer;">취소</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- 날짜 클릭 액션 선택 -->
+<div id="cal-action-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9050;align-items:center;justify-content:center;" onclick="if(event.target===this)this.style.display='none'">
+  <div style="background:#0D1B2E;border:1px solid rgba(167,139,250,.3);border-radius:10px;width:90%;max-width:320px;overflow:hidden;" onclick="event.stopPropagation()">
+    <!-- 날짜 헤더 -->
+    <div style="padding:.75rem 1rem;background:rgba(167,139,250,.08);border-bottom:1px solid rgba(167,139,250,.15);display:flex;align-items:center;justify-content:space-between;">
+      <div id="cal-action-date-label" style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:2px;color:#A78BFA;"></div>
+      <button onclick="document.getElementById('cal-action-modal').style.display='none'" style="background:transparent;border:none;color:var(--muted);font-size:16px;cursor:pointer;">✕</button>
+    </div>
+    <!-- 기존 일정 -->
+    <div id="cal-action-events" style="padding:.5rem 1rem;border-bottom:1px solid rgba(167,139,250,.1);min-height:32px;"></div>
+    <!-- 액션 버튼들 -->
+    <div style="padding:.75rem 1rem;display:flex;flex-direction:column;gap:8px;">
+      <button id="cal-action-bd-btn" onclick="calActionBirthday()" style="padding:10px 14px;border-radius:5px;border:1px solid rgba(244,200,116,.3);background:rgba(244,200,116,.06);color:#F4C874;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;cursor:pointer;text-align:left;display:flex;align-items:center;gap:8px;">
+        <span>🎂</span><span>생일 등록</span>
+      </button>
+      <button id="cal-action-event-btn" onclick="calActionEvent()" style="padding:10px 14px;border-radius:5px;border:1px solid rgba(167,139,250,.3);background:rgba(167,139,250,.06);color:#A78BFA;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;cursor:pointer;text-align:left;display:flex;align-items:center;gap:8px;">
+        <span>📌</span><span>일정 추가</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+
+<!-- 일정 추가 모달 -->
+<div id="cal-event-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9100;align-items:center;justify-content:center;" onclick="if(event.target===this)this.style.display='none'">
+  <div style="background:#0D1B2E;border:1px solid rgba(167,139,250,.3);border-radius:8px;width:90%;max-width:400px;padding:1.25rem;" onclick="event.stopPropagation()">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:2px;color:#A78BFA;margin-bottom:.25rem;">📌 일정 추가</div>
+    <div id="cal-event-date-label" style="font-size:11px;color:var(--muted);font-family:Rajdhani,sans-serif;margin-bottom:.75rem;"></div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <div>
+        <div style="font-size:10px;color:var(--muted);font-family:Rajdhani,sans-serif;margin-bottom:3px;">제목 *</div>
+        <input id="cal-event-title" placeholder="일정 제목" maxlength="50"
+          style="width:100%;background:#0a1628;border:1px solid rgba(167,139,250,.3);border-radius:4px;padding:7px 10px;color:var(--white);font-family:'Rajdhani',sans-serif;font-size:13px;outline:none;box-sizing:border-box;">
+      </div>
+      <div>
+        <div style="font-size:10px;color:var(--muted);font-family:Rajdhani,sans-serif;margin-bottom:3px;">내용</div>
+        <textarea id="cal-event-content" placeholder="일정 내용 (선택)" maxlength="500" rows="4"
+          style="width:100%;background:#0a1628;border:1px solid rgba(167,139,250,.3);border-radius:4px;padding:7px 10px;color:var(--white);font-family:'Rajdhani',sans-serif;font-size:12px;outline:none;box-sizing:border-box;resize:vertical;"></textarea>
+      </div>
+      <div id="cal-event-error" style="display:none;font-size:11px;color:#E05050;font-family:Rajdhani,sans-serif;"></div>
+      <div style="display:flex;gap:8px;margin-top:4px;">
+        <button onclick="saveCalEvent()" style="flex:1;padding:8px;border-radius:4px;border:1px solid rgba(167,139,250,.4);background:rgba(167,139,250,.1);color:#A78BFA;font-family:Rajdhani,sans-serif;font-size:12px;font-weight:700;cursor:pointer;">등록</button>
+        <button onclick="document.getElementById('cal-event-modal').style.display='none'" style="padding:8px 16px;border-radius:4px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:Rajdhani,sans-serif;font-size:12px;cursor:pointer;">취소</button>
       </div>
     </div>
   </div>

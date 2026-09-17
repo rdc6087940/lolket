@@ -1727,7 +1727,7 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
 </div> <div class="modal-overlay" id="invite-manage-modal" style="display:none;"> <div class="modal" style="max-width:520px;"> <div class="modal-title">초대 링크 관리</div> <div style="font-size:12px;color:var(--text-muted);margin-bottom:1rem;line-height:1.6;">
  커뮤니티를 선택하고 초대 링크를 생성하세요.<br>
  링크는 1회용이며 계정 생성 후 자동 폐기됩니다.
- </div> <div style="display:flex;flex-direction:column;gap:1rem;margin-bottom:1rem;"> <div style="display:flex;flex-direction:column;gap:6px;"> <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;text-transform:uppercase;">연결할 커뮤니티</label> <select class="form-input" id="invite-community-select" style="cursor:pointer;"> <option value="">커뮤니티 선택</option> </select> </div> </div> <button class="btn-primary" style="width:100%;margin-bottom:1rem;" onclick="generateInviteLink()">초대 링크 생성</button> <div id="invite-link-result" style="display:none;"> <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;font-family:'Rajdhani',sans-serif;letter-spacing:1px;">생성된 링크 (클릭해서 복사)</div> <div class="invite-card"> <div class="invite-code-val" id="invite-link-val" onclick="copyInviteLink()" style="cursor:pointer;" title="클릭해서 복사"></div> <button class="btn-xs enter" onclick="copyInviteLink()">복사</button> </div> <div style="font-size:11px;color:var(--text-muted);margin-top:6px;">⚠ 이 링크는 1회만 사용 가능합니다.</div> </div> <div style="margin-top:1rem;"> <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;font-family:'Rajdhani',sans-serif;letter-spacing:1px;">기존 초대 링크</div> <div id="invite-list" style="display:flex;flex-direction:column;gap:4px;max-height:160px;overflow-y:auto;"></div> </div> <div class="modal-actions"> <button class="btn-secondary" onclick="document.getElementById('invite-manage-modal').style.display='none'">닫기</button> </div> </div>
+ </div> <div style="display:flex;align-items:center;justify-content:space-between;padding:.75rem 0;border-top:1px solid rgba(255,255,255,.05);margin-top:.5rem;"> <div> <div style="font-size:11px;font-family:'Rajdhani',sans-serif;font-weight:700;letter-spacing:1px;color:var(--white);">기본 출석</div> <div style="font-size:10px;color:var(--text-muted);font-family:'Noto Sans KR',sans-serif;margin-top:2px;">ON 시 멤버 추가 시 자동으로 출석 처리</div> </div> <button id="cm-default-attend-btn" onclick="toggleCmDefaultAttend()" style="width:48px;height:26px;border-radius:13px;border:none;cursor:pointer;transition:all .2s;background:#2D3748;position:relative;"> <span id="cm-default-attend-dot" style="position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#718096;transition:all .2s;"></span> </button> <input type="hidden" id="cm-default-attend" value="false"> </div> <div style="display:flex;flex-direction:column;gap:1rem;margin-bottom:1rem;"> <div style="display:flex;flex-direction:column;gap:6px;"> <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;text-transform:uppercase;">연결할 커뮤니티</label> <select class="form-input" id="invite-community-select" style="cursor:pointer;"> <option value="">커뮤니티 선택</option> </select> </div> </div> <button class="btn-primary" style="width:100%;margin-bottom:1rem;" onclick="generateInviteLink()">초대 링크 생성</button> <div id="invite-link-result" style="display:none;"> <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;font-family:'Rajdhani',sans-serif;letter-spacing:1px;">생성된 링크 (클릭해서 복사)</div> <div class="invite-card"> <div class="invite-code-val" id="invite-link-val" onclick="copyInviteLink()" style="cursor:pointer;" title="클릭해서 복사"></div> <button class="btn-xs enter" onclick="copyInviteLink()">복사</button> </div> <div style="font-size:11px;color:var(--text-muted);margin-top:6px;">⚠ 이 링크는 1회만 사용 가능합니다.</div> </div> <div style="margin-top:1rem;"> <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;font-family:'Rajdhani',sans-serif;letter-spacing:1px;">기존 초대 링크</div> <div id="invite-list" style="display:flex;flex-direction:column;gap:4px;max-height:160px;overflow-y:auto;"></div> </div> <div class="modal-actions"> <button class="btn-secondary" onclick="document.getElementById('invite-manage-modal').style.display='none'">닫기</button> </div> </div>
 </div> 
 <div id="screen-recruit" class="screen">
   <div class="recruit-detail-wrap">
@@ -4223,7 +4223,7 @@ puuid: searchResult.puuid || null,
 highTier: searchResult.highTier || null,
 highLp: searchResult.highLp || 0,
 prevSeasonHighest: searchResult.prevSeasonHighest || null,
-present: false,
+present: !!(window._currentCommunity && window._currentCommunity.defaultAttend),
 soloWins: searchResult.soloWins || 0,
 soloLosses: searchResult.soloLosses || 0,
 soloLP: searchResult.soloLP || 0,
@@ -7992,6 +7992,7 @@ if (isAdmin && !isMaster && currentAdminData?.communityId && currentAdminData.co
 }
 currentCommunity = community;
 window._currentCommunityId = community.id;
+window._currentCommunity = community;
 document.getElementById('community-indicator-name').textContent = community.name;
 document.getElementById('community-indicator').classList.add('visible');
 const canCreateMatch = isMaster || (isAdmin && currentAdminData?.communityId === community.id);
@@ -8097,6 +8098,9 @@ document.getElementById('community-modal-title').textContent = '커뮤니티 수
 document.getElementById('cm-name').value = c.name;
 document.getElementById('cm-desc').value = c.description || '';
 if (document.getElementById('cm-deeplol-id')) document.getElementById('cm-deeplol-id').value = c.deeplolServerId || '';
+      // 기본 출석 설정
+      const defaultAttend = c.defaultAttend === true || c.defaultAttend === 'true';
+      setCmDefaultAttend(defaultAttend);
 const dcInput = document.getElementById('cm-discord-channel');
 if (dcInput) dcInput.value = c.discordChannelId || '';
 const dsInput = document.getElementById('cm-discord-server-id');
@@ -8137,6 +8141,7 @@ const discordChannelId = (document.getElementById('cm-discord-channel')?.value |
 const discordServerId  = (document.getElementById('cm-discord-server-id')?.value || '').trim();
 const discordNotifyChannelId = (document.getElementById('cm-discord-notify-channel')?.value || '').trim();
 const deeplolServerId  = (document.getElementById('cm-deeplol-id')?.value || '').trim();
+    const defaultAttend = document.getElementById('cm-default-attend')?.value === 'true';
 const alarmChannelId = (document.getElementById('cm-discord-alarm-channel')?.value || '').trim();
 const alarmEveryone = !!(document.getElementById('cm-alarm-everyone')?.checked);
 const alarmAuto     = !!(document.getElementById('cm-alarm-auto')?.checked);
@@ -18768,6 +18773,22 @@ var _origEnterCommunity = typeof enterCommunity === 'function' ? enterCommunity 
     loadDDVersion().then(loadPatchNotes);
   }
 })();
+
+
+function toggleCmDefaultAttend() {
+  var cur = document.getElementById('cm-default-attend').value === 'true';
+  setCmDefaultAttend(!cur);
+}
+function setCmDefaultAttend(val) {
+  var btn = document.getElementById('cm-default-attend-btn');
+  var dot = document.getElementById('cm-default-attend-dot');
+  var inp = document.getElementById('cm-default-attend');
+  if (!btn) return;
+  inp.value = val ? 'true' : 'false';
+  btn.style.background = val ? '#A78BFA' : '#2D3748';
+  dot.style.background = val ? '#fff' : '#718096';
+  dot.style.left = val ? '25px' : '3px';
+}
 
 </script>
 

@@ -104,6 +104,23 @@ export default {
     }
 
     // 디스코드 Interactions
+    // 디스코드 슬래시 명령어 등록
+    if (path === '/discord-register-commands' && request.method === 'POST') {
+      const appId = env.DISCORD_APP_ID || '1500717088984010883';
+      const botToken = env.DISCORD_BOT_TOKEN;
+      if (!botToken) return json({ok:false,error:'BOT_TOKEN 없음'},500);
+      const commands = [
+        { name:'생일', description:'오늘부터 5일 이내 생일 조회' },
+        { name:'일정', description:'오늘부터 7일 이내 일정 조회' },
+      ];
+      const res = await fetch(`https://discord.com/api/v10/applications/${appId}/commands`, {
+        method:'PUT',
+        headers:{ 'Authorization':'Bot '+botToken, 'Content-Type':'application/json' },
+        body: JSON.stringify(commands)
+      });
+      const data = await res.json();
+      return json({ ok: res.ok, data });
+    }
     if (path === '/discord' && request.method === 'POST') {
       return handleDiscordInteraction(request, env, ctx);
     }
@@ -506,6 +523,16 @@ export default {
     }
 
     // ── 시즌 관리 ──
+    // 캘린더 생일 등록 (디스코드 유저 ID 기반)
+    if (path === '/calendar-birthday-write' && request.method === 'POST') {
+      return handleCalendarBirthdayWrite(request, env);
+    }
+    if (path === '/calendar-birthday-delete' && request.method === 'POST') {
+      return handleCalendarBirthdayDelete(request, env);
+    }
+    if (path === '/calendar-event-write' && request.method === 'POST') {
+      return handleCalendarEventWrite(request, env);
+    }
     if (path === '/season-list' && request.method === 'POST') {
       return handleSeasonList(request, env);
     }
@@ -737,6 +764,7 @@ async function handleDbPublicRead(request, env) {
     /^system\/tracked_connects$/,
     /^system\/connect_cache$/,
     /^system\/connect_cache\/[^/]+$/,
+    /^communities\/[^/]+\/calendar/,
   ];
   if (!publicRead.some(r => r.test(dbPath))) {
     return json({ ok: false, error: '허용되지 않는 경로입니다' }, 403);
@@ -770,6 +798,12 @@ async function handleDbPublicRead(request, env) {
       { pattern: /^system\/patch_notes/, ttl: 31536000 },
       { pattern: /^system\/patch_mode$/, ttl: 21600 },
     ];
+    // calendar 경로는 캐시 없이 직접 통과
+    if (dbPath.startsWith('communities/') && dbPath.includes('/calendar')) {
+      const r = await fetch(`${dbUrl}/${dbPath}.json${authQ}${shallowParam}`);
+      if (!r.ok) return json({ ok: false, error: 'DB 읽기 실패: ' + r.status }, 500);
+      return json({ ok: true, data: await r.json() });
+    }
     const cacheRule = !shallow && CACHEABLE_PATHS.find(c => c.pattern.test(dbPath));
     if (cacheRule) {
       const cacheKey = 'pub-' + dbPath.replace(/\//g, '-');
@@ -947,6 +981,12 @@ async function handleDbRead(request, env) {
       { pattern: /^system\/patch_notes/, ttl: 31536000 },
       { pattern: /^system\/patch_mode$/, ttl: 21600 },
     ];
+    // calendar 경로는 캐시 없이 직접 통과
+    if (dbPath.startsWith('communities/') && dbPath.includes('/calendar')) {
+      const r = await fetch(`${dbUrl}/${dbPath}.json${authQ}${shallowParam}`);
+      if (!r.ok) return json({ ok: false, error: 'DB 읽기 실패: ' + r.status }, 500);
+      return json({ ok: true, data: await r.json() });
+    }
     const cacheRule = !shallow && CACHEABLE_PATHS.find(c => c.pattern.test(dbPath));
     if (cacheRule) {
       const cacheKey = 'pub-' + dbPath.replace(/\//g, '-');
@@ -2998,6 +3038,132 @@ async function handleDonationWrite(request, env) {
 
 
 
+
+
+// 캘린더 일정 등록 (관리자)
+async function handleCalendarEventWrite(request, env) {
+  let body; try { body = await request.json(); } catch { return json({ok:false,error:'잘못된 요청'},400); }
+  const { communityId, docId, monthKey, data, token } = body;
+  if (!communityId || !docId || !monthKey || !data) return json({ok:false,error:'필수 파라미터 누락'},400);
+
+  // 관리자 권한 확인
+  let isAdmin = false;
+  if (token) {
+    const session = getSession(token);
+    if (session && (session.role === 'admin' || session.role === 'master')) isAdmin = true;
+    if (!isAdmin && token.startsWith('master:')) {
+      const parts = token.split(':');
+      const dbUrl2 = env.FB_DATABASE_URL, secret2 = env.FB_DB_SECRET;
+      const authQ2 = secret2 ? '?auth='+secret2 : '';
+      const saRes = await fetch(`${dbUrl2}/superadmin.json${authQ2}`);
+      if (saRes.ok) {
+        const sa = await saRes.json();
+        if (sa && sa.id === parts[1]) {
+          const pwWithSalt = await sha256(sa.password + (env.PW_SALT || 'lolket_v1'));
+          if (pwWithSalt === parts.slice(2).join(':')) isAdmin = true;
+        }
+      }
+    }
+  }
+  if (!isAdmin) return json({ok:false,error:'관리자 권한 필요'},403);
+
+  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth='+secret : '';
+
+  const res = await fetch(`${dbUrl}/communities/${communityId}/calendar/${monthKey}/${docId}.json${authQ}`, {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) return json({ok:false,error:'저장 실패'},500);
+  await invalidateCache('pub-communities-' + communityId + '-calendar-' + monthKey).catch(()=>{});
+  return json({ok:true});
+}
+
+// 캘린더 생일 등록 (디스코드 로그인 유저)
+async function handleCalendarBirthdayWrite(request, env) {
+  let body; try { body = await request.json(); } catch { return json({ok:false,error:'잘못된 요청'},400); }
+  const { communityId, discordUserId, puuId, date } = body;
+  if (!communityId || !discordUserId || !puuId || !date) return json({ok:false,error:'필수 파라미터 누락'},400);
+
+  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth='+secret : '';
+  const monthKey = date.slice(0, 7);
+  const docId = 'bd_' + discordUserId;
+
+  // 기존 등록된 생일 전체 검색 (다른 달 포함)
+  // shallow로 월 목록 가져오기
+  const calRes = await fetch(`${dbUrl}/communities/${communityId}/calendar.json${authQ}&shallow=true`);
+  if (calRes.ok) {
+    const months = await calRes.json();
+    if (months) {
+      // 모든 월에서 같은 discordUserId(docId) 또는 같은 puuId 삭제
+      await Promise.all(Object.keys(months).map(async (m) => {
+        // 해당 월 데이터 읽기
+        const mRes = await fetch(`${dbUrl}/communities/${communityId}/calendar/${m}.json${authQ}`);
+        if (!mRes.ok) return;
+        const mData = await mRes.json();
+        if (!mData) return;
+        // 같은 discordUserId 또는 같은 puuId 삭제
+        await Promise.all(Object.entries(mData).map(async ([id, ev]) => {
+          if (ev && (id === docId || ev.puuId === puuId)) {
+            await fetch(`${dbUrl}/communities/${communityId}/calendar/${m}/${id}.json${authQ}`, { method: 'DELETE' });
+          }
+        }));
+      }));
+    }
+  }
+
+  // 새 생일 저장
+  const res = await fetch(`${dbUrl}/communities/${communityId}/calendar/${monthKey}/${docId}.json${authQ}`, {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ type: 'birthday', puuId, date, registeredBy: discordUserId, createdAt: Date.now() })
+  });
+  if (!res.ok) return json({ok:false,error:'저장 실패'},500);
+  await invalidateCache('pub-communities-' + communityId + '-calendar-' + monthKey).catch(()=>{});
+  return json({ok:true});
+}
+
+// 캘린더 이벤트 삭제 (본인 or 관리자)
+async function handleCalendarBirthdayDelete(request, env) {
+  let body; try { body = await request.json(); } catch { return json({ok:false,error:'잘못된 요청'},400); }
+  const { communityId, discordUserId, date, docId: bodyDocId, token } = body;
+  if (!communityId || !date) return json({ok:false,error:'필수 파라미터 누락'},400);
+
+  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth='+secret : '';
+  const monthKey = date.slice(0, 7);
+
+  // docId: 명시적으로 받거나 discordUserId로 생성
+  const docId = bodyDocId || ('bd_' + discordUserId);
+
+  // 관리자 체크 (토큰이 있으면 검증)
+  let isAdmin = false;
+  if (token) {
+    const session = getSession(token);
+    if (session && (session.role === 'admin' || session.role === 'master')) isAdmin = true;
+    // master 토큰 형식 체크
+    if (!isAdmin && token.startsWith('master:')) {
+      const parts = token.split(':');
+      const pwHash = parts.slice(2).join(':');
+      const saRes = await fetch(`${dbUrl}/superadmin.json${authQ}`);
+      if (saRes.ok) {
+        const sa = await saRes.json();
+        if (sa && sa.id === parts[1]) {
+          const pwWithSalt = await sha256(sa.password + (env.PW_SALT || 'lolket_v1'));
+          if (pwWithSalt === pwHash) isAdmin = true;
+        }
+      }
+    }
+  }
+
+  // 본인 or 관리자만 삭제 가능
+  if (!isAdmin && !discordUserId) return json({ok:false,error:'권한 없음'},403);
+
+  await fetch(`${dbUrl}/communities/${communityId}/calendar/${monthKey}/${docId}.json${authQ}`, { method: 'DELETE' });
+  await invalidateCache('pub-communities-' + communityId + '-calendar-' + monthKey).catch(()=>{});
+  return json({ok:true});
+}
+
 // ══════════════════════════════════════════════════
 // 시즌 관리
 // ══════════════════════════════════════════════════
@@ -3512,6 +3678,215 @@ async function handleDiscordInteraction(request, env, ctx) {
   if (interaction.type === 3) {
     const customId = interaction.data.custom_id || '';
     // 나가기 버튼
+    // ── 생일 날짜 버튼 ──
+    if (customId.startsWith('cal_bd__')) {
+      const parts = customId.slice('cal_bd__'.length).split('__');
+      const guildId = parts[0] || interaction.guild_id;
+      const dateStr = parts[1] || parts[0];
+      const appId = env.DISCORD_APP_ID || '1500717088984010883';
+      const token = interaction.token;
+      const resp = discordDefer(true);
+      ctx.waitUntil((async () => {
+        try {
+          const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+          const authQ = secret ? '?auth='+secret : '';
+          // 커뮤니티 찾기 (discordServerId 또는 discordGuildId로 매칭)
+          const ciRes = await fetch(`${dbUrl}/communities_info.json${authQ}`);
+          const ci = await ciRes.json() || {};
+          let cid = null;
+          for (const [k, v] of Object.entries(ci)) {
+            if (v && (String(v.discordServerId) === String(guildId) || String(v.discordGuildId) === String(guildId))) { cid = k; break; }
+          }
+          if (!cid) { await discordFollowup(appId, token, '❌ 이 디스코드 서버와 연결된 커뮤니티를 찾을 수 없습니다.\n관리자에게 디스코드 서버 ID 설정을 요청하세요.', env); return; }
+
+          const monthKey = dateStr.slice(0,7);
+          const calRes = await fetch(`${dbUrl}/communities/${cid}/calendar/${monthKey}.json${authQ}`);
+          const calData = await calRes.json() || {};
+
+          // 해당 날짜 생일 찾기
+          const birthdays = Object.values(calData).filter(ev => ev && ev.type === 'birthday' && ev.date === dateStr);
+          if (!birthdays.length) {
+            await discordFollowup(appId, token, `🎂 **${dateStr}** 에 등록된 생일이 없습니다.`, env);
+            return;
+          }
+          // 멤버 이름 조회
+          // nickname_current에서 puuId → 닉네임 조회
+          const nickRes = await fetch(`${dbUrl}/communities/${cid}/nickname_current.json${authQ}`);
+          const nickData = (nickRes.ok ? await nickRes.json() : null) || {};
+          const lines = birthdays.map(ev => {
+            const nick = nickData[ev.puuId];
+            return nick ? `🎂 **${nick}**` : `🎂 (알 수 없음)`;
+          });
+          const [y,mo,d] = dateStr.split('-');
+          const label = dateStr === new Date(Date.now()+9*3600*1000).toISOString().slice(0,10) ? '오늘' : `${y}년 ${parseInt(mo)}월 ${parseInt(d)}일`;
+          await discordFollowup(appId, token, `🎂 **${label} 생일**\n${lines.join('\n')}`, env);
+        } catch(e) {
+          await discordFollowup(appId, token, '❌ 오류: '+e.message, env);
+        }
+      })());
+      return resp;
+    }
+
+    // ── 다음 생일 버튼 ──
+    if (customId.startsWith('cal_bd_next__')) {
+      const guildId = interaction.guild_id;
+      const appId = env.DISCORD_APP_ID || '1500717088984010883';
+      const token = interaction.token;
+      const resp = discordDefer(true);
+      ctx.waitUntil((async () => {
+        try {
+          const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+          const authQ = secret ? '?auth='+secret : '';
+          const ciRes = await fetch(`${dbUrl}/communities_info.json${authQ}`);
+          const ci = await ciRes.json() || {};
+          let cid = null;
+          for (const [k, v] of Object.entries(ci)) {
+            if (v && (String(v.discordServerId) === String(guildId) || String(v.discordGuildId) === String(guildId))) { cid = k; break; }
+          }
+          if (!cid) { await discordFollowup(appId, token, '❌ 이 디스코드 서버와 연결된 커뮤니티를 찾을 수 없습니다.\n관리자에게 디스코드 서버 ID 설정을 요청하세요.', env); return; }
+
+          const kstNow = new Date(Date.now() + 9*3600*1000);
+          const today = kstNow.toISOString().slice(0,10);
+
+          // 향후 365일치 캘린더 조회
+          const months = new Set();
+          for (let i = 0; i < 12; i++) {
+            const d = new Date(kstNow);
+            d.setUTCMonth(d.getUTCMonth() + i);
+            months.add(d.toISOString().slice(0,7));
+          }
+          const allBirthdays = [];
+          await Promise.all([...months].map(async (m) => {
+            const r = await fetch(`${dbUrl}/communities/${cid}/calendar/${m}.json${authQ}`);
+            if (!r.ok) return;
+            const data = await r.json() || {};
+            Object.values(data).forEach(ev => {
+              if (ev && ev.type === 'birthday' && ev.date >= today) allBirthdays.push(ev);
+            });
+          }));
+          if (!allBirthdays.length) { await discordFollowup(appId, token, '🎂 앞으로 등록된 생일이 없습니다.', env); return; }
+
+          // 가장 가까운 날짜
+          allBirthdays.sort((a,b) => a.date > b.date ? 1 : -1);
+          const nextDate = allBirthdays[0].date;
+          const nextBds = allBirthdays.filter(ev => ev.date === nextDate);
+
+          // nickname_current에서 puuId → 닉네임 조회
+          const nickRes2 = await fetch(`${dbUrl}/communities/${cid}/nickname_current.json${authQ}`);
+          const nickData2 = (nickRes2.ok ? await nickRes2.json() : null) || {};
+          const lines = nextBds.map(ev => {
+            const nick = nickData2[ev.puuId];
+            return nick ? `🎂 **${nick}**` : `🎂 (알 수 없음)`;
+          });
+          const [y,mo,d] = nextDate.split('-');
+          await discordFollowup(appId, token, `🎂 **다음 생일: ${y}년 ${parseInt(mo)}월 ${parseInt(d)}일**\n${lines.join('\n')}`, env);
+        } catch(e) {
+          await discordFollowup(appId, token, '❌ 오류: '+e.message, env);
+        }
+      })());
+      return resp;
+    }
+
+    // ── 일정 날짜 버튼 ──
+    if (customId.startsWith('cal_ev__')) {
+      const evParts = customId.slice('cal_ev__'.length).split('__');
+      const guildId = evParts[0] || interaction.guild_id;
+      const dateStr = evParts[1] || evParts[0];
+      const appId = env.DISCORD_APP_ID || '1500717088984010883';
+      const token = interaction.token;
+      const resp = discordDefer(true);
+      ctx.waitUntil((async () => {
+        try {
+          const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+          const authQ = secret ? '?auth='+secret : '';
+          const ciRes = await fetch(`${dbUrl}/communities_info.json${authQ}`);
+          const ci = await ciRes.json() || {};
+          let cid = null;
+          for (const [k, v] of Object.entries(ci)) {
+            if (v && (String(v.discordServerId) === String(guildId) || String(v.discordGuildId) === String(guildId))) { cid = k; break; }
+          }
+          if (!cid) { await discordFollowup(appId, token, '❌ 이 디스코드 서버와 연결된 커뮤니티를 찾을 수 없습니다.\n관리자에게 디스코드 서버 ID 설정을 요청하세요.', env); return; }
+
+          const monthKey = dateStr.slice(0,7);
+          const calRes = await fetch(`${dbUrl}/communities/${cid}/calendar/${monthKey}.json${authQ}`);
+          const calData = await calRes.json() || {};
+
+          const events = Object.values(calData).filter(ev => ev && ev.type === 'event' && ev.date === dateStr);
+          if (!events.length) {
+            const [y,mo,d] = dateStr.split('-');
+            await discordFollowup(appId, token, `📌 **${y}년 ${parseInt(mo)}월 ${parseInt(d)}일** 에 등록된 일정이 없습니다.`, env);
+            return;
+          }
+          const [y,mo,d] = dateStr.split('-');
+          const label = `${y}년 ${parseInt(mo)}월 ${parseInt(d)}일`;
+          const lines = events.map(ev =>
+            `📌 **${ev.title}**${ev.content ? '\n> '+ev.content.replace(/\n/g,'\n> ') : ''}`
+          ).join('\n\n');
+          await discordFollowup(appId, token, `📅 **${label} 일정**\n\n${lines}`, env);
+        } catch(e) {
+          console.error('[cal_ev] 오류:', e.message, e.stack?.slice(0,200));
+          await discordFollowup(appId, token, '❌ 오류: '+e.message, env);
+        }
+      })());
+      return resp;
+    }
+
+    // ── 다음 일정 버튼 ──
+    if (customId.startsWith('cal_ev_next__')) {
+      const guildId = customId.slice('cal_ev_next__'.length) || interaction.guild_id;
+      const appId = env.DISCORD_APP_ID || '1500717088984010883';
+      const token = interaction.token;
+      const resp = discordDefer(true);
+      ctx.waitUntil((async () => {
+        try {
+          const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+          const authQ = secret ? '?auth='+secret : '';
+          const ciRes = await fetch(`${dbUrl}/communities_info.json${authQ}`);
+          const ci = await ciRes.json() || {};
+          let cid = null;
+          for (const [k, v] of Object.entries(ci)) {
+            if (v && (String(v.discordServerId) === String(guildId) || String(v.discordGuildId) === String(guildId))) { cid = k; break; }
+          }
+          if (!cid) { await discordFollowup(appId, token, '❌ 이 디스코드 서버와 연결된 커뮤니티를 찾을 수 없습니다.', env); return; }
+
+          const kstNow = new Date(Date.now() + 9*3600*1000);
+          const today = kstNow.toISOString().slice(0,10);
+
+          // 향후 3개월 일정 조회
+          const months = new Set();
+          for (let i = 0; i < 3; i++) {
+            const d = new Date(kstNow);
+            d.setUTCMonth(d.getUTCMonth() + i);
+            months.add(d.toISOString().slice(0,7));
+          }
+          const allEvents = [];
+          await Promise.all([...months].map(async (m) => {
+            const r = await fetch(`${dbUrl}/communities/${cid}/calendar/${m}.json${authQ}`);
+            if (!r.ok) return;
+            const data = await r.json() || {};
+            Object.values(data).forEach(ev => {
+              if (ev && ev.type === 'event' && ev.date >= today) allEvents.push(ev);
+            });
+          }));
+
+          if (!allEvents.length) { await discordFollowup(appId, token, '📌 앞으로 등록된 일정이 없습니다.', env); return; }
+
+          allEvents.sort((a,b) => a.date > b.date ? 1 : -1);
+          const nextDate = allEvents[0].date;
+          const nextEvs = allEvents.filter(ev => ev.date === nextDate);
+
+          const [y,mo,d] = nextDate.split('-');
+          const lines = nextEvs.map(ev =>
+            `📌 **${ev.title}**${ev.content ? '\n> '+ev.content.replace(/\n/g,'\n> ') : ''}`
+          ).join('\n\n');
+          await discordFollowup(appId, token, `📅 **다음 일정: ${y}년 ${parseInt(mo)}월 ${parseInt(d)}일**\n\n${lines}`, env);
+        } catch(e) {
+          await discordFollowup(appId, token, '❌ 오류: '+e.message, env);
+        }
+      })());
+      return resp;
+    }
+
     if (customId.startsWith('leave_match__') || customId.startsWith('leave_match_')) {
       let cid, matchId;
       if (customId.startsWith('leave_match__')) {
@@ -3767,6 +4142,73 @@ async function handleDiscordInteraction(request, env, ctx) {
     }
 
     // ── /내전참가 ──
+    // ── /생일 ──
+    if (cmdName === '생일') {
+      const guildId = interaction.guild_id;
+      const kstNow = new Date(Date.now() + 9*3600*1000);
+      const today = kstNow.toISOString().slice(0,10);
+      // 오늘~4일 후 버튼 + 다음 생일 버튼
+      const buttons = [];
+      for (let i = 0; i < 5; i++) {
+        const d = new Date(kstNow);
+        d.setUTCDate(d.getUTCDate() + i);
+        const dateStr = d.toISOString().slice(0,10);
+        let label;
+        if (i === 0) label = '오늘';
+        else if (i === 1) label = '내일';
+        else if (i === 2) label = '내일모레';
+        else {
+          const m = d.getUTCMonth()+1, day = d.getUTCDate();
+          const yy = String(d.getUTCFullYear()).slice(2);
+          label = yy+'년 '+m+'월 '+day+'일';
+        }
+        buttons.push({ type:2, style:2, label, custom_id:'cal_bd__'+guildId+'__'+dateStr });
+      }
+      buttons.push({ type:2, style:1, label:'🎂 다음 생일', custom_id:'cal_bd_next__'+guildId });
+      return new Response(JSON.stringify({
+        type: 4,
+        data: {
+          content: '📅 생일을 조회할 날짜를 선택하세요.',
+          flags: 64,
+          components: [{ type:1, components: buttons.slice(0,5) }, { type:1, components: [buttons[5]] }]
+        }
+      }), { headers: { 'Content-Type': 'application/json' } });
+    }
+
+    // ── /일정 ──
+    if (cmdName === '일정') {
+      const guildId = interaction.guild_id;
+      const kstNow = new Date(Date.now() + 9*3600*1000);
+      const buttons = [];
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(kstNow);
+        d.setUTCDate(d.getUTCDate() + i);
+        const dateStr = d.toISOString().slice(0,10);
+        let label;
+        if (i === 0) label = '오늘';
+        else if (i === 1) label = '내일';
+        else if (i === 2) label = '내일모레';
+        else {
+          const m = d.getUTCMonth()+1, day = d.getUTCDate();
+          const yy = String(d.getUTCFullYear()).slice(2);
+          label = yy+'년 '+m+'월 '+day+'일';
+        }
+        buttons.push({ type:2, style:2, label, custom_id:'cal_ev__'+guildId+'__'+dateStr });
+      }
+      const nextEvBtn = { type:2, style:1, label:'📌 다음 일정', custom_id:'cal_ev_next__'+guildId };
+      return new Response(JSON.stringify({
+        type: 4,
+        data: {
+          content: '📅 일정을 조회할 날짜를 선택하세요.',
+          flags: 64,
+          components: [
+            { type:1, components: buttons.slice(0,5) },
+            { type:1, components: [...buttons.slice(5,7), nextEvBtn] }
+          ]
+        }
+      }), { headers: { 'Content-Type': 'application/json' } });
+    }
+
     if (cmdName === '내전참가') {
       const resp = discordDefer(true);
       const discordUserId = interaction.member?.user?.id || interaction.user?.id;
