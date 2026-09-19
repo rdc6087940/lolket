@@ -1703,7 +1703,7 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
         <span style="font-size:10px;background:rgba(10,200,185,.08);border:1px solid rgba(10,200,185,.2);border-radius:3px;padding:1px 6px;color:var(--blue-bright);font-family:monospace;">{출석인원}</span>
         <span style="font-size:10px;background:rgba(10,200,185,.08);border:1px solid rgba(10,200,185,.2);border-radius:3px;padding:1px 6px;color:var(--blue-bright);font-family:monospace;">{커뮤니티명}</span>
       </div>
-    </div> <div style="display:flex;flex-direction:column;gap:6px;margin-top:.5rem;"> <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;text-transform:uppercase;">딥롤 커넥트 Server ID <span style="color:var(--text-muted);font-size:9px;font-weight:400;">(전적 페이지용)</span></label> <input class="form-input" type="text" id="cm-deeplol-id" placeholder="예) 156" style="border-color:rgba(200,170,110,.2);"> <span style="font-size:10px;color:var(--text-muted);font-family:'Noto Sans KR',sans-serif;">딥롤 커넥트에서 생성한 서버의 ID를 입력하면 전적 페이지가 활성화됩니다.</span> </div> <div style="display:flex;flex-direction:column;gap:6px;margin-top:.5rem;"> <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;text-transform:uppercase;">디스코드 서버 ID <span style="color:var(--text-muted);font-size:9px;font-weight:400;">(봇 연동용)</span></label> <input class="form-input" type="text" id="cm-discord-server-id" placeholder="예) 1499401481097449636" style="border-color:rgba(88,101,242,.3);"> <span style="font-size:10px;color:var(--text-muted);font-family:'Noto Sans KR',sans-serif;">디스코드 봇 /내전참가 커맨드 연동에 사용됩니다. 서버 우클릭 → ID 복사</span> </div> <div style="display:flex;flex-direction:column;gap:6px;margin-top:.5rem;"> <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;text-transform:uppercase;">내전 모임 메세지 채널 ID <span style="color:var(--text-muted);font-size:9px;font-weight:400;">(디스코드 호출용)</span></label> <input class="form-input" type="text" id="cm-discord-notify-channel" placeholder="예) 1500816161456263339" style="border-color:rgba(88,101,242,.3);"> <span style="font-size:10px;color:var(--text-muted);font-family:'Noto Sans KR',sans-serif;">📢 디스코드 호출 버튼으로 신청자들에게 멘션을 보낼 채널입니다.</span> </div>
+    </div> <div style="display:flex;flex-direction:column;gap:6px;margin-top:.5rem;"> <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;text-transform:uppercase;">딥롤 커넥트 Server ID <span style="color:var(--text-muted);font-size:9px;font-weight:400;">(전적 페이지용)</span></label> <input class="form-input" type="text" id="cm-deeplol-id" placeholder="예) 156" style="border-color:rgba(200,170,110,.2);"> <span style="font-size:10px;color:var(--text-muted);font-family:'Noto Sans KR',sans-serif;">딥롤 커넥트에서 생성한 서버의 ID를 입력하면 전적 페이지가 활성화됩니다.</span> </div> <div style="display:flex;flex-direction:column;gap:6px;margin-top:.5rem;"> <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;text-transform:uppercase;">디스코드 서버 ID <span style="color:var(--text-muted);font-size:9px;font-weight:400;">(봇 연동용)</span></label> <input class="form-input" type="text" id="cm-discord-server-id" placeholder="예) 1499401481097449636" style="border-color:rgba(88,101,242,.3);"> <span style="font-size:10px;color:var(--text-muted);font-family:'Noto Sans KR',sans-serif;">디스코드 봇 /내전참가 커맨드 연동에 사용됩니다. 서버 우클릭 → ID 복사</span> </div> <div style="display:flex;flex-direction:column;gap:6px;margin-top:.5rem;"> <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;text-transform:uppercase;">내전 모임 메세지 채널 ID <span style="color:var(--text-muted);font-size:9px;font-weight:400;">(디스코드 호출용)</span></label> <input class="form-input" type="text" id="cm-discord-notify-channel" placeholder="예) 1500816161456263339" style="border-color:rgba(88,101,242,.3);"> <span style="font-size:10px;color:var(--text-muted);font-family:'Noto Sans KR',sans-serif;">📢 디스코드 호출 버튼으로 신청자들에게 멘션을 보낼 채널입니다.</span> </div> <div style="display:flex;align-items:center;justify-content:space-between;padding:.75rem 0;border-top:1px solid rgba(255,255,255,.05);margin-top:.5rem;"> <div> <div style="font-size:11px;font-family:'Rajdhani',sans-serif;font-weight:700;letter-spacing:1px;color:var(--white);">기본 출석</div> <div style="font-size:10px;color:var(--text-muted);font-family:'Noto Sans KR',sans-serif;margin-top:2px;">ON 시 멤버 추가 시 자동으로 출석 처리</div> </div> <button id="cm-default-attend-btn" onclick="toggleCmDefaultAttend()" style="width:48px;height:26px;border-radius:13px;border:none;cursor:pointer;transition:all .2s;background:#2D3748;position:relative;"> <span id="cm-default-attend-dot" style="position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#718096;transition:all .2s;"></span> </button> <input type="hidden" id="cm-default-attend" value="false"> </div>
   </div>
 </div>
 <div style="display:flex;flex-direction:column;gap:6px;">
@@ -1727,7 +1727,7 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
 </div> <div class="modal-overlay" id="invite-manage-modal" style="display:none;"> <div class="modal" style="max-width:520px;"> <div class="modal-title">초대 링크 관리</div> <div style="font-size:12px;color:var(--text-muted);margin-bottom:1rem;line-height:1.6;">
  커뮤니티를 선택하고 초대 링크를 생성하세요.<br>
  링크는 1회용이며 계정 생성 후 자동 폐기됩니다.
- </div> <div style="display:flex;align-items:center;justify-content:space-between;padding:.75rem 0;border-top:1px solid rgba(255,255,255,.05);margin-top:.5rem;"> <div> <div style="font-size:11px;font-family:'Rajdhani',sans-serif;font-weight:700;letter-spacing:1px;color:var(--white);">기본 출석</div> <div style="font-size:10px;color:var(--text-muted);font-family:'Noto Sans KR',sans-serif;margin-top:2px;">ON 시 멤버 추가 시 자동으로 출석 처리</div> </div> <button id="cm-default-attend-btn" onclick="toggleCmDefaultAttend()" style="width:48px;height:26px;border-radius:13px;border:none;cursor:pointer;transition:all .2s;background:#2D3748;position:relative;"> <span id="cm-default-attend-dot" style="position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#718096;transition:all .2s;"></span> </button> <input type="hidden" id="cm-default-attend" value="false"> </div> <div style="display:flex;flex-direction:column;gap:1rem;margin-bottom:1rem;"> <div style="display:flex;flex-direction:column;gap:6px;"> <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;text-transform:uppercase;">연결할 커뮤니티</label> <select class="form-input" id="invite-community-select" style="cursor:pointer;"> <option value="">커뮤니티 선택</option> </select> </div> </div> <button class="btn-primary" style="width:100%;margin-bottom:1rem;" onclick="generateInviteLink()">초대 링크 생성</button> <div id="invite-link-result" style="display:none;"> <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;font-family:'Rajdhani',sans-serif;letter-spacing:1px;">생성된 링크 (클릭해서 복사)</div> <div class="invite-card"> <div class="invite-code-val" id="invite-link-val" onclick="copyInviteLink()" style="cursor:pointer;" title="클릭해서 복사"></div> <button class="btn-xs enter" onclick="copyInviteLink()">복사</button> </div> <div style="font-size:11px;color:var(--text-muted);margin-top:6px;">⚠ 이 링크는 1회만 사용 가능합니다.</div> </div> <div style="margin-top:1rem;"> <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;font-family:'Rajdhani',sans-serif;letter-spacing:1px;">기존 초대 링크</div> <div id="invite-list" style="display:flex;flex-direction:column;gap:4px;max-height:160px;overflow-y:auto;"></div> </div> <div class="modal-actions"> <button class="btn-secondary" onclick="document.getElementById('invite-manage-modal').style.display='none'">닫기</button> </div> </div>
+ </div> <div style="display:flex;flex-direction:column;gap:1rem;margin-bottom:1rem;"> <div style="display:flex;flex-direction:column;gap:6px;"> <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;text-transform:uppercase;">연결할 커뮤니티</label> <select class="form-input" id="invite-community-select" style="cursor:pointer;"> <option value="">커뮤니티 선택</option> </select> </div> </div> <button class="btn-primary" style="width:100%;margin-bottom:1rem;" onclick="generateInviteLink()">초대 링크 생성</button> <div id="invite-link-result" style="display:none;"> <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;font-family:'Rajdhani',sans-serif;letter-spacing:1px;">생성된 링크 (클릭해서 복사)</div> <div class="invite-card"> <div class="invite-code-val" id="invite-link-val" onclick="copyInviteLink()" style="cursor:pointer;" title="클릭해서 복사"></div> <button class="btn-xs enter" onclick="copyInviteLink()">복사</button> </div> <div style="font-size:11px;color:var(--text-muted);margin-top:6px;">⚠ 이 링크는 1회만 사용 가능합니다.</div> </div> <div style="margin-top:1rem;"> <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;font-family:'Rajdhani',sans-serif;letter-spacing:1px;">기존 초대 링크</div> <div id="invite-list" style="display:flex;flex-direction:column;gap:4px;max-height:160px;overflow-y:auto;"></div> </div> <div class="modal-actions"> <button class="btn-secondary" onclick="document.getElementById('invite-manage-modal').style.display='none'">닫기</button> </div> </div>
 </div> 
 <div id="screen-recruit" class="screen">
   <div class="recruit-detail-wrap">
@@ -1811,7 +1811,7 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
   <div id="champ-rank-body"><div class="champ-empty">내전 기록이 없습니다</div></div>
   <button class="champ-more-btn" id="champ-more-btn" onclick="openChampModal()" style="display:none;">더보기 ▶</button>
 </div>
-</div> <div style="flex:1;min-width:0;"> <div class="list-topbar" style="margin-bottom:.5rem;"> <div class="list-heading">내전 목록</div> <div style="display:flex;align-items:center;gap:8px;"> <input id="match-search-input" type="text" placeholder="내전명·진행자 검색..." oninput="renderMatchList()" style="padding:6px 10px;background:var(--bg-dark);border:1px solid var(--border-subtle);border-radius:3px;color:var(--text-white);font-family:'Rajdhani',sans-serif;font-size:12px;outline:none;width:180px;"> <button class="btn-primary admin-only" onclick="openNewMatchFlow()" id="btn-list-new" style="display:none;">+ 새 내전 생성</button> <button class="btn-secondary admin-only" id="btn-manage-cats-main" onclick="openManageCategories()" style="display:none;">🏷 내전 카테고리 관리</button> <button class="btn-secondary admin-only" id="btn-rules-list" onclick="openRulesListModal()" style="display:none;">📋 가이드/룰 목록</button> </div> </div>
+</div> <div style="flex:1;min-width:0;"> <div class="list-topbar" style="margin-bottom:.5rem;"> <div class="list-heading">내전 목록</div> <div style="display:flex;align-items:center;gap:8px;"> <input id="match-search-input" type="text" placeholder="내전명·진행자 검색..." oninput="renderMatchList()" style="padding:6px 10px;background:var(--bg-dark);border:1px solid var(--border-subtle);border-radius:3px;color:var(--text-white);font-family:'Rajdhani',sans-serif;font-size:12px;outline:none;width:180px;"> <button class="btn-primary admin-only" onclick="openNewMatchFlow()" id="btn-list-new" style="display:none;">+ 새 내전 생성</button> <button class="btn-secondary admin-only" id="btn-manage-cats-main" onclick="openManageCategories()" style="display:none;">🏷 카테고리 관리</button> <button class="btn-secondary admin-only" id="btn-manage-match-types" onclick="openMatchTypeManager()" style="display:none;">📋 내전 종류</button> <button onclick="openDashboard()" style="padding:7px 14px;border-radius:3px;border:1px solid rgba(91,141,239,.4);background:rgba(91,141,239,.08);color:#5B8DEF;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;cursor:pointer;">📊 대시보드</button> <button class="btn-secondary admin-only" id="btn-rules-list" onclick="openRulesListModal()" style="display:none;">📋 가이드/룰 목록</button> </div> </div>
 <div id="match-cat-bar" style="margin-bottom:.6rem;display:none;">
   <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
     <div id="match-cat-tabs" style="display:flex;gap:5px;flex-wrap:wrap;"></div>
@@ -1861,12 +1861,12 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
  소환사 검색
  </div> </div> <div class="panel-body search-section"> <div class="search-box-wrap"> <input type="text" id="search-input" placeholder="닉네임#KR1" onkeydown="onSearchKey(event)" /> <button class="search-btn" id="search-btn" onclick="searchSummoner()"> <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="5" cy="5" r="4" stroke="currentColor" stroke-width="1.5"/><line x1="8.5" y1="8.5" x2="12" y2="12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> </button> </div> <div class="search-hint"> <span>닉네임#태그</span> 형식으로 입력. 확장: <span style="color:var(--blue-bright);">닉네임#태그 최고티어/현티어 주라인/부라인</span><br>
  예) 페이커#KR1 · Hide on bush#KR1
- </div> <div id="search-loading" style="display:none;justify-content:center;padding:1.5rem;"> <div class="spinner"></div> </div> <div id="search-result" style="display:none;"> <div class="search-result"> <div class="result-profile"> <div class="result-avatar" id="r-avatar">?</div> <div> <div class="result-name" id="r-name">—</div> <div class="result-tag" id="r-tag">—</div> </div> </div> <div class="result-tiers"> <div class="tier-row"> <span class="tier-row-label">SOLO/DUO</span> <span class="tier-row-val" id="r-solo">—</span> </div> <div class="tier-row"> <span class="tier-row-label">FLEX</span> <span class="tier-row-val" id="r-flex">—</span> </div>
+ </div> <div id="search-loading" style="display:none;justify-content:center;padding:1.5rem;"> <div class="spinner"></div> </div> <div id="search-result" style="display:none;"> <div class="search-result"> <div class="result-profile"> <div class="result-avatar" id="r-avatar">?</div> <div> <div class="result-name" id="r-name">—</div> <div class="result-tag" id="r-tag">—</div> </div> </div> <div class="result-tiers"> <div class="tier-row"> <span class="tier-row-label">SOLO/DUO</span> <span class="tier-row-val" id="r-solo">—</span> </div> <div class="tier-row"> <span class="tier-row-label">FLEX</span> <span class="tier-row-val" id="r-flex">—</span> </div> <div class="tier-row" id="r-main-lane-row" style="display:none;"> <span class="tier-row-label">커뮤니티 주라인</span> <span class="tier-row-val" id="r-main-lane" style="color:var(--blue-bright);">—</span> </div>
  <div class="tier-row"> <span class="tier-row-label">솔랭 판수</span> <span class="tier-row-val" id="r-solo-games" style="font-family:'Rajdhani',sans-serif;">—</span> </div> <div class="tier-row"> <span class="tier-row-label">LEVEL</span> <span class="tier-row-val" id="r-level">—</span> </div> <div class="tier-row" id="r-prev-row" style="display:none;background:rgba(200,170,110,0.04);border-radius:2px;padding:3px 6px;margin-top:2px;"> <span class="tier-row-label" style="display:flex;align-items:center;gap:4px;"><span style="font-size:9px;">🏆</span>전 시즌 최고</span> <span class="tier-row-val" id="r-prev-season" style="font-size:11px;">—</span> </div> </div> <div style="padding:.6rem 1rem;border-top:1px solid var(--border-subtle);background:rgba(200,170,110,0.03);"> <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;"> <span style="font-size:10px;font-family:'Rajdhani',sans-serif;font-weight:700;letter-spacing:1px;color:var(--gold);">✏ 티어 직접 설정</span> <button onclick="applyTierOverride('')" style="font-size:9px;font-family:'Rajdhani',sans-serif;font-weight:700;color:var(--text-muted);background:transparent;border:1px solid var(--border-subtle);border-radius:2px;padding:1px 7px;cursor:pointer;letter-spacing:.5px;" id="r-tier-reset">API 값으로 초기화</button> </div> <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;" id="r-tier-btns"> <button class="tier-override-btn" data-tier="UNRANKED" onclick="applyTierOverride('UNRANKED')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-iron);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;letter-spacing:.3px;">UNRANK</button> <button class="tier-override-btn" data-tier="IRON" onclick="applyTierOverride('IRON')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-iron);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">IRON</button> <button class="tier-override-btn" data-tier="BRONZE" onclick="applyTierOverride('BRONZE')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-bronze);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">BRONZE</button> <button class="tier-override-btn" data-tier="SILVER" onclick="applyTierOverride('SILVER')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-silver);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">SILVER</button> <button class="tier-override-btn" data-tier="GOLD" onclick="applyTierOverride('GOLD')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-gold);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">GOLD</button> <button class="tier-override-btn" data-tier="PLATINUM" onclick="applyTierOverride('PLATINUM')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-plat);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">PLAT</button> <button class="tier-override-btn" data-tier="EMERALD" onclick="applyTierOverride('EMERALD')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-emerald);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">EMERALD</button> <button class="tier-override-btn" data-tier="DIAMOND" onclick="applyTierOverride('DIAMOND')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-diamond);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">DIAMOND</button> <button class="tier-override-btn" data-tier="MASTER" onclick="applyTierOverride('MASTER')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-master);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">MASTER</button> <button class="tier-override-btn" data-tier="GRANDMASTER" onclick="applyTierOverride('GRANDMASTER')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-grandmaster);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">GM</button> <button class="tier-override-btn" data-tier="CHALLENGER" onclick="applyTierOverride('CHALLENGER')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-challenger);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">CHALL</button> </div> </div> <div class="lane-select"> <div class="lane-select-label">주 포지션</div> <div class="lane-buttons" id="main-lanes"> <button class="lane-btn" data-lane="top" onclick="selectLane('main','top')">TOP</button> <button class="lane-btn" data-lane="jg" onclick="selectLane('main','jg')">JG</button> <button class="lane-btn" data-lane="mid" onclick="selectLane('main','mid')">MID</button> <button class="lane-btn" data-lane="bot" onclick="selectLane('main','bot')">BOT</button> <button class="lane-btn" data-lane="sup" onclick="selectLane('main','sup')">SUP</button> </div> <div class="lane-select-label" style="margin-top:4px;">보조 포지션</div> <div class="lane-buttons" id="sub-lanes"> <button class="lane-btn" data-lane="top" onclick="selectLane('sub','top')">TOP</button> <button class="lane-btn" data-lane="jg" onclick="selectLane('sub','jg')">JG</button> <button class="lane-btn" data-lane="mid" onclick="selectLane('sub','mid')">MID</button> <button class="lane-btn" data-lane="bot" onclick="selectLane('sub','bot')">BOT</button> <button class="lane-btn" data-lane="sup" onclick="selectLane('sub','sup')">SUP</button> </div> </div> <div style="padding:.75rem 1rem;border-top:1px solid var(--border-subtle);"> <button class="btn-add-member" id="btn-add" onclick="addMember()" disabled>멤버 추가</button> </div> </div> </div> </div> </div></div> <div class="next-wrap"> <div class="next-condition"> <div class="cond-item"> <div class="cond-dot" id="cond-count"></div> <span id="cond-count-text" style="font-size:12px;color:var(--text-muted);">인원 10의 배수</span> </div> <div class="cond-item"> <div class="cond-dot" id="cond-attend"></div> <span id="cond-attend-text" style="font-size:12px;color:var(--text-muted);">전원 출석</span> </div> </div> <button onclick="copyMatchLink()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(10,200,185,.4);background:rgba(10,200,185,.06);color:var(--blue-bright);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="내전 상세 링크 복사">🔗 링크 복사</button> <button onclick="copyTeamText()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(200,170,110,.4);background:rgba(200,170,110,.06);color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="팀 정보 텍스트 복사">📋 팀 정보 복사</button> <button onclick="copyMemberMentions()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(100,150,255,.4);background:rgba(100,150,255,.06);color:#7EB2FF;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="참여 멤버 @멘션 복사">@ 멘션 복사</button> <button id="btn-attend-all" onclick="toggleAttendAll()" style="padding:7px 16px;border-radius:2px;border:1px solid rgba(10,200,185,0.4);background:rgba(10,200,185,0.08);color:var(--blue-bright);font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;cursor:pointer;transition:all .15s;">전체 출석</button> <button id="btn-discord-notify" onclick="sendDiscordNotify()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(114,137,218,0.4);background:rgba(114,137,218,0.08);color:#7289DA;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;cursor:pointer;transition:all .15s;"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;margin-right:4px;"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>알림 전송</button> <button class="btn-next" id="btn-next" disabled onclick="goNextStage()">다음 단계 →</button> </div>
 </div>
 </div> <div class="modal-overlay" id="edit-time-modal" style="display:none;"> <div class="modal" style="max-width:360px;"> <div class="modal-title">시작 시간 수정</div> <div class="form-row"> <div class="form-label">새 시작 시간</div> <input class="form-input" type="datetime-local" id="et-time"> </div> <div class="modal-actions"> <button class="btn-secondary" onclick="closeEditTimeModal()">취소</button> <button class="btn-primary" onclick="saveEditTime()">저장</button> </div> </div>
 </div> <div class="modal-overlay" id="em-modal" style="display:none;" data-id=""> <div class="modal" style="max-width:420px;"> <div class="modal-title">내전 정보 수정</div> <div class="form-row"> <div class="form-label">내전 이름</div> <input class="form-input" type="text" id="em-name"> </div> <div class="form-row"> <div class="form-label">시작 시간</div> <input class="form-input" type="datetime-local" id="em-time"> </div> <div class="form-row"> <div class="form-label">진행 관리자 (선택)</div> <input class="form-input" type="text" id="em-admin" placeholder="공란 가능"> </div> <div class="modal-actions"> <button class="btn-secondary" onclick="closeEditMatchModal()">취소</button> <button class="btn-secondary" onclick="saveEditMatch()">저장</button> <button class="btn-primary" onclick="(function(){saveEditMatch();setTimeout(()=>{const list=dbLoad();const snap=list.find(m=>m.name===document.getElementById('em-name').value.trim());if(snap)proceedToStage1(snap);},100)})()">진행하기 →</button> </div> </div>
-</div> <div class="modal-overlay" id="create-modal" style="display:none;"> <div class="modal"> <div class="modal-title">새 내전 생성</div> <div class="form-row"> <div class="form-label">내전 이름</div> <input class="form-input" type="text" id="m-name" placeholder="예) 금요 정기 내전 시즌 1"> </div> <div class="form-row"> <div class="form-label">시작 시간</div> <input class="form-input" type="datetime-local" id="m-time"> </div> <div class="form-row"> <div class="form-label">진행 관리자 (선택)</div> <input class="form-input" type="text" id="m-admin" placeholder="관리자 닉네임 (공란 가능)"> </div> <div class="form-row" id="m-cat-row" style="display:none;"> <div class="form-label">카테고리 (선택)</div> <select class="form-input" id="m-cat" style="cursor:pointer;font-family:'Rajdhani',sans-serif;font-size:12px;"><option value="">없음 (미분류)</option></select> </div> <div class="modal-actions"> <button class="btn-secondary" onclick="closeCreateModal()">취소</button> <button class="btn-primary" onclick="createMatch()">생성</button> </div> </div>
+</div> <div class="modal-overlay" id="create-modal" style="display:none;"> <div class="modal"> <div class="modal-title">새 내전 생성</div> <div class="form-row"> <div class="form-label">내전 이름</div> <input class="form-input" type="text" id="m-name" placeholder="예) 금요 정기 내전 시즌 1"> </div> <div class="form-row"> <div class="form-label">시작 시간</div> <input class="form-input" type="datetime-local" id="m-time"> </div> <div class="form-row"> <div class="form-label">진행 관리자 (선택)</div> <input class="form-input" type="text" id="m-admin" placeholder="관리자 닉네임 (공란 가능)"> </div> <div class="form-row" id="m-type-row" style="display:none;"> <div class="form-label">내전 종류 (선택)</div> <select class="form-input" id="m-type" style="cursor:pointer;font-family:'Rajdhani',sans-serif;font-size:12px;"><option value="">없음</option></select> </div> <div class="form-row" id="m-cat-row" style="display:none;"> <div class="form-label">내전 종류 (선택)</div> <select class="form-input" id="m-cat" style="cursor:pointer;font-family:'Rajdhani',sans-serif;font-size:12px;"><option value="">없음 (미분류)</option></select> </div> <div class="modal-actions"> <button class="btn-secondary" onclick="closeCreateModal()">취소</button> <button class="btn-primary" onclick="createMatch()">생성</button> </div> </div>
 </div> <div id="screen-2" class="screen"> <div class="type-select-wrap"> <div style="text-align:center;"> <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:4px;color:var(--gold);margin-bottom:6px;">내전 종류 선택</div> <div style="font-size:13px;color:var(--text-muted);">진행 방식을 선택하면 팀 짜기 단계로 넘어갑니다</div> </div> <div class="type-cards"> <div class="type-card" id="type-normal" onclick="selectType('normal')"> <div class="type-card-icon">⚔️</div> <div class="type-card-title">일반 내전</div> <div class="type-card-desc">관리자가 멤버를 직접 드래그해서 팀을 구성합니다. 빠르고 간단한 팀 배정에 적합합니다.</div> <div class="type-card-tags"> <span class="type-tag">드래그 앤 드롭</span> <span class="type-tag">빠른 배정</span> </div> </div> <div class="type-card" id="type-auction" onclick="selectType('auction')"> <div class="type-card-icon">🏆</div> <div class="type-card-title">경매 내전</div> <div class="type-card-desc">팀장들이 포인트를 가지고 멤버를 입찰해 영입합니다. 전략적이고 긴장감 있는 팀 구성이 가능합니다.</div> <div class="type-card-tags"> <span class="type-tag">포인트 입찰</span> <span class="type-tag">랜덤 경매</span> <span class="type-tag">카운트다운</span> </div> </div> </div> <div class="type-select-footer" style="justify-content:space-between;"> <button class="btn-secondary" onclick="goBackToStage1()">← 이전 단계</button> <button class="btn-next" id="btn-type-next" disabled onclick="goToStage3()">다음 단계 →</button> </div> </div>
 </div> <div id="screen-3-normal" class="screen"> <div class="builder-wrap"> <div class="builder-topbar-row" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;"> <div class="builder-topbar-title" style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;color:var(--gold);">일반 내전 — 팀 구성</div> <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;"> <button class="btn-secondary" onclick="goBackToStage2()">← 이전 단계</button> <button onclick="copyMatchLink()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(10,200,185,.4);background:rgba(10,200,185,.06);color:var(--blue-bright);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="내전 상세 링크 복사">🔗 링크 복사</button> <button onclick="copyTeamText()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(200,170,110,.4);background:rgba(200,170,110,.06);color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="팀 정보 텍스트 복사">📋 팀 정보 복사</button> <button onclick="copyTeamMentions('captain')" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(100,150,255,.4);background:rgba(100,150,255,.06);color:#7EB2FF;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="팀장만 멘션 복사">@ 팀장</button> <button onclick="copyTeamMentions('members')" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(100,150,255,.4);background:rgba(100,150,255,.06);color:#7EB2FF;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="팀장 제외 멘션 복사">@ 팀장 제외</button> <button class="btn-secondary" onclick="addTeamModal('normal')">+ 팀 추가</button> <button class="btn-secondary" onclick="openSwapModal()" style="font-size:11px;padding:7px 14px;border-color:rgba(157,72,224,.4);color:#B97EEA;background:rgba(157,72,224,.06);">🔄 선수 교체</button> <button class="btn-secondary" onclick="openDraftOrderModal()" style="font-size:11px;padding:7px 14px;border-color:rgba(200,170,110,.4);color:var(--gold);background:rgba(200,170,110,.06);">🎲 팀뽑기 순서</button> <button onclick="openHyperFearlessBan()" style="font-size:11px;padding:7px 14px;border-radius:2px;border:1px solid rgba(10,200,185,.4);background:rgba(10,200,185,.06);color:var(--blue-bright);font-family:'Rajdhani',sans-serif;font-weight:700;letter-spacing:1px;cursor:pointer;">🎯 챔피언 추첨</button> <button class="btn-copy-img" onclick="copyTeamBuilderImage()" style="font-size:11px;padding:7px 14px;"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="1" y="3" width="8" height="9" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M4 3V2a1 1 0 011-1h5a1 1 0 011 1v7a1 1 0 01-1 1h-1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg> 이미지 복사</button> <button class="btn-next" id="btn-normal-next" disabled onclick="goToStage4()">다음 단계 →</button> </div> </div> <div class="builder-cond" style="margin-bottom:.75rem;"> <div class="cond-item"><div class="cond-dot" id="n-cond-pool"></div><span id="n-cond-pool-text" style="font-size:12px;color:var(--text-muted);">대기칸 비어있음</span></div> <div class="cond-item"><div class="cond-dot" id="n-cond-teams"></div><span id="n-cond-teams-text" style="font-size:12px;color:var(--text-muted);">팀 조건 충족</span></div> </div>  <div class="builder-layout"> <div class="pool-panel"> <div class="balance-ctrl-section">
   <span class="balance-ctrl-label">⚖️ 밸런스 점수</span>
@@ -3477,7 +3477,7 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
 <!-- RoongTube 카테고리 관리 모달 -->
 <div class="modal-overlay" id="rtube-cat-modal" style="display:none;z-index:9200;" onclick="if(event.target===this)closeRtubeCatModal()">
   <div class="modal" style="max-width:400px;">
-    <div class="modal-title">카테고리 관리</div>
+    <div class="modal-title">내전 종류 관리</div>
     <div style="display:flex;gap:6px;margin-top:.75rem;margin-bottom:.75rem;">
       <input class="form-input" id="rtube-new-cat-input" placeholder="새 카테고리명" style="flex:1;" onkeydown="if(event.key==='Enter')addRtubeCat()">
       <button class="btn-primary" onclick="addRtubeCat()" style="padding:6px 14px;font-size:12px;">추가</button>
@@ -3537,17 +3537,31 @@ let _sessionToken = localStorage.getItem('injeong_session_token') || '';
 window._getSessionToken = function() { return _sessionToken; };
 var _communityRatings = {};
 var _communityPuuMap = {};
+var _communityMostPosMap = {}; // puuId → most_position
 
 function _getHeaders() {
   return { 'Content-Type': 'application/json', 'X-Session-Token': _sessionToken };
 }
 
+async function _getMasterToken() {
+  try {
+    const id = localStorage.getItem('injeong_login_id') || '';
+    const pw = localStorage.getItem('injeong_pw_hash') || '';
+    if (!id || !pw) return '';
+    const SALT = 'lolket_v1';
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw + SALT));
+    const hex = Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+    return 'master:' + id + ':' + hex;
+  } catch(e) { return ''; }
+}
+
 
 async function _workerRead(path) {
+  const masterToken = isMaster ? await _getMasterToken() : '';
   const res = await fetch(RIOT_PROXY_URL + '/db-read', {
     method: 'POST',
     headers: _getHeaders(),
-    body: JSON.stringify({ path }),
+    body: JSON.stringify({ path, masterToken }),
   });
   const result = await res.json();
   if (!result.ok) throw new Error(result.error || 'DB 읽기 실패');
@@ -3555,11 +3569,12 @@ async function _workerRead(path) {
 }
 
 async function _workerWrite(path, data, requireRole) {
+  const masterToken = (isMaster || isAdmin) ? await _getMasterToken() : '';
   const doWrite = async () => {
     const res = await fetch(RIOT_PROXY_URL + '/db-write', {
       method: 'POST',
       headers: _getHeaders(),
-      body: JSON.stringify({ path, data, requireRole }),
+      body: JSON.stringify({ path, data, requireRole, masterToken }),
     });
     return await res.json();
   };
@@ -3604,10 +3619,11 @@ async function _tryRelogin() {
 }
 
 async function _workerDelete(path, requireRole) {
+  const masterToken = isMaster ? await _getMasterToken() : '';
   const res = await fetch(RIOT_PROXY_URL + '/db-delete', {
     method: 'POST',
     headers: _getHeaders(),
-    body: JSON.stringify({ path, requireRole }),
+    body: JSON.stringify({ path, requireRole, masterToken }),
   });
   const result = await res.json();
   if (!result.ok) throw new Error(result.error || 'DB 삭제 실패');
@@ -3709,12 +3725,14 @@ const name=document.getElementById('m-name').value.trim();
 const time=document.getElementById('m-time').value;
 const admin=document.getElementById('m-admin').value.trim();
 const categoryId=(document.getElementById('m-cat')&&document.getElementById('m-cat').value)||null;
+const _newMatchType=(document.getElementById('m-type')&&document.getElementById('m-type').value)||null;
 if (!name) return toast('내전 이름을 입력하세요', 'err');
 if (!time) return toast('시작 시간을 설정하세요', 'err');
 if (new Date(time) <= new Date()) return toast('시작 시간은 현재 시간 이후여야 합니다', 'err');
 members=[]; matchType=null; teams=[]; bracketRounds=[]; extraMatches=[]; resultMatches=[];
 nextTeamId=1; _0xB2=1; _0xB1=1;
-match={id: 'match_'+Date.now(), name, time, admin: admin || '—', status: '내전 모집', createdAt: Date.now(), communityId: window._currentCommunityId || 'default', communityName: (window._currentCommunity && window._currentCommunity.name) || '', isAram: false, maxMembers: null};
+const _selMatchType = (document.getElementById('m-type') && document.getElementById('m-type').value) || null;
+match={id: 'match_'+Date.now(), name, time, admin: admin || '—', status: '내전 모집', createdAt: Date.now(), communityId: window._currentCommunityId || 'default', communityName: (window._currentCommunity && window._currentCommunity.name) || '', isAram: false, maxMembers: null, matchType: _selMatchType || null};
 closeCreateModal();
 await saveCurrentMatch();
 // 알람 예약 생성
@@ -3940,6 +3958,19 @@ var _tierColor = TIER_COLORS[_tierStr] || '#5B6474';
 var _highLabel = data.highTier ? '<span style="font-size:9px;color:var(--gold);margin-left:4px;">(최고)</span>' : '';
 document.getElementById('r-solo').innerHTML=`<span style="color:${_tierColor}">${_dispTier}</span>${_highLabel}`;
 document.getElementById('r-flex').textContent=data.flex;
+// 커뮤니티 주라인 표시 (name#tag → puuId → most_position)
+var _mainLaneRow = document.getElementById('r-main-lane-row');
+var _mainLaneEl = document.getElementById('r-main-lane');
+var _mapKey2 = (data.name||'').toLowerCase() + '#' + (data.tag||'').toLowerCase();
+var _dpPuuId = _communityPuuMap && _communityPuuMap[_mapKey2];
+var _pos = _dpPuuId && _communityMostPosMap && _communityMostPosMap[_dpPuuId];
+if (_pos) {
+  var _posLabel = { TOP:'탑', JUNGLE:'정글', MID:'미드', ADC:'원딜', SUPPORT:'서폿', BOTTOM:'원딜' }[_pos.toUpperCase()] || _pos;
+  _mainLaneEl.textContent = _posLabel;
+  _mainLaneRow.style.display = '';
+} else {
+  _mainLaneRow.style.display = 'none';
+}
 var _soloW = data.soloWins || 0;
 var _soloL = data.soloLosses || 0;
 var _soloG = _soloW + _soloL;
@@ -4025,11 +4056,7 @@ selectedMainLane = lane;
 document.querySelectorAll('#main-lanes .lane-btn').forEach(b =>{
 b.classList.toggle('selected', b.dataset.lane === lane);
 });
-// 주 포지션 변경 시 서브에서 같은 포지션 제거
-selectedSubLanes.delete(lane);
 } else {
-// 서브: 주 포지션과 같으면 선택 불가
-if (lane === selectedMainLane) return;
 // 다중 선택 토글
 if (selectedSubLanes.has(lane)) {
 selectedSubLanes.delete(lane);
@@ -4039,10 +4066,9 @@ selectedSubLanes.add(lane);
 }
 // 서브 버튼 UI 업데이트
 document.querySelectorAll('#sub-lanes .lane-btn').forEach(b =>{
-const isMain = b.dataset.lane === selectedMainLane;
-b.disabled = isMain;
-b.style.opacity = isMain ? '0.3' : '';
-b.style.cursor = isMain ? 'not-allowed' : '';
+b.disabled = false;
+b.style.opacity = '';
+b.style.cursor = '';
 b.classList.toggle('selected', selectedSubLanes.has(b.dataset.lane));
 });
 document.getElementById('btn-add').disabled = !selectedMainLane && !(match && match.isAram);
@@ -4319,7 +4345,10 @@ const _scoreRow = `<div style="display:flex;align-items:center;gap:6px;margin-to
   </div>`;
 card.innerHTML=`
 <div style="display:flex;align-items:flex-start;gap:10px;width:100%;">
-  <div class="avatar" style="color:${color};flex-shrink:0;"> <img src="https://ddragon.leagueoflegends.com/cdn/16.14.1/img/profileicon/${m.icon}.png" onerror="this.style.display=&quot;none&quot;"> <div class="avatar-rank-border"></div> </div>
+  <div style="display:flex;flex-direction:column;align-items:center;gap:3px;flex-shrink:0;">
+    <div class="avatar" style="color:${color};"> <img src="https://ddragon.leagueoflegends.com/cdn/16.14.1/img/profileicon/${m.icon}.png" onerror="this.style.display=&quot;none&quot;"> <div class="avatar-rank-border"></div> </div>
+    ${(function(){var _mk=(m.name||'').toLowerCase()+'#'+(m.tag||'').toLowerCase();var _dp=_communityPuuMap[_mk];var _mp=_dp&&_communityMostPosMap[_dp];if(!_mp)return '';var _pl={'TOP':'탑','JUNGLE':'정글','MID':'미드','ADC':'원딜','SUPPORT':'서폿','BOTTOM':'원딜'}[_mp.toUpperCase()]||_mp;return '<span style="font-size:9px;font-family:Rajdhani,sans-serif;font-weight:700;color:var(--gold);background:rgba(200,170,110,.08);border:1px solid rgba(200,170,110,.2);border-radius:2px;padding:1px 5px;white-space:nowrap;" title="커뮤니티 주라인">'+_pl+'</span>';})()}
+  </div>
   <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;">
     <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:4px;">
       <div style="flex:1;min-width:0;">
@@ -6548,6 +6577,8 @@ a: p.assists || 0,
 dmg: p.totalDamageDealtToChampions || 0,
 gold: p.goldEarned || 0,
 cs: (p.totalMinionsKilled || 0)+(p.neutralMinionsKilled || 0),
+wards: (p.wardsPlaced || 0) + (p.visionWardsBoughtInGame || 0),
+tankDmg: p.damageSelfMitigated || 0,
 win: p.win || false,
 items: [p.item0, p.item1, p.item2, p.item3, p.item4, p.item5, p.item6].map(id => id || 0),
 pos: p.teamPosition || p.individualPosition || 'UTILITY',
@@ -7993,10 +8024,12 @@ if (isAdmin && !isMaster && currentAdminData?.communityId && currentAdminData.co
 currentCommunity = community;
 window._currentCommunityId = community.id;
 window._currentCommunity = community;
+// 내전 종류 로드
+if (typeof loadMatchTypes === 'function') loadMatchTypes();
 document.getElementById('community-indicator-name').textContent = community.name;
 document.getElementById('community-indicator').classList.add('visible');
 const canCreateMatch = isMaster || (isAdmin && currentAdminData?.communityId === community.id);
-['btn-list-new', 'btn-new-match', 'btn-rules-list', 'btn-manage-cats-main'].forEach(id => {
+['btn-list-new', 'btn-new-match', 'btn-rules-list', 'btn-manage-cats-main', 'btn-manage-match-types'].forEach(id => {
 const el = document.getElementById(id);
 if (el) el.style.display = canCreateMatch ? '' : 'none';
 });
@@ -8036,7 +8069,7 @@ if (match && match.id) {
 }
 showScreenRaw('screen-0');
 loadCommunityRatings();
-loadCategories().then(function(){ renderMatchList(); }).catch(function(){ renderMatchList(); });
+loadCategories().then(function(){ renderMatchList(); if (typeof _updateCreateModalCatSelect === 'function') _updateCreateModalCatSelect(); }).catch(function(){ renderMatchList(); });
 }
 let _allCommunities = []; 
 async function renderCommunityList() {
@@ -8090,6 +8123,9 @@ document.getElementById('community-modal').style.display = 'flex';
 }
 function openCommunityEditModal(cid) {
 if (!_fbReady) return;
+// 캐시 클리어 후 최신 데이터 로드
+_commListMemCache = null;
+try { localStorage.removeItem('comm_list_cache'); } catch(e) {}
 window._fb.fbGetCommunities().then(list => {
 const c = list.find(x => x.id === cid);
 if (!c) return;
@@ -8195,12 +8231,16 @@ try {
     alarmEveryone: alarmEveryone || false,
     alarmAuto: alarmAuto || false,
     alarmTemplate: alarmTemplate || '',
+    defaultAttend: defaultAttend || false,
     bannerImage: finalBanner || null,
   };
 
   if (_fbReady && window._fb.fbSaveCommunity) {
     await window._fb.fbSaveCommunity(cObj);
   }
+  // 캐시 클리어 (저장 후 즉시 반영)
+  _commListMemCache = null;
+  try { localStorage.removeItem('comm_list_cache'); } catch(e) {}
 
   closeCommunityModal();
   // 최신 목록 다시 불러와서 렌더링
@@ -8218,6 +8258,8 @@ if (!confirm('커뮤니티를 삭제하면 모든 내전 데이터도 삭제됩�
 if (_fbReady && window._fb.fbDeleteCommunity) {
 await window._fb.fbDeleteCommunity(cid);
 }
+_commListMemCache = null;
+try { localStorage.removeItem('comm_list_cache'); } catch(e) {}
 renderCommunityList();
 toast('커뮤니티가 삭제되었습니다', 'ok');
 }
@@ -11780,7 +11822,11 @@ const catMenuBtn = isOwnMatch
   ? `<button onclick="event.stopPropagation();openSetCatModal('${m.id}')" style="font-size:10px;padding:2px 6px;border:1px solid var(--border-subtle);background:transparent;color:var(--text-muted);border-radius:2px;cursor:pointer;font-family:'Rajdhani',sans-serif;font-weight:700;margin-left:4px;" title="카테고리 변경">🏷</button>`
   : '';
 
-card.innerHTML = '<div class="list-card-body"><div class="list-card-name">'+_escHtml(m.name)+catBadge+'</div><div class="list-card-meta"><span class="list-card-time">'+timeStr+'</span><span class="list-card-admin">👤 '+m.admin+'</span></div></div><div class="list-card-footer"><span class="list-status-pill '+pillCls+'">'+displayStatus+'</span><div style="display:flex;align-items:center;gap:2px;"><span class="list-card-stage">'+stageLabel+'</span>'+catMenuBtn+(isOwnMatch?'<button class="list-card-del" data-mid="'+m.id+'" title="삭제">✕</button>':'')+'</div></div>';
+// 내전 종류 뱃지
+const _mtId = m.matchType;
+const _mt = _mtId && _matchTypes && _matchTypes.find(function(t){ return t.id === _mtId; });
+const _mtBadge = _mt ? '<span style="font-family:Rajdhani,sans-serif;font-size:10px;font-weight:700;padding:1px 6px;border-radius:2px;background:rgba(167,139,250,.12);color:#A78BFA;border:1px solid rgba(167,139,250,.3);margin-left:4px;">' + _mt.name + '</span>' : '';
+card.innerHTML = '<div class="list-card-body"><div class="list-card-name">'+_escHtml(m.name)+catBadge+'</div><div class="list-card-meta"><span class="list-card-time">'+timeStr+'</span><span class="list-card-admin">👤 '+m.admin+'</span>'+_mtBadge+'</div></div><div class="list-card-footer"><span class="list-status-pill '+pillCls+'">'+displayStatus+'</span><div style="display:flex;align-items:center;gap:2px;"><span class="list-card-stage">'+stageLabel+'</span>'+catMenuBtn+(isOwnMatch?'<button class="list-card-del" data-mid="'+m.id+'" title="삭제">✕</button>':'')+'</div></div>';
 // 내전 상세 진입: 자신의 커뮤니티만 가능
 card.addEventListener('click', function() {
   if (!isOwnMatch && isAdmin && m.communityId && window._currentCommunityId) {
@@ -15547,7 +15593,7 @@ function _parseFullInput(raw) {
       // 부라인 파싱
       var allSub = _parseLanes(subPart);
       // 부라인에서 주라인과 같은 첫 항목 제거
-      if (allSub.length > 0 && allSub[0] === mainLane) allSub.shift();
+      // 주/보조 중복 허용
       subLanes = allSub;
     } else {
       // 슬래시 없음 - 공백으로 주/부 분리
@@ -15555,7 +15601,7 @@ function _parseFullInput(raw) {
       if (parts.length > 0) mainLane = _normLane(parts[0]);
       if (parts.length > 1) {
         subLanes = _parseLanes(parts.slice(1).join(' '));
-        if (subLanes[0] === mainLane) subLanes.shift();
+        // 주/보조 중복 허용
       }
     }
   }
@@ -16589,6 +16635,23 @@ function setCatFilter(catId) {
 window.setCatFilter = setCatFilter;
 
 // ── 카테고리 관리 모달 ──
+// 내전 생성 모달의 카테고리 선택 드롭다운 업데이트
+function _updateCreateModalCatSelect() {
+  var sel = document.getElementById('m-cat');
+  var row = document.getElementById('m-cat-row');
+  if (!sel || !row) return;
+  if (!_matchCategories || _matchCategories.length === 0) {
+    row.style.display = 'none';
+    return;
+  }
+  row.style.display = '';
+  sel.innerHTML = '<option value="">없음 (미분류)</option>' +
+    _matchCategories.map(function(c) {
+      return '<option value="' + c.id + '">' + (c.name || '') + '</option>';
+    }).join('');
+}
+window._updateCreateModalCatSelect = _updateCreateModalCatSelect;
+
 function openManageCategories() {
   renderManageCatList();
   document.getElementById('modal-manage-cats').style.display = 'flex';
@@ -16734,7 +16797,11 @@ async function loadCommunityRatings() {
       if (Date.now() - c.ts < CACHE_TTL) { 
         _communityRatings = c.data;
         // puuMap도 캐시에 있으면 바로 반환
-        if (c.puuMap) { _communityPuuMap = c.puuMap; return; }
+        if (c.puuMap) {
+          _communityPuuMap = c.puuMap;
+          if (c.mostPosMap) { _communityMostPosMap = c.mostPosMap; return; }
+          // mostPosMap 없으면 캐시 무효화 후 딥롤 재조회
+        }
         // puuMap 없으면 rating 데이터 재사용하고 puuMap만 생성
       }
     }
@@ -16748,7 +16815,7 @@ async function loadCommunityRatings() {
     const j = await res.json();
     if (j.ok && j.data) {
       _communityRatings = j.data;
-      try { localStorage.setItem(CACHE_KEY, JSON.stringify({ data: j.data, ts: Date.now() })); } catch(e3) {}
+      try { localStorage.setItem(CACHE_KEY, JSON.stringify({ data: j.data, ts: Date.now(), puuMap: _communityPuuMap, mostPosMap: _communityMostPosMap })); } catch(e3) {}
     } else {
       _communityRatings = {};
     }
@@ -16790,8 +16857,18 @@ async function loadCommunityRatings() {
           if (m.puu_id && m.riot_name && m.riot_tag) {
             var key = m.riot_name.toLowerCase() + '#' + m.riot_tag.toLowerCase();
             _communityPuuMap[key] = m.puu_id;
+            if (m.most_position) _communityMostPosMap[m.puu_id] = m.most_position;
           }
         });
+        // mostPosMap도 캐시에 저장
+        try {
+          var cached2 = localStorage.getItem(CACHE_KEY);
+          if (cached2) {
+            var c2 = JSON.parse(cached2);
+            c2.mostPosMap = _communityMostPosMap;
+            localStorage.setItem(CACHE_KEY, JSON.stringify(c2));
+          }
+        } catch(e3) {}
       }
     }
   } catch(e) {}
@@ -18790,12 +18867,115 @@ function setCmDefaultAttend(val) {
   dot.style.left = val ? '25px' : '3px';
 }
 
+
+// ══════════════════════════════════════════════════
+// 내전 종류 관리
+// ══════════════════════════════════════════════════
+var _matchTypes = []; // { id, name }
+
+async function loadMatchTypes() {
+  var cid = window._currentCommunityId;
+  if (!cid) return;
+  try {
+    var res = await fetch(RIOT_PROXY_URL + '/db-public-read', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ path: 'communities/' + cid + '/match_types' })
+    });
+    var j = await res.json();
+    if (j.ok && j.data) {
+      _matchTypes = Object.entries(j.data).map(function(e) {
+        return { id: e[0], name: e[1].name || e[1] };
+      }).sort(function(a,b){ return a.name > b.name ? 1 : -1; });
+    } else {
+      _matchTypes = [];
+    }
+  } catch(e) { _matchTypes = []; }
+  _updateMatchTypeSelect();
+}
+
+function _updateMatchTypeSelect() {
+  var sel = document.getElementById('m-type');
+  var row = document.getElementById('m-type-row');
+  if (!sel || !row) return;
+  if (!_matchTypes || _matchTypes.length === 0) { row.style.display = 'none'; return; }
+  row.style.display = '';
+  sel.innerHTML = '<option value="">없음</option>' +
+    _matchTypes.map(function(t) {
+      return '<option value="' + t.id + '">' + t.name + '</option>';
+    }).join('');
+}
+
+function openMatchTypeManager() {
+  renderMatchTypeList();
+  document.getElementById('modal-match-types').style.display = 'flex';
+}
+
+function renderMatchTypeList() {
+  var el = document.getElementById('match-type-list');
+  if (!el) return;
+  if (!_matchTypes.length) {
+    el.innerHTML = '<div style="font-size:11px;color:var(--text-muted);text-align:center;padding:.5rem;">등록된 내전 종류가 없습니다</div>';
+    return;
+  }
+  el.innerHTML = _matchTypes.map(function(t) {
+    return '<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg-dark);border:1px solid var(--border-subtle);border-radius:3px;">' +
+      '<span style="flex:1;font-family:Rajdhani,sans-serif;font-size:13px;font-weight:700;color:var(--text-white);">' + t.name + '</span>' +
+      '<button class="mt-del-btn" data-id="' + t.id + '" style="padding:2px 8px;border-radius:2px;border:1px solid rgba(192,48,48,.3);background:transparent;color:#E05050;font-size:10px;font-family:Rajdhani,sans-serif;cursor:pointer;">삭제</button>' +
+      '</div>';
+  }).join('');
+}
+
+// 내전 종류 삭제 버튼 이벤트 위임
+document.addEventListener('click', function(e) {
+  if (e.target.classList.contains('mt-del-btn')) {
+    deleteMatchType(e.target.dataset.id);
+  }
+});
+
+async function addMatchType() {
+  var inp = document.getElementById('new-match-type-name');
+  var name = inp.value.trim();
+  if (!name) return;
+  var cid = window._currentCommunityId;
+  if (!cid) return toast('커뮤니티를 선택해주세요', 'err');
+  var id = 'mt_' + Date.now();
+  try {
+    await _workerWrite('communities/' + cid + '/match_types/' + id, { name: name }, isAdmin ? 'admin' : 'master');
+    _matchTypes.push({ id, name });
+    _matchTypes.sort(function(a,b){ return a.name > b.name ? 1 : -1; });
+    inp.value = '';
+    renderMatchTypeList();
+    _updateMatchTypeSelect();
+    // 내전 종류 관리 버튼 표시
+    var btn = document.getElementById('btn-manage-match-types');
+    if (btn) btn.style.display = '';
+  } catch(e) { toast('저장 실패: ' + e.message, 'err'); }
+}
+
+async function deleteMatchType(id) {
+  if (!confirm('이 내전 종류를 삭제할까요?')) return;
+  var cid = window._currentCommunityId;
+  try {
+    await _workerDelete('communities/' + cid + '/match_types/' + id, 'admin');
+    _matchTypes = _matchTypes.filter(function(t){ return t.id !== id; });
+    renderMatchTypeList();
+    _updateMatchTypeSelect();
+  } catch(e) { toast('삭제 실패: ' + e.message, 'err'); }
+}
+
+
+function openDashboard() {
+  var cid = window._currentCommunityId;
+  if (!cid) { toast('커뮤니티를 선택해주세요', 'err'); return; }
+  window.open('dashboard.html?cid=' + cid, '_blank');
+}
+
 </script>
 
 <!-- ── 카테고리 관리 모달 ── -->
 <div class="cat-modal-overlay" id="modal-manage-cats" style="display:none;">
   <div class="cat-modal-box">
-    <div class="cat-modal-title">🏷 카테고리 관리</div>
+    <div class="cat-modal-title">🏷 내전 종류 관리</div>
     <div id="cat-manage-list" style="flex:1;overflow-y:auto;min-height:40px;"></div>
     <div style="display:flex;gap:6px;align-items:center;margin-top:.5rem;">
       <input class="cat-add-input" id="cat-new-name" placeholder="새 카테고리 이름" maxlength="20"
@@ -18939,5 +19119,21 @@ function setCmDefaultAttend(val) {
     </div>
   </div>
 </div>
+
+<!-- 내전 종류 관리 모달 -->
+<div class="modal-overlay" id="modal-match-types" style="display:none;">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-title">🏷 내전 종류 관리</div>
+    <div id="match-type-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:1rem;max-height:280px;overflow-y:auto;"></div>
+    <div style="display:flex;gap:8px;">
+      <input class="form-input" type="text" id="new-match-type-name" placeholder="새 종류 입력 (예: 정기전)" style="flex:1;">
+      <button class="btn-primary" onclick="addMatchType()" style="white-space:nowrap;">추가</button>
+    </div>
+    <div class="modal-actions" style="margin-top:1rem;">
+      <button class="btn-secondary" onclick="document.getElementById('modal-match-types').style.display='none'">닫기</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>

@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; background: #14161c; }
+  a { color: #5B8DEF; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { background: #2a2d38; border-radius: 4px; }
+  .loading-spinner {
+    display: inline-block; width: 20px; height: 20px;
+    border: 2px solid #262a35; border-top-color: #5B8DEF;
+    border-radius: 50%; animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</helmet>
+<div style="font-family:'Sora',sans-serif; background:#14161c; min-height:100vh; color:#e8e9ee; padding:40px 48px 80px; box-sizing:border-box;">
+
+  <!-- 헤더 -->
+  <div style="display:flex; align-items:flex-end; justify-content:space-between; flex-wrap:wrap; gap:16px; margin-bottom:32px;">
+    <div>
+      <div style="font-size:13px; font-weight:600; letter-spacing:0.12em; color:#5B8DEF; text-transform:uppercase; margin-bottom:8px;">{{ communitySubtitle }}</div>
+      <div style="font-size:36px; font-weight:800; letter-spacing:-0.01em;">내전 대시보드</div>
+    </div>
+    <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+      <!-- 새로고침 버튼 -->
+      <button onClick="{{ onRefresh }}" style="padding:9px 14px; border-radius:8px; border:1px solid #262a35; background:transparent; color:#a7abbd; font-family:'Sora',sans-serif; font-size:13px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:6px;">🔄 새로고침</button>
+      <!-- 시즌 선택 -->
+      <sc-if value="{{ hasSeasons }}" hint-placeholder-val="{{ false }}">
+        <select onChange="{{ onSeasonChange }}" style="background:#1b1e27; border:1px solid #262a35; border-radius:8px; color:#e8e9ee; font-family:'Sora',sans-serif; font-size:13px; font-weight:600; padding:9px 14px; cursor:pointer; outline:none;">
+          <option value="">전체 기간</option>
+          <sc-for list="{{ seasons }}" as="s" hint-placeholder-count="3">
+            <option value="{{ s.id }}" selected="{{ s.selected }}">{{ s.name }}</option>
+          </sc-for>
+        </select>
+      </sc-if>
+      <!-- 탭 -->
+      <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="3">
+        <div onClick="{{ t.onClick }}" style="{{ t.style }}">{{ t.label }}</div>
+      </sc-for>
+    </div>
+  </div>
+
+  <!-- 로딩 -->
+  <sc-if value="{{ isLoading }}" hint-placeholder-val="{{ true }}">
+    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:80px 0; gap:16px;">
+      <div class="loading-spinner"></div>
+      <div style="font-size:13px; color:#6b6f80;">데이터 불러오는 중...</div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ !isLoading }}" hint-placeholder-val="{{ false }}">
+
+    <!-- ══ 리더보드 탭 ══ -->
+    <sc-if value="{{ isLeaderboard }}" hint-placeholder-val="{{ true }}">
+
+      <!-- 차트 행 -->
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
+        <div style="background:#1b1e27; border:1px solid #262a35; border-radius:14px; padding:22px 24px;">
+          <div style="font-size:14px; font-weight:600; color:#c7cadb; margin-bottom:20px;">시간대별 경기 수</div>
+          <div style="display:flex; align-items:flex-end; gap:6px; height:180px;">
+            <sc-for list="{{ hourlyActivity }}" as="h" hint-placeholder-count="8">
+              <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:8px; height:100%; justify-content:flex-end;">
+                <div style="font-size:11px; font-family:'JetBrains Mono',monospace; color:#8b8fa3;">{{ h.count }}</div>
+                <div style="width:100%; border-radius:5px 5px 0 0; background:{{ h.color }}; height:{{ h.barHeight }};"></div>
+                <div style="font-size:11px; color:#6b6f80; white-space:nowrap;">{{ h.label }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        <div style="background:#1b1e27; border:1px solid #262a35; border-radius:14px; padding:22px 24px;">
+          <div style="font-size:14px; font-weight:600; color:#c7cadb; margin-bottom:20px;">요일별 경기 수</div>
+          <div style="display:flex; align-items:flex-end; gap:10px; height:180px;">
+            <sc-for list="{{ weekdayActivity }}" as="d" hint-placeholder-count="7">
+              <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:8px; height:100%; justify-content:flex-end;">
+                <div style="font-size:11px; font-family:'JetBrains Mono',monospace; color:#8b8fa3;">{{ d.count }}</div>
+                <div style="width:100%; border-radius:5px 5px 0 0; background:{{ d.color }}; height:{{ d.barHeight }};"></div>
+                <div style="font-size:11px; color:#6b6f80; white-space:nowrap;">{{ d.label }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+
+      <!-- 일별 차트 -->
+      <div style="background:#1b1e27; border:1px solid #262a35; border-radius:14px; padding:22px 24px; margin-bottom:28px;">
+        <div style="font-size:14px; font-weight:600; color:#c7cadb; margin-bottom:20px;">이번 달 일별 경기 수</div>
+        <div style="display:flex; align-items:flex-end; gap:3px; height:140px;">
+          <sc-for list="{{ monthlyActivity }}" as="mo" hint-placeholder-count="31">
+            <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; height:100%; justify-content:flex-end;">
+              <div style="font-size:9px; font-family:'JetBrains Mono',monospace; color:#8b8fa3; min-height:12px;">{{ mo.countLabel }}</div>
+              <div style="width:100%; border-radius:3px 3px 0 0; background:{{ mo.color }}; height:{{ mo.barHeight }};" title="{{ mo.label }}일: {{ mo.count }}경기"></div>
+              <div style="font-size:9px; color:#6b6f80; white-space:nowrap;">{{ mo.label }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <!-- 요약 카드 + 내전 종류 비율 -->
+      <div style="display:grid; grid-template-columns:repeat(4,minmax(0,1fr)) 1.3fr; gap:12px; margin-bottom:28px;">
+        <sc-for list="{{ summaryCards }}" as="c" hint-placeholder-count="4">
+          <div style="background:#1b1e27; border:1px solid #262a35; border-radius:12px; padding:16px 18px;">
+            <div style="font-size:11px; font-weight:600; color:#8b8fa3; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:8px; white-space:nowrap;">{{ c.label }}</div>
+            <div style="font-size:21px; font-weight:700; font-family:'JetBrains Mono',monospace;">{{ c.value }}</div>
+            <div style="font-size:11px; color:{{ c.subColor }}; margin-top:5px; font-weight:500;">{{ c.sub }}</div>
+          </div>
+        </sc-for>
+        <div style="background:#1b1e27; border:1px solid #262a35; border-radius:12px; padding:16px 18px;">
+          <div style="font-size:11px; font-weight:600; color:#8b8fa3; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:10px; white-space:nowrap;">내전 종류별 비율</div>
+          <sc-if value="{{ matchTypeItems.length === 0 }}" hint-placeholder-val="{{ false }}">
+            <div style="font-size:12px; color:#6b6f80;">종류 없음</div>
+          </sc-if>
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <sc-for list="{{ matchTypeItems }}" as="mt" hint-placeholder-count="3">
+              <div style="display:flex; align-items:center; justify-content:space-between; gap:6px;">
+                <div style="display:flex; align-items:center; gap:6px; min-width:0;">
+                  <div style="width:7px; height:7px; border-radius:50%; background:{{ mt.color }}; flex-shrink:0;"></div>
+                  <div style="font-size:10px; color:#c7cadb; white-space:nowrap;">{{ mt.label }}</div>
+                </div>
+                <div style="font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600; white-space:nowrap;">{{ mt.pct }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+
+      <!-- 리더보드 테이블 -->
+      <div style="background:#1b1e27; border:1px solid #262a35; border-radius:14px; overflow:hidden;">
+        <div style="display:grid; grid-template-columns:44px 1.6fr 90px 90px 90px 90px 1fr; gap:8px; padding:14px 22px; font-size:12px; font-weight:600; color:#6b6f80; text-transform:uppercase; letter-spacing:0.05em; border-bottom:1px solid #262a35;">
+          <div>#</div><div>플레이어</div><div>승</div><div>패</div><div>승률</div><div>KDA</div><div>주 챔피언</div>
+        </div>
+        <sc-if value="{{ leaderboard.length === 0 }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:40px; text-align:center; color:#6b6f80; font-size:13px;">결과 데이터가 있는 내전이 없습니다</div>
+        </sc-if>
+        <sc-for list="{{ leaderboard }}" as="p" hint-placeholder-count="8">
+          <div style="display:grid; grid-template-columns:44px 1.6fr 90px 90px 90px 90px 1fr; gap:8px; align-items:center; padding:14px 22px; border-bottom:1px solid #21242e; font-size:14px;">
+            <div style="font-family:'JetBrains Mono',monospace; font-weight:700; color:{{ p.rankColor }};">{{ p.rank }}</div>
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="width:34px; height:34px; border-radius:8px; background:{{ p.avatarBg }}; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px; color:#0d0e12;">{{ p.initial }}</div>
+              <div>
+                <div style="font-weight:600;">{{ p.name }}</div>
+                <div style="font-size:12px; color:#6b6f80;">{{ p.tier }}</div>
+              </div>
+            </div>
+            <div style="font-family:'JetBrains Mono',monospace; color:#5be3a9;">{{ p.wins }}</div>
+            <div style="font-family:'JetBrains Mono',monospace; color:#e35b5b;">{{ p.losses }}</div>
+            <div style="font-family:'JetBrains Mono',monospace; font-weight:600;">{{ p.winRate }}</div>
+            <div style="font-family:'JetBrains Mono',monospace;">{{ p.kda }}</div>
+            <div style="color:#a7abbd;">{{ p.mainChamp }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <!-- ══ 챔피언 & 어워드 탭 ══ -->
+    <sc-if value="{{ isChampions }}" hint-placeholder-val="{{ false }}">
+      <div style="font-size:14px; font-weight:600; color:#c7cadb; margin-bottom:14px;">시즌 어워드</div>
+      <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:16px; margin-bottom:32px;">
+        <sc-for list="{{ awards }}" as="aw" hint-placeholder-count="6">
+          <div style="background:#1b1e27; border:1px solid #262a35; border-radius:14px; padding:22px 24px;">
+            <div style="font-size:12px; font-weight:600; color:#8b8fa3; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:16px;">{{ aw.title }}</div>
+            <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+              <div style="width:40px; height:40px; border-radius:10px; background:{{ aw.avatarBg }}; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:16px; color:#0d0e12;">{{ aw.initial }}</div>
+              <div>
+                <div style="font-weight:700; font-size:16px;">{{ aw.name }}</div>
+                <div style="font-size:12px; color:#6b6f80;">{{ aw.champ }}</div>
+              </div>
+            </div>
+            <div style="font-size:28px; font-weight:800; font-family:'JetBrains Mono',monospace; color:{{ aw.accentColor }};">{{ aw.value }}</div>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="font-size:14px; font-weight:600; color:#c7cadb; margin-bottom:14px;">챔피언 통계</div>
+      <sc-if value="{{ champions.length === 0 }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:40px; text-align:center; color:#6b6f80; font-size:13px;">결과 데이터가 있는 내전이 없습니다</div>
+      </sc-if>
+      <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:14px;">
+        <sc-for list="{{ champions }}" as="ch" hint-placeholder-count="9">
+          <div style="background:#1b1e27; border:1px solid #262a35; border-radius:12px; padding:18px 20px;">
+            <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:12px;">
+              <div style="font-weight:700; font-size:16px;">{{ ch.name }}</div>
+              <div style="font-size:12px; color:#6b6f80;">{{ ch.games }}게임</div>
+            </div>
+            <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:8px;">
+              <span style="color:#8b8fa3;">승률</span>
+              <span style="font-family:'JetBrains Mono',monospace; font-weight:600; color:{{ ch.winRateColor }};">{{ ch.winRate }}</span>
+            </div>
+            <div style="height:6px; background:#12141b; border-radius:3px; overflow:hidden; margin-bottom:10px;">
+              <div style="height:100%; background:{{ ch.winRateColor }}; width:{{ ch.winRateWidth }};"></div>
+            </div>
+            <div style="display:flex; justify-content:space-between; font-size:13px;">
+              <span style="color:#8b8fa3;">평균 KDA</span>
+              <span style="font-family:'JetBrains Mono',monospace;">{{ ch.kda }}</span>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <!-- ══ 참여 현황 탭 ══ -->
+    <sc-if value="{{ isParticipation }}" hint-placeholder-val="{{ false }}">
+      <div style="display:grid; grid-template-columns:1fr 320px; gap:20px; align-items:start; margin-bottom:20px;">
+        <div style="background:#1b1e27; border:1px solid #262a35; border-radius:14px; padding:20px 22px;">
+          <div style="font-size:14px; font-weight:600; color:#c7cadb; margin-bottom:16px;">{{ calendarMonthLabel }}</div>
+          <div style="display:grid; grid-template-columns:repeat(7,1fr); gap:6px; margin-bottom:8px;">
+            <sc-for list="{{ weekdayHeaders }}" as="wd" hint-placeholder-count="7">
+              <div style="text-align:center; font-size:11px; color:#6b6f80; font-weight:600;">{{ wd }}</div>
+            </sc-for>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(7,1fr); gap:6px;">
+            <sc-for list="{{ calendarCells }}" as="cell" hint-placeholder-count="35">
+              <div onClick="{{ cell.onClick }}" style="{{ cell.style }}">
+                <sc-if value="{{ cell.day }}" hint-placeholder-val="{{ false }}">
+                  <div style="font-size:12px; font-weight:600;">{{ cell.day }}</div>
+                  <sc-if value="{{ cell.hasMatch }}" hint-placeholder-val="{{ false }}">
+                    <div style="font-size:10px; color:{{ cell.matchCountColor }}; font-family:'JetBrains Mono',monospace; margin-top:2px;">{{ cell.matchCount }}경기</div>
+                    <div style="font-size:10px; color:{{ cell.peopleCountColor }}; font-family:'JetBrains Mono',monospace;">{{ cell.peopleCount }}명</div>
+                  </sc-if>
+                </sc-if>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        <div style="background:#1b1e27; border:1px solid #262a35; border-radius:14px; padding:20px 22px;">
+          <div style="font-size:14px; font-weight:700; margin-bottom:6px;">{{ selectedDayLabel }}</div>
+          <div style="font-size:12px; color:#6b6f80; margin-bottom:16px;">{{ selectedDayCountLabel }}</div>
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <sc-for list="{{ selectedDayPeople }}" as="person" hint-placeholder-count="6">
+              <div style="display:flex; align-items:center; gap:8px; background:#12141b; border-radius:20px; padding:6px 14px 6px 8px;">
+                <div style="width:24px; height:24px; border-radius:50%; background:{{ person.avatarBg }}; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:#0d0e12;">{{ person.initial }}</div>
+                <div style="font-size:13px; color:#c7cadb; white-space:nowrap;">{{ person.name }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+        <div style="display:flex; flex-direction:column; gap:16px;">
+          <div style="background:#1b1e27; border:1px solid #262a35; border-radius:14px; padding:20px 22px;">
+            <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:14px;">
+              <div style="font-size:12px; font-weight:600; color:#8b8fa3; text-transform:uppercase; letter-spacing:0.05em;">이번 주</div>
+              <div style="font-size:12px; color:#6b6f80;">{{ currentWeekTotals.label }}</div>
+            </div>
+            <div style="display:flex; gap:24px;">
+              <div>
+                <div style="font-size:26px; font-weight:800; font-family:'JetBrains Mono',monospace;">{{ currentWeekTotals.matches }}</div>
+                <div style="font-size:12px; color:#6b6f80; margin-top:4px;">경기 수</div>
+              </div>
+              <div>
+                <div style="font-size:26px; font-weight:800; font-family:'JetBrains Mono',monospace; color:#5B8DEF;">{{ currentWeekTotals.people }}</div>
+                <div style="font-size:12px; color:#6b6f80; margin-top:4px;">참여 인원</div>
+              </div>
+            </div>
+          </div>
+          <div style="background:#1b1e27; border:1px solid #262a35; border-radius:14px; padding:20px 22px;">
+            <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:14px;">
+              <div style="font-size:12px; font-weight:600; color:#8b8fa3; text-transform:uppercase; letter-spacing:0.05em;">선택한 주</div>
+              <div style="font-size:12px; color:#6b6f80;">{{ selectedWeekTotals.label }}</div>
+            </div>
+            <div style="display:flex; gap:24px;">
+              <div>
+                <div style="font-size:26px; font-weight:800; font-family:'JetBrains Mono',monospace;">{{ selectedWeekTotals.matches }}</div>
+                <div style="font-size:12px; color:#6b6f80; margin-top:4px;">경기 수</div>
+              </div>
+              <div>
+                <div style="font-size:26px; font-weight:800; font-family:'JetBrains Mono',monospace; color:#7C5CFC;">{{ selectedWeekTotals.people }}</div>
+                <div style="font-size:12px; color:#6b6f80; margin-top:4px;">참여 인원</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="background:#1b1e27; border:1px solid #262a35; border-radius:14px; padding:20px 22px;">
+          <div style="font-size:12px; font-weight:600; color:#8b8fa3; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:14px;">이번 달</div>
+          <div style="display:flex; gap:24px; margin-bottom:14px;">
+            <div>
+              <div style="font-size:26px; font-weight:800; font-family:'JetBrains Mono',monospace;">{{ monthTotals.matches }}</div>
+              <div style="font-size:12px; color:#6b6f80; margin-top:4px;">경기 수</div>
+            </div>
+            <div>
+              <div style="font-size:26px; font-weight:800; font-family:'JetBrains Mono',monospace; color:#5B8DEF;">{{ monthTotals.people }}</div>
+              <div style="font-size:12px; color:#6b6f80; margin-top:4px;">참여 인원</div>
+            </div>
+          </div>
+          <div style="border-top:1px solid #262a35; padding-top:12px; display:flex; align-items:baseline; justify-content:space-between;">
+            <div style="font-size:12px; color:#6b6f80;">저번 달 {{ lastMonthTotals.matches }}경기 · {{ lastMonthTotals.people }}명</div>
+            <div style="font-size:13px; font-weight:700; font-family:'JetBrains Mono',monospace; color:{{ monthDiffColor }};">{{ monthDiffLabel }}경기</div>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+  </sc-if>
+
+</div>
+</x-dc>
+<script>
+// 캘린더 패널과 우측 패널 높이 동기화
+function syncCalendarPanelHeight() {
+  var calPanel = document.getElementById('cal-people-panel');
+  if (!calPanel) return;
+  var prev = calPanel.previousElementSibling;
+  if (prev) {
+    var h = prev.getBoundingClientRect().height;
+    if (h > 0) calPanel.style.height = h + 'px';
+  }
+}
+// 렌더링 후 실행
+setTimeout(syncCalendarPanelHeight, 500);
+setTimeout(syncCalendarPanelHeight, 1500);
+window.addEventListener('resize', syncCalendarPanelHeight);
+</script>
+<script type="text/x-dc" data-dc-script>
+const WORKER_URL = 'https://api.roonging.com';
+const AVATAR_COLORS = ['#5B8DEF','#7C5CFC','#2ED9A3','#EF5B5B','#F5A623','#5be3a9','#e35b5b','#a78bfa'];
+
+function avatarColor(name) {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+  return AVATAR_COLORS[h % AVATAR_COLORS.length];
+}
+
+function mkPerson(name) {
+  return { name, initial: name[0] || '?', avatarBg: avatarColor(name) };
+}
+
+async function dbRead(path) {
+  const r = await fetch(WORKER_URL + '/db-public-read', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ path })
+  });
+  const j = await r.json();
+  return j.ok ? j.data : null;
+}
+
+class Component extends DCLogic {
+  state = {
+    tab: 'leaderboard',
+    selectedSeason: '',
+    selectedDay: null,
+    isLoading: true,
+    communityName: '',
+    seasons: [],
+    matches: [],
+    matchTypeDefs: {},
+    memberStats: {},
+    statsData: [],
+  };
+
+  async componentDidMount() {
+    const params = new URLSearchParams(location.search);
+    const cid = params.get('cid');
+    if (!cid) { this.setState({ isLoading: false }); return; }
+
+    const CACHE_TTL = 60 * 60 * 1000;
+    const META_KEY = 'db_meta_' + cid;
+    const MATCHES_KEY = 'db_matches_' + cid;
+
+    // 메타 캐시 확인 (commInfo, seasons, matchTypes)
+    let commInfo, seasonsRaw, matchTypesRaw, matchesRaw;
+    try {
+      const metaCached = sessionStorage.getItem(META_KEY);
+      if (metaCached) {
+        const { ts, data } = JSON.parse(metaCached);
+        if (Date.now() - ts < CACHE_TTL) {
+          ({ commInfo, seasonsRaw, matchTypesRaw } = data);
+        }
+      }
+    } catch(e) {}
+
+    // matches 캐시 확인
+    try {
+      const matchesCached = sessionStorage.getItem(MATCHES_KEY);
+      if (matchesCached) {
+        const { ts, data } = JSON.parse(matchesCached);
+        if (Date.now() - ts < CACHE_TTL) matchesRaw = data;
+      }
+    } catch(e) {}
+
+    // matches를 slim하게 압축 (대시보드에 필요한 필드만)
+    function slimMatches(raw) {
+      if (!raw) return raw;
+      const out = {};
+      Object.entries(raw).forEach(([id, m]) => {
+        if (!m) return;
+        out[id] = {
+          id: m.id,
+          status: m.status,
+          createdAt: m.createdAt,
+          matchType: m.matchType || null,
+          _members: m._members ? m._members.map(mb => ({ name: mb.name })) : [],
+          _resultMatches: m._resultMatches ? m._resultMatches.map(rm => ({
+            winner: rm.winner || null,
+            gameData: rm.gameData ? {
+              teamA: (rm.gameData.teamA || []).map(p => ({ name: p.name, champion: p.champion, k: p.k, d: p.d, a: p.a, dmg: p.dmg, wards: p.wards, tankDmg: p.tankDmg, win: p.win })),
+              teamB: (rm.gameData.teamB || []).map(p => ({ name: p.name, champion: p.champion, k: p.k, d: p.d, a: p.a, dmg: p.dmg, wards: p.wards, tankDmg: p.tankDmg, win: p.win })),
+            } : null,
+          })) : [],
+        };
+      });
+      return out;
+    }
+
+    // 캐시 없는 것만 fetch
+    const fetches = [];
+    if (!commInfo) fetches.push(dbRead('communities_info/' + cid).then(d => { commInfo = d; }));
+    else fetches.push(Promise.resolve());
+    if (!matchesRaw) fetches.push(dbRead('communities/' + cid + '/matches').then(d => {
+      matchesRaw = slimMatches(d);
+      try { sessionStorage.setItem(MATCHES_KEY, JSON.stringify({ ts: Date.now(), data: matchesRaw })); } catch(e) {
+        console.warn('matches 캐시 저장 실패:', e.message);
+      }
+    }));
+    else fetches.push(Promise.resolve());
+    if (!seasonsRaw) fetches.push(dbRead('communities/' + cid + '/seasons').then(d => { seasonsRaw = d; }));
+    else fetches.push(Promise.resolve());
+    if (!matchTypesRaw) fetches.push(dbRead('communities/' + cid + '/match_types').then(d => { matchTypesRaw = d; }));
+    else fetches.push(Promise.resolve());
+    await Promise.all(fetches);
+
+    // 메타 캐시 저장
+    try {
+      sessionStorage.setItem(META_KEY, JSON.stringify({ ts: Date.now(), data: { commInfo, seasonsRaw, matchTypesRaw } }));
+    } catch(e) {}
+
+    const communityName = commInfo?.name || cid;
+    const matches = matchesRaw ? Object.values(matchesRaw) : [];
+    const seasons = seasonsRaw ? Object.entries(seasonsRaw).map(([id, s]) => ({
+      id, name: s.name || id,
+      startDate: s.startDate || null,
+      endDate: s.endDate || null,
+    })).filter(s => s.startDate).sort((a, b) => a.startDate > b.startDate ? -1 : 1) : [];
+    const matchTypeDefs = matchTypesRaw || {};
+
+    // 딥롤 stats 데이터 (1시간 캐싱)
+    let statsData = [];
+    if (commInfo?.deeplolServerId) {
+      const STATS_KEY = 'db_stats_' + cid;
+      let statsCached = false;
+      try {
+        const sc = sessionStorage.getItem(STATS_KEY);
+        if (sc) {
+          const { ts, data } = JSON.parse(sc);
+          if (Date.now() - ts < CACHE_TTL) { statsData = data; statsCached = true; }
+        }
+      } catch(e) {}
+      if (!statsCached) {
+        try {
+          const sr = await fetch('https://b2c-api-cdn.deeplol.gg/tournament/server_info?server_id=' + commInfo.deeplolServerId, {
+            headers: { 'Referer': 'https://www.deeplol.gg/' }
+          });
+          if (sr.ok) {
+            const sj = await sr.json();
+            statsData = (sj?.tournament_stats?.tournament_stats_all_list || []).map(m => ({
+              riot_name: m.riot_name, riot_tag: m.riot_tag, most_tier: m.most_tier,
+              most_three_champ: m.most_three_champ,
+            }));
+            try { sessionStorage.setItem(STATS_KEY, JSON.stringify({ ts: Date.now(), data: statsData })); } catch(e) {}
+          }
+        } catch(e) {}
+      }
+    }
+
+    const stateData = {
+      communityName,
+      _cid: cid,
+      seasons,
+      matches,
+      matchTypeDefs,
+      statsData,
+      selectedDay: new Date().getDate(),
+    };
+    this.setState({ isLoading: false, ...stateData });
+  }
+
+  // 선택된 시즌으로 matches 필터링
+  filteredMatches() {
+    const { matches, selectedSeason, seasons } = this.state;
+    if (!selectedSeason) return matches;
+    const s = seasons.find(s => s.id === selectedSeason);
+    if (!s || !s.startDate) return matches;
+    const startTs = new Date(s.startDate + 'T00:00:00').getTime();
+    const endTs = s.endDate ? new Date(s.endDate + 'T23:59:59').getTime() : null;
+    return matches.filter(m => {
+      const t = m.createdAt || 0;
+      return t >= startTs && (endTs == null || t <= endTs);
+    });
+  }
+
+  renderVals() {
+    const { tab, selectedSeason, selectedDay, isLoading, communityName, seasons, matchTypeDefs, statsData } = this.state;
+    const setTab = (t) => this.setState({ tab: t });
+    const setSelectedDay = (d) => this.setState({ selectedDay: d });
+
+    const tabDef = (key, label) => ({
+      label,
+      onClick: () => setTab(key),
+      style: {
+        padding: '9px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: 600,
+        cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
+        background: tab === key ? '#5B8DEF' : 'transparent',
+        color: tab === key ? '#0d0e12' : '#a7abbd',
+        border: tab === key ? '1px solid #5B8DEF' : '1px solid #262a35',
+      }
+    });
+
+    const selSeason = seasons.find(s => s.id === selectedSeason);
+    const seasonLabel = selectedSeason ? (selSeason?.name || '') : '전체 기간';
+    const communitySubtitle = communityName
+      ? communityName + (seasonLabel ? ' · ' + seasonLabel : '')
+      : '';
+
+    const onSeasonChange = (e) => this.setState({ selectedSeason: e.target.value });
+    const onRefresh = () => {
+      const cid = new URLSearchParams(location.search).get('cid');
+      if (!cid) return;
+      try {
+        sessionStorage.removeItem('db_matches_' + cid);
+        sessionStorage.removeItem('db_meta_' + cid);
+        sessionStorage.removeItem('db_stats_' + cid);
+      } catch(e) {}
+      this.setState({ isLoading: true });
+      this.componentDidMount();
+    };
+    const seasonItems = seasons.map(s => ({ ...s, selected: s.id === selectedSeason }));
+
+    const allMatches = this.filteredMatches();
+    const stage3PlusMatches = allMatches.filter(m => m.status && !['내전 모집','종류 선택'].includes(m.status));
+    // 3단계 이상 (status가 대기/진행/종료이거나 step>=3)
+
+    // 결과 있는 내전
+    const finishedMatches = allMatches.filter(m => m._resultMatches && m._resultMatches.length > 0 && m.status === '내전 종료');
+
+    // ── 차트 데이터 ──
+    const hourCounts = new Array(24).fill(0);
+    const dayCounts = new Array(7).fill(0);
+    allMatches.forEach(m => {
+      if (!m.createdAt) return;
+      const d = new Date(m.createdAt);
+      hourCounts[d.getHours()]++;
+      dayCounts[d.getDay()]++;
+    });
+    // 18~23시 + 0시 위주로 표시 (가장 많은 구간 8개)
+    const relevantHours = [18,19,20,21,22,23,0,1];
+    const hourlyRaw = relevantHours.map(h => ({ label: h + '시', count: hourCounts[h] }));
+    const hourlyMax = Math.max(...hourlyRaw.map(h => h.count), 1);
+    const hourlyActivity = hourlyRaw.map(h => ({
+      ...h, barHeight: Math.max(4, h.count / hourlyMax * 140) + 'px',
+      color: h.count === hourlyMax ? '#5B8DEF' : '#33395c',
+    }));
+
+    const dayLabels = ['일','월','화','수','목','금','토'];
+    const weekdayMax = Math.max(...dayCounts, 1);
+    const weekdayActivity = dayCounts.map((count, i) => ({
+      label: dayLabels[i], count,
+      barHeight: Math.max(4, count / weekdayMax * 140) + 'px',
+      color: count === weekdayMax ? '#5B8DEF' : '#33395c',
+    }));
+
+    const now = new Date();
+    const year = now.getFullYear(), month = now.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const monthlyCounts = new Array(daysInMonth).fill(0);
+    allMatches.forEach(m => {
+      if (!m.createdAt) return;
+      const d = new Date(m.createdAt);
+      if (d.getFullYear() === year && d.getMonth() === month)
+        monthlyCounts[d.getDate() - 1]++;
+    });
+    const monthlyMax = Math.max(...monthlyCounts, 1);
+    const monthlyActivity = monthlyCounts.map((count, i) => ({
+      label: String(i + 1), count,
+      countLabel: count > 0 ? String(count) : '',
+      barHeight: Math.max(count === 0 ? 3 : 4, count / monthlyMax * 100) + 'px',
+      color: count === monthlyMax ? '#5B8DEF' : '#33395c',
+    }));
+
+    // ── 요약 카드 ──
+    // 3단계 이상: 모집/종류선택 제외
+    const totalParticipants = new Set();
+    stage3PlusMatches.forEach(m => (m._members || []).forEach(mb => { if (mb.name) totalParticipants.add(mb.name); }));
+
+    // 5단계 riot api 등록 데이터: resultMatches 중 gameData 있는 것만
+    const riotResultMatches = [];
+    finishedMatches.forEach(m => {
+      (m._resultMatches || []).forEach(rm => {
+        if (rm.winner && rm.gameData && rm.gameData.teamA && rm.gameData.teamA.length > 0)
+          riotResultMatches.push(rm);
+      });
+    });
+
+    // 최다 승리/최고 승률: riot gameData 기반
+    const rWins = {}, rGames = {};
+    riotResultMatches.forEach(rm => {
+      const winTeam = rm.winner === 'b' ? rm.gameData.teamA : rm.gameData.teamB;
+      const loseTeam = rm.winner === 'b' ? rm.gameData.teamB : rm.gameData.teamA;
+      (winTeam||[]).forEach(p => { rWins[p.name]=(rWins[p.name]||0)+1; rGames[p.name]=(rGames[p.name]||0)+1; });
+      (loseTeam||[]).forEach(p => { rGames[p.name]=(rGames[p.name]||0)+1; });
+    });
+    let topWinner = '—', topWins = 0;
+    Object.entries(rWins).forEach(([name, w]) => { if (w > topWins) { topWins = w; topWinner = name; } });
+    let bestRateName = '—', bestRate = -1;
+    Object.entries(rWins).forEach(([name, w]) => {
+      const g = rGames[name] || 1;
+      if (g >= 3) { const r = w/g; if (r > bestRate) { bestRate = r; bestRateName = name; } }
+    });
+
+    const summaryCards = [
+      { label: '총 경기 수', value: String(stage3PlusMatches.length), sub: seasonLabel + ' (3단계↑)', subColor: '#8b8fa3' },
+      { label: '참여 인원', value: totalParticipants.size + '명', sub: '활성 유저', subColor: '#8b8fa3' },
+      { label: '최다 승리', value: topWinner, sub: topWins > 0 ? topWins + '승' : '—', subColor: '#F5A623' },
+      { label: '최고 승률', value: bestRateName, sub: bestRate >= 0 ? Math.round(bestRate*100)+'%' : '—', subColor: '#5be3a9' },
+    ];
+
+    // ── 내전 종류별 비율 ──
+    const mtColors = ['#5B8DEF','#7C5CFC','#2ED9A3','#EF5B5B','#F5A623','#5be3a9'];
+    const mtCounts = {};
+    allMatches.forEach(m => { if (m.matchType) mtCounts[m.matchType] = (mtCounts[m.matchType]||0)+1; });
+    const mtTotal = Object.values(mtCounts).reduce((a,b) => a+b, 0);
+    const matchTypeItems = Object.entries(mtCounts).map(([id, count], i) => ({
+      label: matchTypeDefs[id]?.name || id,
+      count, color: mtColors[i % mtColors.length],
+      pct: mtTotal > 0 ? Math.round(count / mtTotal * 100) + '%' : '0%',
+    }));
+
+    // ── 리더보드 (riot gameData 기반) ──
+    const playerStats = {};
+    riotResultMatches.forEach(rm => {
+      const processTeam = (teamPlayers, isWin) => {
+        (teamPlayers || []).forEach(p => {
+          if (!p.name) return;
+          if (!playerStats[p.name]) playerStats[p.name] = { wins:0, losses:0, k:0, d:0, a:0, champs:{} };
+          const ps = playerStats[p.name];
+          if (isWin) ps.wins++; else ps.losses++;
+          ps.k += p.k || 0; ps.d += p.d || 0; ps.a += p.a || 0;
+          if (p.champion && p.champion !== '?') ps.champs[p.champion] = (ps.champs[p.champion]||0)+1;
+        });
+      };
+      const aWin = rm.winner === 'b';
+      processTeam(rm.gameData.teamA, aWin);
+      processTeam(rm.gameData.teamB, !aWin);
+    });
+
+    const rankColors = ['#F5A623','#a7abbd','#cd7f32'];
+    const leaderboard = Object.entries(playerStats)
+      .map(([name, ps]) => {
+        const games = ps.wins + ps.losses;
+        const kda = ps.d === 0 ? (ps.k + ps.a).toFixed(1) : ((ps.k + ps.a) / ps.d).toFixed(2);
+        const mainChamp = Object.entries(ps.champs).sort((a,b) => b[1]-a[1])[0]?.[0] || '—';
+        const statRow = statsData.find(s => s.riot_name === name);
+        const tier = statRow ? (statRow.most_tier || '') : '';
+        return { name, wins: ps.wins, losses: ps.losses, games, kda, mainChamp, tier,
+          winRate: games > 0 ? Math.round(ps.wins/games*100)+'%' : '0%',
+          sortKey: ps.wins * 1000 + (ps.wins/Math.max(games,1)) * 100,
+        };
+      })
+      .sort((a,b) => b.sortKey - a.sortKey)
+      .map((p, i) => ({
+        ...p, rank: i+1,
+        rankColor: rankColors[i] || '#6b6f80',
+        avatarBg: avatarColor(p.name),
+        initial: p.name[0] || '?',
+      }));
+
+    // ── 어워드 ──
+    const awardAccum = {};
+    finishedMatches.forEach(m => {
+      (m._resultMatches || []).forEach(rm => {
+        if (!rm.gameData) return;
+        [...(rm.gameData.teamA||[]), ...(rm.gameData.teamB||[])].forEach(p => {
+          if (!p.name) return;
+          if (!awardAccum[p.name]) awardAccum[p.name] = { k:0, d:0, a:0, dmg:0, wards:0, tankDmg:0, champ:'?' };
+          const ac = awardAccum[p.name];
+          ac.k += p.k||0; ac.d += p.d||0; ac.a += p.a||0;
+          ac.dmg += p.dmg||0; ac.wards += p.wards||0; ac.tankDmg += p.tankDmg||0;
+          if (p.champion && p.champion !== '?') ac.champ = p.champion;
+        });
+      });
+    });
+    const topBy = (key, fmt) => {
+      let best = null, bestVal = -1;
+      Object.entries(awardAccum).forEach(([name, ac]) => {
+        if (ac[key] > bestVal) { bestVal = ac[key]; best = { name, val: ac[key], champ: ac.champ }; }
+      });
+      return best ? { name: best.name, initial: best.name[0]||'?', avatarBg: avatarColor(best.name),
+        champ: best.champ, value: fmt(best.val) } : { name:'—', initial:'?', avatarBg:'#33395c', champ:'—', value:'—' };
+    };
+    const awards = [
+      { title:'최다 킬', accentColor:'#5B8DEF', ...topBy('k', v => v+'킬') },
+      { title:'최다 데스', accentColor:'#e35b5b', ...topBy('d', v => v+'데스') },
+      { title:'최다 어시스트', accentColor:'#5B8DEF', ...topBy('a', v => v+'어시') },
+      { title:'최다 딜량', accentColor:'#F5A623', ...topBy('dmg', v => v.toLocaleString()) },
+      { title:'최다 와드', accentColor:'#5be3a9', ...topBy('wards', v => v+'개') },
+      { title:'최다 탱킹', accentColor:'#7C5CFC', ...topBy('tankDmg', v => v.toLocaleString()) },
+    ];
+
+    // ── 챔피언 통계 ──
+    const champMap = {};
+    finishedMatches.forEach(m => {
+      (m._resultMatches || []).forEach(rm => {
+        if (!rm.gameData) return;
+        const processTeamChamp = (players, isWin) => {
+          (players||[]).forEach(p => {
+            if (!p.champion || p.champion === '?') return;
+            if (!champMap[p.champion]) champMap[p.champion] = { games:0, wins:0, k:0, d:0, a:0 };
+            const c = champMap[p.champion];
+            c.games++; if (isWin) c.wins++;
+            c.k += p.k||0; c.d += p.d||0; c.a += p.a||0;
+          });
+        };
+        processTeamChamp(rm.gameData.teamA, rm.winner === 'b');
+        processTeamChamp(rm.gameData.teamB, rm.winner !== 'b');
+      });
+    });
+    const champions = Object.entries(champMap)
+      .sort((a,b) => b[1].games - a[1].games)
+      .slice(0, 18)
+      .map(([name, c]) => {
+        const wr = c.games > 0 ? c.wins/c.games : 0;
+        const wrPct = Math.round(wr*100);
+        const kda = c.d === 0 ? (c.k+c.a).toFixed(1) : ((c.k+c.a)/c.d).toFixed(2);
+        const color = wr >= 0.6 ? '#5be3a9' : wr >= 0.45 ? '#F5A623' : '#e35b5b';
+        return { name, games: c.games, winRate: wrPct+'%', winRateWidth: wrPct+'%', winRateColor: color, kda };
+      });
+
+    // ── 참여 현황 캘린더 (3단계 이상 내전) ──
+    const validForParticipation = stage3PlusMatches;
+    const dailyMatchMap = {};
+    const dailyRosterMap = {};
+    validForParticipation.forEach(m => {
+      if (!m.createdAt) return;
+      const d = new Date(m.createdAt);
+      if (d.getFullYear() !== year || d.getMonth() !== month) return;
+      const day = d.getDate();
+      dailyMatchMap[day] = (dailyMatchMap[day]||0)+1;
+      if (!dailyRosterMap[day]) dailyRosterMap[day] = new Set();
+      (m._members||[]).forEach(mb => { if (mb.name) dailyRosterMap[day].add(mb.name); });
+    });
+
+    const firstWeekday = new Date(year, month, 1).getDay();
+    const calendarCells = [];
+    for (let i = 0; i < firstWeekday; i++) calendarCells.push({ day: null, style: { height:'64px' } });
+    for (let d = 1; d <= daysInMonth; d++) {
+      const hasMatch = !!dailyMatchMap[d];
+      const isSelected = d === selectedDay;
+      calendarCells.push({
+        day: d, hasMatch,
+        matchCount: dailyMatchMap[d] || 0,
+        peopleCount: dailyRosterMap[d]?.size || 0,
+        matchCountColor: isSelected ? '#0d0e12' : '#5B8DEF',
+        peopleCountColor: isSelected ? 'rgba(13,14,18,0.7)' : '#8b8fa3',
+        onClick: hasMatch ? () => setSelectedDay(d) : undefined,
+        style: {
+          height:'64px', borderRadius:'8px', padding:'6px 8px',
+          cursor: hasMatch ? 'pointer' : 'default',
+          background: isSelected ? '#5B8DEF' : hasMatch ? '#12141b' : 'transparent',
+          border: isSelected ? '1px solid #5B8DEF' : hasMatch ? '1px solid #262a35' : '1px solid transparent',
+          color: isSelected ? '#0d0e12' : hasMatch ? '#e8e9ee' : '#4a4d5c',
+        }
+      });
+    }
+
+    const selRoster = dailyRosterMap[selectedDay] ? [...dailyRosterMap[selectedDay]] : [];
+    const selMatchCount = dailyMatchMap[selectedDay] || 0;
+    const selDayLabel = `${month+1}월 ${selectedDay}일`;
+    const selDayCountLabel = selRoster.length > 0 ? `${selRoster.length}명 참여 · ${selMatchCount}경기` : '경기 없음';
+    const selectedDayPeople = selRoster.map(mkPerson);
+
+    // 주간 집계
+    const computeWeek = (day) => {
+      const d = new Date(year, month, day);
+      const dow = d.getDay();
+      const start = Math.max(1, day - dow);
+      const end = Math.min(daysInMonth, start + 6);
+      const people = new Set(); let matches = 0;
+      for (let dd = start; dd <= end; dd++) {
+        if (dailyMatchMap[dd]) { matches += dailyMatchMap[dd]; dailyRosterMap[dd]?.forEach(n => people.add(n)); }
+      }
+      return { matches, people: people.size, label: `${start}일 ~ ${end}일` };
+    };
+    const today = now.getDate();
+    const currentWeekTotals = computeWeek(today);
+    const selectedWeekTotals = computeWeek(selectedDay != null ? selectedDay : today);
+
+    // 월간 집계
+    const monthPeople = new Set(); let monthMatches = 0;
+    Object.entries(dailyMatchMap).forEach(([d, c]) => {
+      monthMatches += c; dailyRosterMap[parseInt(d)]?.forEach(n => monthPeople.add(n));
+    });
+    const monthTotals = { matches: monthMatches, people: monthPeople.size };
+    // 저번 달
+    const prevMonth = month === 0 ? 11 : month - 1;
+    const prevYear = month === 0 ? year - 1 : year;
+    const prevPeople = new Set(); let prevMatches = 0;
+    validForParticipation.forEach(m => {
+      if (!m.createdAt) return;
+      const d = new Date(m.createdAt);
+      if (d.getFullYear() === prevYear && d.getMonth() === prevMonth) {
+        prevMatches++;
+        (m._members||[]).forEach(mb => { if (mb.name) prevPeople.add(mb.name); });
+      }
+    });
+    const lastMonthTotals = { matches: prevMatches, people: prevPeople.size };
+    const monthDiff = monthTotals.matches - lastMonthTotals.matches;
+
+    return {
+      communitySubtitle,
+      isLoading,
+      tabs: [tabDef('leaderboard','리더보드'), tabDef('champions','챔피언 & 어워드'), tabDef('participation','참여 현황')],
+      isLeaderboard: tab === 'leaderboard',
+      isChampions: tab === 'champions',
+      isParticipation: tab === 'participation',
+      seasons: seasonItems,
+      hasSeasons: seasonItems.length > 0,
+      onSeasonChange,
+      onRefresh,
+      summaryCards, leaderboard, champions, hourlyActivity, weekdayActivity, monthlyActivity,
+      awards, matchTypeItems,
+      calendarMonthLabel: `${year}년 ${month+1}월`,
+      weekdayHeaders: ['일','월','화','수','목','금','토'],
+      calendarCells, selectedDayLabel: selDayLabel,
+      selectedDayCountLabel: selDayCountLabel, selectedDayPeople,
+      currentWeekTotals, selectedWeekTotals, monthTotals, lastMonthTotals,
+      monthDiffLabel: (monthDiff >= 0 ? '+' : '') + monthDiff,
+      monthDiffColor: monthDiff >= 0 ? '#5be3a9' : '#e35b5b',
+    };
+  }
+}
+</script>
+</body>
+</html>
