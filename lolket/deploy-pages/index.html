@@ -1,6 +1,14 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
+<!-- Google Analytics 4 -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-MY5Z9P4L0W"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-MY5Z9P4L0W');
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>룽잉닷컴 — 내전 관리</title>
@@ -1859,7 +1867,7 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
 <div id="guide-section-wrap" style="background:var(--bg-panel);border:1px solid var(--border-gold);border-radius:4px;overflow:hidden;box-shadow:0 2px 12px rgba(200,170,110,.06);"> <div style="padding:.6rem 1rem;border-bottom:1px solid var(--border-gold);display:flex;align-items:center;justify-content:space-between;background:rgba(200,170,110,.06);"> <span style="font-family:Rajdhani,sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;color:var(--gold);display:flex;align-items:center;gap:6px;"><span style="width:5px;height:5px;border-radius:50%;background:var(--blue-bright);display:inline-block;flex-shrink:0;"></span>가이드/룰</span> <button onclick="openGuidePickModal()" style="padding:3px 10px;border:1px solid rgba(200,170,110,.5);background:rgba(200,170,110,.12);color:var(--gold);border-radius:2px;font-family:Rajdhani,sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all .15s;" onmouseover="this.style.background='rgba(200,170,110,.22)'" onmouseout="this.style.background='rgba(200,170,110,.12)'">+ 적용</button> </div> <div id="guide-applied-list" style="padding:.5rem .6rem;display:flex;flex-direction:column;gap:5px;max-height:220px;overflow-y:auto;"><div style="font-size:11px;color:var(--text-muted);font-family:Rajdhani,sans-serif;text-align:center;padding:.75rem;letter-spacing:1px;">적용된 가이드가 없습니다</div></div> </div>
 <div class="panel" style="display:flex;flex-direction:column;height:fit-content;"> <div class="panel-header"> <div class="panel-title"> <div class="panel-title-dot"></div>
  소환사 검색
- </div> </div> <div class="panel-body search-section"> <div class="search-box-wrap"> <input type="text" id="search-input" placeholder="닉네임#KR1" onkeydown="onSearchKey(event)" /> <button class="search-btn" id="search-btn" onclick="searchSummoner()"> <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="5" cy="5" r="4" stroke="currentColor" stroke-width="1.5"/><line x1="8.5" y1="8.5" x2="12" y2="12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> </button> </div> <div class="search-hint"> <span>닉네임#태그</span> 형식으로 입력. 확장: <span style="color:var(--blue-bright);">닉네임#태그 최고티어/현티어 주라인/부라인</span><br>
+ </div> <div style="display:flex;align-items:center;gap:6px;"> <span style="font-size:10px;font-family:'Rajdhani',sans-serif;font-weight:700;color:var(--text-muted);letter-spacing:1px;">자동 설정</span> <button id="auto-lane-toggle" onclick="toggleAutoLane()" style="width:40px;height:22px;border-radius:11px;border:none;cursor:pointer;transition:all .2s;background:#2D3748;position:relative;flex-shrink:0;"> <span id="auto-lane-dot" style="position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#718096;transition:all .2s;display:block;"></span> </button> </div> </div> <div class="panel-body search-section"> <div class="search-box-wrap"> <input type="text" id="search-input" placeholder="닉네임#KR1" onkeydown="onSearchKey(event)" /> <button class="search-btn" id="search-btn" onclick="searchSummoner()"> <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="5" cy="5" r="4" stroke="currentColor" stroke-width="1.5"/><line x1="8.5" y1="8.5" x2="12" y2="12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> </button> </div> <div class="search-hint"> <span>닉네임#태그</span> 형식으로 입력. 확장: <span style="color:var(--blue-bright);">닉네임#태그 최고티어/현티어 주라인/부라인</span><br>
  예) 페이커#KR1 · Hide on bush#KR1
  </div> <div id="search-loading" style="display:none;justify-content:center;padding:1.5rem;"> <div class="spinner"></div> </div> <div id="search-result" style="display:none;"> <div class="search-result"> <div class="result-profile"> <div class="result-avatar" id="r-avatar">?</div> <div> <div class="result-name" id="r-name">—</div> <div class="result-tag" id="r-tag">—</div> </div> </div> <div class="result-tiers"> <div class="tier-row"> <span class="tier-row-label">SOLO/DUO</span> <span class="tier-row-val" id="r-solo">—</span> </div> <div class="tier-row"> <span class="tier-row-label">FLEX</span> <span class="tier-row-val" id="r-flex">—</span> </div> <div class="tier-row" id="r-main-lane-row" style="display:none;"> <span class="tier-row-label">커뮤니티 주라인</span> <span class="tier-row-val" id="r-main-lane" style="color:var(--blue-bright);">—</span> </div>
  <div class="tier-row"> <span class="tier-row-label">솔랭 판수</span> <span class="tier-row-val" id="r-solo-games" style="font-family:'Rajdhani',sans-serif;">—</span> </div> <div class="tier-row"> <span class="tier-row-label">LEVEL</span> <span class="tier-row-val" id="r-level">—</span> </div> <div class="tier-row" id="r-prev-row" style="display:none;background:rgba(200,170,110,0.04);border-radius:2px;padding:3px 6px;margin-top:2px;"> <span class="tier-row-label" style="display:flex;align-items:center;gap:4px;"><span style="font-size:9px;">🏆</span>전 시즌 최고</span> <span class="tier-row-val" id="r-prev-season" style="font-size:11px;">—</span> </div> </div> <div style="padding:.6rem 1rem;border-top:1px solid var(--border-subtle);background:rgba(200,170,110,0.03);"> <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;"> <span style="font-size:10px;font-family:'Rajdhani',sans-serif;font-weight:700;letter-spacing:1px;color:var(--gold);">✏ 티어 직접 설정</span> <button onclick="applyTierOverride('')" style="font-size:9px;font-family:'Rajdhani',sans-serif;font-weight:700;color:var(--text-muted);background:transparent;border:1px solid var(--border-subtle);border-radius:2px;padding:1px 7px;cursor:pointer;letter-spacing:.5px;" id="r-tier-reset">API 값으로 초기화</button> </div> <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;" id="r-tier-btns"> <button class="tier-override-btn" data-tier="UNRANKED" onclick="applyTierOverride('UNRANKED')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-iron);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;letter-spacing:.3px;">UNRANK</button> <button class="tier-override-btn" data-tier="IRON" onclick="applyTierOverride('IRON')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-iron);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">IRON</button> <button class="tier-override-btn" data-tier="BRONZE" onclick="applyTierOverride('BRONZE')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-bronze);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">BRONZE</button> <button class="tier-override-btn" data-tier="SILVER" onclick="applyTierOverride('SILVER')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-silver);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">SILVER</button> <button class="tier-override-btn" data-tier="GOLD" onclick="applyTierOverride('GOLD')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-gold);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">GOLD</button> <button class="tier-override-btn" data-tier="PLATINUM" onclick="applyTierOverride('PLATINUM')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-plat);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">PLAT</button> <button class="tier-override-btn" data-tier="EMERALD" onclick="applyTierOverride('EMERALD')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-emerald);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">EMERALD</button> <button class="tier-override-btn" data-tier="DIAMOND" onclick="applyTierOverride('DIAMOND')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-diamond);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">DIAMOND</button> <button class="tier-override-btn" data-tier="MASTER" onclick="applyTierOverride('MASTER')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-master);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">MASTER</button> <button class="tier-override-btn" data-tier="GRANDMASTER" onclick="applyTierOverride('GRANDMASTER')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-grandmaster);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">GM</button> <button class="tier-override-btn" data-tier="CHALLENGER" onclick="applyTierOverride('CHALLENGER')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-challenger);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">CHALL</button> </div> </div> <div class="lane-select"> <div class="lane-select-label">주 포지션</div> <div class="lane-buttons" id="main-lanes"> <button class="lane-btn" data-lane="top" onclick="selectLane('main','top')">TOP</button> <button class="lane-btn" data-lane="jg" onclick="selectLane('main','jg')">JG</button> <button class="lane-btn" data-lane="mid" onclick="selectLane('main','mid')">MID</button> <button class="lane-btn" data-lane="bot" onclick="selectLane('main','bot')">BOT</button> <button class="lane-btn" data-lane="sup" onclick="selectLane('main','sup')">SUP</button> </div> <div class="lane-select-label" style="margin-top:4px;">보조 포지션</div> <div class="lane-buttons" id="sub-lanes"> <button class="lane-btn" data-lane="top" onclick="selectLane('sub','top')">TOP</button> <button class="lane-btn" data-lane="jg" onclick="selectLane('sub','jg')">JG</button> <button class="lane-btn" data-lane="mid" onclick="selectLane('sub','mid')">MID</button> <button class="lane-btn" data-lane="bot" onclick="selectLane('sub','bot')">BOT</button> <button class="lane-btn" data-lane="sup" onclick="selectLane('sub','sup')">SUP</button> </div> </div> <div style="padding:.75rem 1rem;border-top:1px solid var(--border-subtle);"> <button class="btn-add-member" id="btn-add" onclick="addMember()" disabled>멤버 추가</button> </div> </div> </div> </div> </div></div> <div class="next-wrap"> <div class="next-condition"> <div class="cond-item"> <div class="cond-dot" id="cond-count"></div> <span id="cond-count-text" style="font-size:12px;color:var(--text-muted);">인원 10의 배수</span> </div> <div class="cond-item"> <div class="cond-dot" id="cond-attend"></div> <span id="cond-attend-text" style="font-size:12px;color:var(--text-muted);">전원 출석</span> </div> </div> <button onclick="copyMatchLink()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(10,200,185,.4);background:rgba(10,200,185,.06);color:var(--blue-bright);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="내전 상세 링크 복사">🔗 링크 복사</button> <button onclick="copyTeamText()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(200,170,110,.4);background:rgba(200,170,110,.06);color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="팀 정보 텍스트 복사">📋 팀 정보 복사</button> <button onclick="copyMemberMentions()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(100,150,255,.4);background:rgba(100,150,255,.06);color:#7EB2FF;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="참여 멤버 @멘션 복사">@ 멘션 복사</button> <button id="btn-attend-all" onclick="toggleAttendAll()" style="padding:7px 16px;border-radius:2px;border:1px solid rgba(10,200,185,0.4);background:rgba(10,200,185,0.08);color:var(--blue-bright);font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;cursor:pointer;transition:all .15s;">전체 출석</button> <button id="btn-discord-notify" onclick="sendDiscordNotify()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(114,137,218,0.4);background:rgba(114,137,218,0.08);color:#7289DA;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;cursor:pointer;transition:all .15s;"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;margin-right:4px;"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>알림 전송</button> <button class="btn-next" id="btn-next" disabled onclick="goNextStage()">다음 단계 →</button> </div>
@@ -3822,6 +3830,7 @@ if (new Date(time) <= new Date()) return toast('시작 시간은 현재 시간 �
 members=[]; matchType=null; teams=[]; bracketRounds=[]; extraMatches=[]; resultMatches=[];
 nextTeamId=1; _0xB2=1; _0xB1=1;
 const _selMatchType = (document.getElementById('m-type') && document.getElementById('m-type').value) || null;
+gaEvent('create_match', { match_name: name, community_id: window._currentCommunityId });
 match={id: 'match_'+Date.now(), name, time, admin: admin || '—', status: '내전 모집', createdAt: Date.now(), communityId: window._currentCommunityId || 'default', communityName: (window._currentCommunity && window._currentCommunity.name) || '', isAram: false, maxMembers: null, matchType: _selMatchType || null};
 closeCreateModal();
 await saveCurrentMatch();
@@ -3974,8 +3983,7 @@ if (q.includes('#')){
   // 티어/라인 약어 패턴으로 구분: 예) 's t e4 ᄋᄃ/ᄋᄃ' → tagLine='s t', 나머지='e4 ᄋᄃ/ᄋᄃ'
   // 티어 약어: i1~d4, m숫자, gm, chall 등
   var _TIER_ABBR = /^(i|b|s|g|p|e|d)[1-4]$|^(gm|chall|언랭|unrank)$/i;
-  var _MASTER_ABBR = /^m\d*$/i; // m, m0, m1768 등
-  // 라인 약어 (최소 2글자 이상)
+  var _MASTER_ABBR = /^m\d*$/i;
   var _LANE_ABBR = ['top','jg','jug','mid','bot','adc','sup','ᄐ','ᄆᄃ','ᄋᄃ','ᄌᆯ','정글','탑','미드','봇','서폿'];
   var _afterTokens = _afterHash.split(' ');
   var _tagTokens = [];
@@ -3984,20 +3992,33 @@ if (q.includes('#')){
   for (var _ti = 0; _ti < _afterTokens.length; _ti++) {
     var _tok = _afterTokens[_ti].toLowerCase();
     var _isTier = _TIER_ABBR.test(_tok) || _MASTER_ABBR.test(_tok);
-    var _isLane = _LANE_ABBR.indexOf(_tok) >= 0;
-    // 숫자만 있는 토큰은 LP값으로 간주 (GM 1768 같은 경우)
+    // 라인 약어는 공백으로 구분된 독립 토큰일 때만 인식
+    // 단, 첫 번째 토큰(tagLine 첫 부분)이면서 티어가 아직 안 나왔을 때만 적용
+    var _isLane = !_foundTierOrLane && _LANE_ABBR.indexOf(_tok) >= 0;
     var _isNumber = /^\d+$/.test(_tok);
     if (!_foundTierOrLane && (_isTier || _isLane)) {
+      // tagLine 뒤에 공백+티어/라인이 올 때만 분리
+      // 단, 이전 tagToken이 없으면(첫 토큰부터 티어/라인이면) tagLine 전체 사용
+      if (_tagTokens.length === 0 && _ti === 0) {
+        // 첫 토큰부터 티어/라인이면 tagLine 없는 것 → 전체를 rest로
+        _foundTierOrLane = true;
+        _restTokens.push(_afterTokens[_ti]);
+        continue;
+      }
       _foundTierOrLane = true;
     }
-    // 숫자는 티어 발견 전이면 tagLine에 포함 안함 (발견 후면 LP값)
     if (_foundTierOrLane || (_isNumber && _restTokens.length > 0)) {
       _restTokens.push(_afterTokens[_ti]);
     } else {
       _tagTokens.push(_afterTokens[_ti]);
     }
   }
-  tagLine = _tagTokens.join(' ').trim() || 'KR1';
+  // 추가 정보(티어/라인)가 없으면 #뒤 전체를 tagLine으로 사용
+  if (_restTokens.length === 0) {
+    tagLine = _afterHash.trim() || 'KR1';
+  } else {
+    tagLine = _tagTokens.join(' ').trim() || 'KR1';
+  }
   // 나머지 양식은 search-input에 다시 넣거나 별도 처리 (기존 양식 파싱 유지)
   if (_restTokens.length > 0) {
     // 기존 양식 파싱을 위해 input에 gameName#tagLine + 나머지 형태로 재구성
@@ -4039,6 +4060,10 @@ topChampions: data.topChampions || [],
 };
 document.getElementById('r-name').textContent=data.name;
 document.getElementById('r-tag').textContent='#'+data.tag;
+// 자동 설정 ON이면 딥롤에서 라인 자동 설정
+if (_autoLaneEnabled && data.puuid) {
+  _autoSetLane(data.puuid, data.name, data.tag);
+}
 const tierStr=data.solo.split(' ')[0];
 const color=TIER_COLORS[tierStr] || '#5B6474';
 // 최고 티어가 있으면 최고 티어 표시, 없으면 현티어
@@ -4306,7 +4331,8 @@ if (!searchResult.puuid && members.find(m => m.name === searchResult.name && m.t
 return toast(`${searchResult.name}#${searchResult.tag}은(는) 이미 추가되었습니다`, 'err');
 }
 const solo = searchResult.solo;
-const overrideTier = _tierOverride;
+var overrideTier = _tierOverride || (window._autoTierOverride ? window._autoTierOverride : null);
+if (window._autoTierOverride) window._autoTierOverride = null;
 var detailVal = _getTierDetailSuffix();
 // division이 없으면 solo API 결과에서 자동 추출
 if (!detailVal && !overrideTier) {
@@ -4622,6 +4648,7 @@ bracketRounds=[]; extraMatches=[];
 const screen=matchType === 'normal'?'screen-3-normal':'screen-3-auction';
 showScreen(screen);
 match.status='팀 짜기';
+gaEvent('stage_progress', { stage: 3, match_type: matchType, community_id: window._currentCommunityId });
 await saveCurrentMatch();
 if (matchType === 'normal'){renderNormalPool(); renderNormalTeams(); checkNormalConditions();}
 else{renderAuctionPool(); renderAuctionTeams(); renderFailZone(); renderOnSale(); checkAuctionConditions();}
@@ -4634,6 +4661,7 @@ pips[1].classList.add('active');
 document.getElementById('btn-next').disabled=true;
 showScreen('screen-2');
 match.status='종류 선택';
+gaEvent('stage_progress', { stage: 2, community_id: window._currentCommunityId });
 await saveCurrentMatch();
 toast('2단계 종류 선택으로 이동합니다', 'ok');
 }
@@ -6134,6 +6162,7 @@ pips[4].classList.add('active');
 initResultMatches();
 showScreen('screen-5');
 match.status='내전 종료';
+gaEvent('match_completed', { community_id: window._currentCommunityId });
 document.getElementById('bar-status').textContent='내전 종료';
 await saveCurrentMatch();
 s5SwitchTab('result');
@@ -8124,6 +8153,7 @@ if (isAdmin && !isMaster && currentAdminData?.communityId && currentAdminData.co
 currentCommunity = community;
 window._currentCommunityId = community.id;
 window._currentCommunity = community;
+gaEvent('enter_community', { community_id: community.id, community_name: community.name });
 // 내전 종류 로드
 if (typeof loadMatchTypes === 'function') loadMatchTypes();
 // 진행자 로드
@@ -19185,6 +19215,135 @@ async function deleteHost(id) {
     renderHostList();
     _updateHostSelect();
   } catch(e) { toast('삭제 실패: ' + e.message, 'err'); }
+}
+
+
+// ── Google Analytics 커스텀 이벤트 ──
+function gaEvent(name, params) {
+  if (typeof gtag === 'function') gtag('event', name, params || {});
+}
+
+
+// ── 자동 라인 설정 ──
+var _autoLaneEnabled = false;
+
+function toggleAutoLane() {
+  _autoLaneEnabled = !_autoLaneEnabled;
+  var btn = document.getElementById('auto-lane-toggle');
+  var dot = document.getElementById('auto-lane-dot');
+  if (!btn) return;
+  btn.style.background = _autoLaneEnabled ? '#A78BFA' : '#2D3748';
+  dot.style.background = _autoLaneEnabled ? '#fff' : '#718096';
+  dot.style.left = _autoLaneEnabled ? '21px' : '3px';
+}
+
+// 포지션명 → 내부 라인 코드 변환
+function _posToLane(pos) {
+  var map = { Top:'top', Jungle:'jg', Middle:'mid', Bot:'bot', Supporter:'sup' };
+  return map[pos] || pos.toLowerCase();
+}
+
+// 티어 숫자값 (비교용)
+function _tierValue(tier, div) {
+  var tiers = { IRON:0, BRONZE:1, SILVER:2, GOLD:3, PLATINUM:4, EMERALD:5, DIAMOND:6, MASTER:7, GRANDMASTER:8, CHALLENGER:9 };
+  return (tiers[tier] || 0) * 10 + (5 - (div || 0));
+}
+
+async function _autoSetLane(puuid, gameName, tagLine) {
+  if (!puuid) return;
+  try {
+    var DEEPLOL = 'https://b2c-api-cdn.deeplol.gg';
+    var HDR = { headers: { 'Referer': 'https://www.deeplol.gg/' } };
+
+    // 1단계: summoner API로 딥롤 puu_id 획득
+    var sumR = await fetch(DEEPLOL + '/summoner/summoner?riot_id_name=' + encodeURIComponent(gameName || '') + '&riot_id_tag_line=' + encodeURIComponent(tagLine || 'KR1') + '&platform_id=KR', HDR);
+    var sumD = await sumR.json();
+    var dpPuuId = sumD?.summoner_basic_info_dict?.puu_id || puuid;
+    var prevList = sumD?.summoner_basic_info_dict?.previous_season_tier_list || [];
+
+    // 2단계: 딥롤 puu_id로 나머지 API 병렬 호출
+    var [r25, r27, rtr] = await Promise.all([
+      fetch(DEEPLOL + '/summoner/champion-stat?puu_id=' + encodeURIComponent(dpPuuId) + '&season=25&platform_id=KR', HDR),
+      fetch(DEEPLOL + '/summoner/champion-stat?puu_id=' + encodeURIComponent(dpPuuId) + '&season=27&platform_id=KR', HDR),
+      fetch(DEEPLOL + '/summoner/summoner-realtime?platform_id=KR&summoner_id=&puu_id=' + encodeURIComponent(dpPuuId), HDR),
+    ]);
+    var [d25, d27, rtd] = await Promise.all([r25.json(), r27.json(), rtr.json()]);
+
+    var pos25 = (d25 && d25.counter_champion_stats && d25.counter_champion_stats.total && d25.counter_champion_stats.total.position_rate) || {};
+    var pos27 = (d27 && d27.counter_champion_stats && d27.counter_champion_stats.total && d27.counter_champion_stats.total.position_rate) || {};
+
+    // 둘 다 데이터 없으면 라인 설정 스킵
+    var hasPos = Object.keys(pos25).length > 0 || Object.keys(pos27).length > 0;
+
+    // realtime에서 현시즌(27) 티어
+    var solo27 = rtd?.season_tier_info_dict?.ranked_solo_5x5;
+    var tier27 = solo27?.tier || '';
+    var div27 = solo27?.division || 0;
+    var tierVal27 = _tierValue(tier27, div27);
+
+    var s25 = prevList.find(function(s){ return s.season === 25; });
+    var tier25 = s25?.tier || '';
+    var div25 = s25?.division || 0;
+    var tierVal25 = _tierValue(tier25, div25);
+
+    if (hasPos) {
+      // 티어 높은 시즌의 포지션 데이터 → 주라인
+      var mainPosData = (tierVal27 >= tierVal25 && Object.keys(pos27).length > 0) ? pos27 : pos25;
+      if (Object.keys(mainPosData).length === 0) mainPosData = Object.keys(pos25).length > 0 ? pos25 : pos27;
+
+      var mainPos = null, mainRate = -1;
+      Object.entries(mainPosData).forEach(function(e) {
+        if (e[1].rate > mainRate) { mainRate = e[1].rate; mainPos = e[0]; }
+      });
+
+      // 어느 시즌이든 5% 넘으면 부라인에 포함 (주라인 제외)
+      var subPosSet = {};
+      [pos25, pos27].forEach(function(pd) {
+        Object.entries(pd).forEach(function(e) {
+          if (e[0] !== mainPos && e[1].rate >= 5) {
+            subPosSet[e[0]] = true;
+          }
+        });
+      });
+      var subLanes = Object.keys(subPosSet).map(_posToLane);
+
+      if (mainPos) {
+        var mainLane = _posToLane(mainPos);
+        selectedMainLane = mainLane;
+        selectedSubLanes = new Set(subLanes);
+        document.querySelectorAll('#main-lanes .lane-btn').forEach(function(b) {
+          b.classList.toggle('selected', b.dataset.lane === mainLane);
+        });
+        document.querySelectorAll('#sub-lanes .lane-btn').forEach(function(b) {
+          b.classList.toggle('selected', selectedSubLanes.has(b.dataset.lane));
+        });
+      }
+      toast('✅ 자동 설정 완료: ' + (_posToLane(mainPos)||'') + (subLanes.length ? ' / 부: ' + subLanes.join(', ') : ''), 'ok');
+    } else {
+      toast('⚠️ 딥롤 라인 데이터 없음 (신규 유저)', 'err');
+    }
+
+    // 낮은 티어로 등록
+    var useTier = '', useDiv = 0;
+    if (tier25 && tier27) {
+      if (tierVal25 <= tierVal27) { useTier = tier25; useDiv = div25; }
+      else { useTier = tier27; useDiv = div27; }
+    } else if (tier25) { useTier = tier25; useDiv = div25; }
+    else if (tier27) { useTier = tier27; useDiv = div27; }
+
+    if (useTier) {
+      var TIER_KO = {
+        'IRON':'I','BRONZE':'B','SILVER':'S','GOLD':'G','PLATINUM':'P',
+        'EMERALD':'E','DIAMOND':'D','MASTER':'M','GRANDMASTER':'GM','CHALLENGER':'Chall'
+      };
+      var abbr = (TIER_KO[useTier] || useTier) + (useDiv > 0 ? useDiv : '');
+      window._autoTierOverride = abbr;
+      applyTierOverride(useTier);
+    }
+  } catch(e) {
+    console.error('[autoLane]', e);
+    toast('자동 설정 실패: ' + e.message, 'err');
+  }
 }
 
 </script>

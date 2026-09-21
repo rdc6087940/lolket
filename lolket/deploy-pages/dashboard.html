@@ -1,6 +1,14 @@
 <!DOCTYPE html>
 <html>
 <head>
+<!-- Google Analytics 4 -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-MY5Z9P4L0W"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-MY5Z9P4L0W');
+</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script src="./support.js"></script>
@@ -621,7 +629,10 @@ class Component extends DCLogic {
 
   renderVals() {
     const { tab, selectedSeason, selectedDay, isLoading, communityName, seasons, matchTypeDefs, statsData } = this.state;
-    const setTab = (t) => this.setState({ tab: t });
+    const setTab = (t) => {
+  if (typeof gtag === 'function') gtag('event', 'dashboard_tab', { tab: t, cid: new URLSearchParams(location.search).get('cid') });
+  this.setState({ tab: t });
+};
     const setSelectedDay = (d) => this.setState({ selectedDay: d });
 
     const tabDef = (key, label) => ({
