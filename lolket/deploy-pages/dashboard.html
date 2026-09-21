@@ -15,6 +15,9 @@
   a { color: #5B8DEF; }
   ::-webkit-scrollbar { width: 8px; height: 8px; }
   ::-webkit-scrollbar-thumb { background: #2a2d38; border-radius: 4px; }
+  #cal-grid { align-items: stretch; }
+  #cal-people-panel { overflow: hidden !important; }
+  #cal-people-panel .people-scroll { overflow-y: auto; flex: 1; padding-right: 4px; }
   .loading-spinner {
     display: inline-block; width: 20px; height: 20px;
     border: 2px solid #262a35; border-top-color: #5B8DEF;
@@ -33,7 +36,7 @@
     </div>
     <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
       <!-- 새로고침 버튼 -->
-      <button onClick="{{ onRefresh }}" style="padding:9px 14px; border-radius:8px; border:1px solid #262a35; background:transparent; color:#a7abbd; font-family:'Sora',sans-serif; font-size:13px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:6px;">🔄 새로고침</button>
+      <button onClick="{{ onRefresh }}" style="{{ refreshBtnStyle }}">{{ refreshLabel }}</button>
       <!-- 시즌 선택 -->
       <sc-if value="{{ hasSeasons }}" hint-placeholder-val="{{ false }}">
         <select onChange="{{ onSeasonChange }}" style="background:#1b1e27; border:1px solid #262a35; border-radius:8px; color:#e8e9ee; font-family:'Sora',sans-serif; font-size:13px; font-weight:600; padding:9px 14px; cursor:pointer; outline:none;">
@@ -209,9 +212,16 @@
 
     <!-- ══ 참여 현황 탭 ══ -->
     <sc-if value="{{ isParticipation }}" hint-placeholder-val="{{ false }}">
-      <div style="display:grid; grid-template-columns:1fr 320px; gap:20px; align-items:start; margin-bottom:20px;">
+      <div id="cal-grid" style="display:grid; grid-template-columns:1fr 320px; gap:20px; align-items:start; margin-bottom:20px;">
         <div style="background:#1b1e27; border:1px solid #262a35; border-radius:14px; padding:20px 22px;">
-          <div style="font-size:14px; font-weight:600; color:#c7cadb; margin-bottom:16px;">{{ calendarMonthLabel }}</div>
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+            <div style="font-size:14px; font-weight:600; color:#c7cadb;">{{ calendarMonthLabel }}</div>
+            <div style="display:flex; gap:6px;">
+              <button onClick="{{ onCalPrev }}" style="width:28px; height:28px; border-radius:6px; border:1px solid #262a35; background:transparent; color:#a7abbd; font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all .15s;">‹</button>
+              <button onClick="{{ onCalToday }}" style="height:28px; padding:0 10px; border-radius:6px; border:1px solid #262a35; background:transparent; color:#a7abbd; font-family:'Sora',sans-serif; font-size:11px; font-weight:600; cursor:pointer; transition:all .15s;">오늘</button>
+              <button onClick="{{ onCalNext }}" style="width:28px; height:28px; border-radius:6px; border:1px solid #262a35; background:transparent; color:#a7abbd; font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all .15s;">›</button>
+            </div>
+          </div>
           <div style="display:grid; grid-template-columns:repeat(7,1fr); gap:6px; margin-bottom:8px;">
             <sc-for list="{{ weekdayHeaders }}" as="wd" hint-placeholder-count="7">
               <div style="text-align:center; font-size:11px; color:#6b6f80; font-weight:600;">{{ wd }}</div>
@@ -305,20 +315,108 @@
 </div>
 </x-dc>
 <script>
+// 전역: Riot Data Dragon 한글 챔피언명
+window._champKoMap = null;
+window._champKoLoading = null;
+window.loadChampKo = async function() {
+  if (window._champKoMap) return window._champKoMap;
+  if (window._champKoLoading) return window._champKoLoading;
+  window._champKoLoading = (async () => {
+    try {
+      const vr = await fetch('https://ddragon.leagueoflegends.com/api/versions.json');
+      const versions = await vr.json();
+      const ver = versions[0];
+      const cr = await fetch('https://ddragon.leagueoflegends.com/cdn/' + ver + '/data/ko_KR/champion.json');
+      const cd = await cr.json();
+      const map = {};
+      Object.entries(cd.data).forEach(([key, val]) => {
+        map[key] = val.name;
+        if (val.id && val.id !== key) map[val.id] = val.name;
+      });
+      window._champKoMap = map;
+      console.log('[Dashboard] 챔피언 한글명 로드 완료:', Object.keys(map).length + '개');
+      return map;
+    } catch(e) {
+      console.warn('[Dashboard] Data Dragon 로드 실패:', e.message);
+      window._champKoMap = {};
+      return {};
+    }
+  })();
+  return window._champKoLoading;
+};
+// 미리 로드 시작
+window.loadChampKo();
+</script>
+<script>
 // 캘린더 패널과 우측 패널 높이 동기화
 function syncCalendarPanelHeight() {
-  var calPanel = document.getElementById('cal-people-panel');
-  if (!calPanel) return;
-  var prev = calPanel.previousElementSibling;
-  if (prev) {
-    var h = prev.getBoundingClientRect().height;
-    if (h > 0) calPanel.style.height = h + 'px';
+  // /html/body/div/div/div/div[2]/div[2] 경로 직접 접근
+  try {
+    var root = document.body.children[0]; // div
+    var inner = root.children[0]; // div
+    var page = inner.children[0]; // div (페이지 컨테이너)
+    var section = page.children[1]; // div[2] - 참여현황 섹션
+    if (!section) return;
+    var grid = section.children[1]; // div[2] - 캘린더+멤버 그리드
+    if (!grid) return;
+    var calPanel = grid.children[0];
+    var peoplePanel = grid.children[1];
+    if (!calPanel || !peoplePanel) return;
+    var h = calPanel.getBoundingClientRect().height;
+    if (h > 0) {
+      peoplePanel.style.setProperty('height', h + 'px', 'important');
+      peoplePanel.style.setProperty('max-height', h + 'px', 'important');
+      peoplePanel.style.setProperty('overflow', 'hidden', 'important');
+      // 내부 스크롤 요소 찾기 (flex:1인 div)
+      var children = peoplePanel.children;
+      for (var i = 0; i < children.length; i++) {
+        var c = children[i];
+        if (c.children.length > 2) { // 멤버 리스트 div
+          c.style.setProperty('overflow-y', 'auto', 'important');
+          c.style.setProperty('max-height', (h - 90) + 'px', 'important');
+        }
+      }
+    }
+  } catch(e) {}
+}
+function findAndFixCalGrid() {
+  var divs = document.querySelectorAll('div');
+  for (var i = 0; i < divs.length; i++) {
+    var el = divs[i];
+    if (el.style.gridTemplateColumns === '1fr 320px' && el.children.length === 2) {
+      var calPanel = el.children[0];
+      var peoplePanel = el.children[1];
+      var h = calPanel.getBoundingClientRect().height;
+      if (h > 0) {
+        peoplePanel.style.setProperty('height', h + 'px', 'important');
+        peoplePanel.style.setProperty('max-height', h + 'px', 'important');
+        peoplePanel.style.setProperty('overflow', 'hidden', 'important');
+        // 내부 스크롤 div (마지막 div)
+        var innerDivs = peoplePanel.querySelectorAll('div');
+        innerDivs.forEach(function(d) {
+          if (d.children.length > 3) {
+            d.style.setProperty('overflow-y', 'auto', 'important');
+            d.style.setProperty('max-height', (h - 90) + 'px', 'important');
+            d.style.setProperty('flex', '1', 'important');
+          }
+        });
+      }
+      break;
+    }
   }
 }
-// 렌더링 후 실행
-setTimeout(syncCalendarPanelHeight, 500);
-setTimeout(syncCalendarPanelHeight, 1500);
-window.addEventListener('resize', syncCalendarPanelHeight);
+setTimeout(findAndFixCalGrid, 500);
+setTimeout(findAndFixCalGrid, 1500);
+window.addEventListener('resize', findAndFixCalGrid);
+// 탭 전환 시도 감지
+var _prevTab = '';
+setInterval(function() {
+  var grid = null;
+  document.querySelectorAll('div').forEach(function(el) {
+    if (el.style.gridTemplateColumns === '1fr 320px' && el.children.length === 2) grid = el;
+  });
+  if (grid) findAndFixCalGrid();
+}, 2000);
 </script>
 <script type="text/x-dc" data-dc-script>
 const WORKER_URL = 'https://api.roonging.com';
@@ -334,6 +432,11 @@ function mkPerson(name) {
   return { name, initial: name[0] || '?', avatarBg: avatarColor(name) };
 }
 
+function champKo(name) {
+  if (!name || name === '?') return name;
+  return (window._champKoMap && window._champKoMap[name]) || CHAMP_KO_FALLBACK[name] || name;
+}
+
 async function dbRead(path) {
   const r = await fetch(WORKER_URL + '/db-public-read', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -343,12 +446,21 @@ async function dbRead(path) {
   return j.ok ? j.data : null;
 }
 
+
+const CHAMP_KO_FALLBACK = {
+  Aatrox:'아트록스',Ahri:'아리',Akali:'아칼리',Akshan:'아크샨',Alistar:'알리스타',Amumu:'아무무',Anivia:'애니비아',Annie:'애니',Aphelios:'아펠리오스',Ashe:'애쉬',AurelionSol:'아우렐리온 솔',Aurora:'오로라',Azir:'아지르',Bard:'바드',BelVeth:'벨베스',Blitzcrank:'블리츠크랭크',Brand:'브랜드',Braum:'브라움',Briar:'브라이어',Caitlyn:'케이틀린',Camille:'카밀',Cassiopeia:'카시오페아',ChoGath:'초가스',Corki:'코르키',Darius:'다리우스',Diana:'다이애나',Draven:'드레이븐',DrMundo:'문도 박사',Ekko:'에코',Elise:'엘리스',Evelynn:'이블린',Ezreal:'이즈리얼',Fiddlesticks:'피들스틱',Fiora:'피오라',Fizz:'피즈',Galio:'갈리오',Gangplank:'갱플랭크',Garen:'가렌',Gnar:'나르',Gragas:'그라가스',Graves:'그레이브즈',Gwen:'그웬',Hecarim:'헤카림',Heimerdinger:'하이머딩거',Hwei:'흐웨이',Illaoi:'일라오이',Irelia:'이렐리아',Ivern:'아이번',Janna:'잔나',JarvanIV:'자르반 4세',Jax:'잭스',Jayce:'제이스',Jhin:'진',Jinx:'징크스',KSante:'케이산테',KaiSa:'카이사',Kalista:'칼리스타',Karma:'카르마',Karthus:'카서스',Kassadin:'카사딘',Katarina:'카타리나',Kayle:'케일',Kayn:'케인',Kennen:'케넨',KhaZix:'카직스',Kindred:'킨드레드',Kled:'클레드',KogMaw:'코그모',LeBlanc:'르블랑',LeeSin:'리 신',Leona:'레오나',Lillia:'릴리아',Lissandra:'리산드라',Lucian:'루시안',Lulu:'룰루',Lux:'럭스',Malphite:'말파이트',Malzahar:'말자하',Maokai:'마오카이',MasterYi:'마스터 이',Milio:'밀리오',MissFortune:'미스 포츈',MonkeyKing:'우디르',Mordekaiser:'모데카이저',Morgana:'모르가나',Naafiri:'나피리',Nami:'나미',Nasus:'나서스',Nautilus:'노틸러스',Neeko:'니코',Nidalee:'니달리',Nilah:'닐라',Nocturne:'녹턴',Nunu:'누누와 윌럼프',Olaf:'올라프',Orianna:'오리아나',Ornn:'오른',Pantheon:'판테온',Poppy:'뽀삐',Pyke:'파이크',Qiyana:'키야나',Quinn:'퀸',Rakan:'라칸',Rammus:'람머스',RekSai:'렉사이',Rell:'렐',RenataGlasc:'르나타 글라스크',Renekton:'레넥톤',Rengar:'렝가',Riven:'리븐',Rumble:'럼블',Ryze:'라이즈',Samira:'사미라',Sejuani:'세주아니',Senna:'세나',Seraphine:'세라핀',Sett:'세트',Shaco:'샤코',Shen:'쉔',Shyvana:'쉬바나',Singed:'신지드',Sion:'사이온',Sivir:'시비르',Skarner:'스카너',Smolder:'스몰더',Sona:'소나',Soraka:'소라카',Swain:'스웨인',Sylas:'사일러스',Syndra:'신드라',TahmKench:'탐 켄치',Taliyah:'탈리야',Talon:'탈론',Taric:'타릭',Teemo:'티모',Thresh:'쓰레쉬',Tristana:'트리스타나',Trundle:'트런들',Tryndamere:'트린다미어',TwistedFate:'트위스티드 페이트',Twitch:'트위치',Udyr:'우디르',Urgot:'우르곳',Varus:'바루스',Vayne:'베인',Veigar:'베이가',VelKoz:'벨코즈',Vex:'벡스',Vi:'바이',Viego:'비에고',Viktor:'빅토르',Vladimir:'블라디미르',Volibear:'볼리베어',Warwick:'워윅',Wukong:'오공',Xayah:'자야',Xerath:'제라스',XinZhao:'신 짜오',Yasuo:'야스오',Yone:'요네',Yorick:'요릭',Yuumi:'유미',Zac:'자크',Zed:'제드',Zeri:'제리',Ziggs:'직스',Zilean:'질리언',Zoe:'조이',Zyra:'자이라',Ambessa:'암베사',
+};
+
+
 class Component extends DCLogic {
   state = {
     tab: 'leaderboard',
     selectedSeason: '',
     selectedDay: null,
+    calYear: new Date().getFullYear(),
+    calMonth: new Date().getMonth(),
     isLoading: true,
+    lastRefresh: 0,
     communityName: '',
     seasons: [],
     matches: [],
@@ -357,7 +469,17 @@ class Component extends DCLogic {
     statsData: [],
   };
 
+  componentWillUnmount() {
+    if (this._refreshTimer) clearInterval(this._refreshTimer);
+  }
+
   async componentDidMount() {
+    // 1분마다 re-render로 카운트다운 업데이트
+    if (!this._refreshTimer) {
+      this._refreshTimer = setInterval(() => {
+        this.setState({ _tick: Date.now() });
+      }, 60000);
+    }
     const params = new URLSearchParams(location.search);
     const cid = params.get('cid');
     if (!cid) { this.setState({ isLoading: false }); return; }
@@ -521,7 +643,27 @@ class Component extends DCLogic {
       : '';
 
     const onSeasonChange = (e) => this.setState({ selectedSeason: e.target.value });
+    const onCalPrev = () => {
+      const { calYear, calMonth } = this.state;
+      if (calMonth === 0) this.setState({ calYear: calYear - 1, calMonth: 11, selectedDay: null });
+      else this.setState({ calMonth: calMonth - 1, selectedDay: null });
+    };
+    const onCalNext = () => {
+      const { calYear, calMonth } = this.state;
+      if (calMonth === 11) this.setState({ calYear: calYear + 1, calMonth: 0, selectedDay: null });
+      else this.setState({ calMonth: calMonth + 1, selectedDay: null });
+    };
+    const onCalToday = () => {
+      const now2 = new Date();
+      this.setState({ calYear: now2.getFullYear(), calMonth: now2.getMonth(), selectedDay: now2.getDate() });
+    };
+    const REFRESH_COOLDOWN = 15 * 60 * 1000; // 15분
+    const { lastRefresh } = this.state;
+    const now3 = Date.now();
+    const refreshCooldownLeft = Math.max(0, Math.ceil((lastRefresh + REFRESH_COOLDOWN - now3) / 1000));
+    const canRefresh = refreshCooldownLeft === 0;
     const onRefresh = () => {
+      if (!canRefresh) return;
       const cid = new URLSearchParams(location.search).get('cid');
       if (!cid) return;
       try {
@@ -529,9 +671,10 @@ class Component extends DCLogic {
         sessionStorage.removeItem('db_meta_' + cid);
         sessionStorage.removeItem('db_stats_' + cid);
       } catch(e) {}
-      this.setState({ isLoading: true });
+      this.setState({ isLoading: true, lastRefresh: Date.now() });
       this.componentDidMount();
     };
+    const refreshLabel = canRefresh ? '🔄 새로고침' : '🔄 ' + Math.floor(refreshCooldownLeft / 60) + ':' + String(refreshCooldownLeft % 60).padStart(2, '0');
     const seasonItems = seasons.map(s => ({ ...s, selected: s.id === selectedSeason }));
 
     const allMatches = this.filteredMatches();
@@ -568,7 +711,7 @@ class Component extends DCLogic {
     }));
 
     const now = new Date();
-    const year = now.getFullYear(), month = now.getMonth();
+    const { calYear: year, calMonth: month } = this.state;
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const monthlyCounts = new Array(daysInMonth).fill(0);
     allMatches.forEach(m => {
@@ -596,6 +739,10 @@ class Component extends DCLogic {
       (m._resultMatches || []).forEach(rm => {
         if (rm.winner && rm.gameData && rm.gameData.teamA && rm.gameData.teamA.length > 0)
           riotResultMatches.push(rm);
+        else if (rm.winner && !rm.gameData && rm.teamA && rm.teamA.members) {
+          // gameData가 rm 자체에 없고 teamA.members 구조인 경우 gameData로 변환
+          // (팀 구성 데이터이므로 스코어보드 없음 - 스킵)
+        }
       });
     });
 
@@ -656,7 +803,7 @@ class Component extends DCLogic {
       .map(([name, ps]) => {
         const games = ps.wins + ps.losses;
         const kda = ps.d === 0 ? (ps.k + ps.a).toFixed(1) : ((ps.k + ps.a) / ps.d).toFixed(2);
-        const mainChamp = Object.entries(ps.champs).sort((a,b) => b[1]-a[1])[0]?.[0] || '—';
+        const mainChamp = champKo(Object.entries(ps.champs).sort((a,b) => b[1]-a[1])[0]?.[0] || '—');
         const statRow = statsData.find(s => s.riot_name === name);
         const tier = statRow ? (statRow.most_tier || '') : '';
         return { name, wins: ps.wins, losses: ps.losses, games, kda, mainChamp, tier,
@@ -683,7 +830,7 @@ class Component extends DCLogic {
           const ac = awardAccum[p.name];
           ac.k += p.k||0; ac.d += p.d||0; ac.a += p.a||0;
           ac.dmg += p.dmg||0; ac.wards += p.wards||0; ac.tankDmg += p.tankDmg||0;
-          if (p.champion && p.champion !== '?') ac.champ = p.champion;
+          if (p.champion && p.champion !== '?') ac.champ = champKo(p.champion);
         });
       });
     });
@@ -712,8 +859,9 @@ class Component extends DCLogic {
         const processTeamChamp = (players, isWin) => {
           (players||[]).forEach(p => {
             if (!p.champion || p.champion === '?') return;
-            if (!champMap[p.champion]) champMap[p.champion] = { games:0, wins:0, k:0, d:0, a:0 };
-            const c = champMap[p.champion];
+            const champKey = p.champion;
+            if (!champMap[champKey]) champMap[champKey] = { games:0, wins:0, k:0, d:0, a:0 };
+            const c = champMap[champKey];
             c.games++; if (isWin) c.wins++;
             c.k += p.k||0; c.d += p.d||0; c.a += p.a||0;
           });
@@ -730,7 +878,7 @@ class Component extends DCLogic {
         const wrPct = Math.round(wr*100);
         const kda = c.d === 0 ? (c.k+c.a).toFixed(1) : ((c.k+c.a)/c.d).toFixed(2);
         const color = wr >= 0.6 ? '#5be3a9' : wr >= 0.45 ? '#F5A623' : '#e35b5b';
-        return { name, games: c.games, winRate: wrPct+'%', winRateWidth: wrPct+'%', winRateColor: color, kda };
+        return { name: champKo(name), games: c.games, winRate: wrPct+'%', winRateWidth: wrPct+'%', winRateColor: color, kda };
       });
 
     // ── 참여 현황 캘린더 (3단계 이상 내전) ──
@@ -824,6 +972,12 @@ class Component extends DCLogic {
       hasSeasons: seasonItems.length > 0,
       onSeasonChange,
       onRefresh,
+      canRefresh,
+      refreshLabel,
+      refreshBtnStyle: 'padding:9px 14px; border-radius:8px; border:1px solid #3a3d4a; background:#1b1e27; font-family:Sora,sans-serif; font-size:13px; font-weight:600; display:flex; align-items:center; gap:6px;' + (canRefresh ? 'color:#e8e9ee; cursor:pointer; opacity:1;' : 'color:#8b8fa3; cursor:not-allowed; opacity:0.6;'),
+      onCalPrev,
+      onCalNext,
+      onCalToday,
       summaryCards, leaderboard, champions, hourlyActivity, weekdayActivity, monthlyActivity,
       awards, matchTypeItems,
       calendarMonthLabel: `${year}년 ${month+1}월`,

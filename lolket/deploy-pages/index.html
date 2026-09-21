@@ -1811,7 +1811,7 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
   <div id="champ-rank-body"><div class="champ-empty">내전 기록이 없습니다</div></div>
   <button class="champ-more-btn" id="champ-more-btn" onclick="openChampModal()" style="display:none;">더보기 ▶</button>
 </div>
-</div> <div style="flex:1;min-width:0;"> <div class="list-topbar" style="margin-bottom:.5rem;"> <div class="list-heading">내전 목록</div> <div style="display:flex;align-items:center;gap:8px;"> <input id="match-search-input" type="text" placeholder="내전명·진행자 검색..." oninput="renderMatchList()" style="padding:6px 10px;background:var(--bg-dark);border:1px solid var(--border-subtle);border-radius:3px;color:var(--text-white);font-family:'Rajdhani',sans-serif;font-size:12px;outline:none;width:180px;"> <button class="btn-primary admin-only" onclick="openNewMatchFlow()" id="btn-list-new" style="display:none;">+ 새 내전 생성</button> <button class="btn-secondary admin-only" id="btn-manage-cats-main" onclick="openManageCategories()" style="display:none;">🏷 카테고리 관리</button> <button class="btn-secondary admin-only" id="btn-manage-match-types" onclick="openMatchTypeManager()" style="display:none;">📋 내전 종류</button> <button onclick="openDashboard()" style="padding:7px 14px;border-radius:3px;border:1px solid rgba(91,141,239,.4);background:rgba(91,141,239,.08);color:#5B8DEF;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;cursor:pointer;">📊 대시보드</button> <button class="btn-secondary admin-only" id="btn-rules-list" onclick="openRulesListModal()" style="display:none;">📋 가이드/룰 목록</button> </div> </div>
+</div> <div style="flex:1;min-width:0;"> <div class="list-topbar" style="margin-bottom:.5rem;"> <div class="list-heading">내전 목록</div> <div style="display:flex;align-items:center;gap:8px;"> <input id="match-search-input" type="text" placeholder="내전명·진행자 검색..." oninput="renderMatchList()" style="padding:6px 10px;background:var(--bg-dark);border:1px solid var(--border-subtle);border-radius:3px;color:var(--text-white);font-family:'Rajdhani',sans-serif;font-size:12px;outline:none;width:180px;"> <button class="btn-primary admin-only" onclick="openNewMatchFlow()" id="btn-list-new" style="display:none;">+ 새 내전 생성</button> <button class="btn-secondary admin-only" id="btn-manage-cats-main" onclick="openManageCategories()" style="display:none;">🏷 카테고리 관리</button> <button class="btn-secondary admin-only" id="btn-manage-match-types" onclick="openMatchTypeManager()" style="display:none;">📋 내전 종류</button> <button class="btn-secondary admin-only" id="btn-manage-hosts" onclick="openHostManager()" style="display:none;">👤 진행자 관리</button> <button onclick="openDashboard()" style="padding:7px 14px;border-radius:3px;border:1px solid rgba(91,141,239,.4);background:rgba(91,141,239,.08);color:#5B8DEF;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;cursor:pointer;">📊 대시보드</button> <button class="btn-secondary admin-only" id="btn-rules-list" onclick="openRulesListModal()" style="display:none;">📋 가이드/룰 목록</button> </div> </div>
 <div id="match-cat-bar" style="margin-bottom:.6rem;display:none;">
   <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
     <div id="match-cat-tabs" style="display:flex;gap:5px;flex-wrap:wrap;"></div>
@@ -1866,8 +1866,97 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
 </div>
 </div> <div class="modal-overlay" id="edit-time-modal" style="display:none;"> <div class="modal" style="max-width:360px;"> <div class="modal-title">시작 시간 수정</div> <div class="form-row"> <div class="form-label">새 시작 시간</div> <input class="form-input" type="datetime-local" id="et-time"> </div> <div class="modal-actions"> <button class="btn-secondary" onclick="closeEditTimeModal()">취소</button> <button class="btn-primary" onclick="saveEditTime()">저장</button> </div> </div>
 </div> <div class="modal-overlay" id="em-modal" style="display:none;" data-id=""> <div class="modal" style="max-width:420px;"> <div class="modal-title">내전 정보 수정</div> <div class="form-row"> <div class="form-label">내전 이름</div> <input class="form-input" type="text" id="em-name"> </div> <div class="form-row"> <div class="form-label">시작 시간</div> <input class="form-input" type="datetime-local" id="em-time"> </div> <div class="form-row"> <div class="form-label">진행 관리자 (선택)</div> <input class="form-input" type="text" id="em-admin" placeholder="공란 가능"> </div> <div class="modal-actions"> <button class="btn-secondary" onclick="closeEditMatchModal()">취소</button> <button class="btn-secondary" onclick="saveEditMatch()">저장</button> <button class="btn-primary" onclick="(function(){saveEditMatch();setTimeout(()=>{const list=dbLoad();const snap=list.find(m=>m.name===document.getElementById('em-name').value.trim());if(snap)proceedToStage1(snap);},100)})()">진행하기 →</button> </div> </div>
-</div> <div class="modal-overlay" id="create-modal" style="display:none;"> <div class="modal"> <div class="modal-title">새 내전 생성</div> <div class="form-row"> <div class="form-label">내전 이름</div> <input class="form-input" type="text" id="m-name" placeholder="예) 금요 정기 내전 시즌 1"> </div> <div class="form-row"> <div class="form-label">시작 시간</div> <input class="form-input" type="datetime-local" id="m-time"> </div> <div class="form-row"> <div class="form-label">진행 관리자 (선택)</div> <input class="form-input" type="text" id="m-admin" placeholder="관리자 닉네임 (공란 가능)"> </div> <div class="form-row" id="m-type-row" style="display:none;"> <div class="form-label">내전 종류 (선택)</div> <select class="form-input" id="m-type" style="cursor:pointer;font-family:'Rajdhani',sans-serif;font-size:12px;"><option value="">없음</option></select> </div> <div class="form-row" id="m-cat-row" style="display:none;"> <div class="form-label">내전 종류 (선택)</div> <select class="form-input" id="m-cat" style="cursor:pointer;font-family:'Rajdhani',sans-serif;font-size:12px;"><option value="">없음 (미분류)</option></select> </div> <div class="modal-actions"> <button class="btn-secondary" onclick="closeCreateModal()">취소</button> <button class="btn-primary" onclick="createMatch()">생성</button> </div> </div>
-</div> <div id="screen-2" class="screen"> <div class="type-select-wrap"> <div style="text-align:center;"> <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:4px;color:var(--gold);margin-bottom:6px;">내전 종류 선택</div> <div style="font-size:13px;color:var(--text-muted);">진행 방식을 선택하면 팀 짜기 단계로 넘어갑니다</div> </div> <div class="type-cards"> <div class="type-card" id="type-normal" onclick="selectType('normal')"> <div class="type-card-icon">⚔️</div> <div class="type-card-title">일반 내전</div> <div class="type-card-desc">관리자가 멤버를 직접 드래그해서 팀을 구성합니다. 빠르고 간단한 팀 배정에 적합합니다.</div> <div class="type-card-tags"> <span class="type-tag">드래그 앤 드롭</span> <span class="type-tag">빠른 배정</span> </div> </div> <div class="type-card" id="type-auction" onclick="selectType('auction')"> <div class="type-card-icon">🏆</div> <div class="type-card-title">경매 내전</div> <div class="type-card-desc">팀장들이 포인트를 가지고 멤버를 입찰해 영입합니다. 전략적이고 긴장감 있는 팀 구성이 가능합니다.</div> <div class="type-card-tags"> <span class="type-tag">포인트 입찰</span> <span class="type-tag">랜덤 경매</span> <span class="type-tag">카운트다운</span> </div> </div> </div> <div class="type-select-footer" style="justify-content:space-between;"> <button class="btn-secondary" onclick="goBackToStage1()">← 이전 단계</button> <button class="btn-next" id="btn-type-next" disabled onclick="goToStage3()">다음 단계 →</button> </div> </div>
+</div> <div class="modal-overlay" id="create-modal" style="display:none;">
+ <div class="modal">
+  <div class="modal-title">새 내전 생성</div>
+  <div class="form-row">
+   <div class="form-label">내전 이름</div>
+   <input class="form-input" type="text" id="m-name" placeholder="예) 금요 정기 내전 시즌 1">
+  </div>
+  <div class="form-row">
+   <div class="form-label">시작 시간</div>
+   <input class="form-input" type="datetime-local" id="m-time">
+  </div>
+  <div class="form-row">
+   <div class="form-label" style="display:flex;align-items:center;justify-content:space-between;">진행자 (선택) <button onclick="openHostManager()" style="padding:2px 8px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--text-muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;">관리</button></div>
+   <div id="m-admin-btns" style="display:flex;flex-wrap:wrap;gap:6px;min-height:32px;padding:4px 0;"></div>
+   <input type="hidden" id="m-admin" value="">
+  </div>
+  <div class="form-row" id="m-type-row" style="display:none;">
+   <div class="form-label">내전 종류 (선택)</div>
+   <select class="form-input" id="m-type" style="cursor:pointer;font-family:'Rajdhani',sans-serif;font-size:12px;"><option value="">없음</option></select>
+  </div>
+  <div class="form-row" id="m-cat-row" style="display:none;">
+   <div class="form-label">카테고리 (선택)</div>
+   <select class="form-input" id="m-cat" style="cursor:pointer;font-family:'Rajdhani',sans-serif;font-size:12px;"><option value="">없음 (미분류)</option></select>
+  </div>
+  <div class="modal-actions">
+   <button class="btn-secondary" onclick="closeCreateModal()">취소</button>
+   <button class="btn-primary" onclick="createMatch()">생성</button>
+  </div>
+ </div>
+</div>
+<div class="modal-overlay" id="add-team-modal" style="display:none;"> <div class="modal modal-add-team"> <div class="modal-title">팀 추가</div> <div style="font-size:12px;color:var(--text-muted);margin-bottom:1rem;line-height:1.6;">
+ 팀장을 지정하면 팀 이름이 팀장 닉네임으로 설정됩니다.<br>
+ 팀장은 나중에 대기칸에서 드래그해 팀에 추가한 뒤 지정할 수 있습니다.
+ </div> <div class="form-row"> <div class="form-label">팀장 선택 (선택사항)</div> <input type="text" id="captain-search" class="form-input" placeholder="닉네임 검색..." oninput="filterCaptainList('captain-list','captain-search')" style="margin-bottom:6px;font-size:12px;padding:6px 10px;"> <div class="captain-list" id="captain-list"></div> </div> <div class="modal-actions"> <button class="btn-secondary" onclick="closeAddTeamModal()">취소</button> <button class="btn-primary" onclick="confirmAddTeam()">팀 생성</button> </div> </div>
+</div> <div class="modal-overlay" id="set-captain-modal" style="display:none;"> <div class="modal modal-sm"> <div class="modal-title">팀장 지정</div> <input type="text" id="set-captain-search" class="form-input" placeholder="닉네임 검색..." oninput="filterCaptainList('set-captain-list','set-captain-search')" style="margin-bottom:8px;font-size:12px;padding:6px 10px;"> <div class="captain-list" id="set-captain-list"></div> <div class="modal-actions"> <button class="btn-secondary" onclick="document.getElementById('set-captain-modal').style.display='none'">취소</button> </div> </div>
+</div> <div class="modal-overlay" id="points-modal" style="display:none;"> <div class="modal" style="max-width:400px;"> <div class="modal-title">팀장 포인트 설정</div> <div class="points-form" id="points-form"></div> <div id="points-auto-notice" style="display:none;margin:8px 0;padding:8px;background:rgba(200,170,110,.08);border:1px solid rgba(200,170,110,.3);border-radius:3px;font-family:'Noto Sans KR',sans-serif;font-size:11px;color:var(--gold);line-height:1.6;"></div>
+<div class="modal-actions" style="flex-wrap:wrap;gap:6px;">
+  <button onclick="calcAutoPoints()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(10,200,185,.4);background:rgba(10,200,185,.06);color:var(--blue-bright);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">⚡ 잔여포인트 자동계산</button>
+  <div style="flex:1;"></div>
+  <button class="btn-secondary" onclick="document.getElementById('points-modal').style.display='none'">취소</button>
+  <button class="btn-primary" onclick="savePoints()">저장</button>
+</div> </div>>
+</div> 
+
+<!-- 블랙리스트 추가 모달 -->
+<div class="modal-overlay" id="bl-add-modal" style="display:none;">
+  <div class="modal" style="max-width:440px;display:flex;flex-direction:column;max-height:90vh;padding:0;overflow:hidden;">
+    <div class="modal-title" style="padding:1.25rem 1.5rem 1rem;flex-shrink:0;">🚫 블랙리스트 추가</div>
+    <div style="display:flex;flex-direction:column;gap:1rem;overflow-y:auto;padding:0 1.5rem 1rem;flex:1;">
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <label class="form-label">소환사 검색</label>
+        <div style="display:flex;gap:6px;">
+          <input class="form-input" type="text" id="bl-search-input" placeholder="닉네임#태그" style="flex:1;" onkeydown="if(event.key==='Enter')blSearchSummoner()">
+          <button class="btn-primary" onclick="blSearchSummoner()" style="white-space:nowrap;padding:8px 14px;font-size:12px;">검색</button>
+        </div>
+      </div>
+      <div id="bl-summoner-result" style="display:none;background:var(--bg-dark);border:1px solid var(--border-subtle);border-radius:3px;padding:10px 12px;display:none;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <img id="bl-s-icon" src="" style="width:36px;height:36px;border-radius:3px;border:1px solid var(--border-subtle);" onerror="this.style.display=&quot;none&quot;">
+          <div>
+            <div style="font-size:13px;font-weight:600;color:var(--text-white);"><span id="bl-s-name">—</span><span id="bl-s-tag" style="color:var(--text-muted);font-size:11px;margin-left:3px;"></span></div>
+            <div style="font-size:11px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;"><span id="bl-s-tier">—</span> · Lv.<span id="bl-s-level">—</span></div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <label class="form-label">블랙리스트 사유 <span style="color:#E05050;">*</span></label>
+        <textarea class="form-input" id="bl-reason" placeholder="블랙리스트 등재 사유를 입력하세요" style="height:80px;resize:vertical;font-size:12px;line-height:1.6;"></textarea>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <label class="form-label">부가 정보 (선택) — 디스코드, 기타 메모</label>
+        <input class="form-input" type="text" id="bl-memo" placeholder="예) 디스코드: xxx#1234 / 기타 메모" style="font-size:12px;">
+      </div>
+    </div>
+    <div class="modal-actions" style="padding:.75rem 1.5rem 1.25rem;border-top:1px solid var(--border-subtle);flex-shrink:0;">
+      <button class="btn-secondary" onclick="closeBlacklistAddModal()">취소</button>
+      <button class="btn-primary" onclick="submitBlacklist()" style="border-color:rgba(192,48,48,.5);color:#E05050;background:rgba(192,48,48,.08);">블랙리스트 등록</button>
+    </div>
+  </div>
+</div>
+
+<!-- 블랙리스트 상세 모달 -->
+<div class="modal-overlay" id="bl-detail-modal" style="display:none;">
+  <div class="modal" style="max-width:460px;display:flex;flex-direction:column;max-height:90vh;padding:0;overflow:hidden;">
+    <div class="modal-title" style="padding:1.25rem 1.5rem 1rem;flex-shrink:0;">🚫 블랙리스트 상세</div>
+    <div style="display:flex;flex-direction:column;gap:1rem;overflow-y:auto;padding:0 1.5rem 1rem;flex:1;" id="bl-detail-body"></div>
+    <div class="modal-actions" style="padding:.75rem 1.5rem 1.25rem;border-top:1px solid var(--border-subtle);flex-shrink:0;" id="bl-detail-actions"></div>
+  </div>
+</div>
+
+<div id="screen-2" class="screen"> <div class="type-select-wrap"> <div style="text-align:center;"> <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:4px;color:var(--gold);margin-bottom:6px;">내전 종류 선택</div> <div style="font-size:13px;color:var(--text-muted);">진행 방식을 선택하면 팀 짜기 단계로 넘어갑니다</div> </div> <div class="type-cards"> <div class="type-card" id="type-normal" onclick="selectType('normal')"> <div class="type-card-icon">⚔️</div> <div class="type-card-title">일반 내전</div> <div class="type-card-desc">관리자가 멤버를 직접 드래그해서 팀을 구성합니다. 빠르고 간단한 팀 배정에 적합합니다.</div> <div class="type-card-tags"> <span class="type-tag">드래그 앤 드롭</span> <span class="type-tag">빠른 배정</span> </div> </div> <div class="type-card" id="type-auction" onclick="selectType('auction')"> <div class="type-card-icon">🏆</div> <div class="type-card-title">경매 내전</div> <div class="type-card-desc">팀장들이 포인트를 가지고 멤버를 입찰해 영입합니다. 전략적이고 긴장감 있는 팀 구성이 가능합니다.</div> <div class="type-card-tags"> <span class="type-tag">포인트 입찰</span> <span class="type-tag">랜덤 경매</span> <span class="type-tag">카운트다운</span> </div> </div> </div> <div class="type-select-footer" style="justify-content:space-between;"> <button class="btn-secondary" onclick="goBackToStage1()">← 이전 단계</button> <button class="btn-next" id="btn-type-next" disabled onclick="goToStage3()">다음 단계 →</button> </div> </div>
 </div> <div id="screen-3-normal" class="screen"> <div class="builder-wrap"> <div class="builder-topbar-row" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;"> <div class="builder-topbar-title" style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;color:var(--gold);">일반 내전 — 팀 구성</div> <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;"> <button class="btn-secondary" onclick="goBackToStage2()">← 이전 단계</button> <button onclick="copyMatchLink()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(10,200,185,.4);background:rgba(10,200,185,.06);color:var(--blue-bright);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="내전 상세 링크 복사">🔗 링크 복사</button> <button onclick="copyTeamText()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(200,170,110,.4);background:rgba(200,170,110,.06);color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="팀 정보 텍스트 복사">📋 팀 정보 복사</button> <button onclick="copyTeamMentions('captain')" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(100,150,255,.4);background:rgba(100,150,255,.06);color:#7EB2FF;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="팀장만 멘션 복사">@ 팀장</button> <button onclick="copyTeamMentions('members')" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(100,150,255,.4);background:rgba(100,150,255,.06);color:#7EB2FF;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="팀장 제외 멘션 복사">@ 팀장 제외</button> <button class="btn-secondary" onclick="addTeamModal('normal')">+ 팀 추가</button> <button class="btn-secondary" onclick="openSwapModal()" style="font-size:11px;padding:7px 14px;border-color:rgba(157,72,224,.4);color:#B97EEA;background:rgba(157,72,224,.06);">🔄 선수 교체</button> <button class="btn-secondary" onclick="openDraftOrderModal()" style="font-size:11px;padding:7px 14px;border-color:rgba(200,170,110,.4);color:var(--gold);background:rgba(200,170,110,.06);">🎲 팀뽑기 순서</button> <button onclick="openHyperFearlessBan()" style="font-size:11px;padding:7px 14px;border-radius:2px;border:1px solid rgba(10,200,185,.4);background:rgba(10,200,185,.06);color:var(--blue-bright);font-family:'Rajdhani',sans-serif;font-weight:700;letter-spacing:1px;cursor:pointer;">🎯 챔피언 추첨</button> <button class="btn-copy-img" onclick="copyTeamBuilderImage()" style="font-size:11px;padding:7px 14px;"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="1" y="3" width="8" height="9" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M4 3V2a1 1 0 011-1h5a1 1 0 011 1v7a1 1 0 01-1 1h-1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg> 이미지 복사</button> <button class="btn-next" id="btn-normal-next" disabled onclick="goToStage4()">다음 단계 →</button> </div> </div> <div class="builder-cond" style="margin-bottom:.75rem;"> <div class="cond-item"><div class="cond-dot" id="n-cond-pool"></div><span id="n-cond-pool-text" style="font-size:12px;color:var(--text-muted);">대기칸 비어있음</span></div> <div class="cond-item"><div class="cond-dot" id="n-cond-teams"></div><span id="n-cond-teams-text" style="font-size:12px;color:var(--text-muted);">팀 조건 충족</span></div> </div>  <div class="builder-layout"> <div class="pool-panel"> <div class="balance-ctrl-section">
   <span class="balance-ctrl-label">⚖️ 밸런스 점수</span>
   <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
@@ -3719,6 +3808,7 @@ document.getElementById('create-modal').style.display='flex';
 }
 function closeCreateModal(){
 document.getElementById('create-modal').style.display='none';
+_selectedHosts = [];
 }
 async function createMatch(){
 const name=document.getElementById('m-name').value.trim();
@@ -3965,7 +4055,7 @@ var _mapKey2 = (data.name||'').toLowerCase() + '#' + (data.tag||'').toLowerCase(
 var _dpPuuId = _communityPuuMap && _communityPuuMap[_mapKey2];
 var _pos = _dpPuuId && _communityMostPosMap && _communityMostPosMap[_dpPuuId];
 if (_pos) {
-  var _posLabel = { TOP:'탑', JUNGLE:'정글', MID:'미드', ADC:'원딜', SUPPORT:'서폿', BOTTOM:'원딜' }[_pos.toUpperCase()] || _pos;
+  var _posLabel = { TOP:'탑', JUNGLE:'정글', MID:'미드', MIDDLE:'미드', ADC:'원딜', BOT:'원딜', BOTTOM:'원딜', SUPPORT:'서폿', SUPPORTER:'서폿', UTILITY:'서폿' }[_pos.toUpperCase()] || _pos;
   _mainLaneEl.textContent = _posLabel;
   _mainLaneRow.style.display = '';
 } else {
@@ -4347,7 +4437,7 @@ card.innerHTML=`
 <div style="display:flex;align-items:flex-start;gap:10px;width:100%;">
   <div style="display:flex;flex-direction:column;align-items:center;gap:3px;flex-shrink:0;">
     <div class="avatar" style="color:${color};"> <img src="https://ddragon.leagueoflegends.com/cdn/16.14.1/img/profileicon/${m.icon}.png" onerror="this.style.display=&quot;none&quot;"> <div class="avatar-rank-border"></div> </div>
-    ${(function(){var _mk=(m.name||'').toLowerCase()+'#'+(m.tag||'').toLowerCase();var _dp=_communityPuuMap[_mk];var _mp=_dp&&_communityMostPosMap[_dp];if(!_mp)return '';var _pl={'TOP':'탑','JUNGLE':'정글','MID':'미드','ADC':'원딜','SUPPORT':'서폿','BOTTOM':'원딜'}[_mp.toUpperCase()]||_mp;return '<span style="font-size:9px;font-family:Rajdhani,sans-serif;font-weight:700;color:var(--gold);background:rgba(200,170,110,.08);border:1px solid rgba(200,170,110,.2);border-radius:2px;padding:1px 5px;white-space:nowrap;" title="커뮤니티 주라인">'+_pl+'</span>';})()}
+    ${(function(){var _mk=(m.name||'').toLowerCase()+'#'+(m.tag||'').toLowerCase();var _dp=_communityPuuMap[_mk];var _mp=_dp&&_communityMostPosMap[_dp];if(!_mp)return '';var _pl={'TOP':'탑','JUNGLE':'정글','MIDDLE':'미드','MID':'미드','ADC':'원딜','BOT':'원딜','BOTTOM':'원딜','SUPPORT':'서폿','SUPPORTER':'서폿','UTILITY':'서폿'}[_mp.toUpperCase()]||_mp;return '<span style="font-size:9px;font-family:Rajdhani,sans-serif;font-weight:700;color:var(--gold);background:rgba(200,170,110,.08);border:1px solid rgba(200,170,110,.2);border-radius:2px;padding:1px 5px;white-space:nowrap;" title="커뮤니티 주라인">'+_pl+'</span>';})()}
   </div>
   <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;">
     <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:4px;">
@@ -5354,9 +5444,19 @@ const _miniScoreHtml = (function() {
     '<span style="font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;color:var(--gold);">⭐ ' + Math.round(r.current) + '</span>' +
     _doomPart + '</div>';
 })();
+// 3단계 주라인 뱃지
+const _s3mk = (m.name||'').toLowerCase()+'#'+(m.tag||'').toLowerCase();
+const _s3dp = _communityPuuMap[_s3mk];
+const _s3mp = _s3dp && _communityMostPosMap[_s3dp];
+const _s3pl = _s3mp ? ({'TOP':'탑','JUNGLE':'정글','MIDDLE':'미드','MID':'미드','ADC':'원딜','BOT':'원딜','BOTTOM':'원딜','SUPPORT':'서폿','SUPPORTER':'서폿','UTILITY':'서폿'}[_s3mp.toUpperCase()] || _s3mp) : '';
+const _s3laneBadge = _s3pl ? `<span style="font-size:8px;font-family:Rajdhani,sans-serif;font-weight:700;color:var(--gold);background:rgba(200,170,110,.08);border:1px solid rgba(200,170,110,.2);border-radius:2px;padding:0px 4px;white-space:nowrap;">${_s3pl}</span>` : '';
+
 div.innerHTML=`
+<div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex-shrink:0;">
 <div class="mini-avatar"> <img src="https://ddragon.leagueoflegends.com/cdn/16.14.1/img/profileicon/${m.icon}.png"
-onerror="this.style.display=&quot;none&quot;"> </div> <div class="mini-info" style="min-width:0;flex:1;"> <div class="mini-name" style="display:flex;align-items:center;gap:3px;"> <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${m.name}</span>
+onerror="this.style.display=&quot;none&quot;"> </div>
+${_s3laneBadge}
+</div> <div class="mini-info" style="min-width:0;flex:1;"> <div class="mini-name" style="display:flex;align-items:center;gap:3px;"> <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${m.name}</span>
 ${isCaptain ? '<span class="captain-badge">C</span>' : ''}
 ${bidBadge}
 </div> <div class="mini-meta"> <span class="mini-tier" style="color:${color};background:${color}18">${(()=>{const tf=m.tierFull||'';const isHT=['MASTER','GRANDMASTER','CHALLENGER'].includes(m.tier);const lp=tf.match(/(\d+)LP/);const detail=tf&&tf!==m.tier?tf.replace(m.tier,'').trim():'';const suffix=isHT?(lp?` ${lp[1]}LP`:(detail?` ${detail}`:'')):(detail?` ${detail}`:'');return (TIER_KO[m.tier]||m.tier)+suffix;})()} </span> ${m.mainLane ? `<span class="mini-lane">${LANE_KO[m.mainLane]||m.mainLane}</span>` : ''}${_subLaneText(m.subLane)?`<span style="color:var(--border-subtle);font-size:8px;margin:0 1px;">/</span><span class="mini-lane sub">${_subLaneText(m.subLane)}</span>`:''} </div> ${_miniScoreHtml} ${_champRowHtml}</div>`;
@@ -8026,10 +8126,12 @@ window._currentCommunityId = community.id;
 window._currentCommunity = community;
 // 내전 종류 로드
 if (typeof loadMatchTypes === 'function') loadMatchTypes();
+// 진행자 로드
+if (typeof loadHosts === 'function') loadHosts();
 document.getElementById('community-indicator-name').textContent = community.name;
 document.getElementById('community-indicator').classList.add('visible');
 const canCreateMatch = isMaster || (isAdmin && currentAdminData?.communityId === community.id);
-['btn-list-new', 'btn-new-match', 'btn-rules-list', 'btn-manage-cats-main', 'btn-manage-match-types'].forEach(id => {
+['btn-list-new', 'btn-new-match', 'btn-rules-list', 'btn-manage-cats-main', 'btn-manage-match-types', 'btn-manage-hosts'].forEach(id => {
 const el = document.getElementById(id);
 if (el) el.style.display = canCreateMatch ? '' : 'none';
 });
@@ -15211,7 +15313,7 @@ function copyTeamText() {
     const nameW = Math.max(...rows.map(r => visWidth(r.name)), 0);
     const tierW = Math.max(...rows.map(r => visWidth(r.tier)), 0);
     rows.forEach(r => {
-      lines.push('  • ' + padEnd(r.name, nameW) + '  ' + padEnd(r.tier, tierW) + '  │  주: ' + r.main + '  │  희망: ' + r.sub);
+      lines.push('  • ' + padEnd(r.name, nameW) + '  ' + padEnd(r.tier, tierW) + '  │  주라인: ' + r.main + '  │  부라인: ' + r.sub);
     });
 
     if (ti < sortedTeams.length - 1) {
@@ -18970,6 +19072,121 @@ function openDashboard() {
   window.open('dashboard.html?cid=' + cid, '_blank');
 }
 
+
+// ══════════════════════════════════════════════════
+// 진행자 관리
+// ══════════════════════════════════════════════════
+var _hosts = []; // { id, name }
+
+async function loadHosts() {
+  var cid = window._currentCommunityId;
+  if (!cid) return;
+  try {
+    var res = await fetch(RIOT_PROXY_URL + '/db-public-read', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ path: 'communities/' + cid + '/hosts' })
+    });
+    var j = await res.json();
+    if (j.ok && j.data) {
+      _hosts = Object.entries(j.data).map(function(e) {
+        return { id: e[0], name: e[1].name || e[1] };
+      }).sort(function(a,b){ return a.name > b.name ? 1 : -1; });
+    } else {
+      _hosts = [];
+    }
+  } catch(e) { _hosts = []; }
+  _updateHostSelect();
+}
+
+var _selectedHosts = []; // 선택된 진행자 이름 배열
+
+function _updateHostSelect() {
+  var container = document.getElementById('m-admin-btns');
+  var hidden = document.getElementById('m-admin');
+  if (!container) return;
+  if (!_hosts.length) {
+    container.innerHTML = '<span style="font-size:11px;color:var(--text-muted);font-family:Rajdhani,sans-serif;">등록된 진행자가 없습니다</span>';
+    return;
+  }
+  container.innerHTML = _hosts.map(function(h) {
+    var isSelected = _selectedHosts.indexOf(h.name) >= 0;
+    return '<button type="button" class="host-select-btn" data-name="' + h.name + '" onclick="toggleHostSelect(this)" style="padding:5px 12px;border-radius:3px;border:1px solid ' + (isSelected ? 'var(--blue-bright)' : 'var(--border-subtle)') + ';background:' + (isSelected ? 'rgba(10,200,185,0.15)' : 'transparent') + ';color:' + (isSelected ? 'var(--blue-bright)' : 'var(--text-muted)') + ';font-family:Rajdhani,sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;">' + h.name + '</button>';
+  }).join('');
+  if (hidden) hidden.value = _selectedHosts.join(', ');
+}
+
+function toggleHostSelect(btn) {
+  var name = btn.dataset.name;
+  var idx = _selectedHosts.indexOf(name);
+  if (idx >= 0) {
+    _selectedHosts.splice(idx, 1);
+    btn.style.borderColor = 'var(--border-subtle)';
+    btn.style.background = 'transparent';
+    btn.style.color = 'var(--text-muted)';
+  } else {
+    _selectedHosts.push(name);
+    btn.style.borderColor = 'var(--blue-bright)';
+    btn.style.background = 'rgba(10,200,185,0.15)';
+    btn.style.color = 'var(--blue-bright)';
+  }
+  var hidden = document.getElementById('m-admin');
+  if (hidden) hidden.value = _selectedHosts.join(', ');
+}
+
+function openHostManager() {
+  renderHostList();
+  document.getElementById('modal-hosts').style.display = 'flex';
+}
+
+function renderHostList() {
+  var el = document.getElementById('host-list');
+  if (!el) return;
+  if (!_hosts.length) {
+    el.innerHTML = '<div style="font-size:11px;color:var(--text-muted);text-align:center;padding:.5rem;">등록된 진행자가 없습니다</div>';
+    return;
+  }
+  el.innerHTML = _hosts.map(function(h) {
+    return '<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg-dark);border:1px solid var(--border-subtle);border-radius:3px;">' +
+      '<span style="flex:1;font-family:Rajdhani,sans-serif;font-size:13px;font-weight:700;color:var(--text-white);">' + h.name + '</span>' +
+      '<button class="host-del-btn" data-id="' + h.id + '" style="padding:2px 8px;border-radius:2px;border:1px solid rgba(192,48,48,.3);background:transparent;color:#E05050;font-size:10px;font-family:Rajdhani,sans-serif;cursor:pointer;">삭제</button>' +
+      '</div>';
+  }).join('');
+}
+
+document.addEventListener('click', function(e) {
+  if (e.target.classList.contains('host-del-btn')) {
+    deleteHost(e.target.dataset.id);
+  }
+});
+
+async function addHost() {
+  var inp = document.getElementById('new-host-name');
+  var name = inp.value.trim();
+  if (!name) return;
+  var cid = window._currentCommunityId;
+  if (!cid) return toast('커뮤니티를 선택해주세요', 'err');
+  var id = 'host_' + Date.now();
+  try {
+    await _workerWrite('communities/' + cid + '/hosts/' + id, { name: name, createdAt: Date.now() }, 'admin');
+    _hosts.push({ id, name });
+    _hosts.sort(function(a,b){ return a.name > b.name ? 1 : -1; });
+    inp.value = '';
+    renderHostList();
+    _updateHostSelect();
+  } catch(e) { toast('저장 실패: ' + e.message, 'err'); }
+}
+
+async function deleteHost(id) {
+  if (!confirm('이 진행자를 삭제할까요?')) return;
+  var cid = window._currentCommunityId;
+  try {
+    await _workerDelete('communities/' + cid + '/hosts/' + id, 'admin');
+    _hosts = _hosts.filter(function(h){ return h.id !== id; });
+    renderHostList();
+    _updateHostSelect();
+  } catch(e) { toast('삭제 실패: ' + e.message, 'err'); }
+}
+
 </script>
 
 <!-- ── 카테고리 관리 모달 ── -->
@@ -19131,6 +19348,22 @@ function openDashboard() {
     </div>
     <div class="modal-actions" style="margin-top:1rem;">
       <button class="btn-secondary" onclick="document.getElementById('modal-match-types').style.display='none'">닫기</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- 진행자 관리 모달 -->
+<div class="modal-overlay" id="modal-hosts" style="display:none;">
+  <div class="modal" style="max-width:400px;">
+    <div class="modal-title">👤 진행자 관리</div>
+    <div id="host-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:1rem;max-height:300px;overflow-y:auto;"></div>
+    <div style="display:flex;gap:8px;">
+      <input class="form-input" type="text" id="new-host-name" placeholder="진행자 이름 입력" style="flex:1;">
+      <button class="btn-primary" onclick="addHost()" style="white-space:nowrap;">추가</button>
+    </div>
+    <div class="modal-actions" style="margin-top:1rem;">
+      <button class="btn-secondary" onclick="document.getElementById('modal-hosts').style.display='none'">닫기</button>
     </div>
   </div>
 </div>

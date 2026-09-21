@@ -743,6 +743,7 @@ async function handleDbPublicRead(request, env) {
     /^communities\/[^/]+\/match_categories($|\/)/,
     /^communities\/[^/]+\/match_types($|\/)/,
     /^communities\/[^/]+\/seasons($|\/)/,
+    /^communities\/[^/]+\/hosts($|\/)/,
     /^communities\/[^/]+\/deeplolServerId$/,
     /^communities\/[^/]+$/,
     /^communities_info\/[^/]+($|\/)/,
@@ -1321,7 +1322,7 @@ function checkPermission(session, dbPath, requireRole) {
     }
   }
   // 관리자 이상 카테고리/내전종류 쓰기 허용 (자신의 커뮤니티)
-  if (/^communities\/[^/]+\/(match_categories|match_types)($|\/)/.test(dbPath)) {
+  if (/^communities\/[^/]+\/(match_categories|match_types|hosts)($|\/)/.test(dbPath)) {
     if (session.role === 'master') return true;
     if (session.role === 'admin') {
       const cidFromPath = dbPath.split('/')[1];
