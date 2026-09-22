@@ -4128,9 +4128,10 @@ topChampions: data.topChampions || [],
 };
 document.getElementById('r-name').textContent=data.name;
 document.getElementById('r-tag').textContent='#'+data.tag;
-// 자동 설정 ON이면 딥롤에서 라인 자동 설정
+// 자동 설정 플래그만 저장 (try 블록 밖에서 실행)
 if (_autoLaneEnabled && data.puuid) {
-  _autoSetLane(data.puuid, data.name, data.tag);
+  window._pendingAutoLane = { puuid: data.puuid, name: data.name, tag: data.tag,
+    hasManualTier: !!(_pendingParsed && (_pendingParsed.tierHigh || _pendingParsed.tierCur)) };
 }
 const tierStr=data.solo.split(' ')[0];
 const color=TIER_COLORS[tierStr] || '#5B6474';
@@ -4231,6 +4232,14 @@ toast('소환사를 찾을 수 없습니다', 'err');
 }finally{
 document.getElementById('search-loading').style.display='none';
 document.getElementById('search-btn').disabled=false;
+}
+// try/catch 완전히 끝난 후 자동 설정 실행
+if (window._pendingAutoLane) {
+  var _pal = window._pendingAutoLane;
+  window._pendingAutoLane = null;
+  setTimeout(function() {
+    _autoSetLane(_pal.puuid, _pal.name, _pal.tag, _pal.hasManualTier);
+  }, 0);
 }
 }
 async function selectLane(type, lane){
@@ -19359,7 +19368,7 @@ function _tierValue(tier, div) {
   return (tiers[tier] || 0) * 10 + (5 - (div || 0));
 }
 
-async function _autoSetLane(puuid, gameName, tagLine) {
+async function _autoSetLane(puuid, gameName, tagLine, hasManualTier) {
   if (!puuid) return;
   try {
     var DEEPLOL = 'https://b2c-api-cdn.deeplol.gg';
@@ -19379,8 +19388,8 @@ async function _autoSetLane(puuid, gameName, tagLine) {
     ]);
     var [d25, d27, rtd] = await Promise.all([r25.json(), r27.json(), rtr.json()]);
 
-    var pos25 = (d25 && d25.counter_champion_stats && d25.counter_champion_stats.total && d25.counter_champion_stats.total.position_rate) || {};
-    var pos27 = (d27 && d27.counter_champion_stats && d27.counter_champion_stats.total && d27.counter_champion_stats.total.position_rate) || {};
+    var pos25 = (d25 && d25.counter_champion_stats && d25.counter_champion_stats.ranked_solo_5x5 && d25.counter_champion_stats.ranked_solo_5x5.position_rate) || (d25 && d25.counter_champion_stats && d25.counter_champion_stats.total && d25.counter_champion_stats.total.position_rate) || {};
+    var pos27 = (d27 && d27.counter_champion_stats && d27.counter_champion_stats.ranked_solo_5x5 && d27.counter_champion_stats.ranked_solo_5x5.position_rate) || (d27 && d27.counter_champion_stats && d27.counter_champion_stats.total && d27.counter_champion_stats.total.position_rate) || {};
 
     // 둘 다 데이터 없으면 라인 설정 스킵
     var hasPos = Object.keys(pos25).length > 0 || Object.keys(pos27).length > 0;
@@ -19429,6 +19438,9 @@ async function _autoSetLane(puuid, gameName, tagLine) {
         document.querySelectorAll('#sub-lanes .lane-btn').forEach(function(b) {
           b.classList.toggle('selected', selectedSubLanes.has(b.dataset.lane));
         });
+        // 멤버 추가 버튼 상태 업데이트
+        var _addBtn = document.getElementById('btn-add');
+        if (_addBtn) _addBtn.disabled = false;
       }
       toast('✅ 자동 설정 완료: ' + (_posToLane(mainPos)||'') + (subLanes.length ? ' / 부: ' + subLanes.join(', ') : ''), 'ok');
     } else {
@@ -19436,9 +19448,7 @@ async function _autoSetLane(puuid, gameName, tagLine) {
     }
 
     // 티어가 이미 수동 입력된 경우 자동 설정 스킵
-    // _pendingParsed에 tierHigh가 있으면 수동 입력된 것
-    var _hasMaualTier = _pendingParsed && (_pendingParsed.tierHigh || _pendingParsed.tierCur);
-    if (!_hasMaualTier) {
+    if (!hasManualTier) {
       // 낮은 티어로 등록
       var useTier = '', useDiv = 0;
       if (tier25 && tier27) {
