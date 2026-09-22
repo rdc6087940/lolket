@@ -1867,7 +1867,7 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
 <div id="guide-section-wrap" style="background:var(--bg-panel);border:1px solid var(--border-gold);border-radius:4px;overflow:hidden;box-shadow:0 2px 12px rgba(200,170,110,.06);"> <div style="padding:.6rem 1rem;border-bottom:1px solid var(--border-gold);display:flex;align-items:center;justify-content:space-between;background:rgba(200,170,110,.06);"> <span style="font-family:Rajdhani,sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;color:var(--gold);display:flex;align-items:center;gap:6px;"><span style="width:5px;height:5px;border-radius:50%;background:var(--blue-bright);display:inline-block;flex-shrink:0;"></span>가이드/룰</span> <button onclick="openGuidePickModal()" style="padding:3px 10px;border:1px solid rgba(200,170,110,.5);background:rgba(200,170,110,.12);color:var(--gold);border-radius:2px;font-family:Rajdhani,sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all .15s;" onmouseover="this.style.background='rgba(200,170,110,.22)'" onmouseout="this.style.background='rgba(200,170,110,.12)'">+ 적용</button> </div> <div id="guide-applied-list" style="padding:.5rem .6rem;display:flex;flex-direction:column;gap:5px;max-height:220px;overflow-y:auto;"><div style="font-size:11px;color:var(--text-muted);font-family:Rajdhani,sans-serif;text-align:center;padding:.75rem;letter-spacing:1px;">적용된 가이드가 없습니다</div></div> </div>
 <div class="panel" style="display:flex;flex-direction:column;height:fit-content;"> <div class="panel-header"> <div class="panel-title"> <div class="panel-title-dot"></div>
  소환사 검색
- </div> <div style="display:flex;align-items:center;gap:6px;"> <span style="font-size:10px;font-family:'Rajdhani',sans-serif;font-weight:700;color:var(--text-muted);letter-spacing:1px;">자동 설정</span> <button id="auto-lane-toggle" onclick="toggleAutoLane()" style="width:40px;height:22px;border-radius:11px;border:none;cursor:pointer;transition:all .2s;background:#2D3748;position:relative;flex-shrink:0;"> <span id="auto-lane-dot" style="position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#718096;transition:all .2s;display:block;"></span> </button> </div> </div> <div class="panel-body search-section"> <div class="search-box-wrap"> <input type="text" id="search-input" placeholder="닉네임#KR1" onkeydown="onSearchKey(event)" /> <button class="search-btn" id="search-btn" onclick="searchSummoner()"> <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="5" cy="5" r="4" stroke="currentColor" stroke-width="1.5"/><line x1="8.5" y1="8.5" x2="12" y2="12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> </button> </div> <div class="search-hint"> <span>닉네임#태그</span> 형식으로 입력. 확장: <span style="color:var(--blue-bright);">닉네임#태그 최고티어/현티어 주라인/부라인</span><br>
+ </div> <div style="display:flex;align-items:center;gap:6px;"> <span style="font-size:10px;font-family:'Rajdhani',sans-serif;font-weight:700;color:var(--text-muted);letter-spacing:1px;">자동 설정</span> <button id="auto-lane-toggle" onclick="toggleAutoLane()" style="width:40px;height:22px;border-radius:11px;border:none;cursor:pointer;transition:all .2s;background:#2D3748;position:relative;flex-shrink:0;"> <span id="auto-lane-dot" style="position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#718096;transition:all .2s;display:block;"></span> </button> </div> </div> <div class="panel-body search-section"> <div style="display:flex;align-items:center;gap:8px;padding:.4rem .75rem .2rem;border-bottom:1px solid var(--border-subtle);background:rgba(0,0,0,.1);"> <span style="font-size:10px;font-family:'Rajdhani',sans-serif;font-weight:700;letter-spacing:1px;color:var(--text-muted);">부라인 비율</span> <input type="number" id="sub-lane-threshold" min="1" max="100" placeholder="10" style="width:60px;background:var(--bg-dark);border:1px solid var(--border-subtle);border-radius:2px;padding:3px 6px;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;color:var(--text-white);outline:none;text-align:center;"> <span style="font-size:10px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;">% 이상 부라인 선택</span> </div> <div class="search-box-wrap"> <input type="text" id="search-input" placeholder="닉네임#KR1" onkeydown="onSearchKey(event)" /> <button class="search-btn" id="search-btn" onclick="searchSummoner()"> <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="5" cy="5" r="4" stroke="currentColor" stroke-width="1.5"/><line x1="8.5" y1="8.5" x2="12" y2="12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> </button> </div> <div class="search-hint"> <span>닉네임#태그</span> 형식으로 입력. 확장: <span style="color:var(--blue-bright);">닉네임#태그 최고티어/현티어 주라인/부라인</span><br>
  예) 페이커#KR1 · Hide on bush#KR1
  </div> <div id="search-loading" style="display:none;justify-content:center;padding:1.5rem;"> <div class="spinner"></div> </div> <div id="search-result" style="display:none;"> <div class="search-result"> <div class="result-profile"> <div class="result-avatar" id="r-avatar">?</div> <div> <div class="result-name" id="r-name">—</div> <div class="result-tag" id="r-tag">—</div> </div> </div> <div class="result-tiers"> <div class="tier-row"> <span class="tier-row-label">SOLO/DUO</span> <span class="tier-row-val" id="r-solo">—</span> </div> <div class="tier-row"> <span class="tier-row-label">FLEX</span> <span class="tier-row-val" id="r-flex">—</span> </div> <div class="tier-row" id="r-main-lane-row" style="display:none;"> <span class="tier-row-label">커뮤니티 주라인</span> <span class="tier-row-val" id="r-main-lane" style="color:var(--blue-bright);">—</span> </div>
  <div class="tier-row"> <span class="tier-row-label">솔랭 판수</span> <span class="tier-row-val" id="r-solo-games" style="font-family:'Rajdhani',sans-serif;">—</span> </div> <div class="tier-row"> <span class="tier-row-label">LEVEL</span> <span class="tier-row-val" id="r-level">—</span> </div> <div class="tier-row" id="r-prev-row" style="display:none;background:rgba(200,170,110,0.04);border-radius:2px;padding:3px 6px;margin-top:2px;"> <span class="tier-row-label" style="display:flex;align-items:center;gap:4px;"><span style="font-size:9px;">🏆</span>전 시즌 최고</span> <span class="tier-row-val" id="r-prev-season" style="font-size:11px;">—</span> </div> </div> <div style="padding:.6rem 1rem;border-top:1px solid var(--border-subtle);background:rgba(200,170,110,0.03);"> <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;"> <span style="font-size:10px;font-family:'Rajdhani',sans-serif;font-weight:700;letter-spacing:1px;color:var(--gold);">✏ 티어 직접 설정</span> <button onclick="applyTierOverride('')" style="font-size:9px;font-family:'Rajdhani',sans-serif;font-weight:700;color:var(--text-muted);background:transparent;border:1px solid var(--border-subtle);border-radius:2px;padding:1px 7px;cursor:pointer;letter-spacing:.5px;" id="r-tier-reset">API 값으로 초기화</button> </div> <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;" id="r-tier-btns"> <button class="tier-override-btn" data-tier="UNRANKED" onclick="applyTierOverride('UNRANKED')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-iron);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;letter-spacing:.3px;">UNRANK</button> <button class="tier-override-btn" data-tier="IRON" onclick="applyTierOverride('IRON')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-iron);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">IRON</button> <button class="tier-override-btn" data-tier="BRONZE" onclick="applyTierOverride('BRONZE')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-bronze);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">BRONZE</button> <button class="tier-override-btn" data-tier="SILVER" onclick="applyTierOverride('SILVER')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-silver);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">SILVER</button> <button class="tier-override-btn" data-tier="GOLD" onclick="applyTierOverride('GOLD')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-gold);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">GOLD</button> <button class="tier-override-btn" data-tier="PLATINUM" onclick="applyTierOverride('PLATINUM')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-plat);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">PLAT</button> <button class="tier-override-btn" data-tier="EMERALD" onclick="applyTierOverride('EMERALD')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-emerald);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">EMERALD</button> <button class="tier-override-btn" data-tier="DIAMOND" onclick="applyTierOverride('DIAMOND')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-diamond);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">DIAMOND</button> <button class="tier-override-btn" data-tier="MASTER" onclick="applyTierOverride('MASTER')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-master);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">MASTER</button> <button class="tier-override-btn" data-tier="GRANDMASTER" onclick="applyTierOverride('GRANDMASTER')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-grandmaster);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">GM</button> <button class="tier-override-btn" data-tier="CHALLENGER" onclick="applyTierOverride('CHALLENGER')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-challenger);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">CHALL</button> </div> </div> <div class="lane-select"> <div class="lane-select-label">주 포지션</div> <div class="lane-buttons" id="main-lanes"> <button class="lane-btn" data-lane="top" onclick="selectLane('main','top')">TOP</button> <button class="lane-btn" data-lane="jg" onclick="selectLane('main','jg')">JG</button> <button class="lane-btn" data-lane="mid" onclick="selectLane('main','mid')">MID</button> <button class="lane-btn" data-lane="bot" onclick="selectLane('main','bot')">BOT</button> <button class="lane-btn" data-lane="sup" onclick="selectLane('main','sup')">SUP</button> </div> <div class="lane-select-label" style="margin-top:4px;">보조 포지션</div> <div class="lane-buttons" id="sub-lanes"> <button class="lane-btn" data-lane="top" onclick="selectLane('sub','top')">TOP</button> <button class="lane-btn" data-lane="jg" onclick="selectLane('sub','jg')">JG</button> <button class="lane-btn" data-lane="mid" onclick="selectLane('sub','mid')">MID</button> <button class="lane-btn" data-lane="bot" onclick="selectLane('sub','bot')">BOT</button> <button class="lane-btn" data-lane="sup" onclick="selectLane('sub','sup')">SUP</button> </div> </div> <div style="padding:.75rem 1rem;border-top:1px solid var(--border-subtle);"> <button class="btn-add-member" id="btn-add" onclick="addMember()" disabled>멤버 추가</button> </div> </div> </div> </div> </div></div> <div class="next-wrap"> <div class="next-condition"> <div class="cond-item"> <div class="cond-dot" id="cond-count"></div> <span id="cond-count-text" style="font-size:12px;color:var(--text-muted);">인원 10의 배수</span> </div> <div class="cond-item"> <div class="cond-dot" id="cond-attend"></div> <span id="cond-attend-text" style="font-size:12px;color:var(--text-muted);">전원 출석</span> </div> </div> <button onclick="copyMatchLink()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(10,200,185,.4);background:rgba(10,200,185,.06);color:var(--blue-bright);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="내전 상세 링크 복사">🔗 링크 복사</button> <button onclick="copyTeamText()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(200,170,110,.4);background:rgba(200,170,110,.06);color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="팀 정보 텍스트 복사">📋 팀 정보 복사</button> <button onclick="copyMemberMentions()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(100,150,255,.4);background:rgba(100,150,255,.06);color:#7EB2FF;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="참여 멤버 @멘션 복사">@ 멘션 복사</button> <button id="btn-attend-all" onclick="toggleAttendAll()" style="padding:7px 16px;border-radius:2px;border:1px solid rgba(10,200,185,0.4);background:rgba(10,200,185,0.08);color:var(--blue-bright);font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;cursor:pointer;transition:all .15s;">전체 출석</button> <button id="btn-discord-notify" onclick="sendDiscordNotify()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(114,137,218,0.4);background:rgba(114,137,218,0.08);color:#7289DA;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;cursor:pointer;transition:all .15s;"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;margin-right:4px;"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>알림 전송</button> <button class="btn-next" id="btn-next" disabled onclick="goNextStage()">다음 단계 →</button> </div>
@@ -2113,6 +2113,7 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
   <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
     <button class="btn-secondary" onclick="goBackToStage2()">← 이전 단계</button>
     <button onclick="copyMatchLink()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(10,200,185,.4);background:rgba(10,200,185,.06);color:var(--blue-bright);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="내전 상세 링크 복사">🔗 링크 복사</button>
+    <button onclick="copyLaneTeamText()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(10,200,185,.4);background:rgba(10,200,185,.06);color:var(--blue-bright);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;">📋 팀 정보 복사</button>
     <button class="btn-copy-img" onclick="copyTeamBuilderImage()" style="font-size:11px;padding:7px 14px;"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="1" y="3" width="8" height="9" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M4 3V2a1 1 0 011-1h5a1 1 0 011 1v7a1 1 0 01-1 1h-1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg> 이미지 복사</button>
     <button class="btn-next" id="btn-lane-next" disabled onclick="goToStage4()">다음 단계 →</button>
   </div>
@@ -2123,31 +2124,29 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
 </div>
 <div class="builder-layout">
   <!-- 일반 내전과 동일한 pool-panel 재사용 -->
-  <div class="pool-panel">
-    <div class="balance-ctrl-section"></div>
-    <div class="pool-header"><span class="pool-title">대기칸</span><span class="pool-count" id="lane-pool-count">0명</span></div>
-    <div id="lane-pool-drop" class="pool-drop drop-zone" ondragover="onDragOver(event)" ondrop="onLaneDrop(event,'pool',null,null)"></div>
-    <div class="filter-bar">
-      <div class="filter-search-row"><input class="filter-search-input" type="text" id="lane-pool-search" placeholder="이름 검색..." oninput="renderLaneBuilder()"><button class="filter-search-clear" id="lane-pool-search-clear" onclick="document.getElementById('lane-pool-search').value='';renderLaneBuilder()">✕</button></div>
-      <div class="filter-row"><span class="filter-label">LANE</span>
-        <button class="lane-filter-btn" data-lane="ALL" onclick="setLaneFilter('ALL')">전체</button>
-        <button class="lane-filter-btn" data-lane="TOP" onclick="setLaneFilter('TOP')">탑</button>
-        <button class="lane-filter-btn" data-lane="JUNGLE" onclick="setLaneFilter('JUNGLE')">정글</button>
-        <button class="lane-filter-btn" data-lane="MID" onclick="setLaneFilter('MID')">미드</button>
-        <button class="lane-filter-btn" data-lane="ADC" onclick="setLaneFilter('ADC')">원딜</button>
-        <button class="lane-filter-btn" data-lane="SUPPORT" onclick="setLaneFilter('SUPPORT')">서폿</button>
-      </div>
-      <div class="filter-row"><span class="filter-label">SORT</span>
-        <select class="sort-select" id="lane-member-sort" onchange="renderLaneBuilder()">
-          <option value="added">추가순</option>
-          <option value="tier">티어순</option>
-          <option value="name">이름순</option>
-          <option value="attend">출석순</option>
-        </select>
-      </div>
-    </div>
-    <div id="lane-pool-list" class="pool-body"></div>
+  <div class="pool-panel"> <div class="balance-ctrl-section">
+  <span class="balance-ctrl-label">⚖️ 밸런스 점수</span>
+  <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;font-size:12px;color:var(--text-muted);">
+      <input type="checkbox" id="s3-show-score" onchange="_s3ToggleScore()" style="cursor:pointer;accent-color:var(--blue-bright);">
+      점수 표시
+    </label>
+    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;font-size:12px;color:var(--text-muted);">
+      <input type="checkbox" id="s3-use-match-history" onchange="_s3RefreshTeams()" style="cursor:pointer;accent-color:var(--blue-bright);">
+      내전 전적 보정
+    </label>
+    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;font-size:12px;color:var(--text-muted);">
+      <input type="checkbox" id="s3-show-champ" onchange="_s3RefreshTeams()" style="cursor:pointer;accent-color:var(--blue-bright);">
+      모스트 챔피언
+    </label>
+    <button onclick="autoBalance()" style="padding:4px 12px;border-radius:2px;border:1px solid rgba(10,200,185,.4);background:rgba(10,200,185,.08);color:var(--blue-bright);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;">✨ 자동 밸런싱</button>
+    <button onclick="openBalanceInfoModal()" style="padding:3px 8px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--text-muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;cursor:pointer;">점수 안내 ?</button>
   </div>
+</div>
+<div id="s3n-guide-wrap" style="background:var(--bg-panel);border:1px solid var(--border-gold);border-radius:4px;overflow:hidden;box-shadow:0 2px 12px rgba(200,170,110,.06);margin-bottom:.75rem;"> <div onclick="_s3GuideToggle('s3n-guide-wrap','s3n-guide-list')" style="padding:.45rem 1rem;display:flex;align-items:center;justify-content:space-between;background:rgba(200,170,110,.06);cursor:pointer;user-select:none;"> <span style="font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;color:var(--gold);display:flex;align-items:center;gap:6px;"><span style="width:5px;height:5px;border-radius:50%;background:var(--blue-bright);display:inline-block;flex-shrink:0;"></span>가이드/룰 </span> <span id="s3n-guide-arrow" style="font-size:10px;color:var(--text-muted);transition:transform .2s;">▼</span> </div> <div id="s3n-guide-list" style="display:none;padding:.4rem .5rem;flex-wrap:wrap;gap:5px;max-height:100px;overflow-y:auto;"><div style="font-size:11px;color:var(--text-muted);font-family:Rajdhani,sans-serif;text-align:center;padding:.5rem;width:100%;letter-spacing:1px;">적용된 가이드가 없습니다</div></div> </div><div class="pool-header"> <div class="pool-title"><div class="panel-title-dot"></div>대기</div> <div style="display:flex;align-items:center;gap:5px;"> <div class="filter-active-dot" id="lp-filter-dot"></div> <div class="count-badge lit" id="lane-pool-count">0명</div> </div> </div> <div class="filter-bar" style="padding:.4rem .5rem;gap:.35rem;"> <div class="filter-search-row"> <input class="filter-search-input" id="lp-search" placeholder="닉네임 검색..." oninput="applyFilter('lp')"> <button class="filter-search-clear" id="lp-search-clear" onclick="clearSearch('lp')">✕</button> </div> <div class="filter-row"> <span class="filter-label">포지션</span> <button id="lp-lane-mode-main" onclick="setLaneMode('lp','main')" style="padding:2px 7px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:9px;font-weight:700;cursor:pointer;letter-spacing:.5px;">주라인</button><button id="lp-lane-mode-both" onclick="setLaneMode('lp','both')" style="padding:2px 7px;border-radius:2px;border:1px solid rgba(10,200,185,.4);background:rgba(10,200,185,.1);color:var(--blue-bright);font-family:'Rajdhani',sans-serif;font-size:9px;font-weight:700;cursor:pointer;letter-spacing:.5px;margin-right:4px;">주+보조</button><button class="lane-filter-btn" data-lane="top" onclick="toggleLaneFilter('lp','top')">TOP</button> <button class="lane-filter-btn" data-lane="jg" onclick="toggleLaneFilter('lp','jg')">JG</button> <button class="lane-filter-btn" data-lane="mid" onclick="toggleLaneFilter('lp','mid')">MID</button> <button class="lane-filter-btn" data-lane="bot" onclick="toggleLaneFilter('lp','bot')">BOT</button> <button class="lane-filter-btn" data-lane="sup" onclick="toggleLaneFilter('lp','sup')">SUP</button> </div> <div class="filter-row"> <span class="filter-label">정렬</span> <select class="sort-select" id="lp-sort" onchange="applyFilter('lp')"> <option value="added">추가순</option> <option value="tier">티어 높은순</option> <option value="tier-asc">티어 낮은순</option> <option value="name">이름순</option> </select> </div> </div> <div class="pool-body" id="lane-pool-list"
+ ondragover="onDragOver(event,'lane-pool')"
+ ondragleave="onDragLeave(event,'lane-pool')"
+ ondrop="onLaneDrop(event,'pool',null,null)" onclick=""> </div> </div>
   <div class="teams-panel" id="lane-teams-panel"></div>
 </div>
 </div>
@@ -4073,7 +4072,20 @@ if (q.includes('#')){
   if (_restTokens.length === 0) {
     tagLine = _afterHash.trim() || 'KR1';
   } else {
-    tagLine = _tagTokens.join(' ').trim() || 'KR1';
+    // _restTokens가 라인 약어만 있고 티어가 없으면 tagLine 전체로 사용
+    var _hasTierInRest = _restTokens.some(function(t) {
+      return _TIER_ABBR.test(t.toLowerCase()) || _MASTER_ABBR.test(t.toLowerCase());
+    });
+    var _hasLaneInRest = _restTokens.some(function(t) {
+      return _LANE_ABBR.indexOf(t.toLowerCase()) >= 0;
+    });
+    if (!_hasTierInRest && _hasLaneInRest && _tagTokens.length === 0) {
+      // 예: #top → tagLine='top', 추가정보 없음
+      tagLine = _afterHash.trim() || 'KR1';
+      _restTokens = [];
+    } else {
+      tagLine = _tagTokens.join(' ').trim() || 'KR1';
+    }
   }
   // 나머지 양식은 search-input에 다시 넣거나 별도 처리 (기존 양식 파싱 유지)
   if (_restTokens.length > 0) {
@@ -5244,7 +5256,7 @@ card.innerHTML =
       '<div class="on-sale-name">' + _escHtml(m.name) + '<span style="color:var(--text-muted);font-size:11px;margin-left:4px;">#' + _escHtml(m.tag||'') + '</span></div>' +
       '<div style="margin-top:2px;display:flex;align-items:center;gap:6px;">' +
         '<span class="mini-tier" style="font-size:12px;padding:2px 8px;color:' + color + ';background:' + color + '18;border:1px solid ' + color + '33">' + (TIER_KO[m.tier]||m.tier) + suffix + '</span>' +
-        (function(){var k=(m.name||'').toLowerCase()+'#'+(m.tag||'').toLowerCase();var dp=_communityPuuMap[k];var r=dp?_communityRatings[dp]:null;var ds=(typeof getDoomScore==='function')?getDoomScore(m):null;var rHtml=r?'<span style="font-size:11px;font-weight:700;color:var(--gold);font-family:Rajdhani,sans-serif;">⭐ '+Math.round(r.current)+'</span>':'<span style="font-size:10px;color:var(--text-muted);font-family:Rajdhani,sans-serif;">배치중</span>';var dHtml=(ds&&ds!=='—')?'<span style="font-size:9px;color:var(--border-subtle);margin:0 3px;font-family:Rajdhani,sans-serif;">|</span><span style="font-size:11px;font-weight:700;color:#A78BFA;font-family:Rajdhani,sans-serif;">💀'+ds+'</span>':'';return rHtml+dHtml;})() +
+        (function(){var k=(m.name||'').toLowerCase()+'#'+(m.tag||'').toLowerCase();var dp=_communityPuuMap[k];var r=dp?_communityRatings[dp]:null;var ds=(typeof getDoomScore==='function')?getDoomScore(m, laneOverride||null):null;var rHtml=r?'<span style="font-size:11px;font-weight:700;color:var(--gold);font-family:Rajdhani,sans-serif;">⭐ '+Math.round(r.current)+'</span>':'<span style="font-size:10px;color:var(--text-muted);font-family:Rajdhani,sans-serif;">배치중</span>';var dHtml=(ds&&ds!=='—')?'<span style="font-size:9px;color:var(--border-subtle);margin:0 3px;font-family:Rajdhani,sans-serif;">|</span><span style="font-size:11px;font-weight:700;color:#A78BFA;font-family:Rajdhani,sans-serif;">💀'+ds+'</span>':'';return rHtml+dHtml;})() +
       '</div>' +
     '</div>' +
   '</div>' +
@@ -5489,7 +5501,7 @@ div.appendChild(pts);
 }
 return div;
 }
-function makeMiniCard(m, sourceZone, mode, isCaptain){
+function makeMiniCard(m, sourceZone, mode, isCaptain, laneOverride){
 const color=TIER_COLORS[m.tier] || '#5B6474';
 const div=document.createElement('div');
 div.className=`mini-card${isCaptain ? ' captain' : ''}`;
@@ -5533,7 +5545,7 @@ const _miniScoreHtml = (function() {
   var _key = (m.name || '').toLowerCase() + '#' + (m.tag || '').toLowerCase();
   var _dpId = _communityPuuMap[_key];
   var r = _dpId ? _communityRatings[_dpId] : null;
-  var _md = (typeof getDoomScore === 'function') ? getDoomScore(m) : null;
+  var _md = (typeof getDoomScore === 'function') ? getDoomScore(m, laneOverride || null) : null;
   var _doomPart = (_md && _md !== '—') ? '<span style="font-family:Rajdhani,sans-serif;font-size:9px;color:var(--border-subtle);margin:0 2px;">|</span><span style="font-family:Rajdhani,sans-serif;font-size:9px;color:var(--text-muted);">멸망</span><span style="font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;color:#A78BFA;">'+_md+'</span>' : '';
   if (!r) return '<div style="display:flex;align-items:center;gap:3px;margin-top:2px;padding-top:2px;border-top:1px solid rgba(255,255,255,.06);">' +
     '<span style="font-family:Rajdhani,sans-serif;font-size:9px;color:var(--text-muted);">배치중</span>' + _doomPart + '</div>';
@@ -6954,6 +6966,7 @@ const filterState = {
 s1: { lanes: new Set(), search: '', sort: '', tiers: new Set(), laneMode: 'both' },
 np: { lanes: new Set(), search: '', sort: '', tiers: new Set(), laneMode: 'both' },
 ap: { lanes: new Set(), search: '', sort: '', tiers: new Set(), laneMode: 'both' },
+lp: { lanes: new Set(), search: '', sort: '', tiers: new Set(), laneMode: 'both' },
 };
 const TIER_ORDER = ['UNRANKED','IRON','BRONZE','SILVER','GOLD','PLATINUM','EMERALD','DIAMOND','MASTER','GRANDMASTER','CHALLENGER'];
 function tierRank(tier) { return TIER_ORDER.indexOf(tier) ?? 0; }
@@ -7001,11 +7014,12 @@ function toggleLaneFilter(scope, lane) {
 const st = filterState[scope];
 if (st.lanes.has(lane)) st.lanes.delete(lane);
 else st.lanes.add(lane);
-const prefix = { s1:'s1', np:'np', ap:'ap' }[scope];
+const prefix = { s1:'s1', np:'np', ap:'ap', lp:'lp' }[scope];
 const container = {
 s1: document.getElementById('member-grid')?.closest('.panel'),
 np: document.getElementById('n-pool')?.closest('.pool-panel'),
 ap: document.getElementById('a-pool')?.closest('.pool-panel'),
+lp: document.getElementById('lane-pool-list')?.closest('.pool-panel'),
 }[scope];
 if (container) {
 container.querySelectorAll('.lane-filter-btn').forEach(btn => {
@@ -7035,6 +7049,7 @@ if (dot) dot.classList.toggle('visible', st.lanes.size > 0 || !!st.search || !!s
 if (scope === 's1') renderMembers();
 else if (scope === 'np') renderNormalPool();
 else if (scope === 'ap') renderAuctionPool();
+else if (scope === 'lp') { if (typeof renderLaneBuilder === 'function') renderLaneBuilder(); }
 }
 function filterAndSort(list, scope) {
 const st = filterState[scope];
@@ -11769,6 +11784,18 @@ const snapshot = {
 _members: members,
 _matchType: matchType,
 _teams: teams,
+_laneTeams: matchType === 'lane' ? laneTeams.map(function(t) {
+  var slots = {};
+  Object.keys(t.slots).forEach(function(s) {
+    var mb = t.slots[s];
+    slots[s] = mb ? { id: mb.id, name: mb.name, icon: mb.icon,
+      soloTier: mb.soloTier || null, tier: mb.tier || null,
+      highTier: mb.highTier || null, tierFull: mb.tierFull || null,
+      mainLane: mb.mainLane || null, subLanes: mb.subLanes || [],
+      puuid: mb.puuid || null } : null;
+  });
+  return { id: t.id, name: t.name, slots: slots };
+}) : null,
 _normalPool: normalPool,
 _auctionPool: auctionPool,
 _failedMembers: failedMembers,
@@ -11870,6 +11897,19 @@ startStatusTimer();
 renderMembers(); updateProgress(); updateConditions();
 if (matchType === 'normal') { renderNormalPool(); renderNormalTeams(); checkNormalConditions(); }
 if (matchType === 'auction') { renderAuctionPool(); renderAuctionTeams(); renderFailZone(); renderOnSale(); checkAuctionConditions(); }
+if (matchType === 'lane') {
+  laneTeams = (snapshot._laneTeams || []).map(function(t) {
+    var slots = {};
+    Object.keys(t.slots || {}).forEach(function(s) {
+      slots[s] = t.slots[s] || null;
+    });
+    // 누락된 슬롯 채우기
+    ['top','jg','mid','bot','sup'].forEach(function(s) { if (!(s in slots)) slots[s] = null; });
+    return { id: t.id, name: t.name, slots: slots };
+  });
+  if (laneTeams.length === 0) initLaneBuilder();
+  else renderLaneBuilder();
+}
 if (bracketRounds.length > 0) drawBracket();
 renderResultMatches();
 _updateDiscordShareBtn();
@@ -11877,10 +11917,10 @@ restorePips(screen);
 toast('내전 데이터를 불러왔습니다', 'ok');
 }
 function restorePips(screen) {
-const order = ['screen-1','screen-2','screen-3-normal','screen-3-auction','screen-4','screen-5'];
+const order = ['screen-1','screen-2','screen-3-normal','screen-3-auction','screen-3-lane','screen-4','screen-5'];
 const stageMap = {
 'screen-1': 0, 'screen-2': 1,
-'screen-3-normal': 2, 'screen-3-auction': 2,
+'screen-3-normal': 2, 'screen-3-auction': 2, 'screen-3-lane': 2,
 'screen-4': 3, 'screen-5': 4,
 };
 const cur = stageMap[screen] ?? 0;
@@ -12087,7 +12127,7 @@ bracketRounds = []; extraMatches = []; resultMatches = []; _0xB1 = 1;
 _localVersion = 0;
 if (typeof _matchBidUnsub !== 'undefined' && _matchBidUnsub) { _matchBidUnsub(); _matchBidUnsub = null; }
 if (window._bidLeaderUnsub) { window._bidLeaderUnsub(); window._bidLeaderUnsub = null; }
-const VALID_MATCH_SCREENS = ['screen-1','screen-2-select','screen-3-normal','screen-3-auction','screen-4','screen-5'];
+const VALID_MATCH_SCREENS = ['screen-1','screen-2-select','screen-3-normal','screen-3-auction','screen-3-lane','screen-4','screen-5'];
 const savedScreen = snapshot._currentScreen;
 let targetScreen;
 if (snapshot.status === '내전 종료' || savedScreen === 'screen-5') {
@@ -17877,12 +17917,12 @@ async function loadDoomScores() {
   } catch(e) { _doomScores = _DOOM_DEFAULT; }
 }
 
-function getDoomScore(member) {
+function getDoomScore(member, laneOverride) {
   var table = _doomScores || _DOOM_DEFAULT;
   // 임시티어 → 최고티어 → 현재티어 순 우선
   var rawTier = member.highTier || member._tempTier || member._peakTier || member.tier || 'UNRANKED';
   var tier = rawTier.toUpperCase().trim().split(' ')[0];
-  var lane = member.mainLane || 'top';
+  var lane = laneOverride || member.mainLane || 'top';
   var laneKey = {top:'top',jg:'jg',mid:'mid',bot:'bot',sup:'sup',
     Top:'top',Jungle:'jg',Middle:'mid',Bottom:'bot',Support:'sup'}[lane] || 'top';
 
@@ -19366,11 +19406,13 @@ async function _autoSetLane(puuid, gameName, tagLine) {
         if (e[1].rate > mainRate) { mainRate = e[1].rate; mainPos = e[0]; }
       });
 
-      // 어느 시즌이든 5% 넘으면 부라인에 포함 (주라인 제외)
+      // 어느 시즌이든 threshold% 넘으면 부라인에 포함 (주라인 제외)
+      var _thresholdEl = document.getElementById('sub-lane-threshold');
+      var _threshold = (_thresholdEl && _thresholdEl.value !== '') ? parseFloat(_thresholdEl.value) : 10;
       var subPosSet = {};
       [pos25, pos27].forEach(function(pd) {
         Object.entries(pd).forEach(function(e) {
-          if (e[0] !== mainPos && e[1].rate >= 5) {
+          if (e[0] !== mainPos && e[1].rate >= _threshold) {
             subPosSet[e[0]] = true;
           }
         });
@@ -19393,22 +19435,27 @@ async function _autoSetLane(puuid, gameName, tagLine) {
       toast('⚠️ 딥롤 라인 데이터 없음 (신규 유저)', 'err');
     }
 
-    // 낮은 티어로 등록
-    var useTier = '', useDiv = 0;
-    if (tier25 && tier27) {
-      if (tierVal25 <= tierVal27) { useTier = tier25; useDiv = div25; }
-      else { useTier = tier27; useDiv = div27; }
-    } else if (tier25) { useTier = tier25; useDiv = div25; }
-    else if (tier27) { useTier = tier27; useDiv = div27; }
+    // 티어가 이미 수동 입력된 경우 자동 설정 스킵
+    // _pendingParsed에 tierHigh가 있으면 수동 입력된 것
+    var _hasMaualTier = _pendingParsed && (_pendingParsed.tierHigh || _pendingParsed.tierCur);
+    if (!_hasMaualTier) {
+      // 낮은 티어로 등록
+      var useTier = '', useDiv = 0;
+      if (tier25 && tier27) {
+        if (tierVal25 <= tierVal27) { useTier = tier25; useDiv = div25; }
+        else { useTier = tier27; useDiv = div27; }
+      } else if (tier25) { useTier = tier25; useDiv = div25; }
+      else if (tier27) { useTier = tier27; useDiv = div27; }
 
-    if (useTier) {
-      var TIER_KO = {
-        'IRON':'I','BRONZE':'B','SILVER':'S','GOLD':'G','PLATINUM':'P',
-        'EMERALD':'E','DIAMOND':'D','MASTER':'M','GRANDMASTER':'GM','CHALLENGER':'Chall'
-      };
-      var abbr = (TIER_KO[useTier] || useTier) + (useDiv > 0 ? useDiv : '');
-      window._autoTierOverride = abbr;
-      applyTierOverride(useTier);
+      if (useTier) {
+        var TIER_KO = {
+          'IRON':'I','BRONZE':'B','SILVER':'S','GOLD':'G','PLATINUM':'P',
+          'EMERALD':'E','DIAMOND':'D','MASTER':'M','GRANDMASTER':'GM','CHALLENGER':'Chall'
+        };
+        var abbr = (TIER_KO[useTier] || useTier) + (useDiv > 0 ? useDiv : '');
+        window._autoTierOverride = abbr;
+        applyTierOverride(useTier);
+      }
     }
   } catch(e) {
     console.error('[autoLane]', e);
@@ -19453,8 +19500,9 @@ function _makeLaneMiniCard(m) {
 }
 
 function renderLaneBuilder() {
-  var q = (document.getElementById('lane-pool-search') ? document.getElementById('lane-pool-search').value : '').toLowerCase();
-  var sortVal = (document.getElementById('lane-member-sort') ? document.getElementById('lane-member-sort').value : 'added');
+  var _lpState = filterState['lp'] || { lanes: new Set(), search: '', sort: '' };
+  var q = _lpState.search || (document.getElementById('lp-search') ? document.getElementById('lp-search').value.toLowerCase() : '');
+  var sortVal = _lpState.sort || (document.getElementById('lp-sort') ? document.getElementById('lp-sort').value : 'added');
   var assigned = {};
   laneTeams.forEach(function(t) {
     Object.values(t.slots).forEach(function(m) { if (m) assigned[m.id] = true; });
@@ -19463,20 +19511,21 @@ function renderLaneBuilder() {
   var poolMembers = attended.filter(function(m){ return !assigned[m.id]; });
 
   // 라인 필터 (일반 내전과 동일한 activeLaneFilter 변수 재사용)
-  if (typeof activeLaneFilter !== 'undefined' && activeLaneFilter && activeLaneFilter !== 'ALL') {
-    var laneMap = { TOP:['top','TOP'], JUNGLE:['jg','JUNGLE'], MID:['mid','MID'], ADC:['bot','ADC','BOT'], SUPPORT:['sup','SUPPORT'] };
-    var allowed = laneMap[activeLaneFilter] || [];
-    poolMembers = poolMembers.filter(function(m){ return allowed.indexOf(m.mainLane) >= 0 || allowed.indexOf((m.mainLane||'').toUpperCase()) >= 0; });
+  if (_lpState.lanes && _lpState.lanes.size > 0) {
+    poolMembers = poolMembers.filter(function(m) {
+      var ml = (m.mainLane || '').toLowerCase();
+      return _lpState.lanes.has(ml);
+    });
   }
   if (q) poolMembers = poolMembers.filter(function(m){ return m.name.toLowerCase().includes(q); });
 
   // 정렬
   poolMembers = poolMembers.slice().sort(function(a, b) {
-    if (sortVal === 'tier') {
+    if (sortVal === 'tier' || sortVal === 'tier-asc') {
       var tv = {'CHALLENGER':9,'GRANDMASTER':8,'MASTER':7,'DIAMOND':6,'EMERALD':5,'PLATINUM':4,'GOLD':3,'SILVER':2,'BRONZE':1,'IRON':0,'UNRANKED':-1};
       var ta = tv[(a.soloTier||'UNRANKED').split(' ')[0]] || -1;
       var tb = tv[(b.soloTier||'UNRANKED').split(' ')[0]] || -1;
-      return tb - ta;
+      return sortVal === 'tier-asc' ? ta - tb : tb - ta;
     }
     if (sortVal === 'name') return a.name.localeCompare(b.name);
     return 0;
@@ -19487,23 +19536,14 @@ function renderLaneBuilder() {
   if (poolCount) poolCount.textContent = poolMembers.length + '명';
   if (poolList) {
     // 일반 내전과 동일한 makeMiniCard 재사용
-    poolList.innerHTML = poolMembers.map(function(m) { return makeMiniCard(m, 'pool', 'normal', false); }).join('');
-    // 드래그 이벤트를 라인 빌더용으로 오버라이드
-    poolList.querySelectorAll('.mini-card').forEach(function(el) {
-      el.addEventListener('dragstart', function(ev) {
-        var mid = parseInt(el.dataset.mid || el.getAttribute('data-mid'));
-        if (!mid) {
-          // data-mid 없으면 이름으로 찾기
-          var nameEl = el.querySelector('.mini-name');
-          if (nameEl) {
-            var name = nameEl.textContent.trim();
-            var found = poolMembers.find(function(m){ return m.name === name; });
-            if (found) mid = found.id;
-          }
-        }
-        onLaneDragStart(ev, mid);
-      });
+    poolList.innerHTML = '';
+    poolMembers.forEach(function(m) {
+      var card = makeMiniCard(m, 'pool', 'normal', false);
+      // 드래그 이벤트 오버라이드
+      card.addEventListener('dragstart', function(ev) { onLaneDragStart(ev, m.id); });
+      poolList.appendChild(card);
     });
+
   }
 
   var panel = document.getElementById('lane-teams-panel');
@@ -19516,42 +19556,57 @@ function renderLaneBuilder() {
   laneTeams.forEach(function(t) {
     var teamPanel = document.createElement('div');
     teamPanel.className = 'team-panel';
+
+    // 멸망전 점수 합산 (슬롯 라인 기준으로 계산)
+    var totalDoom = 0; var hasDoom = false;
+    Object.keys(t.slots).forEach(function(slotKey) {
+      var mb = t.slots[slotKey];
+      if (mb) {
+        var ds = typeof getDoomScore === 'function' ? getDoomScore(mb, slotKey) : null;
+        if (ds && ds !== '—' && !isNaN(parseFloat(ds))) { totalDoom += parseFloat(ds); hasDoom = true; }
+      }
+    });
+
+    // 팀 헤더
     var hdr = document.createElement('div');
     hdr.className = 'team-header';
-    var mList = Object.values(t.slots).filter(Boolean);
-    var totalDoom = mList.reduce(function(s, m){ return s + (m.doomScore || 0); }, 0);
-    var avgScore = mList.length > 0 ? Math.round(totalDoom / mList.length) : 0;
-    hdr.innerHTML = '<span class="team-name">' + t.name + '</span>' +
-      '<span style="font-family:Rajdhani,sans-serif;font-size:11px;color:var(--text-muted);">멸망 ' + avgScore + '</span>' +
-      '<span class="team-count">' + mList.length + '/5</span>';
+    var filled = Object.values(t.slots).filter(Boolean).length;
+    var doomHtml = hasDoom ? '<span style="font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;color:#A78BFA;margin-left:6px;">멸망 ' + totalDoom.toFixed(1) + '</span>' : '';
+    hdr.innerHTML = '<span class="team-name">' + t.name + '</span><span class="team-count">' + filled + '/5</span>' + doomHtml;
     teamPanel.appendChild(hdr);
 
+    // 라인 슬롯
     LANE_SLOTS.forEach(function(slot) {
       var m = t.slots[slot];
       var slotEl = document.createElement('div');
-      slotEl.style.cssText = 'display:flex;align-items:center;gap:8px;padding:5px 8px;border-bottom:1px solid rgba(30,45,64,.5);min-height:46px;transition:background .15s;' + (m ? '' : 'background:rgba(10,20,40,0.3);');
+      slotEl.style.cssText = 'display:flex;align-items:center;gap:6px;padding:4px 6px;border-bottom:1px solid rgba(30,45,64,.5);min-height:52px;transition:background .15s;position:relative;' + (m ? '' : 'background:rgba(10,20,40,0.3);');
       slotEl.addEventListener('dragover', function(ev) { ev.preventDefault(); slotEl.style.background='rgba(10,200,185,0.06)'; });
-      slotEl.addEventListener('dragleave', function() { slotEl.style.background=m?'':'rgba(10,20,40,0.3)'; });
-      slotEl.addEventListener('drop', function(ev) { slotEl.style.background=''; onLaneDrop(ev,'team',t.id,slot); });
+      slotEl.addEventListener('dragleave', function() { slotEl.style.background = m ? '' : 'rgba(10,20,40,0.3)'; });
+      slotEl.addEventListener('drop', (function(capturedSlot, capturedTeamId) {
+        return function(ev) { slotEl.style.background=''; onLaneDrop(ev,'team',capturedTeamId,capturedSlot); };
+      })(slot, t.id));
 
+      // 라인 레이블
       var lbl = document.createElement('div');
-      lbl.style.cssText = 'width:32px;flex-shrink:0;font-size:9px;font-family:Rajdhani,sans-serif;font-weight:700;color:var(--blue-bright);background:rgba(10,200,185,.1);border:1px solid rgba(10,200,185,.2);border-radius:2px;padding:2px 4px;text-align:center;';
+      lbl.style.cssText = 'width:28px;flex-shrink:0;font-size:9px;font-family:Rajdhani,sans-serif;font-weight:700;color:var(--blue-bright);background:rgba(10,200,185,.1);border:1px solid rgba(10,200,185,.2);border-radius:2px;padding:2px 3px;text-align:center;';
       lbl.textContent = LANE_SLOT_LABEL[slot];
       slotEl.appendChild(lbl);
 
       if (m) {
-        var mCard = document.createElement('div');
-        mCard.style.cssText = 'display:flex;align-items:center;gap:6px;flex:1;cursor:grab;min-width:0;';
-        mCard.draggable = true;
-        mCard.addEventListener('dragstart', function(ev) { onLaneDragStart(ev, m.id); });
-        mCard.innerHTML = '<img src="https://ddragon.leagueoflegends.com/cdn/16.14.1/img/profileicon/' + m.icon + '.png" style="width:26px;height:26px;border-radius:2px;flex-shrink:0;" onerror="this.style.display=&quot;none&quot;">' +
-          '<span style="font-size:11px;font-weight:600;color:var(--text-white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;">' + m.name + '</span>';
+        var card = makeMiniCard(m, 'lane-team', 'normal', false, slot);
+        card.style.flex = '1';
+        card.style.minWidth = '0';
+        card.addEventListener('dragstart', (function(capturedM) {
+          return function(ev) { onLaneDragStart(ev, capturedM.id); };
+        })(m));
         var rmBtn = document.createElement('button');
         rmBtn.textContent = '✕';
-        rmBtn.style.cssText = 'margin-left:auto;background:transparent;border:none;color:var(--text-muted);cursor:pointer;font-size:11px;padding:0 2px;flex-shrink:0;';
-        rmBtn.addEventListener('click', function() { removeLaneSlot(t.id, slot); });
-        mCard.appendChild(rmBtn);
-        slotEl.appendChild(mCard);
+        rmBtn.style.cssText = 'position:absolute;top:3px;right:3px;background:transparent;border:none;color:var(--text-muted);cursor:pointer;font-size:10px;padding:0;z-index:2;line-height:1;';
+        rmBtn.addEventListener('click', (function(capturedSlot2, capturedTeamId2) {
+          return function(e) { e.stopPropagation(); removeLaneSlot(capturedTeamId2, capturedSlot2); };
+        })(slot, t.id));
+        slotEl.appendChild(card);
+        slotEl.appendChild(rmBtn);
       } else {
         var ph = document.createElement('div');
         ph.style.cssText = 'font-size:10px;color:var(--border-subtle);font-family:Rajdhani,sans-serif;letter-spacing:.5px;';
@@ -19631,6 +19686,40 @@ function convertLaneTeamsToTeams() {
   teams = laneTeams.map(function(t) {
     var mList = LANE_SLOTS.map(function(s){ return t.slots[s]; }).filter(Boolean);
     return { id: t.id, name: t.name, members: mList, captainId: null };
+  });
+}
+
+
+function copyLaneTeamText() {
+  var lines = [];
+  var LANE_KO = { top:'탑', jg:'정글', mid:'미드', bot:'원딜', sup:'서폿' };
+  laneTeams.forEach(function(t) {
+    lines.push('▣ ' + t.name);
+    var LANE_SLOTS2 = ['top','jg','mid','bot','sup'];
+    LANE_SLOTS2.forEach(function(slot) {
+      var m = t.slots[slot];
+      if (m) {
+        var tier = m.soloTier || 'UNRANKED';
+        var mainLabel = m.mainLane ? (LANE_KO[m.mainLane] || m.mainLane) : '—';
+        var subLabel = (m.subLanes && m.subLanes.length) ? m.subLanes.map(function(s){ return LANE_KO[s]||s; }).join(', ') : '—';
+        lines.push('  • [' + LANE_KO[slot] + '] ' + m.name + '  ' + tier + '  │  주라인: ' + mainLabel + '  │  부라인: ' + subLabel);
+      } else {
+        lines.push('  • [' + LANE_KO[slot] + '] 미배치');
+      }
+    });
+    lines.push('');
+  });
+  var text = lines.join('\n').trim();
+  navigator.clipboard.writeText(text).then(function() {
+    toast('팀 정보가 복사되었습니다', 'ok');
+  }).catch(function() {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    toast('팀 정보가 복사되었습니다', 'ok');
   });
 }
 
