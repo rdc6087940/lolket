@@ -783,7 +783,12 @@ class Component extends DCLogic {
     // ── 내전 종류별 비율 ──
     const mtColors = ['#5B8DEF','#7C5CFC','#2ED9A3','#EF5B5B','#F5A623','#5be3a9'];
     const mtCounts = {};
-    allMatches.forEach(m => { if (m.matchType) mtCounts[m.matchType] = (mtCounts[m.matchType]||0)+1; });
+    allMatches.forEach(m => {
+      // 현재 등록된 내전 종류만 집계
+      if (m.matchType && matchTypeDefs[m.matchType]) {
+        mtCounts[m.matchType] = (mtCounts[m.matchType]||0)+1;
+      }
+    });
     const mtTotal = Object.values(mtCounts).reduce((a,b) => a+b, 0);
     const matchTypeItems = Object.entries(mtCounts).map(([id, count], i) => ({
       label: matchTypeDefs[id]?.name || id,
