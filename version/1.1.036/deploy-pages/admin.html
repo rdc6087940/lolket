@@ -327,15 +327,12 @@ body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg-darkest); c
           <div>
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;">
               <div class="section-title" style="margin-bottom:0;flex:1;">등록된 커넥트 서버</div>
-              <div style="display:flex;gap:6px;">
-                <button class="btn-sm" style="border-color:rgba(10,200,185,.4);color:var(--blue-bright);background:rgba(10,200,185,.06);" onclick="syncDeeplolServers()">🔄 딥롤 전체 업데이트</button>
-                <button class="btn-sm btn-blue" onclick="openAddConnectModal()">+ 추가</button>
-              </div>
+              <button class="btn-sm btn-blue" onclick="openAddConnectModal()">+ 추가</button>
             </div>
             <div class="table-wrap">
               <table class="data-table">
                 <thead><tr>
-                  <th>서버명</th><th>서버 ID</th><th>멤버수</th><th>일일게임</th><th>액션</th>
+                  <th>서버명</th><th>서버 ID</th><th>액션</th>
                 </tr></thead>
                 <tbody id="connect-list-tbody">
                   <tr class="loading-row"><td colspan="3"><div class="spinner" style="margin:0 auto;"></div></td></tr>
@@ -558,14 +555,6 @@ async function dbRead(path) {
   });
   const j = await res.json();
   return j.data;
-}
-
-async function dbWrite(path, data) {
-  const res = await fetch(WORKER_URL + '/db-write', {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ path, data, token: _masterToken || _token })
-  });
-  return await res.json();
 }
 
 async function adminApi(endpoint, body) {
@@ -807,88 +796,6 @@ document.querySelectorAll('.modal-overlay').forEach(m => m.addEventListener('cli
 // ── 자동 로그인 체크 ──
 if (_token) showAdmin();
 
-// ── 딥롤 전체 서버 동기화 ──
-const SYNC_CACHE_KEY = 'deeplol_server_list_cache';
-const SYNC_CACHE_TTL = 30 * 24 * 60 * 60 * 1000; // 30일
-
-async function syncDeeplolServers() {
-  if (!confirm('딥롤 server_list API에서 전체 커넥트 서버를 가져와 업데이트합니다. 기존 데이터는 덮어씌워집니다. 계속하시겠습니까?')) return;
-  const btn = document.querySelector('[onclick="syncDeeplolServers()"]');
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ 업데이트 중...'; }
-  try {
-    let list = null;
-
-    // 캐시 확인 (30일)
-    try {
-      const cached = localStorage.getItem(SYNC_CACHE_KEY);
-      if (cached) {
-        const c = JSON.parse(cached);
-        if (Date.now() - c.ts < SYNC_CACHE_TTL) {
-          list = c.data;
-          console.log('[syncDeeplolServers] 캐시 사용:', list.length + '개');
-        }
-      }
-    } catch(e) {}
-
-    // 캐시 없으면 API 호출
-    if (!list) {
-      const res = await fetch('https://b2c-api-cdn.deeplol.gg/tournament/server_list', {
-        headers: { 'Referer': 'https://www.deeplol.gg/' }
-      });
-      if (!res.ok) throw new Error('딥롤 API 오류: ' + res.status);
-      const data = await res.json();
-      list = data.clan_list || [];
-      if (!list.length) throw new Error('서버 목록이 비어있습니다');
-      // 캐시 저장
-      try { localStorage.setItem(SYNC_CACHE_KEY, JSON.stringify({ ts: Date.now(), data: list })); } catch(e) {}
-    }
-
-    // 기존 _trackedConnects 업데이트
-    const updated = {};
-    list.forEach(s => {
-      // Firebase 배열 변환 방지를 위해 's_' 접두사 사용
-      const key = 's_' + s.server_id;
-      updated[key] = {
-        name: s.server_name || '—',
-        serverId: String(s.server_id),
-        pNum: s.p_num || 0,
-        todayGames: s.today_games || 0,
-        serverScale: s.server_scale,
-        profileImage: s.profile_image_url || '',
-        updatedAt: Date.now(),
-      };
-    });
-
-    // Firebase에 저장 (system-connect-write bulk)
-    const writeRes = await masterApi('/system-connect-write', { action: 'bulk', connects: updated });
-    if (!writeRes.ok) throw new Error(writeRes.error || '저장 실패');
-    _trackedConnects = updated;
-
-    // 테이블 다시 렌더링
-    const rows = Object.values(_trackedConnects)
-      .filter(function(c) { return c; })
-      .sort(function(a, b) { return (b.pNum || 0) - (a.pNum || 0); })
-      .map(function(c) { return [c.serverId || '', c]; });
-    document.getElementById('connect-list-tbody').innerHTML = rows.length
-      ? rows.map(([id, c]) => `
-          <tr>
-            <td><span style="font-weight:600;">${esc(c.name||'—')}</span></td>
-            <td><span style="font-family:Rajdhani,sans-serif;font-size:11px;color:var(--muted);">${esc(c.serverId||id)}</span></td>
-            <td><span style="font-family:Rajdhani,sans-serif;font-size:11px;color:var(--text);">${c.pNum != null ? c.pNum.toLocaleString() + '명' : '—'}</span></td>
-            <td><span style="font-family:Rajdhani,sans-serif;font-size:11px;color:var(--blue-bright);">${c.todayGames != null ? c.todayGames + '게임' : '—'}</span></td>
-            <td><button class="btn-xs btn-red" onclick="removeConnect('${esc(id)}')">제거</button></td>
-          </tr>`)
-        .join('')
-      : '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:1.5rem;">등록된 커넥트 없음</td></tr>';
-
-    alert(`✅ ${list.length}개 커넥트 서버 업데이트 완료!`);
-  } catch(e) {
-    alert('❌ 업데이트 실패: ' + e.message);
-  } finally {
-    if (btn) { btn.disabled = false; btn.textContent = '🔄 딥롤 전체 업데이트'; }
-  }
-}
-
 // ── 소속 분석 ──
 var _trackedConnects = {}; // { id: { name, serverId } }
 var _connectCache = {};    // { puuId: { ts, results: [...] } }
@@ -897,42 +804,31 @@ const CONNECT_CACHE_TTL = 24 * 60 * 60 * 1000; // 24시간
 
 async function loadConnectTab() {
   document.getElementById('connect-list-tbody').innerHTML =
-    '<tr class="loading-row"><td colspan="5"><div class="spinner" style="margin:0 auto;"></div></td></tr>';
+    '<tr class="loading-row"><td colspan="3"><div class="spinner" style="margin:0 auto;"></div></td></tr>';
   try {
     const j = await dbRead('system/tracked_connects');
-    // Firebase가 숫자 키를 배열로 반환할 경우 객체로 변환
-    if (Array.isArray(j)) {
-      _trackedConnects = {};
-      j.forEach(function(item, idx) { if (item) _trackedConnects[String(idx)] = item; });
-    } else {
-      _trackedConnects = j || {};
-    }
+    _trackedConnects = j || {};
     const rows = Object.entries(_trackedConnects);
     document.getElementById('connect-list-tbody').innerHTML = rows.length
       ? rows.map(([id, c]) => `
           <tr>
             <td><span style="font-weight:600;">${esc(c.name||'—')}</span></td>
             <td><span style="font-family:Rajdhani,sans-serif;font-size:11px;color:var(--muted);">${esc(c.serverId||id)}</span></td>
-            <td><span style="font-family:Rajdhani,sans-serif;font-size:11px;color:var(--text);">${c.pNum != null ? c.pNum.toLocaleString() + '명' : '—'}</span></td>
-            <td><span style="font-family:Rajdhani,sans-serif;font-size:11px;color:var(--blue-bright);">${c.todayGames != null ? c.todayGames + '게임' : '—'}</span></td>
             <td><button class="btn-xs btn-red" onclick="removeConnect('${esc(id)}')">제거</button></td>
           </tr>`)
         .join('')
       : '<tr><td colspan="3" style="text-align:center;color:var(--muted);padding:1.5rem;">등록된 커넥트 없음</td></tr>';
-    // 캐시 로드 (localStorage)
+    // 캐시 로드 (connectName 없는 구캐시 무효화)
+    const cache = await dbRead('system/connect_cache');
     _connectCache = {};
-    try {
-      Object.keys(localStorage).forEach(function(k) {
-        if (k.startsWith('connect_cache_')) {
-          try {
-            var v2 = JSON.parse(localStorage.getItem(k));
-            var key2 = k.replace('connect_cache_', '');
-            if (v2 && v2.results && Array.isArray(v2.results)) _connectCache[key2] = v2;
-          } catch(e4) {}
+    if (cache) {
+      Object.entries(cache).forEach(([k,v]) => {
+        if (v && v.results && v.results.every && v.results.every(r => r.connectName)) {
+          _connectCache[k] = v;
         }
       });
-    } catch(e5) {}
-  } catch(e) { console.error('[loadConnectTab]', e); }
+    }
+  } catch(e) { toast('로드 오류: ' + e.message, 'err'); }
 }
 
 function openAddConnectModal() {
@@ -994,7 +890,7 @@ async function analyzeConnect() {
     }
 
     // 3. 등록된 커넥트 서버 목록에서 멤버 조회
-    const connects = Object.values(_trackedConnects).filter(function(c) { return c && c.serverId; });
+    const connects = Object.values(_trackedConnects);
     if (!connects.length) {
       resultEl.innerHTML = '<div style="color:var(--muted);font-size:12px;">등록된 커넥트 서버가 없습니다.</div>';
       return;
@@ -1018,7 +914,7 @@ async function analyzeConnect() {
         if (!member) return null;
 
         return {
-          connectName: c.name || c.serverId || '—',
+          connectName: c.name,
           serverId: c.serverId,
           tier: member.tier || '—',
           cnt: member.cnt || 0,
@@ -1032,10 +928,10 @@ async function analyzeConnect() {
     }));
 
     const found = results.filter(Boolean);
-    // 4. localStorage 캐시 저장 (Firebase 미사용)
+    // 4. Firebase 캐시 저장
     const cacheData = { ts: Date.now(), results: found, name: riotName, tag: riotTag };
     _connectCache[cacheKey] = cacheData;
-    try { localStorage.setItem('connect_cache_' + cacheKey, JSON.stringify(cacheData)); } catch(e) {}
+    await adminApi('/system-connect-cache-write', { key: cacheKey, data: cacheData });
     renderConnectResult(found, name, tag, Date.now(), false);
   } catch(e) {
     resultEl.innerHTML = '<div style="color:#E05050;font-size:12px;">❌ 오류: ' + esc(e.message) + '</div>';

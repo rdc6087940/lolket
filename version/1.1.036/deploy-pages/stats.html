@@ -1247,27 +1247,13 @@ async function loadData(){
       json = _siCached;
       try { var _co = JSON.parse(sessionStorage.getItem(_siCacheKey)); if (_co) _updateNextUpdateTime(_co.ts); } catch(e) {}
     } else {
-      // 클라이언트에서 직접 딥롤 API 호출 (Worker 우회)
-      let _siData = null;
-      try {
-        const _siDirect = await fetch('https://b2c-api-cdn.deeplol.gg/tournament/server_info?server_id=' + SERVER_ID, {
-          headers: { 'Referer': 'https://www.deeplol.gg/' }
-        });
-        if (_siDirect.ok) _siData = await _siDirect.json();
-      } catch(e) {}
-
-      // 직접 호출 실패 시 Worker 폴백
-      if (!_siData) {
-        const _siRes = await fetch(WORKER_URL + '/server-info', {
-          method: 'POST', headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({ serverId: SERVER_ID })
-        });
-        const _siJson = await _siRes.json();
-        if (!_siJson.ok) throw new Error('서버 정보 조회 실패');
-        _siData = _siJson.data;
-      }
-
-      json = _siData;
+      const _siRes = await fetch(WORKER_URL + '/server-info', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ serverId: SERVER_ID })
+      });
+      const _siJson = await _siRes.json();
+      if (!_siJson.ok) throw new Error('서버 정보 조회 실패');
+      json = _siJson.data;
       var _nowTs = Date.now();
       try { sessionStorage.setItem(_siCacheKey, JSON.stringify({ data: json, ts: _nowTs })); } catch(e) {}
       _updateNextUpdateTime(_nowTs);
@@ -1313,14 +1299,6 @@ async function loadData(){
       }
     }
     allData=(json.tournament_stats&&json.tournament_stats.tournament_stats_all_list)||[];
-    // sticker 조회용 전역 목록 저장
-    window._serverMemberList = allData;
-    window._puuIdMap = {};
-    allData.forEach(function(m) {
-      if (m.riot_name && m.riot_tag && m.puu_id) {
-        window._puuIdMap[(m.riot_name).toLowerCase()+'#'+(m.riot_tag).toLowerCase()] = m.puu_id;
-      }
-    });
     document.getElementById('member-count').textContent=allData.length;
     currentPage=1;
     applyAll();
@@ -2747,49 +2725,7 @@ function renderDetail(analysis, member, totalLoaded, updatedAt, ratingResult) {
     (isCooling ? '↻ 쿨타임 '+coolSec+'초' : '↻ 업데이트')+
     '</button></div>';
 
-  // 스티커 섹션 비동기 로드
-  // sticker_totals key = 딥롤 puu_id (member.puu_id)
-  var _stickerPuuid = member ? member.puu_id : null;
-  const _communityId = typeof COMMUNITY_ID !== 'undefined' ? COMMUNITY_ID : (typeof _currentCommunityId !== 'undefined' ? _currentCommunityId : null);
-  var _stickerSectionHtml = '<div id="dm-sticker-section" style="margin-bottom:.75rem;"></div>';
-  if (_stickerPuuid && _communityId) {
-    setTimeout(async function() {
-      try {
-        const stickerEl = document.getElementById('dm-sticker-section');
-        if (!stickerEl) return;
-        // sticker_totals/{puuid} 하나만 읽기 (경량)
-        const res = await fetch(WORKER_URL + '/db-public-read', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ path: 'communities/' + _communityId + '/sticker_totals/' + _stickerPuuid })
-        });
-        const j = await res.json();
-        const raw = (j.ok && j.data) ? j.data : {};
-        const counts = {
-          mvp:    raw.mvp    || 0,
-          hmm:    raw.hmm    || 0,
-          shield: raw.shield || 0,
-          imti:   raw.imti   || 0,
-          buddy:  raw.buddy  || 0,
-        };
-        const STICKER_DEF = [
-          {key:'mvp',   label:'🏆 MVP',   color:'#FFD700'},
-          {key:'hmm',   label:'🤔 흐음..', color:'#B97EEA'},
-          {key:'shield',label:'🛡️ 방패',  color:'#5BBCE4'},
-          {key:'imti',  label:'😤 임티',   color:'#E05050'},
-          {key:'buddy', label:'🤝 동반자', color:'#0AC8B9'},
-        ];
-        var badges = STICKER_DEF.map(function(s) {
-          return '<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;border:1px solid '+s.color+'33;background:'+s.color+'12;color:'+s.color+';font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;">'+s.label+' <span style="background:'+s.color+'22;border-radius:10px;padding:1px 6px;">'+counts[s.key]+'</span></span>';
-        }).join('');
-        stickerEl.innerHTML = '<div style="padding:.5rem .75rem;background:var(--bg-darkest,#080E1A);border:1px solid var(--border-subtle,#1E2D40);border-radius:3px;">' +
-          '<div style="font-family:Rajdhani,sans-serif;font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--muted,#5B6474);margin-bottom:6px;">🎖️ 받은 스티커</div>' +
-          '<div style="display:flex;flex-wrap:wrap;gap:5px;">' + badges + '</div>' +
-          '</div>';
-      } catch(e) {}
-    }, 0);
-  }
-
-  document.getElementById('dm-content').innerHTML = _stickerSectionHtml + updateBtnHtml +
+  document.getElementById('dm-content').innerHTML = updateBtnHtml +
     '<div class="dm-body">'+
       '<div class="two-col">'+
         '<div class="dm-section" style="display:flex;flex-direction:column;">'+
@@ -7878,7 +7814,7 @@ async function loadSeasonStats(seasonId) {
     var j = await res.json();
     if (!j.ok) return;
     var data = j.data;
-    var computed = computeSeasonStats(data, isFinalized, season);
+    var computed = computeSeasonStats(data, isFinalized);
     _seasonData[seasonId] = computed;
     try { localStorage.setItem(CACHE_KEY, JSON.stringify({ data: computed, ts: Date.now() })); } catch(e2) {}
     renderSeasonPage(seasonId);
@@ -7886,24 +7822,14 @@ async function loadSeasonStats(seasonId) {
 }
 
 // 시즌 통계 계산 (현재값 - 스냅샷 or final 그대로)
-function computeSeasonStats(data, isFinalized, season) {
+function computeSeasonStats(data, isFinalized) {
   if (!data) return [];
   // 종료된 시즌은 final 데이터 그대로 사용
   if (isFinalized && data.final) {
     return Object.values(data.final);
   }
-  // 종료됐는데 final 없으면 빈 배열 (아직 집계 안 됨)
-  if (isFinalized && !data.final) {
-    return [];
-  }
-  // 진행중 시즌: 현재 allData - 스냅샷, endDate 이후 데이터는 제외
+  // 진행중 시즌: 현재 allData - 스냅샷
   var snapshot = data.snapshot || {};
-  var today = new Date().toISOString().slice(0, 10);
-  var endDate = season && season.endDate;
-  // 종료일이 오늘보다 이전이면 현재 데이터 사용 불가 → 빈 배열
-  if (endDate && endDate < today && !data.final) {
-    return [];
-  }
   return allData.map(function(m) {
     var snap = snapshot[m.puu_id];
     if (!snap) return null; // 스냅샷 없으면 skip
@@ -7987,12 +7913,6 @@ function renderSeasonList() {
     info.innerHTML = '<div style="font-size:12px;font-weight:700;color:' + (isActive ? '#A78BFA' : 'var(--text-muted)') + ';font-family:Rajdhani,sans-serif;">' + s.name + (isActive ? ' 🟢' : s.finalized ? ' ✓' : '') + '</div>' +
       '<div style="font-size:10px;color:var(--muted);">' + s.startDate + ' ~ ' + s.endDate + '</div>';
     row.appendChild(info);
-    var editBtn = document.createElement('button');
-    editBtn.textContent = '✏️';
-    editBtn.title = '시즌 이름 변경';
-    editBtn.style.cssText = 'padding:3px 8px;border-radius:2px;border:1px solid rgba(200,170,110,.3);background:transparent;color:var(--gold);font-size:10px;cursor:pointer;';
-    editBtn.addEventListener('click', (function(id, name){ return function(){ renameSeasonData(id, name); }; })(sid, s.name));
-    row.appendChild(editBtn);
     var snapBtn = document.createElement('button');
     snapBtn.textContent = '📸';
     snapBtn.title = '현재 스냅샷 저장';
@@ -8006,36 +7926,6 @@ function renderSeasonList() {
     row.appendChild(delBtn);
     wrap.appendChild(row);
   });
-}
-
-async function renameSeasonData(seasonId, currentName) {
-  var newName = prompt('새 시즌 이름을 입력하세요:', currentName);
-  if (!newName || newName.trim() === currentName) return;
-  newName = newName.trim();
-  try {
-    var res = await fetch(WORKER_URL + '/season-rename', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        communityId: COMMUNITY_ID,
-        seasonId: seasonId,
-        name: newName,
-        discordId: _myDiscordId,
-        token: localStorage.getItem('sa_master_token')
-      })
-    });
-    var j = await res.json();
-    if (j.ok) {
-      if (_seasons[seasonId]) _seasons[seasonId].name = newName;
-      renderSeasonList();
-      renderSeasonSelect();
-      alert('시즌 이름이 변경되었습니다.');
-    } else {
-      alert('변경 실패: ' + (j.error || '알 수 없는 오류'));
-    }
-  } catch(e) {
-    alert('오류: ' + e.message);
-  }
 }
 
 async function saveSeasonData() {

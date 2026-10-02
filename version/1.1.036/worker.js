@@ -105,142 +105,13 @@ export default {
 
     // 디스코드 Interactions
     // 디스코드 슬래시 명령어 등록
-    // 길드 커맨드 삭제 (등록된 모든 커뮤니티의 discordServerId 기반)
-    // 내전 후기 제출
-    if (path === '/review-submit' && request.method === 'POST') {
-      let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
-      const { cid, matchId, reviewerPuuid, stickers } = body;
-      if (!cid || !matchId || !reviewerPuuid) return json({ok:false,error:'필수 파라미터 없음'},400);
-      const dbUrl2 = env.FB_DATABASE_URL, secret2 = env.FB_DB_SECRET;
-      const authQ2 = secret2 ? '?auth='+secret2 : '';
-      // 이미 제출했는지 확인
-      const existRes = await fetch(`${dbUrl2}/communities/${cid}/reviews/${matchId}/${reviewerPuuid}.json${authQ2}`);
-      const exist = existRes.ok ? await existRes.json() : null;
-      if (exist && exist.submittedAt) return json({ok:false,error:'이미 제출하셨습니다.'},400);
-      // 저장
-      await fetch(`${dbUrl2}/communities/${cid}/reviews/${matchId}/${reviewerPuuid}.json${authQ2}`, {
-        method: 'PUT', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ stickers: stickers || {}, submittedAt: Date.now() })
-      });
-
-      // sticker_totals 집계: review.html에서 이미 딥롤 puu_id로 key 설정됨
-      const stickerEntries = Object.entries(stickers || {});
-      for (const [targetKey, stickerArr] of stickerEntries) {
-        if (!Array.isArray(stickerArr) || !stickerArr.length) continue;
-        for (const stickerKey of stickerArr) {
-          const totalsPath = `${dbUrl2}/communities/${cid}/sticker_totals/${targetKey}/${stickerKey}.json${authQ2}`;
-          const curRes = await fetch(totalsPath);
-          const cur = curRes.ok ? (await curRes.json() || 0) : 0;
-          await fetch(totalsPath, {
-            method: 'PUT', headers: {'Content-Type':'application/json'},
-            body: JSON.stringify((typeof cur === 'number' ? cur : 0) + 1)
-          });
-        }
-      }
-
-      return json({ok:true});
-    }
-
-    // 내전 후기 DM 발송
-    if (path === '/review-dm' && request.method === 'POST') {
-      console.log('[review-dm] 진입');
-      let body; try { body = await request.json(); } catch(e) { console.log('[review-dm] body parse error:', e.message); return json({ok:false,error:'bad request'},400); }
-      const { cid, matchId, members, matchName, token: adminToken } = body;
-      console.log('[review-dm] cid:', cid, 'matchId:', matchId, 'members:', JSON.stringify(members)?.slice(0,200), 'BOT_TOKEN:', !!env.DISCORD_BOT_TOKEN);
-      if (!cid || !matchId || !members?.length) return json({ok:false,error:'필수 파라미터 없음'},400);
-      console.log('[review-dm] members length ok, starting loop');
-      // 토큰 검증 생략 (BOT_TOKEN으로 DM 발송 권한 확인)
-      const BOT_TOKEN = env.DISCORD_BOT_TOKEN;
-      if (!BOT_TOKEN) return json({ok:false,error:'BOT_TOKEN 없음'},500);
-      const results = [];
-      for (const m of members) {
-        if (!m.discordId) continue;
-        try {
-          // DM 채널 열기
-          const dmRes = await fetch('https://discord.com/api/v10/users/@me/channels', {
-            method: 'POST', headers: { 'Authorization': 'Bot '+BOT_TOKEN, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ recipient_id: m.discordId })
-          });
-          const dmStatus = dmRes.status;
-          const dmData = await dmRes.json();
-          console.log('[review-dm] DM channel:', dmStatus, JSON.stringify(dmData).slice(0,100));
-          if (!dmRes.ok) { results.push({discordId: m.discordId, ok:false, error: dmData.message}); continue; }
-          const channelId = dmData.id;
-          // 링크 생성 (puuid 없으면 discordId 사용)
-          const reviewer = m.puuid || m.discordId;
-          const link = 'https://roonging.com/review.html?cid='+cid+'&match='+matchId+'&reviewer='+encodeURIComponent(reviewer);
-          // DM 전송
-          const msgRes = await fetch('https://discord.com/api/v10/channels/'+channelId+'/messages', {
-            method: 'POST', headers: { 'Authorization': 'Bot '+BOT_TOKEN, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ content: '⚔️ **'+(matchName||'내전')+'** 후기를 남겨주세요!\n\n🔗 '+link })
-          });
-          const msgData = await msgRes.json();
-          console.log('[review-dm] msg status:', msgRes.status, JSON.stringify(msgData).slice(0,100));
-          results.push({ discordId: m.discordId, name: m.name, ok: msgRes.ok, status: msgRes.status });
-        } catch(e) {
-          results.push({ puuid: m.puuid, ok: false, error: e.message });
-        }
-      }
-      return json({ ok:true, results });
-    }
-
-    if (path === '/discord-clear-guild-commands' && request.method === 'POST') {
-      const appId = env.DISCORD_APP_ID || '1500717088984010883';
-      const botToken = env.DISCORD_BOT_TOKEN;
-      if (!botToken) return json({ok:false,error:'BOT_TOKEN 없음'},500);
-      let body2; try { body2 = await request.json(); } catch { return json({ok:false},400); }
-
-      // guildId 직접 지정 or communities_info에서 자동 수집
-      let guildIds = [];
-      if (body2.guildId) {
-        guildIds = [String(body2.guildId)];
-      } else {
-        const ciRes2 = await fetch(`${env.FB_DATABASE_URL}/communities_info.json?auth=${env.FB_DB_SECRET}`);
-        const ci2 = ciRes2.ok ? (await ciRes2.json() || {}) : {};
-        Object.values(ci2).forEach(v => {
-          if (v?.discordServerId) guildIds.push(String(v.discordServerId));
-          if (v?.discordGuildId) guildIds.push(String(v.discordGuildId));
-        });
-        guildIds = [...new Set(guildIds)];
-      }
-
-      const results = [];
-      for (const gid of guildIds) {
-        try {
-          const res = await fetch(`https://discord.com/api/v10/applications/${appId}/guilds/${gid}/commands`, {
-            method: 'PUT',
-            headers: { 'Authorization': 'Bot ' + botToken, 'Content-Type': 'application/json' },
-            body: JSON.stringify([])
-          });
-          const data = await res.json();
-          results.push({ guildId: gid, ok: res.ok, status: res.status });
-        } catch(e) {
-          results.push({ guildId: gid, ok: false, error: e.message });
-        }
-      }
-      return json({ ok: true, results });
-    }
-
     if (path === '/discord-register-commands' && request.method === 'POST') {
       const appId = env.DISCORD_APP_ID || '1500717088984010883';
       const botToken = env.DISCORD_BOT_TOKEN;
       if (!botToken) return json({ok:false,error:'BOT_TOKEN 없음'},500);
       const commands = [
-        {
-          name: '룽봇',
-          description: '룽잉닷컴 봇 명령어',
-          options: [
-            { type: 1, name: '생일', description: '오늘부터 5일 이내 생일 조회' },
-            { type: 1, name: '일정', description: '오늘부터 7일 이내 일정 조회' },
-            { type: 1, name: '내전목록', description: '커뮤니티 내전 목록 조회' },
-            { type: 1, name: '내전승률', description: '내전 승률 조회' },
-            { type: 1, name: '내전참가', description: '내전 대기열 참가' },
-            { type: 1, name: '탑레계정등록', description: '닉네임#태그 티어 입력으로 내전 참여 정보 자동 등록', options: [
-              { type: 3, name: '계정정보', description: '예) Roonging#KR1 D4', required: true }
-            ] },
-            { type: 1, name: '내전링크', description: '가장 최근 내전 비회원 링크 조회' },
-          ]
-        }
+        { name:'생일', description:'오늘부터 5일 이내 생일 조회' },
+        { name:'일정', description:'오늘부터 7일 이내 일정 조회' },
       ];
       const res = await fetch(`https://discord.com/api/v10/applications/${appId}/commands`, {
         method:'PUT',
@@ -678,22 +549,6 @@ export default {
       return handleSeasonStats(request, env);
     }
 
-    if (path === '/season-rename' && request.method === 'POST') {
-      let body; try { body = await request.json(); } catch { return json({ ok: false, error: '잘못된 요청' }, 400); }
-      const { communityId, seasonId, name, token } = body;
-      if (!communityId || !seasonId || !name) return json({ ok: false, error: '필수 파라미터 누락' }, 400);
-      const session = await verifySession(token, env);
-      if (!session || (session.role !== 'master' && session.role !== 'admin')) return json({ ok: false, error: '권한 없음' }, 403);
-      const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
-      const authQ = secret ? '?auth=' + secret : '';
-      const res = await fetch(`${dbUrl}/communities/${communityId}/seasons/${seasonId}/name.json${authQ}`, {
-        method: 'PUT', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(name)
-      });
-      if (!res.ok) return json({ ok: false, error: '저장 실패' }, 500);
-      return json({ ok: true });
-    }
-
     if (path === '/season-cache-clear' && request.method === 'POST') {
       let body; try { body = await request.json(); } catch { return json({ ok: false }, 400); }
       const { communityId, seasonId } = body;
@@ -888,10 +743,6 @@ async function handleDbPublicRead(request, env) {
     /^communities\/[^/]+\/match_categories($|\/)/,
     /^communities\/[^/]+\/match_types($|\/)/,
     /^communities\/[^/]+\/seasons($|\/)/,
-    /^communities\/[^/]+\/season_final($|\/)/,
-    /^communities\/[^/]+\/season_snapshots($|\/)/,
-    /^communities\/[^/]+\/reviews($|\/)/,
-    /^communities\/[^/]+\/sticker_totals($|\/)/,
     /^communities\/[^/]+\/hosts($|\/)/,
     /^communities\/[^/]+\/deeplolServerId$/,
     /^communities\/[^/]+$/,
@@ -3043,20 +2894,21 @@ async function handleServerInfo(request, env) {
   const data = await cachedFetch(
     `server-info-${serverId}`,
     async () => {
+      // CDN 캐시 우회를 위해 타임스탬프 추가
+      const _ts = Math.floor(Date.now() / (30 * 60 * 1000)); // 30분 단위
       const res = await fetch(
-        `https://b2c-api-cdn.deeplol.gg/tournament/server_info?server_id=${serverId}`,
+        `https://b2c-api-cdn.deeplol.gg/tournament/server_info?server_id=${serverId}&_t=${_ts}`,
         { headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
           'Referer': 'https://www.deeplol.gg/',
-          'Origin': 'https://www.deeplol.gg',
-          'Accept': 'application/json, text/plain, */*',
-          'Accept-Language': 'ko-KR,ko;q=0.9',
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
         }}
       );
       if (!res.ok) return null;
       return await res.json();
     },
-    3600 // 1시간 캐시
+    1800 // 30분 (전적 데이터 자주 갱신)
   );
   if (!data) return json({ok:false,error:'서버 정보 조회 실패'},500);
   return json({ ok:true, data });
@@ -3479,16 +3331,18 @@ async function handleSeasonStats(request, env) {
   const authQ = secret ? '?auth=' + secret : '';
   const cacheKey = 'season-stats-' + communityId + '-' + seasonId;
 
-  // 시즌 정보 + 스냅샷 + 종료 데이터 병렬 조회 (캐시 없이 항상 최신)
-  const [seasonRes, snapshotRes, finalRes] = await Promise.all([
-    fetch(`${dbUrl}/communities/${communityId}/seasons/${seasonId}.json${authQ}`),
-    fetch(`${dbUrl}/communities/${communityId}/season_snapshots/${seasonId}.json${authQ}`),
-    fetch(`${dbUrl}/communities/${communityId}/season_final/${seasonId}.json${authQ}`)
-  ]);
-  const seasonInfo = seasonRes.ok ? await seasonRes.json() : null;
-  const snapshot = snapshotRes.ok ? await snapshotRes.json() : null;
-  const final = finalRes.ok ? await finalRes.json() : null;
-  const data = { season: seasonInfo, snapshot, final };
+  const data = await cachedFetch(cacheKey, async () => {
+    // 시즌 정보 + 스냅샷 + 종료 데이터 병렬 조회
+    const [seasonRes, snapshotRes, finalRes] = await Promise.all([
+      fetch(`${dbUrl}/communities/${communityId}/seasons/${seasonId}.json${authQ}`),
+      fetch(`${dbUrl}/communities/${communityId}/season_snapshots/${seasonId}.json${authQ}`),
+      fetch(`${dbUrl}/communities/${communityId}/season_final/${seasonId}.json${authQ}`)
+    ]);
+    const season = seasonRes.ok ? await seasonRes.json() : null;
+    const snapshot = snapshotRes.ok ? await snapshotRes.json() : null;
+    const final = finalRes.ok ? await finalRes.json() : null;
+    return { season, snapshot, final };
+  }, 21600); // 6시간 캐시
 
   return json({ ok: true, data });
 }
@@ -3557,38 +3411,6 @@ async function runSeasonAutoProcess(env) {
       for (const [sid, season] of Object.entries(seasons)) {
         if (!season || !season.endDate) continue;
 
-        // 종료일이 지났는데 final 없으면 바로 저장 (과거 누락 복구)
-        const pastEndNoFinal = season.endDate < kstDate && !season.finalized;
-        if (pastEndNoFinal) {
-          console.log(`[season] ${cid}/${sid} 종료일 지남(${season.endDate}), final 없음 → 즉시 저장`);
-          const sidResPast = await fetch(`${dbUrl}/communities_info/${cid}/deeplolServerId.json${authQ}`);
-          if (sidResPast.ok) {
-            const serverIdPast = await sidResPast.json();
-            if (serverIdPast) {
-              try {
-                const dlResPast = await fetch(
-                  `https://b2c-api-cdn.deeplol.gg/tournament/server_info?server_id=${serverIdPast}`,
-                  { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)', 'Referer': 'https://www.deeplol.gg/' } }
-                );
-                if (dlResPast.ok) {
-                  const dlDataPast = await dlResPast.json();
-                  const membersPast = (dlDataPast?.tournament_stats?.tournament_stats_all_list) || [];
-                  if (membersPast.length > 0) {
-                    await saveSeasonFinal(env, cid, sid, membersPast);
-                    await fetch(`${dbUrl}/communities/${cid}/seasons/${sid}/finalized.json${authQ}`, {
-                      method: 'PUT', headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify(true)
-                    });
-                    console.log(`[season] ${cid}/${sid} 누락 final 저장 완료`);
-                  }
-                }
-              } catch(ePast) {
-                console.error(`[season] ${cid}/${sid} 누락 final 저장 실패:`, ePast.message);
-              }
-            }
-          }
-        }
-
         // 시즌 시작일 도달 시 스냅샷 자동 저장
         if (season.startDate === kstDate && !season.snapshotSaved) {
           console.log(`[season] ${cid}/${sid} 시작일 도달, 스냅샷 저장`);
@@ -3596,11 +3418,11 @@ async function runSeasonAutoProcess(env) {
           if (sidRes2.ok) {
             const serverId2 = await sidRes2.json();
             if (serverId2) {
-              const deeplolUrl2 = `https://b2c-api-cdn.deeplol.gg/tournament/server_info?server_id=${serverId2}`;
-              const dlRes2 = await fetch(deeplolUrl2, { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)', 'Referer': 'https://www.deeplol.gg/' } });
+              const deeplolUrl2 = `https://api.deeplol.gg/statistics/custom/list?server_id=${serverId2}`;
+              const dlRes2 = await fetch(deeplolUrl2, { headers: { 'Accept': 'application/json' } });
               if (dlRes2.ok) {
                 const dlData2 = await dlRes2.json();
-                const members2 = (dlData2?.tournament_stats?.tournament_stats_all_list) || [];
+                const members2 = dlData2?.data?.list || [];
                 if (members2.length > 0) {
                   const snapshot = {};
                   members2.forEach(m => {
@@ -3634,11 +3456,11 @@ async function runSeasonAutoProcess(env) {
           const serverId = await sidRes.json();
           if (!serverId) continue;
           // 현재 딥롤 데이터 조회
-          const deeplolUrl = `https://b2c-api-cdn.deeplol.gg/tournament/server_info?server_id=${serverId}`;
-          const dlRes = await fetch(deeplolUrl, { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)', 'Referer': 'https://www.deeplol.gg/' } });
+          const deeplolUrl = `https://api.deeplol.gg/statistics/custom/list?server_id=${serverId}`;
+          const dlRes = await fetch(deeplolUrl, { headers: { 'Accept': 'application/json' } });
           if (!dlRes.ok) continue;
           const dlData = await dlRes.json();
-          const members = (dlData?.tournament_stats?.tournament_stats_all_list) || [];
+          const members = dlData?.data?.list || [];
           if (members.length > 0) {
             await saveSeasonFinal(env, cid, sid, members);
           }
@@ -4197,14 +4019,7 @@ async function handleDiscordInteraction(request, env, ctx) {
       const TIER_EMOJI = {CHALLENGER:'🏆',GRANDMASTER:'💎',MASTER:'💜',DIAMOND:'💠',EMERALD:'💚',PLATINUM:'🩵',GOLD:'🥇',SILVER:'⚪',BRONZE:'🟤',IRON:'⬛',UNRANKED:'❓'};
       const LANE_EMOJI3 = {top:'🛡️',jg:'🌲',mid:'⚡',bot:'🏹',sup:'🌟'};
       const list = members.map((m, i) =>
-        (function() {
-          const laneKo2 = {top:'탑',jg:'정글',mid:'미드',bot:'원딜',sup:'서폿'};
-          const mainStr2 = m.mainLane ? (laneKo2[m.mainLane]||m.mainLane) : '';
-          const subArr2 = Array.isArray(m.subLane) ? m.subLane : (Array.isArray(m.subLanes) ? m.subLanes : []);
-          const subStr2 = subArr2.length ? subArr2.map(l => laneKo2[l]||l).join('/') : '';
-          const laneStr2 = mainStr2 ? (' │ 주:' + mainStr2 + (subStr2 ? ' 부:'+subStr2 : '')) : '';
-          return (i+1) + '. ' + (LANE_EMOJI3[m.mainLane]||'🎮') + ' **' + m.name + '#' + m.tag + '** ' + (TIER_EMOJI[m.tier]||'') + ' ' + (m.tierFull||m.tier||'') + laneStr2;
-        })()
+        `${i+1}. ${LANE_EMOJI3[m.mainLane]||'🎮'} **${m.name}#${m.tag}** ${TIER_EMOJI[m.tier]||''} ${m.tierFull||m.tier||''}`
       ).join('\n');
       return discordReply(`**👥 ${matchData.name||'내전'} 멤버 목록** (${members.length}명)\n${list}`, true);
     }
@@ -4228,26 +4043,10 @@ async function handleDiscordInteraction(request, env, ctx) {
       try {
         const dbUrl2 = env.FB_DATABASE_URL, secret2 = env.FB_DB_SECRET;
         const authQ2 = secret2 ? '?auth='+secret2 : '';
-        const pRes = await fetch(`${dbUrl2}/communities/${cid}/discord_profiles/${discordUserId}.json${authQ2}`);
+        const pRes = await fetch(`${dbUrl2}/discord_profiles/${discordUserId}.json${authQ2}`);
         if (pRes.ok) ep = await pRes.json() || {};
       } catch(e) {}
-
-      // 탑레계정 등록 여부 확인
-      if (!ep || !ep.riotName) {
-        return discordReply('❌ 탑레계정을 먼저 등록해주세요.\n`/룽봇 탑레계정등록` 명령어를 사용하세요.', true);
-      }
-
-      // 탑레계정 있으면 바로 참가 처리 (defer + waitUntil)
-      const appId2 = env.DISCORD_APP_ID || '1500717088984010883';
-      const token2 = interaction.token;
-      const resp2 = discordDefer(true);
-      ctx.waitUntil(
-        handleJoinMatch(ep.riotName, ep.riotTag, ep.mainLane, ep.subLanes || [], matchId, discordUserId, interaction.member?.user?.username || interaction.user?.username, appId2, token2, env, ep.highTier || '', ep.icon || '')
-          .catch(e2 => discordFollowup(appId2, token2, '❌ 참가 오류: ' + e2.message, env))
-      );
-      return resp2;
-
-      // 포지션 역매핑 (저장값 → 한글) - 아래 코드는 더 이상 실행 안 됨
+      // 포지션 역매핑 (저장값 → 한글)
       const LANE_KO_MAP = {top:'탑',jg:'정글',mid:'미드',bot:'원딜',sup:'서폿'};
       const savedMainLane = ep.mainLane ? (LANE_KO_MAP[ep.mainLane] || ep.mainLane) : '';
       const savedSubLanes = ep.subLanes ? ep.subLanes.map(l => LANE_KO_MAP[l] || l).join(',') : '';
@@ -4377,201 +4176,22 @@ async function handleDiscordInteraction(request, env, ctx) {
   if (interaction.type === 2) {
     const cmdName = interaction.data.name;
     const options  = interaction.data.options || [];
+    const opt = (name) => options.find(o => o.name === name)?.value;
 
-    // 룽봇 서브커맨드 처리
-    let subCmd = null;
-    let subOptions = [];
-    if (cmdName === '룽봇' && options.length > 0) {
-      subCmd = options[0].name;
-      subOptions = options[0].options || [];
-    }
-    const activeCmd = subCmd || cmdName;
-    const activeOptions = subCmd ? subOptions : options;
-    const opt = (name) => activeOptions.find(o => o.name === name)?.value;
-
-    console.log('[discord] cmdName:', cmdName, 'subCmd:', subCmd, 'activeCmd:', activeCmd);
-
-    try {
-
-    // ── /룽봇 내전목록 (또는 /내전목록) ──
-    if (activeCmd === '내전목록') {
-      const appId0 = env.DISCORD_APP_ID || '1500717088984010883';
-      const token0 = interaction.token;
-      ctx.waitUntil(handleListMatches(interaction, env).catch(e => discordFollowup(appId0, token0, '❌ 오류: ' + e.message, env)));
-      return discordDefer();
+    // ── /내전목록 ──
+    if (cmdName === '내전목록') {
+      return handleListMatches(interaction, env);
     }
 
     // ── /내전승률 ──
-    if (activeCmd === '내전승률') {
+    if (cmdName === '내전승률') {
       return handleMatchWinRate(interaction, env);
     }
 
-    // ── /탑레계정등록 ──
-    if (activeCmd === '탑레계정등록') {
+    // ── /참여양식저장 ──
+    if (cmdName === '참여양식저장') {
       const discordUserId = interaction.member?.user?.id || interaction.user?.id;
-      const discordName = interaction.member?.user?.username || interaction.user?.username;
-      const input = opt('계정정보') || '';
-      const appId = env.DISCORD_APP_ID || '1500717088984010883';
-      const itoken = interaction.token;
-      if (!input.includes('#')) {
-        return discordReply('❌ 형식 오류: `닉네임#태그 티어` 형식으로 입력해주세요.\n예) Roonging#KR1 D4', true);
-      }
-      // defer 후 비동기 처리
-      ctx.waitUntil((async () => {
-        try {
-          // 입력 파싱: 닉네임#태그 티어
-          const hashIdx = input.indexOf('#');
-          const gameName = input.slice(0, hashIdx).trim();
-          const rest = input.slice(hashIdx + 1).trim();
-          // 마지막 토큰이 티어 패턴이면 티어로, 나머지 전체가 태그
-          const TIER_PATTERN = /^(iron|bronze|silver|gold|platinum|emerald|diamond|master|grandmaster|challenger|i|b|s|g|p|e|d|m|gm|c|chall)\d*$/i;
-          const tokens = rest.split(' ');
-          let tagLine, tierRaw;
-          if (tokens.length >= 2 && TIER_PATTERN.test(tokens[tokens.length - 1].replace(/\(임시\)/gi, '').trim())) {
-            tierRaw = tokens[tokens.length - 1];
-            tagLine = tokens.slice(0, tokens.length - 1).join(' ').trim();
-          } else {
-            tagLine = rest.trim();
-            tierRaw = '';
-          }
-          // (임시) 제거
-          tierRaw = tierRaw.replace(/\(임시\)/gi, '').trim();
-
-          // Riot API로 소환사 정보 조회 (직접 호출)
-          const riotKey = env.RIOT_API_KEY;
-          if (!riotKey) { await discordFollowup(appId, itoken, '❌ Riot API 키가 없습니다.', env); return; }
-          const accountRes = await fetch(
-            `https://asia.api.riotgames.com/riot/account/v1/accounts/by-riot-id/${encodeURIComponent(gameName)}/${encodeURIComponent(tagLine)}`,
-            { headers: { 'X-Riot-Token': riotKey } }
-          );
-          if (!accountRes.ok) {
-            await discordFollowup(appId, itoken, '❌ 소환사를 찾을 수 없습니다: ' + gameName + '#' + tagLine, env);
-            return;
-          }
-          const accountData = await accountRes.json();
-          const puuid = accountData.puuid;
-          // 소환사 레벨/아이콘 조회
-          const sumRes2 = await fetch(
-            `https://kr.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/${encodeURIComponent(puuid)}`,
-            { headers: { 'X-Riot-Token': riotKey } }
-          );
-          const sumData2 = sumRes2.ok ? await sumRes2.json() : {};
-          // 랭크 조회
-          const leagueRes2 = await fetch(
-            `https://kr.api.riotgames.com/lol/league/v4/entries/by-puuid/${encodeURIComponent(puuid)}`,
-            { headers: { 'X-Riot-Token': riotKey } }
-          );
-          const entries2 = leagueRes2.ok ? await leagueRes2.json() : [];
-          const soloEntry = entries2.find(e => e.queueType === 'RANKED_SOLO_5x5');
-          const riotData = {
-            puuid,
-            name: accountData.gameName,
-            tag: accountData.tagLine,
-            solo: soloEntry ? soloEntry.tier + ' ' + soloEntry.rank + ' ' + soloEntry.leaguePoints + 'LP' : 'Unranked',
-          };
-
-          // 딥롤 summoner API → puu_id 획득
-          const DEEPLOL = 'https://b2c-api-cdn.deeplol.gg';
-          const HDR = { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)', 'Referer': 'https://www.deeplol.gg/' } };
-          const sumRes = await fetch(`${DEEPLOL}/summoner/summoner?riot_id_name=${encodeURIComponent(gameName)}&riot_id_tag_line=${encodeURIComponent(tagLine)}&platform_id=KR`, HDR);
-          const sumData = sumRes.ok ? await sumRes.json() : null;
-          const dpPuuId = sumData?.summoner_basic_info_dict?.puu_id || null;
-
-          let mainLane = null, subLanes = [];
-          if (dpPuuId) {
-            // champion-stat (season 25, 27) + realtime 병렬 호출
-            const [r25, r27, rtr] = await Promise.all([
-              fetch(`${DEEPLOL}/summoner/champion-stat?puu_id=${encodeURIComponent(dpPuuId)}&season=25&platform_id=KR`, HDR),
-              fetch(`${DEEPLOL}/summoner/champion-stat?puu_id=${encodeURIComponent(dpPuuId)}&season=27&platform_id=KR`, HDR),
-              fetch(`${DEEPLOL}/summoner/summoner-realtime?platform_id=KR&summoner_id=&puu_id=${encodeURIComponent(dpPuuId)}`, HDR),
-            ]);
-            const [d25, d27, rtd] = await Promise.all([r25.json(), r27.json(), rtr.json()]);
-
-            const pos25 = (d25?.counter_champion_stats?.ranked_solo_5x5?.position_rate) || (d25?.counter_champion_stats?.total?.position_rate) || {};
-            const pos27 = (d27?.counter_champion_stats?.ranked_solo_5x5?.position_rate) || (d27?.counter_champion_stats?.total?.position_rate) || {};
-
-            // 솔로랭크 realtime에서 시즌27 티어값
-            const solo27 = rtd?.season_tier_info_dict?.ranked_solo_5x5;
-            const tier27 = solo27?.tier || '';
-            const div27 = solo27?.division || 0;
-            const TIER_VAL = { IRON:0, BRONZE:1, SILVER:2, GOLD:3, PLATINUM:4, EMERALD:5, DIAMOND:6, MASTER:7, GRANDMASTER:8, CHALLENGER:9 };
-            const tierVal27 = (TIER_VAL[tier27] || 0) * 10 + (5 - div27);
-
-            // 시즌25 티어
-            const prevList = sumData?.summoner_basic_info_dict?.previous_season_tier_list || [];
-            const s25 = prevList.find(s => s.season === 25);
-            const tier25 = s25?.tier || '';
-            const div25 = s25?.division || 0;
-            const tierVal25 = (TIER_VAL[tier25] || 0) * 10 + (5 - div25);
-
-            // 티어 높은 시즌 주라인 채택
-            const posMap = { Top:'top', Jungle:'jg', Middle:'mid', Bot:'bot', Supporter:'sup' };
-            let mainPosData = (tierVal27 >= tierVal25 && Object.keys(pos27).length > 0) ? pos27 : pos25;
-            if (!Object.keys(mainPosData).length) mainPosData = Object.keys(pos25).length > 0 ? pos25 : pos27;
-
-            let mainPos = null, mainRate = -1;
-            Object.entries(mainPosData).forEach(([k, v]) => { if (v.rate > mainRate) { mainRate = v.rate; mainPos = k; } });
-            if (mainPos) mainLane = posMap[mainPos] || mainPos.toLowerCase();
-
-            // 부라인: 두 시즌 중 하나라도 10% 이상
-            const subSet = {};
-            [pos25, pos27].forEach(pd => {
-              Object.entries(pd).forEach(([k, v]) => {
-                if (k !== mainPos && v.rate >= 10) subSet[k] = true;
-              });
-            });
-            subLanes = Object.keys(subSet).map(k => posMap[k] || k.toLowerCase());
-          }
-
-          // 커뮤니티 찾기
-          const ciRes = await fetch(`${env.FB_DATABASE_URL}/communities_info.json?auth=${env.FB_DB_SECRET}`);
-          const ci = ciRes.ok ? (await ciRes.json() || {}) : {};
-          const guildId = interaction.guild_id;
-          let cid = null;
-          for (const [k, v] of Object.entries(ci)) {
-            if (v && (String(v.discordServerId) === String(guildId) || String(v.discordGuildId) === String(guildId))) { cid = k; break; }
-          }
-          if (!cid) { await discordFollowup(appId, itoken, '❌ 연결된 커뮤니티가 없습니다.', env); return; }
-
-          // 프로필 저장
-          // Riot API에서 가져온 profileIconId 사용 (index.html 멤버검색과 동일)
-          const profileIcon = String(sumData2?.profileIconId || '0');
-
-          const profile = {
-            riotName: gameName, riotTag: tagLine,
-            highTier: tierRaw || '',
-            mainLane: mainLane || '',
-            subLanes: subLanes,
-            icon: profileIcon,
-            discordId: discordUserId,
-            discordName: discordName || '',
-            updatedAt: Date.now(),
-          };
-          await fetch(`${env.FB_DATABASE_URL}/communities/${cid}/discord_profiles/${discordUserId}.json?auth=${env.FB_DB_SECRET}`, {
-            method: 'PUT', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(profile)
-          });
-
-          const laneKo = { top:'탑', jg:'정글', mid:'미드', bot:'원딜', sup:'서폿' };
-          const mainStr = mainLane ? laneKo[mainLane] || mainLane : '알 수 없음';
-          const subStr = subLanes.length ? subLanes.map(l => laneKo[l]||l).join(', ') : '없음';
-          await discordFollowup(appId, itoken,
-            '✅ 탑레계정 등록 완료!\n' +
-            '소환사: ' + gameName + '#' + tagLine + '\n' +
-            '티어: ' + (tierRaw || riotData.solo || '?') + '\n' +
-            '주라인: ' + mainStr + '\n' +
-            '부라인: ' + subStr,
-            env
-          );
-        } catch(e) {
-          await discordFollowup(appId, itoken, '❌ 오류: ' + e.message, env);
-        }
-      })());
-      return discordDefer(true);
-
-    // ── 이전 참여양식저장 모달 (더미, 하위호환) ──
-    } else if (false && activeCmd === '참여양식저장_old') {
-      const discordUserId = interaction.member?.user?.id || interaction.user?.id;
+      // 바로 빈 모달 반환 (3초 제한 때문에 Firebase 조회 없이)
       return new Response(JSON.stringify({
         type: 9,
         data: {
@@ -4603,42 +4223,9 @@ async function handleDiscordInteraction(request, env, ctx) {
       }), { headers: { 'Content-Type': 'application/json' } });
     }
 
-    // ── /룽봇 내전링크 ──
-    console.log('[check] activeCmd:', JSON.stringify(activeCmd), 'eq:', activeCmd === '내전링크', 'len:', activeCmd.length);
-    if (activeCmd === '내전링크') {
-      const appId = env.DISCORD_APP_ID || '1500717088984010883';
-      const itoken = interaction.token;
-      const discordGuildId = interaction.guild_id;
-      console.log('[내전링크] ctx:', !!ctx, 'guildId:', discordGuildId);
-      const fetchLink = async () => {
-        // communities_info에서 discordServerId로 커뮤니티 찾기
-        const ciRes = await fetch(`${env.FB_DATABASE_URL}/communities_info.json?auth=${env.FB_DB_SECRET}`);
-        const ci = ciRes.ok ? (await ciRes.json() || {}) : {};
-        let cid = null;
-        for (const [k, v] of Object.entries(ci)) {
-          if (v && (String(v.discordServerId) === String(discordGuildId) || String(v.discordGuildId) === String(discordGuildId))) { cid = k; break; }
-        }
-        if (!cid) return '❌ 이 디스코드 서버와 연결된 커뮤니티를 찾을 수 없습니다.\n관리자에게 디스코드 서버 ID 설정을 요청하세요.';
-        const matchesRes = await fetch(`${env.FB_DATABASE_URL}/communities/${cid}/matches.json?auth=${env.FB_DB_SECRET}`);
-        const matchesData = matchesRes.ok ? await matchesRes.json() : null;
-        if (!matchesData) return '📭 진행 중인 내전이 없습니다.';
-        const matches = Object.entries(matchesData).map(([id,m])=>({id,...m})).filter(m=>m.status&&m.status!=='내전 종료').sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
-        if (!matches.length) return '📭 진행 중인 내전이 없습니다.';
-        const l = matches[0];
-        const emoji = {'내전 모집':'🟡','종류 선택':'🟠','팀 짜기':'🔧','대진표':'⚔️','결과 입력':'📝'}[l.status]||'📋';
-        return emoji + ' **' + (l.name||'내전') + '** 비회원 링크\n상태: ' + l.status + '\n' + (l.admin ? '진행자: ' + l.admin + '\n' : '') + '🔗 https://roonging.com/?match=' + cid + '__' + l.id;
-      };
-      if (ctx && ctx.waitUntil) {
-        ctx.waitUntil(fetchLink().then(msg => discordFollowup(appId, itoken, msg, env)));
-        return discordDefer();
-      } else {
-        return discordReply(await fetchLink(), env);
-      }
-    }
-
     // ── /내전참가 ──
     // ── /생일 ──
-    if (activeCmd === '생일') {
+    if (cmdName === '생일') {
       const guildId = interaction.guild_id;
       const kstNow = new Date(Date.now() + 9*3600*1000);
       const today = kstNow.toISOString().slice(0,10);
@@ -4671,7 +4258,7 @@ async function handleDiscordInteraction(request, env, ctx) {
     }
 
     // ── /일정 ──
-    if (activeCmd === '일정') {
+    if (cmdName === '일정') {
       const guildId = interaction.guild_id;
       const kstNow = new Date(Date.now() + 9*3600*1000);
       const buttons = [];
@@ -4704,20 +4291,14 @@ async function handleDiscordInteraction(request, env, ctx) {
       }), { headers: { 'Content-Type': 'application/json' } });
     }
 
-    } catch(cmdErr) {
-      console.error('[discord cmd error]', cmdErr.message, cmdErr.stack?.slice(0,200));
-      return discordReply('❌ 처리 중 오류: ' + cmdErr.message, env);
-    }
-
-    if (activeCmd === '내전참가') {
+    if (cmdName === '내전참가') {
       const resp = discordDefer(true);
       const discordUserId = interaction.member?.user?.id || interaction.user?.id;
       const discordName   = interaction.member?.user?.username || interaction.user?.username;
       const appId  = env.DISCORD_APP_ID || '1500717088984010883';
       const token  = interaction.token;
-      // 탑레계정 프로필에서 자동으로 정보 가져오기
-      const subRaw = '';
-      const subLanes = [];
+      const subRaw = opt('보조포지션') || '';
+      const subLanes = subRaw ? subRaw.split(/[,，、]/).map(s => s.trim()).filter(Boolean) : [];
       const slashHighTier = opt('최고티어') || '';
       ctx.waitUntil(
         handleJoinMatch(opt('소환사명'), opt('태그'), opt('주포지션'), subLanes, opt('내전id'), discordUserId, discordName, appId, token, env, slashHighTier)
@@ -4735,10 +4316,6 @@ async function handleDiscordInteraction(request, env, ctx) {
 
 // ── /내전목록 처리 ──
 async function handleListMatches(interaction, env) {
-  const appId = env.DISCORD_APP_ID || '1500717088984010883';
-  const token = interaction.token;
-  const replyFn = (msg, comps) => discordFollowup(appId, token, msg, env, comps);
-
   const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
   const authQ = secret ? '?auth='+secret : '';
   const guildId   = interaction.guild_id;
@@ -4754,7 +4331,7 @@ async function handleListMatches(interaction, env) {
     )) { targetCid = cid; break; }
   }
   if (!targetCid) {
-    return replyFn('❌ 이 서버와 연결된 커뮤니티를 찾을 수 없습니다.\n관리자에게 디스코드 서버 ID 설정을 요청하세요.');
+    return discordReply('❌ 이 서버와 연결된 커뮤니티를 찾을 수 없습니다.\n관리자에게 디스코드 서버 ID 설정을 요청하세요.', true);
   }
 
   const matchRes = await fetch(`${dbUrl}/communities/${targetCid}/matches.json${authQ}`);
@@ -4779,7 +4356,7 @@ async function handleListMatches(interaction, env) {
     .slice(0, 5);
 
   if (!openMatches.length) {
-    return replyFn('현재 참가 가능한 내전이 없습니다.\n(디스코드 참가 ON + 12시간 이내 기준)');
+    return discordReply('현재 참가 가능한 내전이 없습니다.\n(디스코드 참가 ON + 12시간 이내 기준)', true);
   }
 
   // 내전마다 4개 버튼: 참가 / 멤버 목록 / 페이지 링크 / 나가기
@@ -4823,19 +4400,18 @@ async function handleListMatches(interaction, env) {
     return `⚔️ **${m.name||'이름없음'}** — ${(m._members||m.members||[]).length}명 참가중 | ${ageStr} 생성`;
   }).join('\n');
 
-  // defer 방식이므로 followup으로 전송
-  await fetch(`https://discord.com/api/v10/webhooks/${appId}/${token}/messages/@original`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
+  return new Response(JSON.stringify({
+    type: 4,
+    data: {
       content: `**📋 참가 가능한 내전 목록**\n${header}`,
       components,
-    })
-  });
+      flags: 64
+    }
+  }), { headers: { 'Content-Type': 'application/json' } });
 }
 
 // ── /내전참가 처리 ──
-async function handleJoinMatch(riotName, riotTag, laneInput, subLanesInput, matchId, discordUserId, discordName, appId, token, env, highTierInput, iconOverride) {
+async function handleJoinMatch(riotName, riotTag, laneInput, subLanesInput, matchId, discordUserId, discordName, appId, token, env, highTierInput) {
   console.log('[joinMatch] start', {riotName, riotTag, laneInput, matchId});
   const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
   const authQ = secret ? '?auth='+secret : '';
@@ -4932,42 +4508,11 @@ async function handleJoinMatch(riotName, riotTag, laneInput, subLanesInput, matc
     const ddData = await ddRes.json();
     icon = ddData.profile_icon_url || '';
     level = ddData.summoner_level || 0;
-    // realtime에서 티어도 가져오기
+    puuid = ddData.puu_id || null;
     const solo = ddData.season_tier_info_dict?.ranked_solo_5x5;
     if (solo && solo.tier) {
       tierStr = solo.tier;
       tierFull = `${solo.tier} ${solo.division||''} ${solo.league_points||0}LP`.trim();
-    }
-  }
-  if (iconOverride) icon = iconOverride;
-  // Riot puuid는 Riot API에서 가져오기
-  try {
-    const riotKey2 = env.RIOT_API_KEY;
-    if (riotKey2) {
-      const accRes = await fetch(
-        `https://asia.api.riotgames.com/riot/account/v1/accounts/by-riot-id/${encodeURIComponent(riotName)}/${encodeURIComponent(riotTag)}`,
-        { headers: { 'X-Riot-Token': riotKey2 } }
-      );
-      if (accRes.ok) {
-        const accData = await accRes.json();
-        puuid = accData.puuid || null;
-      }
-    }
-  } catch(ePuuid) {}
-
-  // highTierInput(수동 입력 티어)이 있으면 우선 적용
-  if (highTierInput && highTierInput.trim()) {
-    const TIER_PARSE = { i:'IRON',b:'BRONZE',s:'SILVER',g:'GOLD',p:'PLATINUM',e:'EMERALD',d:'DIAMOND',m:'MASTER',gm:'GRANDMASTER',c:'CHALLENGER',chall:'CHALLENGER' };
-    const rawT = highTierInput.trim().toLowerCase().replace(/\(임시\)/g,'').trim();
-    const matchT = rawT.match(/^([a-z]+)(\d*)$/);
-    if (matchT) {
-      const tierKey = matchT[1];
-      const div = matchT[2] || '';
-      const resolvedTier = TIER_PARSE[tierKey];
-      if (resolvedTier) {
-        tierStr = resolvedTier;
-        tierFull = resolvedTier + (div ? ' ' + div : '');
-      }
     }
   }
 
@@ -5617,7 +5162,7 @@ async function handleMatchWinRate(interaction, env) {
 // ── 디스코드 채널 호출 ──
 async function handleDiscordNotify(request, env) {
   let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
-  const { communityId, discordIds, message, matchName, matchAdmin } = body;
+  const { communityId, discordIds, message } = body;
   if (!communityId || !discordIds?.length || !message) return json({ok:false,error:'필수 파라미터 없음'},400);
 
   const BOT_TOKEN = env.DISCORD_BOT_TOKEN;
@@ -5634,12 +5179,7 @@ async function handleDiscordNotify(request, env) {
 
   // 멘션 문자열 생성
   const mentions = discordIds.map(id => `<@${id}>`).join(' ');
-  const headerLines = [];
-  if (matchName) headerLines.push('⚔️ **' + matchName + '**');
-  if (matchAdmin) headerLines.push('진행자: ' + matchAdmin);
-  const header = headerLines.length ? headerLines.join(' | ') + '\n' : '';
-  console.log('[notify] matchName:', matchName, 'matchAdmin:', matchAdmin, 'header:', header);
-  const fullMessage = mentions + '\n' + header + message;
+  const fullMessage = `${mentions}\n${message}`;
 
   // 채널에 메시지 전송
   const res = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
@@ -5665,8 +5205,7 @@ async function handleConnectWrite(request, env) {
   const [body, err] = await requireMaster(request, env);
   if (err) return err;
   const { action, id, name, serverId } = body;
-  if (!action) return json({ok:false,error:'필수 파라미터 없음'},400);
-  if (action !== 'bulk' && !id) return json({ok:false,error:'필수 파라미터 없음'},400);
+  if (!action || !id) return json({ok:false,error:'필수 파라미터 없음'},400);
   const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
   const authQ = secret ? '?auth='+secret : '';
   if (action === 'add') {
@@ -5677,14 +5216,6 @@ async function handleConnectWrite(request, env) {
     });
   } else if (action === 'remove') {
     await fetch(`${dbUrl}/system/tracked_connects/${id}.json${authQ}`, { method: 'DELETE' });
-  } else if (action === 'bulk') {
-    // 전체 덮어쓰기 (딥롤 서버 전체 동기화용)
-    const { connects } = body;
-    if (!connects || typeof connects !== 'object') return json({ok:false,error:'connects 필수'},400);
-    await fetch(`${dbUrl}/system/tracked_connects.json${authQ}`, {
-      method: 'PUT', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify(connects)
-    });
   }
   return json({ ok: true });
 }
