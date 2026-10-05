@@ -498,6 +498,44 @@ tr.effect-crown     { animation: crown-shimmer 2s ease-in-out infinite; }
 tr.effect-wave      { animation: wave-flow 1.8s ease-in-out infinite; }
 tr.effect-purple    { animation: purple-glow 1.5s ease-in-out infinite; }
 tr.effect-rainbow   { animation: rainbow-cycle 2s linear infinite; }
+tr.effect-ice       { animation: ice-glow 2s ease-in-out infinite; }
+tr.effect-gold      { animation: gold-shine 1.8s ease-in-out infinite; }
+tr.effect-matrix    { animation: matrix-pulse 1s ease-in-out infinite; }
+tr.effect-cyber     { animation: cyber-scan 1.4s linear infinite; }
+tr.effect-star      { animation: star-twinkle 2.5s ease-in-out infinite; }
+
+@keyframes ice-glow {
+  0%    { box-shadow: 0 0 0px 0px rgba(100,220,255,0), inset 0 0 0px rgba(100,220,255,0); }
+  30%   { box-shadow: 0 0 16px 4px rgba(100,220,255,.9), inset 0 0 20px rgba(100,220,255,.15); background: rgba(100,220,255,.07); }
+  60%   { box-shadow: 0 0 8px 2px rgba(180,240,255,.5), inset 0 0 8px rgba(180,240,255,.08); }
+  100%  { box-shadow: 0 0 0px 0px rgba(100,220,255,0), inset 0 0 0px rgba(100,220,255,0); }
+}
+@keyframes gold-shine {
+  0%,100% { box-shadow: 0 0 6px 1px rgba(255,210,0,.2); background: rgba(255,210,0,.01); }
+  20%     { box-shadow: 0 0 20px 6px rgba(255,220,50,.9), 0 0 40px 10px rgba(255,180,0,.3); background: rgba(255,210,0,.08); }
+  40%     { box-shadow: 0 0 10px 3px rgba(255,200,0,.5); }
+  60%     { box-shadow: 0 0 22px 7px rgba(255,230,80,.85), 0 0 45px 12px rgba(255,160,0,.25); background: rgba(255,210,0,.06); }
+  80%     { box-shadow: 0 0 8px 2px rgba(255,210,0,.3); }
+}
+@keyframes matrix-pulse {
+  0%    { box-shadow: 0 2px 0 0 rgba(0,255,65,.8), 0 -2px 0 0 rgba(0,255,65,.8); background: rgba(0,255,65,.03); }
+  50%   { box-shadow: 0 0 16px 4px rgba(0,255,65,.7), 0 0 30px 8px rgba(0,200,50,.2); background: rgba(0,255,65,.06); }
+  100%  { box-shadow: 0 2px 0 0 rgba(0,255,65,.8), 0 -2px 0 0 rgba(0,255,65,.8); }
+}
+@keyframes cyber-scan {
+  0%    { box-shadow: 0 0 0px rgba(0,200,255,0), inset 0 0 0px rgba(0,200,255,0); outline: 1px solid rgba(0,200,255,.1); }
+  25%   { box-shadow: 0 0 12px 3px rgba(0,200,255,.8), inset 0 1px 0 rgba(0,200,255,.4); outline: 1px solid rgba(0,200,255,.6); }
+  50%   { box-shadow: 0 0 6px 1px rgba(0,200,255,.3); outline: 1px solid rgba(0,200,255,.2); }
+  75%   { box-shadow: 0 0 14px 4px rgba(0,200,255,.9), inset 0 -1px 0 rgba(0,200,255,.4); outline: 1px solid rgba(0,200,255,.7); }
+  100%  { box-shadow: 0 0 0px rgba(0,200,255,0); outline: 1px solid rgba(0,200,255,.1); }
+}
+@keyframes star-twinkle {
+  0%,100% { box-shadow: 0 0 3px 1px rgba(255,240,100,.15); }
+  15%     { box-shadow: 0 0 16px 5px rgba(255,240,100,.9), 4px 4px 12px rgba(200,150,255,.6), -4px -4px 12px rgba(200,150,255,.6); background: rgba(255,240,100,.06); }
+  30%     { box-shadow: 0 0 6px 2px rgba(255,240,100,.3); }
+  60%     { box-shadow: 0 0 18px 6px rgba(255,230,50,.85), -3px 5px 10px rgba(180,130,255,.5), 3px -5px 10px rgba(180,130,255,.5); background: rgba(255,240,100,.05); }
+  80%     { box-shadow: 0 0 5px 1px rgba(255,240,100,.25); }
+}
 
 /* ── 배경 이펙트 오버레이 ── */
 .bg-effect-canvas {
@@ -6882,7 +6920,7 @@ function applyRowEffects() {
   document.querySelectorAll('tr[data-puu]').forEach(function(tr) {
     var puu = tr.getAttribute('data-puu');
     // 기존 이펙트 클래스 제거
-    tr.classList.remove('effect-fire','effect-lightning','effect-crown','effect-wave','effect-purple','effect-rainbow');
+    tr.classList.remove('effect-fire','effect-lightning','effect-crown','effect-wave','effect-purple','effect-rainbow','effect-ice','effect-gold','effect-matrix','effect-cyber','effect-star');
     if (puu && _rowEffects[puu]) {
       tr.classList.add('effect-' + _rowEffects[puu]);
     }
@@ -6898,6 +6936,11 @@ function openEffectPicker(puuId, name) {
     { key:'wave',      label:'🌊 물결',    color:'#00C8B9' },
     { key:'purple',    label:'💜 보라',    color:'#A47BFA' },
     { key:'rainbow',   label:'🌈 무지개',  color:'#FF69B4' },
+    { key:'ice',       label:'🧊 얼음',    color:'#64DCFF' },
+    { key:'gold',      label:'✨ 황금빛',  color:'#FFD200' },
+    { key:'matrix',    label:'💚 매트릭스', color:'#00FF41' },
+    { key:'cyber',     label:'🔵 사이버',  color:'#00C8FF' },
+    { key:'star',      label:'⭐ 별빛',    color:'#FFF064' },
     { key:'none',      label:'✕ 제거',     color:'#5B6474' },
   ];
   var modal = document.getElementById('effect-picker-modal');
@@ -7004,6 +7047,11 @@ function applyBgEffects() {
     if (effect === 'fire') startFireEffect(canvas, ctx, puu);
     else if (effect === 'wave') startWaveEffect(canvas, ctx, puu);
     else if (effect === 'coin') startCoinEffect(canvas, ctx, puu);
+    else if (effect === 'cat') startCatEffect(canvas, ctx, puu);
+    else if (effect === 'sakura') startSakuraEffect(canvas, ctx, puu);
+    else if (effect === 'snow') startSnowEffect(canvas, ctx, puu);
+    else if (effect === 'star') startStarShootEffect(canvas, ctx, puu);
+    else if (effect === 'bubble') startBubbleEffect(canvas, ctx, puu);
   });
 }
 
@@ -7141,13 +7189,232 @@ function startCoinEffect(canvas, ctx, puu) {
   draw();
 }
 
+// 🐱 고양이 걸어다니기
+function startCatEffect(canvas, ctx, puu) {
+  var cats = [];
+  var CAT_FRAMES = [
+    // 걷는 고양이 아스키 아트 두 프레임
+    function(x, y, size, ctx, flip) {
+      ctx.save();
+      if (flip) { ctx.translate(x + size, y); ctx.scale(-1, 1); } else ctx.translate(x, y);
+      ctx.font = size + 'px serif';
+      ctx.fillText('🐱', 0, 0);
+      ctx.restore();
+    }
+  ];
+  function spawnCat() {
+    var fromRight = Math.random() > 0.5;
+    cats.push({
+      x: fromRight ? canvas.width + 40 : -40,
+      y: Math.random() * (canvas.height - 20) + 10,
+      speed: (1.5 + Math.random() * 2) * (fromRight ? -1 : 1),
+      size: 14 + Math.floor(Math.random() * 10),
+      frame: 0,
+      frameTimer: 0,
+      flip: fromRight,
+    });
+  }
+  spawnCat();
+  var spawnTimer = 0;
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    spawnTimer++;
+    if (spawnTimer > 120 + Math.random() * 180) { spawnCat(); spawnTimer = 0; }
+    cats = cats.filter(function(c) {
+      return c.flip ? c.x > -60 : c.x < canvas.width + 60;
+    });
+    cats.forEach(function(c) {
+      c.x += c.speed;
+      c.frameTimer++;
+      if (c.frameTimer > 8) { c.frame = (c.frame + 1) % 2; c.frameTimer = 0; }
+      ctx.save();
+      if (c.flip) { ctx.translate(c.x + c.size, c.y); ctx.scale(-1, 1); }
+      else ctx.translate(c.x, c.y);
+      ctx.font = c.size + 'px serif';
+      ctx.globalAlpha = 0.85;
+      ctx.fillText(c.frame === 0 ? '🐱' : '😺', 0, 0);
+      ctx.restore();
+    });
+    _bgAnimFrames[puu] = requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+// 🌸 벚꽃 떨어지기
+function startSakuraEffect(canvas, ctx, puu) {
+  var petals = [];
+  var emojis = ['🌸','🌺','🌼','🌷'];
+  for (var i = 0; i < 15; i++) {
+    petals.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height - canvas.height,
+      vy: 0.5 + Math.random() * 1.2,
+      vx: (Math.random() - 0.5) * 0.8,
+      rot: Math.random() * Math.PI * 2,
+      rotSpeed: (Math.random() - 0.5) * 0.05,
+      size: 10 + Math.floor(Math.random() * 8),
+      emoji: emojis[Math.floor(Math.random() * emojis.length)],
+      alpha: 0.5 + Math.random() * 0.4,
+    });
+  }
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    petals.forEach(function(p) {
+      p.x += p.vx + Math.sin(p.rot) * 0.3;
+      p.y += p.vy;
+      p.rot += p.rotSpeed;
+      if (p.y > canvas.height + 20) { p.y = -20; p.x = Math.random() * canvas.width; }
+      ctx.save();
+      ctx.globalAlpha = p.alpha;
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+      ctx.font = p.size + 'px serif';
+      ctx.fillText(p.emoji, -p.size/2, p.size/2);
+      ctx.restore();
+    });
+    _bgAnimFrames[puu] = requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+// ❄️ 눈 내리기
+function startSnowEffect(canvas, ctx, puu) {
+  var flakes = [];
+  for (var i = 0; i < 30; i++) {
+    flakes.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      r: 1.5 + Math.random() * 3,
+      vy: 0.4 + Math.random() * 0.8,
+      vx: (Math.random() - 0.5) * 0.4,
+      alpha: 0.4 + Math.random() * 0.5,
+      wobble: Math.random() * Math.PI * 2,
+    });
+  }
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    flakes.forEach(function(f) {
+      f.wobble += 0.02;
+      f.x += f.vx + Math.sin(f.wobble) * 0.3;
+      f.y += f.vy;
+      if (f.y > canvas.height + 5) { f.y = -5; f.x = Math.random() * canvas.width; }
+      ctx.beginPath();
+      ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(200,230,255,' + f.alpha + ')';
+      ctx.fill();
+    });
+    _bgAnimFrames[puu] = requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+// ⭐ 별똥별
+function startStarShootEffect(canvas, ctx, puu) {
+  var stars = [];
+  function spawnStar() {
+    var angle = (20 + Math.random() * 30) * Math.PI / 180;
+    var speed = 4 + Math.random() * 5;
+    stars.push({
+      x: Math.random() * canvas.width * 0.8,
+      y: Math.random() * canvas.height * 0.5,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      len: 40 + Math.random() * 60,
+      alpha: 1,
+      tail: [],
+    });
+  }
+  var spawnT = 0;
+  // 배경 별
+  var bgStars = Array.from({length:20}, function() {
+    return { x: Math.random()*canvas.width, y: Math.random()*canvas.height, r: 0.5+Math.random()*1.5, a: 0.3+Math.random()*0.5 };
+  });
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // 배경 별 반짝임
+    bgStars.forEach(function(s) {
+      s.a = 0.2 + Math.abs(Math.sin(Date.now()/1000 + s.x)) * 0.6;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+      ctx.fillStyle = 'rgba(255,250,200,'+s.a+')';
+      ctx.fill();
+    });
+    spawnT++;
+    if (spawnT > 60 + Math.random() * 80) { spawnStar(); spawnT = 0; }
+    stars = stars.filter(function(s) { return s.alpha > 0.05 && s.x < canvas.width + 50 && s.y < canvas.height + 50; });
+    stars.forEach(function(s) {
+      s.tail.unshift({x: s.x, y: s.y});
+      if (s.tail.length > 12) s.tail.pop();
+      s.x += s.vx; s.y += s.vy; s.alpha -= 0.015;
+      // 꼬리
+      s.tail.forEach(function(t, i) {
+        var a = s.alpha * (1 - i / s.tail.length) * 0.7;
+        var r = 1.5 * (1 - i / s.tail.length);
+        ctx.beginPath();
+        ctx.arc(t.x, t.y, Math.max(r, 0.2), 0, Math.PI*2);
+        ctx.fillStyle = 'rgba(255,255,180,' + a + ')';
+        ctx.fill();
+      });
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, 2, 0, Math.PI*2);
+      ctx.fillStyle = 'rgba(255,255,220,' + s.alpha + ')';
+      ctx.fill();
+    });
+    _bgAnimFrames[puu] = requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+// 🫧 버블 올라가기
+function startBubbleEffect(canvas, ctx, puu) {
+  var bubbles = [];
+  for (var i = 0; i < 20; i++) {
+    bubbles.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height + canvas.height,
+      r: 3 + Math.random() * 8,
+      vy: 0.5 + Math.random() * 1,
+      vx: (Math.random() - 0.5) * 0.5,
+      wobble: Math.random() * Math.PI * 2,
+      alpha: 0.15 + Math.random() * 0.25,
+    });
+  }
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    bubbles.forEach(function(b) {
+      b.wobble += 0.025;
+      b.x += b.vx + Math.sin(b.wobble) * 0.4;
+      b.y -= b.vy;
+      if (b.y < -20) { b.y = canvas.height + 20; b.x = Math.random() * canvas.width; }
+      // 버블 그리기
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(100,200,255,' + (b.alpha * 2) + ')';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      // 반짝임
+      ctx.beginPath();
+      ctx.arc(b.x - b.r * 0.3, b.y - b.r * 0.3, b.r * 0.2, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255,255,255,' + b.alpha + ')';
+      ctx.fill();
+    });
+    _bgAnimFrames[puu] = requestAnimationFrame(draw);
+  }
+  draw();
+}
+
 function openBgEffectPicker(puuId, name) {
   var existing = _bgEffects[puuId] || 'none';
   var effects = [
-    { key:'fire', label:'🔥 불타는', color:'#FF5500' },
-    { key:'wave', label:'🌊 파도치는', color:'#00C8B9' },
-    { key:'coin', label:'🪙 코인 쌓이는', color:'#FFD700' },
-    { key:'none', label:'✕ 제거', color:'#5B6474' },
+    { key:'fire',   label:'🔥 불타는',   color:'#FF5500' },
+    { key:'wave',   label:'🌊 파도치는', color:'#00C8B9' },
+    { key:'coin',   label:'🪙 코인비',   color:'#FFD700' },
+    { key:'cat',    label:'🐱 고양이',   color:'#FFB347' },
+    { key:'sakura', label:'🌸 벚꽃',     color:'#FFB7C5' },
+    { key:'snow',   label:'❄️ 눈',       color:'#B0E0FF' },
+    { key:'star',   label:'⭐ 별똥별',   color:'#FFF176' },
+    { key:'bubble', label:'🫧 버블',     color:'#80DFFF' },
+    { key:'none',   label:'✕ 제거',     color:'#5B6474' },
   ];
   var modal = document.getElementById('bg-effect-picker-modal');
   if (!modal) {
