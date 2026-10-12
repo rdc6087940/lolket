@@ -208,7 +208,9 @@ const CUSTOM_QUEUE_ID = 3130;
 
 // ── DDragon ──
 let DD_VER = '14.24.1';
-const DD_ICON = id => `https://ddragon.leagueoflegends.com/cdn/${DD_VER}/img/champion/${id}.png`;
+// DD_VER은 initDragon() 후에 바뀌므로 함수로 만들어야 최신 버전 반영
+function DD_ICON(id) { return `https://ddragon.leagueoflegends.com/cdn/${DD_VER}/img/champion/${id}.png`; }
+function DD_PROFILE_ICON(id) { return `https://ddragon.leagueoflegends.com/cdn/${DD_VER}/img/profileicon/${id}.png`; }
 let champMap = {};
 
 async function initDragon() {
@@ -260,6 +262,18 @@ const TIER_KO = {
 function tierColor(t) { return TIER_COLORS[(t||'').toUpperCase().split(' ')[0]] || '#5B6474'; }
 function tierLabel(t) { if(!t) return '언랭'; const k=(t||'').toUpperCase().split(' ')[0]; return TIER_KO[k]||t; }
 
+// ── 소환사 아이콘 조회 (api.roonging.com 루트 엔드포인트 사용) ──
+async function fetchProfileIcon(gameName, tagLine) {
+  if (!gameName) return null;
+  try {
+    const url = WORKER_URL + '?gameName=' + encodeURIComponent(gameName) + '&tagLine=' + encodeURIComponent(tagLine || 'KR1') + '&region=KR';
+    const r = await fetch(url);
+    if (!r.ok) return null;
+    const j = await r.json();
+    return j.icon ? String(j.icon) : null;
+  } catch(e) { return null; }
+}
+
 // ── rating history 전체 조회 ──
 async function loadRatingHistory() {
   const res = await fetch(WORKER_URL + '/db-public-read', {
@@ -307,6 +321,7 @@ async function loadMembersAndRatings() {
           memberList = tsList;
           console.log('[ranking] memberList[0] keys:', Object.keys(tsList[0]));
           console.log('[ranking] memberList[0]:', JSON.stringify(tsList[0]));
+          // 아이콘은 top20 확정 후에만 조회 — 여기서 하지 않음
         }
       } else {
         console.warn('[ranking] server_info failed:', dlRes.status);
@@ -397,9 +412,12 @@ async function fetchWeekMatchIds(puuId, platform, fromTs, toTs) {
       if (!list.length) break;
       let hitTooOld = false;
       for (const item of list) {
-        const ts = (item.creation_timestamp||0)*1000;
-        if (ts < fromTs) { hitTooOld = true; break; } // 범위보다 오래된 매치 → 더 이상 없음
-        if (ts <= toTs) ids.push(item.match_id);       // fromTs <= ts <= toTs
+        // creation_timestamp: 초 단위 or 밀리초 단위 모두 처리
+        let raw = item.match_creation_time || item.creation_timestamp || item.game_creation || item.gameCreation || item.timestamp || 0;
+        // 10자리면 초 단위, 13자리면 밀리초
+        const ts = raw > 1e10 ? raw : raw * 1000;
+        if (ts < fromTs) { hitTooOld = true; break; }
+        if (ts <= toTs) ids.push(item.match_id);
       }
       if (hitTooOld || list.length < PAGE) break;
       offset += PAGE;
@@ -562,9 +580,12 @@ function buildChampRows(champs) {
   return champs.slice(0,5).map(c=>{
     const pct=(c.wr||0).toFixed(0);
     const pctW=(c.win/c.total*100).toFixed(1), pctL=((c.total-c.win)/c.total*100).toFixed(1);
+    // c.name이 영문 챔피언 id인지 확인 — 숫자면 champMap 재시도
+    const champName = /^\d+$/.test(c.name) ? (champMap[c.name] || c.name) : c.name;
+    const imgSrc = /^\d+$/.test(champName) ? '' : DD_ICON(champName);
     return `<div class="champ-row">
-      <img class="champ-icon" src="${DD_ICON(c.name)}" onerror="this.style.opacity=0.15">
-      <span class="champ-name">${esc(c.name)}</span>
+      ${imgSrc ? `<img class="champ-icon" src="${imgSrc}" onerror="this.style.opacity=0.15">` : `<div class="champ-icon" style="background:var(--panel);opacity:.3;border-radius:50%;"></div>`}
+      <span class="champ-name">${esc(champName)}</span>
       <div class="wr-mini" style="flex:1;">
         <div class="wr-bar-mini"><div class="wr-fill-w" style="width:${pctW}%"></div><div class="wr-fill-l" style="width:${pctL}%"></div></div>
         <span class="champ-wr" style="color:${wrColor(c.wr)};min-width:32px;text-align:right;">${pct}%</span>
@@ -646,7 +667,7 @@ function buildRankCard(entry, rank, isRise, ratingHistMap) {
   const tBg = m && m.tier ? `rgba(${hexToRgb(tColor)},.12)` : 'rgba(255,255,255,.05)';
   const tBorder = m && m.tier ? `rgba(${hexToRgb(tColor)},.3)` : 'rgba(255,255,255,.08)';
   const iconId = m && (m.profile_icon_id || m.profile_icon || m.profileIconId || m.icon_id);
-  const avatarSrc = iconId ? `https://ddragon.leagueoflegends.com/cdn/${DD_VER}/img/profileicon/${iconId}.png` : `https://ddragon.leagueoflegends.com/cdn/${DD_VER}/img/profileicon/1.png`;
+  const avatarSrc = iconId ? DD_PROFILE_ICON(iconId) : DD_PROFILE_ICON(1);
   const gameName = m ? (m.riot_name || m.game_name || m.summoner_name || m.nickname || m.name || entry.name) : entry.name;
   const tagLine = m ? (m.riot_id_tag_line || m.tag_line || m.tagLine || '') : '';
   const name = tagLine ? `${gameName} #${tagLine}` : gameName;
@@ -660,7 +681,7 @@ function buildRankCard(entry, rank, isRise, ratingHistMap) {
   <div class="rank-card ${style}" id="${id}" style="animation-delay:${animDelay}" data-puu="${(m&&m.puu_id)||entry.puuId||''}" data-rise="${isRise?1:0}" data-rank="${rank}" onclick="toggleCard('${id}',event)">
     <div class="rank-card-inner">
       <div class="rank-num ${rankNumCls}">${rank}</div>
-      <img class="rank-avatar" src="${avatarSrc}" onerror="this.src='https://ddragon.leagueoflegends.com/cdn/${DD_VER}/img/profileicon/1.png'">
+      <img class="rank-avatar" src="${avatarSrc}" onerror="this.src=DD_PROFILE_ICON(1)">
       <div class="rank-info">
         <div class="rank-name">${esc(name)}</div>
         <div class="rank-meta">
@@ -724,18 +745,112 @@ function toggleCard(id, e) {
 // ── 전역 데이터 ──
 let riseTop = [], dropTop = [];
 
+// ── 캐시 유틸 ──
+function getCacheKey() {
+  const { from } = getLastWeekRange();
+  return COMMUNITY_ID + '_' + toDateStr(from);
+}
+
+// 다음 월요일 02:00 KST 를 UTC ms 로 반환
+function nextMon2amKstMs() {
+  const now = new Date();
+  // KST = UTC+9
+  const kstNow = new Date(now.getTime() + 9 * 3600_000);
+  const day = kstNow.getUTCDay(); // 0=Sun,1=Mon,...
+  const daysUntilMon = day === 0 ? 1 : (8 - day) % 7 || 7;
+  const kstMon2am = new Date(Date.UTC(
+    kstNow.getUTCFullYear(), kstNow.getUTCMonth(), kstNow.getUTCDate() + daysUntilMon,
+    2, 0, 0, 0
+  ));
+  return kstMon2am.getTime() - 9 * 3600_000; // convert back to UTC ms
+}
+
+function isCacheValid(cached) {
+  if (!cached || cached.key !== getCacheKey()) return false;
+  // 현재 시각이 다음 월요일 02:00 KST 이전이면 유효
+  return Date.now() < nextMon2amKstMs();
+}
+
+function clearAllOldCaches() {
+  try {
+    // 구버전 캐시 키 전부 제거
+    const keysToRemove = [];
+    for (const k of Object.keys(localStorage)) {
+      if (k === 'ranking_cache' || k === 'ranking_cache_old' ||
+          k.startsWith('rk_') || k.startsWith('rk2_')) {
+        keysToRemove.push(k);
+      }
+    }
+    keysToRemove.forEach(k => localStorage.removeItem(k));
+    if (keysToRemove.length) console.log('[ranking] 구버전 캐시 삭제:', keysToRemove);
+  } catch(e) {}
+}
+
+function loadCache() {
+  try {
+    clearAllOldCaches();
+    const raw = localStorage.getItem('ranking_cache_v3');
+    if (!raw) return null;
+    const cached = JSON.parse(raw);
+    if (isCacheValid(cached)) return cached;
+    localStorage.removeItem('ranking_cache_v3');
+    return null;
+  } catch(e) { return null; }
+}
+
+function clearCacheAndReload() {
+  try {
+    clearAllOldCaches();
+    localStorage.removeItem('ranking_cache_v3');
+    console.log('[ranking] 캐시 수동 초기화 완료');
+  } catch(e) {}
+  location.reload();
+}
+
+function saveCache(data) {
+  try {
+    localStorage.setItem('ranking_cache_v3', JSON.stringify({
+      key: getCacheKey(),
+      savedAt: Date.now(),
+      ...data
+    }));
+  } catch(e) { /* 저장 실패 무시 */ }
+}
+
+function setLoadingMsg(msg) {
+  const el = document.querySelector('#root .loading-wrap');
+  if (el) el.innerHTML = '<div class="spinner"></div>' + msg;
+}
+
 // ── 메인 진입점 ──
 async function main() {
-  console.log('[ranking] main() START — COMMUNITY_ID:', COMMUNITY_ID, '| SERVER_ID:', SERVER_ID, '| URL:', location.href);
   const root = document.getElementById('root');
   if (!COMMUNITY_ID) {
-    console.warn('[ranking] COMMUNITY_ID is empty — check URL params');
     root.innerHTML = '<div class="err-state">커뮤니티 ID가 없습니다.<br>URL에 ?cid=... 파라미터를 추가하세요.</div>';
+    return;
+  }
+
+  // ── 캐시 히트 → 즉시 렌더 (dragon은 항상 초기화 — 상세 패널 챔피언 이미지에 필요) ──
+  const cached = loadCache();
+  if (cached) {
+    riseTop = cached.riseTop || [];
+    dropTop = cached.dropTop || [];
+    allMembers = cached.allMembers || [];
+    DD_VER = cached.ddVer || DD_VER;
+    const { from, to } = getLastWeekRange();
+    document.getElementById('week-badge').textContent = toDateStr(from) + ' ~ ' + toDateStr(to);
+    if (cached.serverName) {
+      document.querySelector('.page-title').textContent = cached.serverName + ' 주간 랭킹';
+    }
+    renderPage(riseTop, dropTop);
+    // 백그라운드에서 champMap 로드 (상세 패널 클릭 대비)
+    initDragon().catch(()=>{});
     return;
   }
 
   try {
     // 병렬 초기화
+    setLoadingMsg('멤버 정보 + 레이팅 기록 로드 중...');
     const [_, membersAndRatings, history] = await Promise.all([
       initDragon(),
       loadMembersAndRatings(),
@@ -763,29 +878,99 @@ async function main() {
     const memberMap = {};
     allMembers.forEach(m => { memberMap[m.puu_id] = m; });
 
+    // history 전체 스캔으로 멤버 정보 보완 (rating-read에 이름/아이콘 없는 경우)
+    for (const dateKey of Object.keys(history)) {
+      const dayData = history[dateKey];
+      for (const [puuId, d] of Object.entries(dayData)) {
+        if (!d) continue;
+        const hasName = d.riot_name || d.game_name || d.summoner_name || d.nickname || d.name;
+        if (hasName && !memberMap[puuId]) {
+          memberMap[puuId] = {
+            puu_id: puuId,
+            riot_name: d.riot_name || d.game_name || d.summoner_name || d.nickname || d.name || '',
+            riot_id_tag_line: d.riot_id_tag_line || d.tag_line || '',
+            profile_icon_id: d.profile_icon_id || d.profile_icon || d.icon_id || null,
+            platform_id: d.platform_id || 'KR',
+            tier: d.tier || '',
+          };
+        } else if (hasName && memberMap[puuId] && !memberMap[puuId].riot_name) {
+          // 기존 멤버인데 이름 없는 경우 보완
+          memberMap[puuId].riot_name = d.riot_name || d.game_name || d.summoner_name || d.nickname || d.name || memberMap[puuId].riot_name;
+          if (!memberMap[puuId].profile_icon_id) memberMap[puuId].profile_icon_id = d.profile_icon_id || d.profile_icon || null;
+          if (!memberMap[puuId].tier) memberMap[puuId].tier = d.tier || '';
+        }
+      }
+    }
+    console.log('[ranking] memberMap size after history scan:', Object.keys(memberMap).length);
+    const firstMemberKey = Object.keys(memberMap)[0];
+    if (firstMemberKey) console.log('[ranking] memberMap sample:', JSON.stringify(memberMap[firstMemberKey]));
+
     // 매치 데이터를 병렬로 가져와 주간 stats 계산 (top 10 + bot 10 대상만)
     const entries = Object.entries(puuMap).map(([puuId, data]) => {
       const m = memberMap[puuId];
       const curRating = (ratingMap[puuId] && ratingMap[puuId].rating !== undefined)
         ? ratingMap[puuId].rating
         : data.entries.length ? data.entries[data.entries.length-1].rating : 0;
+      const name = m
+        ? (m.riot_name || m.game_name || m.summoner_name || m.nickname || m.name || puuId.slice(0,8))
+        : (data.entries[0] && (data.entries[0].riot_name || data.entries[0].game_name || data.entries[0].summoner_name))
+          || puuId.slice(0,8);
       return {
         puuId,
-        name: m ? (m.riot_name||m.game_name||m.summoner_name||m.nickname||m.name||puuId.slice(0,8)) : puuId.slice(0,8),
-        member: m||null,
+        name,
+        member: m || null,
         totalDelta: data.totalDelta,
         endRating: curRating,
         entries: data.entries.sort((a,b)=>a.timestamp-b.timestamp)
       };
     }).filter(e=>e.totalDelta!==0||e.entries.length>0);
 
-    entries.sort((a,b)=>b.totalDelta-a.totalDelta);
-    riseTop = entries.slice(0,10);
-    dropTop = entries.slice(-10).filter(e=>e.totalDelta<0).reverse();
+    // 전체 내전 판수 50판 미만 멤버 제외 (deeplol cnt 필드)
+    const MIN_TOTAL_GAMES = 50;
+    const qualified = entries.filter(e => {
+      const m = memberMap[e.puuId];
+      const totalGames = m && (m.cnt ?? m.total_games ?? m.game_count ?? m.games ?? null);
+      if (totalGames != null) return totalGames >= MIN_TOTAL_GAMES;
+      // cnt 정보 없는 경우(비멤버) 일단 포함
+      return true;
+    });
+    console.log('[ranking] qualified (>=50판):', qualified.length, '/ total:', entries.length);
+
+    qualified.sort((a,b)=>b.totalDelta-a.totalDelta);
+    riseTop = qualified.slice(0,10);
+    dropTop = qualified.slice(-10).filter(e=>e.totalDelta<0).reverse();
+
+    // ── top20 멤버 아이콘만 조회 (5명씩 배치, 배치 사이 0.2초 딜레이) ──
+    const top20Members = [...new Set([...riseTop.map(e=>e.puuId), ...dropTop.map(e=>e.puuId)])]
+      .map(puuId => memberMap[puuId])
+      .filter(m => m && !m.profile_icon_id && (m.riot_name || m.name));
+    const ICON_BATCH = 5;
+    for (let i = 0; i < top20Members.length; i += ICON_BATCH) {
+      setLoadingMsg(`아이콘 로드 중... (${i+1}~${Math.min(i+ICON_BATCH, top20Members.length)} / ${top20Members.length}명)`);
+      await Promise.all(top20Members.slice(i, i + ICON_BATCH).map(async m => {
+        const gn = m.riot_name || m.name || '';
+        const tl = m.riot_tag || m.tag || 'KR1';
+        const iconId = await fetchProfileIcon(gn, tl);
+        if (iconId) m.profile_icon_id = iconId;
+      }));
+      if (i + ICON_BATCH < top20Members.length) await new Promise(r => setTimeout(r, 200));
+    }
+    console.log('[ranking] 아이콘 조회 완료:', top20Members.length, '건');
 
     // 주간 match stats를 병렬 로드
+    setLoadingMsg(`랭킹 계산 완료 (${qualified.length}명) — 주간 매치 기록 로드 중...`);
     const targets = [...new Set([...riseTop.map(e=>e.puuId), ...dropTop.map(e=>e.puuId)])];
     await loadWeeklyMatchStats(targets, memberMap, from, to, [...riseTop,...dropTop]);
+
+    // ── 캐시 저장 (저번 주 데이터는 월요일 2am KST 까지 불변) ──
+    saveCache({
+      riseTop,
+      dropTop,
+      allMembers,
+      serverName: membersAndRatings.serverName || '',
+      ddVer: DD_VER,
+    });
+    console.log('[ranking] 캐시 저장 완료 — key:', getCacheKey());
 
     renderPage(riseTop, dropTop);
   } catch(e) {
@@ -849,6 +1034,25 @@ async function runDiag() {
   log('=== URL 파라미터 ===');
   log('COMMUNITY_ID: ' + COMMUNITY_ID);
   log('SERVER_ID: ' + SERVER_ID);
+  log('');
+
+  // 0) deeplol server_info (멤버 구조 확인)
+  log('=== deeplol server_info (SERVER_ID=' + SERVER_ID + ') ===');
+  if (SERVER_ID) {
+    try {
+      const r = await fetch('https://b2c-api-cdn.deeplol.gg/tournament/server_info?server_id=' + SERVER_ID, {
+        headers: { 'Referer': 'https://www.deeplol.gg/' }
+      });
+      const j = await r.json();
+      const tsList = j.tournament_stats && j.tournament_stats.tournament_stats_all_list;
+      if (tsList && tsList[0]) {
+        log('member keys: ' + JSON.stringify(Object.keys(tsList[0])));
+        log('member[0]: ' + JSON.stringify(tsList[0]));
+      } else {
+        log(JSON.stringify(j).slice(0, 300));
+      }
+    } catch(e) { log('ERROR: ' + e.message); }
+  } else { log('SERVER_ID 없음'); }
   log('');
 
   // 1) /server-info
@@ -923,14 +1127,113 @@ async function runDiag() {
       log('puuId: ' + firstPuu2.slice(0,20) + '...');
       log('매치 수: ' + list.length);
       if (list[0]) {
-        const ts = (list[0].creation_timestamp||0)*1000;
-        log('최신 매치 시간: ' + new Date(ts).toLocaleString('ko-KR'));
+        log('match item keys: ' + JSON.stringify(Object.keys(list[0])));
+        log('match item raw: ' + JSON.stringify(list[0]));
+        const raw = list[0].match_creation_time || list[0].creation_timestamp || list[0].game_creation || list[0].gameCreation || list[0].timestamp || 0;
+        const ts = raw > 1e10 ? raw : raw * 1000;
+        log('최신 매치 시간: ' + new Date(ts).toLocaleString('ko-KR') + ' (raw=' + raw + ')');
         log('최신 매치 id: ' + list[0].match_id);
       }
+      // history 첫 항목도 출력
+      log('');
+      log('=== history 첫 항목 데이터 구조 ===');
+      try {
+        const hr = await fetch(WORKER_URL + '/db-public-read', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ path: `communities/${COMMUNITY_ID}/rating_history` })
+        });
+        const hj = await hr.json();
+        if (hj.ok && hj.data) {
+          const dateKeys = Object.keys(hj.data).filter(k=>k.slice(0,10)>='2026-10-05').slice(0,2);
+          for (const dk of dateKeys) {
+            const puus = Object.keys(hj.data[dk]);
+            log('dateKey: ' + dk + ' | puuId 수: ' + puus.length);
+            if (puus[0]) log('첫 puuId data: ' + JSON.stringify(hj.data[dk][puus[0]]));
+          }
+        }
+      } catch(e) { log('history scan error: ' + e.message); }
       const { from, to } = getLastWeekRange();
       log('지난주 범위: ' + new Date(from).toLocaleString('ko-KR') + ' ~ ' + new Date(to).toLocaleString('ko-KR'));
     }
   } catch(e) { log('ERROR: ' + e.message); }
+
+  // 5) 아이콘 API 응답 확인
+  log('=== 아이콘 API (api.roonging.com 루트) ===');
+  if (SERVER_ID) {
+    try {
+      const sr = await fetch('https://b2c-api-cdn.deeplol.gg/tournament/server_info?server_id=' + SERVER_ID, {
+        headers: { 'Referer': 'https://www.deeplol.gg/' }
+      });
+      const sj = await sr.json();
+      const tsList2 = sj.tournament_stats && sj.tournament_stats.tournament_stats_all_list;
+      if (tsList2 && tsList2[0]) {
+        const m0 = tsList2[0];
+        const gn = m0.riot_name || m0.name || '';
+        const tl = m0.riot_tag || m0.tag || 'KR1';
+        log('테스트 대상: ' + gn + '#' + tl);
+        const iconUrl = WORKER_URL + '?gameName=' + encodeURIComponent(gn) + '&tagLine=' + encodeURIComponent(tl) + '&region=KR';
+        log('요청 URL: ' + iconUrl);
+        const ir = await fetch(iconUrl);
+        const ij = await ir.json();
+        log('응답 status: ' + ir.status);
+        log('응답 keys: ' + JSON.stringify(Object.keys(ij)));
+        log('응답 전체: ' + JSON.stringify(ij).slice(0, 400));
+      }
+    } catch(e) { log('ERROR: ' + e.message); }
+  } else { log('SERVER_ID 없음 — 스킵'); }
+  log('');
+
+  // 6) cnt 필터 동작 확인
+  log('=== cnt 필터 확인 ===');
+  if (SERVER_ID) {
+    try {
+      const sr2 = await fetch('https://b2c-api-cdn.deeplol.gg/tournament/server_info?server_id=' + SERVER_ID, {
+        headers: { 'Referer': 'https://www.deeplol.gg/' }
+      });
+      const sj2 = await sr2.json();
+      const tsList3 = sj2.tournament_stats && sj2.tournament_stats.tournament_stats_all_list;
+      if (tsList3) {
+        log('전체 멤버 수: ' + tsList3.length);
+        const under50 = tsList3.filter(m => (m.cnt ?? -1) < 50);
+        const over50 = tsList3.filter(m => (m.cnt ?? -1) >= 50);
+        log('50판 미만: ' + under50.length + '명 → ' + JSON.stringify(under50.map(m=>(m.riot_name||m.name)+'('+m.cnt+'판)')));
+        log('50판 이상: ' + over50.length + '명');
+        log('');
+        log('현재 riseTop:');
+        riseTop.forEach((e,i) => {
+          const m = tsList3.find(m=>m.puu_id===e.puuId);
+          log((i+1)+'. '+e.name+' cnt='+(m?m.cnt:'멤버없음'));
+        });
+      }
+    } catch(e) { log('ERROR: ' + e.message); }
+  }
+  log('');
+
+  // 7) localStorage 현황
+  log('=== localStorage 캐시 현황 ===');
+  try {
+    const allKeys = Object.keys(localStorage);
+    const cacheKeys = allKeys.filter(k => k.includes('rank') || k.startsWith('rk'));
+    if (!cacheKeys.length) {
+      log('캐시 키 없음 (정상)');
+    } else {
+      cacheKeys.forEach(k => {
+        try {
+          const v = localStorage.getItem(k);
+          const size = v ? (v.length/1024).toFixed(1) + 'KB' : '빈값';
+          let info = '';
+          if (k === 'ranking_cache_v3') {
+            const parsed = JSON.parse(v);
+            info = ' | key=' + (parsed.key||'없음') + ' | savedAt=' + (parsed.savedAt ? new Date(parsed.savedAt).toLocaleString('ko-KR') : '없음');
+            info += ' | valid=' + isCacheValid(parsed);
+          }
+          log('  ' + k + ' [' + size + ']' + info);
+        } catch(e2) { log('  ' + k + ' [파싱오류]'); }
+      });
+    }
+    log('현재 캐시 키(v3): ' + getCacheKey());
+  } catch(e) { log('ERROR: ' + e.message); }
+  log('');
 
   log('\n=== 완료 — 닫으려면 이 텍스트 아무데나 클릭 ===');
   el.onclick = () => { el.style.display='none'; el.onclick=null; };
