@@ -71,6 +71,14 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:'Noto 
 .btn-refresh.loading .ri{animation:spin .6s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg);}}
 
+.btn-ranking{
+  background:rgba(200,170,110,.08);border:1px solid rgba(200,170,110,.35);border-radius:3px;
+  color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;
+  letter-spacing:1px;padding:5px 12px;cursor:pointer;display:flex;align-items:center;gap:4px;
+  transition:background .15s;white-space:nowrap;
+}
+.btn-ranking:hover{background:rgba(200,170,110,.18);}
+
 .filter-bar{
   background:var(--panel);border-bottom:1px solid var(--border);
   padding:.45rem 1.5rem;display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;
@@ -713,6 +721,7 @@ tr.has-bg-effect td {
           🔑 관리자 로그인
         </button>
         <button onclick="window.open('/guide','_blank')" style="padding:5px 12px;border-radius:3px;border:1px solid rgba(10,200,185,.35);background:rgba(10,200,185,.08);color:#0AC8B9;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1.5px;cursor:pointer;white-space:nowrap;transition:all .15s;" onmouseover="this.style.background='rgba(10,200,185,.18)';this.style.borderColor='rgba(10,200,185,.6)'" onmouseout="this.style.background='rgba(10,200,185,.08)';this.style.borderColor='rgba(10,200,185,.35)'">📖 가이드</button>
+        <button class="btn-ranking" id="btn-ranking" onclick="goRanking()">🏆 주간 랭킹</button>
         <button class="btn-refresh" id="btn-refresh"><span class="ri">↻</span> 새로고침</button>
     <span id="next-update-time" style="font-family:'Rajdhani',sans-serif;font-size:10px;color:var(--muted);margin-left:8px;white-space:nowrap;"></span>
       </div>
@@ -1695,6 +1704,13 @@ document.getElementById('search-input').addEventListener('input',e=>{searchQuery
 document.getElementById('games-min').addEventListener('input',e=>{gamesMin=e.target.value.trim();applyAll();});
 document.getElementById('games-max').addEventListener('input',e=>{gamesMax=e.target.value.trim();applyAll();});
 document.getElementById('btn-refresh').addEventListener('click',loadData);
+
+function goRanking(){
+  const q=new URLSearchParams();
+  if(COMMUNITY_ID) q.set('cid',COMMUNITY_ID);
+  if(SERVER_ID) q.set('server_id',SERVER_ID);
+  window.open('/ranking?'+q.toString(), '_blank');
+}
 
 // 가로 스크롤 동기화 (헤더 ↔ 바디)
 const bodyWrap=document.getElementById('table-body-wrap');

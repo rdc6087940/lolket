@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta property="og:title" content="룽잉닷컴 — 주간 레이팅 랭킹">
+<meta property="og:description" content="저번 주 레이팅 변동 TOP 10 · BOTTOM 10">
+<meta property="og:image" content="https://roonging.com/og-image-v2.png">
+<meta property="og:type" content="website">
+<title>주간 레이팅 랭킹</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0A0F13;--panel:#0F1923;--card:#111E2D;--hover:#162233;
+  --border:rgba(255,255,255,.06);--border-gold:rgba(200,170,110,.2);
+  --gold:#C8AA6E;--blue:#0AC8B9;--red:#E84057;
+  --white:#F0E6D3;--muted:#5B6474;--sub:#A0A8B0;
+}
+html,body{min-height:100%;background:var(--bg);color:var(--white);font-family:'Noto Sans KR',sans-serif;}
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:2px;}
+
+/* ── HEADER ── */
+.page-header{
+  background:linear-gradient(180deg,#0A1628,rgba(10,22,40,.97));
+  border-bottom:1px solid var(--border-gold);
+  padding:.75rem 1.5rem;
+  display:flex;align-items:center;gap:1rem;
+  position:sticky;top:0;z-index:100;
+  backdrop-filter:blur(8px);
+}
+.logo-link{display:flex;align-items:center;gap:8px;text-decoration:none;color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;}
+.logo-diamond{width:8px;height:8px;background:var(--blue);transform:rotate(45deg);box-shadow:0 0 6px rgba(10,200,185,.5);}
+.header-center{flex:1;}
+.page-title{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;color:var(--white);}
+.week-badge{
+  font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;
+  color:var(--blue);background:rgba(10,200,185,.1);border:1px solid rgba(10,200,185,.25);
+  border-radius:3px;padding:2px 10px;margin-left:.5rem;vertical-align:middle;
+}
+.header-back{
+  padding:5px 14px;border-radius:3px;border:1px solid var(--border);background:transparent;
+  color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;
+  cursor:pointer;transition:all .15s;text-decoration:none;display:inline-flex;align-items:center;gap:4px;
+}
+.header-back:hover{border-color:rgba(255,255,255,.15);color:var(--white);}
+
+/* ── LOADING ── */
+@keyframes spin{to{transform:rotate(360deg);}}
+.spinner{width:20px;height:20px;border:2px solid rgba(255,255,255,.08);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0;}
+.loading-wrap{display:flex;align-items:center;justify-content:center;gap:12px;padding:5rem 2rem;font-family:'Rajdhani',sans-serif;font-size:13px;color:var(--muted);letter-spacing:1px;}
+
+/* ── MAIN LAYOUT ── */
+.main-wrap{max-width:1280px;margin:0 auto;padding:1.5rem 1.25rem;}
+.split-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;
+  animation:fadeIn .4s cubic-bezier(.22,1,.36,1) both;
+}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@media(max-width:700px){.split-grid{grid-template-columns:1fr;}}
+
+/* ── SECTION HEADER ── */
+.section-head{
+  display:flex;align-items:center;gap:.5rem;
+  padding:.65rem 1rem;border-radius:6px 6px 0 0;
+  font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;letter-spacing:1.5px;
+}
+.section-head.rise{background:rgba(10,200,185,.06);border:1px solid rgba(10,200,185,.15);border-bottom:none;}
+.section-head.drop{background:rgba(232,64,87,.06);border:1px solid rgba(232,64,87,.15);border-bottom:none;}
+.section-head.rise .sh-icon{color:var(--blue);}
+.section-head.drop .sh-icon{color:var(--red);}
+.section-head .sh-label{flex:1;}
+.section-head .sh-count{font-size:10px;color:var(--muted);font-weight:400;}
+
+/* ── RANK CARD ── */
+.rank-list{display:flex;flex-direction:column;gap:0;}
+.rank-card{
+  background:var(--card);border-left:1px solid rgba(255,255,255,.05);
+  border-right:1px solid rgba(255,255,255,.05);border-bottom:1px solid rgba(255,255,255,.05);
+  cursor:pointer;transition:background .15s;position:relative;overflow:hidden;
+}
+.rank-card:first-child{}
+.rank-card:last-child{border-radius:0 0 6px 6px;}
+.rank-card:hover{background:var(--hover);}
+.rank-card.rise-style:hover{background:rgba(10,200,185,.05);}
+.rank-card.drop-style:hover{background:rgba(232,64,87,.05);}
+
+/* left accent bar */
+.rank-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:transparent;transition:background .15s;}
+.rank-card.rise-style.active::before,.rank-card.rise-style:hover::before{background:var(--blue);}
+.rank-card.drop-style.active::before,.rank-card.drop-style:hover::before{background:var(--red);}
+
+.rank-card-inner{
+  display:flex;align-items:center;gap:.75rem;
+  padding:.65rem 1rem .65rem 1.25rem;
+}
+
+.rank-num{
+  font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;
+  width:24px;text-align:center;flex-shrink:0;
+}
+.rank-num.top3-1{color:var(--gold);}
+.rank-num.top3-2{color:var(--sub);}
+.rank-num.top3-3{color:#CD6133;}
+
+.rank-avatar{
+  width:36px;height:36px;border-radius:50%;border:1.5px solid rgba(255,255,255,.1);
+  object-fit:cover;background:var(--panel);flex-shrink:0;
+}
+.rank-info{flex:1;min-width:0;}
+.rank-name{font-size:13px;font-weight:700;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.rank-meta{display:flex;align-items:center;gap:6px;margin-top:2px;flex-wrap:wrap;}
+.rank-tier{font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;padding:1px 6px;border-radius:2px;}
+.rank-stat{font-family:'Rajdhani',sans-serif;font-size:10px;color:var(--muted);}
+.rank-stat span{color:var(--sub);font-weight:700;}
+.rank-delta{
+  font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;
+  flex-shrink:0;text-align:right;min-width:64px;
+}
+.rank-delta.pos{color:var(--blue);}
+.rank-delta.neg{color:var(--red);}
+.rank-rating{font-family:'Rajdhani',sans-serif;font-size:10px;color:var(--muted);text-align:right;margin-top:1px;}
+
+/* ── DETAIL EXPAND ── */
+.rank-detail{
+  overflow:hidden;max-height:0;
+  transition:max-height .45s cubic-bezier(.22,1,.36,1), opacity .3s ease;
+  opacity:0;
+  border-left:1px solid rgba(255,255,255,.05);
+  border-right:1px solid rgba(255,255,255,.05);
+  border-bottom:1px solid rgba(255,255,255,.05);
+  background:rgba(6,14,24,.9);
+}
+.rank-detail.open{max-height:1200px;opacity:1;}
+.rank-detail-inner{padding:1rem 1.25rem;display:flex;flex-direction:column;gap:.85rem;}
+
+/* chart */
+.detail-chart-wrap{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05);border-radius:5px;padding:.6rem;}
+.detail-chart-title{font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;color:var(--muted);margin-bottom:.4rem;}
+
+/* mini section */
+.detail-section{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05);border-radius:5px;padding:.65rem .85rem;}
+.detail-sec-title{font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:2px;color:var(--gold);margin-bottom:.5rem;}
+.detail-loading{font-family:'Rajdhani',sans-serif;font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px;padding:.25rem 0;}
+.detail-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;}
+@media(max-width:500px){.detail-grid-2{grid-template-columns:1fr;}}
+
+/* user/champ table */
+.mini-table{width:100%;border-collapse:collapse;font-family:'Rajdhani',sans-serif;font-size:11px;}
+.mini-table th{color:var(--muted);font-size:9px;font-weight:700;letter-spacing:1px;padding:3px 5px;border-bottom:1px solid rgba(255,255,255,.05);text-align:left;}
+.mini-table td{padding:4px 5px;border-bottom:1px solid rgba(255,255,255,.03);}
+.mini-table td:last-child{text-align:right;font-weight:700;}
+.mini-table tr:last-child td{border-bottom:none;}
+
+/* champ icon row */
+.champ-row{display:flex;align-items:center;gap:7px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.03);}
+.champ-row:last-child{border-bottom:none;}
+.champ-icon{width:22px;height:22px;border-radius:50%;border:1px solid rgba(255,255,255,.1);object-fit:cover;}
+.champ-name{flex:1;font-family:'Rajdhani',sans-serif;font-size:11px;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.champ-wr{font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;}
+.champ-games{font-family:'Rajdhani',sans-serif;font-size:10px;color:var(--muted);}
+
+/* wr bar */
+.wr-mini{display:flex;align-items:center;gap:4px;}
+.wr-bar-mini{flex:1;height:4px;background:rgba(255,255,255,.06);border-radius:1px;overflow:hidden;min-width:30px;}
+.wr-fill-w{background:#5383E8;height:100%;}
+.wr-fill-l{background:var(--red);height:100%;}
+
+/* error */
+.err-state{text-align:center;padding:3rem 1rem;font-family:'Rajdhani',sans-serif;font-size:13px;color:var(--red);letter-spacing:.5px;}
+
+/* stagger entry animation for cards */
+@keyframes cardSlideIn{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:none}}
+.rise-style{animation:cardSlideIn .3s cubic-bezier(.22,1,.36,1) both;}
+@keyframes cardSlideInR{from{opacity:0;transform:translateX(8px)}to{opacity:1;transform:none}}
+.drop-style{animation:cardSlideInR .3s cubic-bezier(.22,1,.36,1) both;}
+</style>
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<header class="page-header">
+  <a class="logo-link" href="javascript:history.back()"><div class="logo-diamond"></div>룽잉닷컴</a>
+  <div class="header-center">
+    <span class="page-title">주간 레이팅 랭킹</span>
+    <span class="week-badge" id="week-badge">로딩 중...</span>
+  </div>
+  <a class="header-back" href="javascript:history.back()">← 돌아가기</a>
+  <button onclick="runDiag()" style="padding:4px 10px;border-radius:3px;border:1px solid rgba(255,100,100,.4);background:rgba(255,100,100,.08);color:#ff6666;font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:1px;">🔍 진단</button>
+</header>
+<div id="diag-out" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#0a0f13;z-index:9999;overflow:auto;padding:1.5rem;font-family:monospace;font-size:11px;line-height:1.6;color:#aaa;white-space:pre-wrap;"></div>
+
+<!-- ── MAIN ── -->
+<div class="main-wrap">
+  <div id="root"><div class="loading-wrap"><div class="spinner"></div>데이터 불러오는 중...</div></div>
+</div>
+
+<script>
+'use strict';
+// ── 설정 ──
+const WORKER_URL = 'https://api.roonging.com';
+const API_BASE   = 'https://b2c-api-cdn.deeplol.gg';
+const _urlParams = new URLSearchParams(location.search);
+const COMMUNITY_ID = _urlParams.get('cid') || '';
+const SERVER_ID    = _urlParams.get('server_id') || '';
+const CUSTOM_QUEUE_ID = 3130;
+
+// ── DDragon ──
+let DD_VER = '14.24.1';
+const DD_ICON = id => `https://ddragon.leagueoflegends.com/cdn/${DD_VER}/img/champion/${id}.png`;
+let champMap = {};
+
+async function initDragon() {
+  try {
+    const v = await fetch('https://ddragon.leagueoflegends.com/api/versions.json');
+    const vs = await v.json(); DD_VER = vs[0];
+  } catch(e) {}
+  try {
+    const r = await fetch(`https://ddragon.leagueoflegends.com/cdn/${DD_VER}/data/ko_KR/champion.json`);
+    const j = await r.json();
+    Object.values(j.data).forEach(c => { champMap[c.key] = c.id; });
+  } catch(e) {}
+}
+
+// ── 주간 범위 계산 (저번주 월~일) ──
+function getLastWeekRange() {
+  const now = new Date();
+  // 이번주 월요일
+  const day = now.getDay(); // 0=일, 1=월 ... 6=토
+  const diffToMon = (day === 0 ? -6 : 1 - day);
+  const thisMon = new Date(now);
+  thisMon.setDate(now.getDate() + diffToMon);
+  thisMon.setHours(0,0,0,0);
+  // 저번주 월요일
+  const lastMon = new Date(thisMon);
+  lastMon.setDate(thisMon.getDate() - 7);
+  // 저번주 일요일
+  const lastSun = new Date(thisMon);
+  lastSun.setDate(thisMon.getDate() - 1);
+  lastSun.setHours(23,59,59,999);
+  return { from: lastMon, to: lastSun };
+}
+
+function toDateStr(d) {
+  return d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0')+'-'+d.getDate().toString().padStart(2,'0');
+}
+
+// ── 티어 색상 ──
+const TIER_COLORS = {
+  CHALLENGER:'#F4C842',GRANDMASTER:'#E05050',MASTER:'#9B59B6',
+  DIAMOND:'#4A90D9',EMERALD:'#27AE60',PLATINUM:'#1ABC9C',
+  GOLD:'#F39C12',SILVER:'#95A5A6',BRONZE:'#CD6133',IRON:'#7F8C8D'
+};
+const TIER_KO = {
+  CHALLENGER:'챌린저',GRANDMASTER:'그랜드마스터',MASTER:'마스터',
+  DIAMOND:'다이아몬드',EMERALD:'에메랄드',PLATINUM:'플래티넘',
+  GOLD:'골드',SILVER:'실버',BRONZE:'브론즈',IRON:'아이언'
+};
+function tierColor(t) { return TIER_COLORS[(t||'').toUpperCase().split(' ')[0]] || '#5B6474'; }
+function tierLabel(t) { if(!t) return '언랭'; const k=(t||'').toUpperCase().split(' ')[0]; return TIER_KO[k]||t; }
+
+// ── rating history 전체 조회 ──
+async function loadRatingHistory() {
+  const res = await fetch(WORKER_URL + '/db-public-read', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ path: 'communities/' + COMMUNITY_ID + '/rating_history' })
+  });
+  const j = await res.json();
+  return (j.ok && j.data) ? j.data : null;
+}
+
+// ── 커뮤니티 멤버 + 레이팅 조회 ──
+let allMembers = [];
+async function loadMembersAndRatings() {
+  let memberList = [];
+  let serverName = '';
+
+  // 1) SERVER_ID 확보 — URL에 없으면 /server-info로 cid → server_id 조회
+  let resolvedServerId = SERVER_ID;
+  if (!resolvedServerId && COMMUNITY_ID) {
+    try {
+      const siRes = await fetch(WORKER_URL + '/server-info', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ communityId: COMMUNITY_ID })
+      });
+      const siJ = await siRes.json();
+      console.log('[ranking] /server-info response:', JSON.stringify(siJ).slice(0,300));
+      resolvedServerId = (siJ.ok && (siJ.server_id || siJ.serverId || siJ.data?.server_id)) || '';
+      if (!resolvedServerId && siJ.data) resolvedServerId = siJ.data.server_id || siJ.data.serverId || '';
+    } catch(e) { console.error('[ranking] /server-info error:', e); }
+  }
+  console.log('[ranking] resolvedServerId:', resolvedServerId);
+
+  // 2) deeplol API로 멤버 목록 직접 조회
+  if (resolvedServerId) {
+    try {
+      const dlRes = await fetch(API_BASE + '/tournament/server_info?server_id=' + resolvedServerId, {
+        headers: { 'Referer': 'https://www.deeplol.gg/' }
+      });
+      if (dlRes.ok) {
+        const dlJ = await dlRes.json();
+        console.log('[ranking] server_info sample:', JSON.stringify(dlJ).slice(0,500));
+        serverName = dlJ.server_name || '';
+        const tsList = dlJ.tournament_stats && dlJ.tournament_stats.tournament_stats_all_list;
+        if (tsList && tsList.length) {
+          memberList = tsList;
+          console.log('[ranking] memberList[0] keys:', Object.keys(tsList[0]));
+          console.log('[ranking] memberList[0]:', JSON.stringify(tsList[0]));
+        }
+      } else {
+        console.warn('[ranking] server_info failed:', dlRes.status);
+      }
+    } catch(e) { console.error('[ranking] server_info error:', e); }
+  } else {
+    console.warn('[ranking] resolvedServerId empty — will rely on rating-read fallback');
+  }
+
+  // 2) /rating-read로 레이팅 맵 조회
+  const ratingMap = {};
+  try {
+    const rRes = await fetch(WORKER_URL + '/rating-read', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ communityId: COMMUNITY_ID })
+    });
+    const rJ = await rRes.json();
+    console.log('[ranking] rating-read keys:', Object.keys(rJ));
+    const rawRatings = rJ.ratings || (rJ.ok && rJ.data) || {};
+    const firstKey = Object.keys(rawRatings)[0];
+    if (firstKey) console.log('[ranking] rating sample:', JSON.stringify(rawRatings[firstKey]));
+    Object.entries(rawRatings).forEach(([puuId, r]) => {
+      ratingMap[puuId] = {
+        rating: r.current ?? r.rating ?? 0,
+        delta: r.delta ?? 0,
+        games: r.games ?? 0,
+        // 이름/아이콘 fallback — rating 레코드에도 있을 수 있음
+        riot_name: r.riot_name || r.game_name || r.summoner_name || r.name || '',
+        tag_line: r.riot_id_tag_line || r.tag_line || '',
+        profile_icon_id: r.profile_icon_id || r.profile_icon || r.icon_id || null,
+        platform_id: r.platform_id || 'KR',
+        tier: r.tier || '',
+      };
+      // memberList에 없으면 rating 데이터로 가상 멤버 생성
+      if (!memberList.find(m=>m.puu_id===puuId) && ratingMap[puuId].riot_name) {
+        memberList.push({ puu_id: puuId, ...ratingMap[puuId] });
+      }
+    });
+  } catch(e) { console.error('[ranking] rating-read error:', e); }
+
+  // memberList에 현재 rating 병합
+  memberList.forEach(m => {
+    if (ratingMap[m.puu_id]) m._rating = ratingMap[m.puu_id].rating;
+  });
+
+  return { memberList, ratingMap, serverName };
+}
+
+// ── 유저별 주간 delta 합산 ──
+function calcWeeklyDeltas(history, fromDate, toDate) {
+  const from = toDateStr(fromDate), to = toDateStr(toDate);
+  const puuMap = {};
+  const dateKeys = Object.keys(history).filter(k => {
+    const d = k.slice(0,10);
+    return d >= from && d <= to;
+  });
+  dateKeys.sort();
+  dateKeys.forEach(dateKey => {
+    const dayData = history[dateKey];
+    Object.entries(dayData).forEach(([puuId, d]) => {
+      if (!d || d.delta === undefined) return;
+      if (!puuMap[puuId]) puuMap[puuId] = { totalDelta:0, entries:[] };
+      puuMap[puuId].totalDelta += (d.delta || 0);
+      puuMap[puuId].entries.push({ date: dateKey.slice(0,10), key: dateKey, rating: d.rating, delta: d.delta, timestamp: d.timestamp||0 });
+    });
+  });
+  return puuMap;
+}
+
+// ── match IDs (저번주 범위, 최대 200판) ──
+async function fetchWeekMatchIds(puuId, platform, fromTs, toTs) {
+  const ids = [];
+  let offset = 0;
+  const PAGE = 20, MAX = 10;
+  const fromD = new Date(fromTs).toISOString().slice(0,10);
+  const toD = new Date(toTs).toISOString().slice(0,10);
+  let logged = false;
+  for (let p=0; p<MAX; p++) {
+    try {
+      const r = await fetch(API_BASE+'/match/matches?puu_id='+encodeURIComponent(puuId)+'&platform_id='+(platform||'KR')+'&offset='+offset+'&count='+PAGE+'&queue_type=CUSTOM&champion_id=0&only_list=1&last_updated_at=1');
+      const j = await r.json();
+      const list = j.match_id_list || [];
+      if (!logged) {
+        logged = true;
+        console.log('[ranking] matchList p0 for', puuId.slice(0,8), 'count:', list.length, 'range:', fromD, '~', toD);
+        if (list[0]) console.log('[ranking] first match ts:', new Date((list[0].creation_timestamp||0)*1000).toISOString(), 'id:', list[0].match_id);
+      }
+      if (!list.length) break;
+      let hitTooOld = false;
+      for (const item of list) {
+        const ts = (item.creation_timestamp||0)*1000;
+        if (ts < fromTs) { hitTooOld = true; break; } // 범위보다 오래된 매치 → 더 이상 없음
+        if (ts <= toTs) ids.push(item.match_id);       // fromTs <= ts <= toTs
+      }
+      if (hitTooOld || list.length < PAGE) break;
+      offset += PAGE;
+    } catch(e) { break; }
+  }
+  return ids;
+}
+
+async function fetchMatchesBatch(matchIds, platform) {
+  const BATCH = 6, results = [];
+  for (let i=0; i<matchIds.length; i+=BATCH) {
+    const batch = matchIds.slice(i,i+BATCH);
+    const fetched = await Promise.all(batch.map(async mid => {
+      try {
+        const r = await fetch(API_BASE+'/match/match-cached?match_id='+mid+'&platform_id='+(platform||'KR'));
+        return await r.json();
+      } catch(e){ return null; }
+    }));
+    results.push(...fetched.filter(Boolean));
+  }
+  return results;
+}
+
+// ── analyzeMatches (stats.html 로직 이식) ──
+function analyzeMatches(matches, myPuuId, communityPuuIds) {
+  const matchList=[], allies={}, enemies={}, laneEnemies={}, enemyChamps={};
+  for (const matchData of matches) {
+    if (!matchData||!matchData.participants_list) continue;
+    const basic0 = matchData.match_basic_dict||{};
+    if (basic0.queue_id && basic0.queue_id !== CUSTOM_QUEUE_ID) {
+      console.log('[ranking] skip queue_id:', basic0.queue_id);
+      continue;
+    }
+    if (communityPuuIds && communityPuuIds.size > 0) {
+      const puuList = basic0.puu_id_list || (matchData.participants_list||[]).map(p=>p.puu_id);
+      const overlap = puuList.filter(id=>communityPuuIds.has(id)).length;
+      const total = puuList.length||10;
+      if (overlap < Math.min(8, Math.floor(total*0.8))) continue;
+    }
+    const participants = matchData.participants_list;
+    const me = participants.find(p=>p.puu_id===myPuuId);
+    if (!me) continue;
+    const basic = matchData.match_basic_dict||{};
+    const isWin=me.is_win, myPos=me.position, mySide=me.side;
+    matchList.push({
+      match_id:basic.match_id, creation_timestamp:basic.creation_timestamp,
+      game_duration:basic.game_duration, champion_id:me.champion_id,
+      position:me.position, is_win:isWin, is_remake:basic.is_remake,
+      kda:me.final_stat_dict&&me.final_stat_dict.kda,
+      kills:me.final_stat_dict&&me.final_stat_dict.kills,
+      deaths:me.final_stat_dict&&me.final_stat_dict.deaths,
+      assists:me.final_stat_dict&&me.final_stat_dict.assists,
+    });
+    if (basic.is_remake) continue;
+    for (const p of participants) {
+      if (p.puu_id===myPuuId) continue;
+      const name=p.riot_id_name||p.summoner_name||'?', key=p.puu_id;
+      if (p.side===mySide) {
+        if(!allies[key]) allies[key]={name,win:0,total:0};
+        allies[key].total++; if(isWin) allies[key].win++;
+      } else {
+        if(!enemies[key]) enemies[key]={name,win:0,total:0};
+        enemies[key].total++; if(isWin) enemies[key].win++;
+        if (p.position&&myPos&&p.position===myPos) {
+          if(!laneEnemies[key]) laneEnemies[key]={name,win:0,total:0};
+          laneEnemies[key].total++; if(isWin) laneEnemies[key].win++;
+          const cid=String(p.champion_id), cname=champMap[cid]||cid;
+          const champKey=cid+'__'+myPos;
+          if(!enemyChamps[champKey]) enemyChamps[champKey]={name:cname,cid,win:0,total:0};
+          enemyChamps[champKey].total++; if(isWin) enemyChamps[champKey].win++;
+        }
+      }
+    }
+  }
+  function wilsonScore(wins,total){ if(!total) return 0; const z=1.96,p=wins/total,z2=z*z; return (p+z2/(2*total)-z*Math.sqrt((p*(1-p)+z2/(4*total))/total))/(1+z2/total); }
+  function sortWr(obj){ return Object.entries(obj).map(([id,v])=>Object.assign({id},v,{wr:v.win/v.total*100,score:wilsonScore(v.win,v.total)*100})).sort((a,b)=>b.score-a.score); }
+  function sortWrAsc(obj){ return Object.entries(obj).map(([id,v])=>Object.assign({id},v,{wr:v.win/v.total*100,scoreAsc:wilsonScore(v.total-v.win,v.total)*100})).sort((a,b)=>b.scoreAsc-a.scoreAsc); }
+  const valid = matchList.filter(m=>!m.is_remake);
+  const wins = valid.filter(m=>m.is_win).length;
+  let totalKills=0,totalDeaths=0,totalAssists=0,kdaCnt=0;
+  valid.forEach(m=>{ if(m.kills!==undefined){totalKills+=m.kills;totalDeaths+=m.deaths;totalAssists+=m.assists;kdaCnt++;} });
+  const avgKda = kdaCnt>0 ? ((totalKills+totalAssists)/Math.max(1,totalDeaths)).toFixed(2) : null;
+  return {
+    matchList:matchList.sort((a,b)=>(b.creation_timestamp||0)-(a.creation_timestamp||0)),
+    totalGames:valid.length, wins, losses:valid.length-wins,
+    avgKda,
+    allies:sortWr(allies), alliesAsc:sortWrAsc(allies),
+    enemies:sortWr(enemies),
+    laneEnemies:sortWr(laneEnemies), laneEnemiesAsc:sortWrAsc(laneEnemies),
+    enemyChamps:sortWr(Object.fromEntries(Object.entries(enemyChamps))),
+    enemyChampsAsc:sortWrAsc(Object.fromEntries(Object.entries(enemyChamps)))
+  };
+}
+
+// ── SVG 레이팅 차트 ──
+function buildChart(entries) {
+  const chartData = entries.slice().sort((a,b)=>a.timestamp-b.timestamp);
+  if (!chartData.length) return '<div style="font-family:Rajdhani,sans-serif;font-size:11px;color:var(--muted);padding:.5rem 0;">기록 없음</div>';
+  const ratings = chartData.map(e=>Math.round(e.rating));
+  const minR=Math.min(...ratings), maxR=Math.max(...ratings), rangeR=maxR-minR||1;
+  const W=440,H=100,PL=44,PR=8,PT=8,PB=20,gW=W-PL-PR,gH=H-PT-PB,n=chartData.length;
+  const pts = chartData.map((e,i)=>({
+    x:PL+(n===1?gW/2:i/(n-1)*gW),
+    y:PT+gH-(Math.round(e.rating)-minR)/rangeR*gH,
+    r:Math.round(e.rating),e
+  }));
+  const line=pts.map(p=>p.x+','+p.y).join(' ');
+  const area='M '+pts[0].x+' '+(PT+gH)+' L '+pts.map(p=>p.x+' '+p.y).join(' L ')+' L '+pts[pts.length-1].x+' '+(PT+gH)+' Z';
+  const yLabels=[minR,Math.round((minR+maxR)/2),maxR];
+  const yHtml=yLabels.map(v=>{
+    const y=PT+gH-(v-minR)/rangeR*gH;
+    return `<text x="${PL-4}" y="${y+4}" text-anchor="end" fill="rgba(255,255,255,.35)" font-size="9" font-family="Rajdhani,sans-serif">${v}</text><line x1="${PL}" y1="${y}" x2="${W-PR}" y2="${y}" stroke="rgba(255,255,255,.04)" stroke-width="1"/>`;
+  }).join('');
+  const step=Math.max(1,Math.floor(n/5));
+  let xHtml='';
+  for(let xi=0;xi<n;xi+=step){
+    const p=pts[xi],ts=chartData[xi].timestamp?new Date(chartData[xi].timestamp):null;
+    const lbl=ts?(ts.getMonth()+1)+'/'+(ts.getDate()):chartData[xi].date;
+    xHtml+=`<text x="${p.x}" y="${H-4}" text-anchor="middle" fill="rgba(255,255,255,.35)" font-size="9" font-family="Rajdhani,sans-serif">${lbl}</text>`;
+  }
+  const circleHtml=pts.map(p=>`<circle cx="${p.x}" cy="${p.y}" r="2.5" fill="var(--blue)" stroke="#0A0F13" stroke-width="1.5"><title>${p.r}</title></circle>`).join('');
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block;">
+    <defs><linearGradient id="rg_${Math.random().toString(36).slice(2)}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="var(--blue)" stop-opacity=".18"/>
+      <stop offset="100%" stop-color="var(--blue)" stop-opacity="0"/>
+    </linearGradient></defs>
+    ${yHtml}${xHtml}
+    <path d="${area}" fill="rgba(10,200,185,.12)"/>
+    <polyline points="${line}" fill="none" stroke="var(--blue)" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
+    ${circleHtml}
+  </svg>`;
+}
+
+// ── HTML helpers ──
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function wrColor(v){ return v>=55?'var(--red)':v>=50?'var(--gold)':'#5383E8'; }
+
+function buildUserTable(users, label) {
+  if(!users.length) return `<div style="font-family:Rajdhani,sans-serif;font-size:11px;color:var(--muted);">데이터 없음</div>`;
+  const rows = users.slice(0,5).map(u=>{
+    const pct=(u.wr||0).toFixed(0);
+    const wl=`${u.win}승 ${u.total-u.win}패`;
+    const pctW=(u.win/u.total*100).toFixed(1), pctL=((u.total-u.win)/u.total*100).toFixed(1);
+    return `<tr>
+      <td class="ur-name">${esc(u.name)}</td>
+      <td style="font-family:Rajdhani,sans-serif;color:var(--muted);">${u.total}판</td>
+      <td>
+        <div class="wr-mini">
+          <div class="wr-bar-mini"><div class="wr-fill-w" style="width:${pctW}%"></div><div class="wr-fill-l" style="width:${pctL}%"></div></div>
+          <span style="font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;color:${wrColor(u.wr)};min-width:32px;text-align:right;">${pct}%</span>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+  return `<table class="mini-table"><thead><tr><th>${esc(label)}</th><th>게임</th><th>승률</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+function buildChampRows(champs) {
+  if(!champs.length) return `<div style="font-family:Rajdhani,sans-serif;font-size:11px;color:var(--muted);">데이터 없음</div>`;
+  return champs.slice(0,5).map(c=>{
+    const pct=(c.wr||0).toFixed(0);
+    const pctW=(c.win/c.total*100).toFixed(1), pctL=((c.total-c.win)/c.total*100).toFixed(1);
+    return `<div class="champ-row">
+      <img class="champ-icon" src="${DD_ICON(c.name)}" onerror="this.style.opacity=0.15">
+      <span class="champ-name">${esc(c.name)}</span>
+      <div class="wr-mini" style="flex:1;">
+        <div class="wr-bar-mini"><div class="wr-fill-w" style="width:${pctW}%"></div><div class="wr-fill-l" style="width:${pctL}%"></div></div>
+        <span class="champ-wr" style="color:${wrColor(c.wr)};min-width:32px;text-align:right;">${pct}%</span>
+      </div>
+      <span class="champ-games">${c.total}판</span>
+    </div>`;
+  }).join('');
+}
+
+// ── 상세 영역 로드 ──
+const detailDataCache = {};
+async function loadAndRenderDetail(member, ratingEntries, detailEl) {
+  const puuId = member.puu_id;
+  if (detailDataCache[puuId]) {
+    renderDetailContent(detailDataCache[puuId], ratingEntries, detailEl);
+    return;
+  }
+  detailEl.querySelector('.detail-loading').textContent = '매치 데이터 로드 중...';
+  const { from, to } = getLastWeekRange();
+  try {
+    const matchIds = await fetchWeekMatchIds(puuId, member.platform_id||'KR', from.getTime(), to.getTime());
+    if (!matchIds.length) {
+      detailEl.querySelector('.detail-loading').textContent = '이번 주 매치 데이터 없음';
+      return;
+    }
+    detailEl.querySelector('.detail-loading').textContent = `매치 분석 중 (${matchIds.length}판)...`;
+    const matches = await fetchMatchesBatch(matchIds, member.platform_id||'KR');
+    const communityPuuIds = new Set(allMembers.map(m=>m.puu_id));
+    const analysis = analyzeMatches(matches, puuId, communityPuuIds);
+    detailDataCache[puuId] = analysis;
+    renderDetailContent(analysis, ratingEntries, detailEl);
+  } catch(e) {
+    detailEl.querySelector('.detail-loading').textContent = '오류: '+e.message;
+  }
+}
+
+function renderDetailContent(analysis, ratingEntries, detailEl) {
+  const inner = detailEl.querySelector('.detail-loading-wrap');
+  const {totalGames,wins,losses,avgKda,allies,alliesAsc,enemyChamps,enemyChampsAsc} = analysis;
+  const chartHtml = buildChart(ratingEntries||[]);
+  const goodWith  = buildUserTable(allies.slice(0,5), '같이 하면 승률이 높은 유저');
+  const badWith   = buildUserTable(alliesAsc.slice(0,5), '같이 하면 승률이 낮은 유저');
+  const goodChamp = buildChampRows(enemyChamps.slice(0,5));
+  const badChamp  = buildChampRows(enemyChampsAsc.slice(0,5));
+  inner.innerHTML = `
+    <div class="detail-chart-wrap">
+      <div class="detail-chart-title">주간 레이팅 추이</div>
+      ${chartHtml}
+    </div>
+    <div class="detail-grid-2">
+      <div class="detail-section">
+        <div class="detail-sec-title">함께한 유저 승률</div>
+        <div style="margin-bottom:.5rem;font-family:Rajdhani,sans-serif;font-size:10px;color:var(--muted);">✅ 승률 높은 유저</div>
+        ${goodWith}
+        <div style="margin:.65rem 0 .4rem;font-family:Rajdhani,sans-serif;font-size:10px;color:var(--muted);">❌ 승률 낮은 유저</div>
+        ${badWith}
+      </div>
+      <div class="detail-section">
+        <div class="detail-sec-title">맞라인 챔피언 승률</div>
+        <div style="margin-bottom:.5rem;font-family:Rajdhani,sans-serif;font-size:10px;color:var(--muted);">✅ 잘 이기는 챔피언</div>
+        ${goodChamp}
+        <div style="margin:.65rem 0 .4rem;font-family:Rajdhani,sans-serif;font-size:10px;color:var(--muted);">❌ 잘 지는 챔피언</div>
+        ${badChamp}
+      </div>
+    </div>
+  `;
+}
+
+// ── 랭킹 카드 빌드 ──
+function buildRankCard(entry, rank, isRise, ratingHistMap) {
+  const m = entry.member;
+  const delta = Math.round(entry.totalDelta);
+  const sign = delta > 0 ? '+' : '';
+  const style = isRise ? 'rise-style' : 'drop-style';
+  const animDelay = (rank * 0.045).toFixed(2) + 's';
+  const rankNumCls = rank===1?'top3-1':rank===2?'top3-2':rank===3?'top3-3':'';
+  const tColor = tierColor(m && m.tier);
+  const tLabel = tierLabel(m && m.tier);
+  const tBg = m && m.tier ? `rgba(${hexToRgb(tColor)},.12)` : 'rgba(255,255,255,.05)';
+  const tBorder = m && m.tier ? `rgba(${hexToRgb(tColor)},.3)` : 'rgba(255,255,255,.08)';
+  const iconId = m && (m.profile_icon_id || m.profile_icon || m.profileIconId || m.icon_id);
+  const avatarSrc = iconId ? `https://ddragon.leagueoflegends.com/cdn/${DD_VER}/img/profileicon/${iconId}.png` : `https://ddragon.leagueoflegends.com/cdn/${DD_VER}/img/profileicon/1.png`;
+  const gameName = m ? (m.riot_name || m.game_name || m.summoner_name || m.nickname || m.name || entry.name) : entry.name;
+  const tagLine = m ? (m.riot_id_tag_line || m.tag_line || m.tagLine || '') : '';
+  const name = tagLine ? `${gameName} #${tagLine}` : gameName;
+  const rating = Math.round(entry.endRating);
+  const games = entry.weekGames !== undefined ? entry.weekGames : '—';
+  const wr = entry.weekWr !== undefined ? (entry.weekWr+'%') : '—';
+  const kda = entry.weekKda !== undefined ? entry.weekKda : '—';
+  const id = 'card_' + (isRise?'r':'d') + rank;
+
+  return `
+  <div class="rank-card ${style}" id="${id}" style="animation-delay:${animDelay}" data-puu="${(m&&m.puu_id)||entry.puuId||''}" data-rise="${isRise?1:0}" data-rank="${rank}" onclick="toggleCard('${id}',event)">
+    <div class="rank-card-inner">
+      <div class="rank-num ${rankNumCls}">${rank}</div>
+      <img class="rank-avatar" src="${avatarSrc}" onerror="this.src='https://ddragon.leagueoflegends.com/cdn/${DD_VER}/img/profileicon/1.png'">
+      <div class="rank-info">
+        <div class="rank-name">${esc(name)}</div>
+        <div class="rank-meta">
+          ${m&&m.tier?`<span class="rank-tier" style="color:${tColor};background:${tBg};border:1px solid ${tBorder};">${esc(tLabel)}</span>`:''}
+          <span class="rank-stat">주간 <span>${games}판</span></span>
+          <span class="rank-stat">승률 <span>${wr}</span></span>
+          <span class="rank-stat">KDA <span>${kda}</span></span>
+        </div>
+      </div>
+      <div style="text-align:right;flex-shrink:0;">
+        <div class="rank-delta ${delta>=0?'pos':'neg'}">${sign}${delta}</div>
+        <div class="rank-rating">${rating} RP</div>
+      </div>
+    </div>
+  </div>
+  <div class="rank-detail" id="${id}_detail">
+    <div class="rank-detail-inner">
+      <div class="detail-loading-wrap">
+        <div class="detail-loading"><div class="spinner"></div><span>상세 데이터 로드 중...</span></div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function hexToRgb(hex) {
+  const r = parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16);
+  return isNaN(r)?'255,255,255':`${r},${g},${b}`;
+}
+
+// ── 카드 토글 ──
+const openDetails = {};
+function toggleCard(id, e) {
+  e && e.stopPropagation();
+  const card = document.getElementById(id);
+  const detail = document.getElementById(id+'_detail');
+  if (!card || !detail) return;
+  const isOpen = detail.classList.contains('open');
+  if (isOpen) {
+    detail.classList.remove('open');
+    card.classList.remove('active');
+    delete openDetails[id];
+    return;
+  }
+  detail.classList.add('open');
+  card.classList.add('active');
+  openDetails[id] = true;
+  // 멤버 데이터
+  const puuId = card.dataset.puu;
+  const member = allMembers.find(m=>m.puu_id===puuId);
+  const isRise = card.dataset.rise === '1';
+  const rank = parseInt(card.dataset.rank);
+  const entries = (isRise ? riseTop : dropTop);
+  const entry = entries[rank-1];
+  if (!entry) { detail.querySelector('.detail-loading').textContent = '데이터 없음'; return; }
+  const ratingEntries = entry.entries||[];
+  // member가 없어도 puuId로 detail 로드 가능
+  const memberOrFallback = member || { puu_id: puuId, platform_id: 'KR' };
+  loadAndRenderDetail(memberOrFallback, ratingEntries, detail.querySelector('.rank-detail-inner'));
+}
+
+// ── 전역 데이터 ──
+let riseTop = [], dropTop = [];
+
+// ── 메인 진입점 ──
+async function main() {
+  console.log('[ranking] main() START — COMMUNITY_ID:', COMMUNITY_ID, '| SERVER_ID:', SERVER_ID, '| URL:', location.href);
+  const root = document.getElementById('root');
+  if (!COMMUNITY_ID) {
+    console.warn('[ranking] COMMUNITY_ID is empty — check URL params');
+    root.innerHTML = '<div class="err-state">커뮤니티 ID가 없습니다.<br>URL에 ?cid=... 파라미터를 추가하세요.</div>';
+    return;
+  }
+
+  try {
+    // 병렬 초기화
+    const [_, membersAndRatings, history] = await Promise.all([
+      initDragon(),
+      loadMembersAndRatings(),
+      loadRatingHistory()
+    ]);
+    allMembers = membersAndRatings.memberList;
+    const ratingMap = membersAndRatings.ratingMap;
+
+    if (!history) {
+      root.innerHTML = '<div class="err-state">레이팅 기록 데이터가 없습니다.</div>';
+      return;
+    }
+
+    const { from, to } = getLastWeekRange();
+    const fromStr = toDateStr(from), toStr = toDateStr(to);
+    document.getElementById('week-badge').textContent = fromStr + ' ~ ' + toStr;
+
+    // 커뮤니티 서버명 — membersAndRatings에서 이미 /server-info를 호출했으므로 serverName 활용
+    if (membersAndRatings.serverName) {
+      document.querySelector('.page-title').textContent = membersAndRatings.serverName + ' 주간 랭킹';
+    }
+
+    // 주간 delta 계산
+    const puuMap = calcWeeklyDeltas(history, from, to);
+    const memberMap = {};
+    allMembers.forEach(m => { memberMap[m.puu_id] = m; });
+
+    // 매치 데이터를 병렬로 가져와 주간 stats 계산 (top 10 + bot 10 대상만)
+    const entries = Object.entries(puuMap).map(([puuId, data]) => {
+      const m = memberMap[puuId];
+      const curRating = (ratingMap[puuId] && ratingMap[puuId].rating !== undefined)
+        ? ratingMap[puuId].rating
+        : data.entries.length ? data.entries[data.entries.length-1].rating : 0;
+      return {
+        puuId,
+        name: m ? (m.riot_name||m.game_name||m.summoner_name||m.nickname||m.name||puuId.slice(0,8)) : puuId.slice(0,8),
+        member: m||null,
+        totalDelta: data.totalDelta,
+        endRating: curRating,
+        entries: data.entries.sort((a,b)=>a.timestamp-b.timestamp)
+      };
+    }).filter(e=>e.totalDelta!==0||e.entries.length>0);
+
+    entries.sort((a,b)=>b.totalDelta-a.totalDelta);
+    riseTop = entries.slice(0,10);
+    dropTop = entries.slice(-10).filter(e=>e.totalDelta<0).reverse();
+
+    // 주간 match stats를 병렬 로드
+    const targets = [...new Set([...riseTop.map(e=>e.puuId), ...dropTop.map(e=>e.puuId)])];
+    await loadWeeklyMatchStats(targets, memberMap, from, to, [...riseTop,...dropTop]);
+
+    renderPage(riseTop, dropTop);
+  } catch(e) {
+    document.getElementById('root').innerHTML = `<div class="err-state">오류: ${esc(e.message)}</div>`;
+  }
+}
+
+async function loadWeeklyMatchStats(puuIds, memberMap, from, to, entries) {
+  const fromTs = from.getTime(), toTs = to.getTime();
+  await Promise.all(puuIds.map(async puuId => {
+    const member = memberMap[puuId]; // may be null/undefined — OK, we use 'KR' fallback
+    try {
+      const platform = (member && member.platform_id) || 'KR';
+      const matchIds = await fetchWeekMatchIds(puuId, platform, fromTs, toTs);
+      console.log('[ranking] matchIds for', puuId.slice(0,8), ':', matchIds.length);
+      if (!matchIds.length) return;
+      const matches = await fetchMatchesBatch(matchIds, platform);
+      const communityPuuIds = new Set(allMembers.map(m=>m.puu_id));
+      const analysis = analyzeMatches(matches, puuId, communityPuuIds);
+      detailDataCache[puuId] = analysis;
+      const { totalGames, wins, avgKda } = analysis;
+      const wr = totalGames > 0 ? ((wins/totalGames)*100).toFixed(1) : '—';
+      const entry = entries.find(e=>e.puuId===puuId);
+      if (entry) {
+        entry.weekGames = totalGames;
+        entry.weekWr = totalGames>0 ? wr : '—';
+        entry.weekKda = avgKda||'—';
+      }
+    } catch(e) {}
+  }));
+}
+
+function renderPage(rise, drop) {
+  const riseHtml = rise.map((e,i)=>buildRankCard(e,i+1,true,{})).join('');
+  const dropHtml = drop.map((e,i)=>buildRankCard(e,i+1,false,{})).join('');
+  document.getElementById('root').innerHTML = `
+    <div class="split-grid">
+      <div>
+        <div class="section-head rise"><span class="sh-icon">🔺</span><span class="sh-label" style="color:var(--blue);">떡상 TOP 10</span><span class="sh-count">저번주 레이팅 상승</span></div>
+        <div class="rank-list">${riseHtml||'<div class="err-state" style="border:1px solid rgba(255,255,255,.05);border-radius:0 0 6px 6px;">데이터 없음</div>'}</div>
+      </div>
+      <div>
+        <div class="section-head drop"><span class="sh-icon">🔻</span><span class="sh-label" style="color:var(--red);">떡락 TOP 10</span><span class="sh-count">저번주 레이팅 하락</span></div>
+        <div class="rank-list">${dropHtml||'<div class="err-state" style="border:1px solid rgba(255,255,255,.05);border-radius:0 0 6px 6px;">데이터 없음</div>'}</div>
+      </div>
+    </div>
+  `;
+  // toggleCard를 window에 노출 (onclick에서 접근)
+  window.toggleCard = toggleCard;
+}
+
+main();
+
+// ── 진단 함수 ──
+async function runDiag() {
+  const el = document.getElementById('diag-out');
+  el.style.display = 'block';
+  el.textContent = '진단 중...\n\n';
+  const log = s => { el.textContent += s + '\n'; };
+
+  log('=== URL 파라미터 ===');
+  log('COMMUNITY_ID: ' + COMMUNITY_ID);
+  log('SERVER_ID: ' + SERVER_ID);
+  log('');
+
+  // 1) /server-info
+  log('=== /server-info (communityId) ===');
+  try {
+    const r = await fetch(WORKER_URL + '/server-info', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ communityId: COMMUNITY_ID })
+    });
+    const j = await r.json();
+    log(JSON.stringify(j, null, 2));
+  } catch(e) { log('ERROR: ' + e.message); }
+  log('');
+
+  // 2) /rating-read
+  log('=== /rating-read ===');
+  try {
+    const r = await fetch(WORKER_URL + '/rating-read', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ communityId: COMMUNITY_ID })
+    });
+    const j = await r.json();
+    const keys = Object.keys(j);
+    log('keys: ' + JSON.stringify(keys));
+    // 첫번째 유저만 출력
+    const ratings = j.ratings || (j.ok && j.data) || j;
+    const firstPuu = Object.keys(ratings)[0];
+    if (firstPuu) {
+      log('첫번째 puuId: ' + firstPuu.slice(0,20) + '...');
+      log('첫번째 데이터: ' + JSON.stringify(ratings[firstPuu], null, 2));
+    } else {
+      log('ratings 없음: ' + JSON.stringify(j).slice(0,300));
+    }
+  } catch(e) { log('ERROR: ' + e.message); }
+  log('');
+
+  // 3) rating_history
+  log('=== /db-public-read (rating_history) ===');
+  try {
+    const { from, to } = getLastWeekRange();
+    log('기간: ' + toDateStr(from) + ' ~ ' + toDateStr(to));
+    const r = await fetch(WORKER_URL + '/db-public-read', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ path: `communities/${COMMUNITY_ID}/rating_history` })
+    });
+    const j = await r.json();
+    log('ok: ' + j.ok + ' | error: ' + (j.error||'없음'));
+    if (j.ok && j.data) {
+      const dateKeys = Object.keys(j.data);
+      log('날짜 키 수: ' + dateKeys.length);
+      log('날짜 키 샘플: ' + JSON.stringify(dateKeys.slice(0,5)));
+    } else {
+      log(JSON.stringify(j).slice(0,300));
+    }
+  } catch(e) { log('ERROR: ' + e.message); }
+  log('');
+
+  // 4) deeplol 매치 조회 (첫번째 puuId)
+  log('=== deeplol match/matches (첫 유저) ===');
+  try {
+    const r2 = await fetch(WORKER_URL + '/rating-read', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ communityId: COMMUNITY_ID })
+    });
+    const j2 = await r2.json();
+    const ratings2 = j2.ratings || (j2.ok && j2.data) || {};
+    const firstPuu2 = Object.keys(ratings2)[0];
+    if (firstPuu2) {
+      const mr = await fetch(API_BASE+'/match/matches?puu_id='+encodeURIComponent(firstPuu2)+'&platform_id=KR&offset=0&count=5&queue_type=CUSTOM&champion_id=0&only_list=1&last_updated_at=1');
+      const mj = await mr.json();
+      const list = mj.match_id_list || [];
+      log('puuId: ' + firstPuu2.slice(0,20) + '...');
+      log('매치 수: ' + list.length);
+      if (list[0]) {
+        const ts = (list[0].creation_timestamp||0)*1000;
+        log('최신 매치 시간: ' + new Date(ts).toLocaleString('ko-KR'));
+        log('최신 매치 id: ' + list[0].match_id);
+      }
+      const { from, to } = getLastWeekRange();
+      log('지난주 범위: ' + new Date(from).toLocaleString('ko-KR') + ' ~ ' + new Date(to).toLocaleString('ko-KR'));
+    }
+  } catch(e) { log('ERROR: ' + e.message); }
+
+  log('\n=== 완료 — 닫으려면 이 텍스트 아무데나 클릭 ===');
+  el.onclick = () => { el.style.display='none'; el.onclick=null; };
+}
+</script>
+</body>
+</html>
