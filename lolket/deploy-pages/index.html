@@ -2719,7 +2719,7 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
     <span style="font-family:'Rajdhani',sans-serif;font-size:10px;color:var(--muted);letter-spacing:1px;">Discord 전송</span>
     <input type="checkbox" id="auction-discord-toggle" style="accent-color:#7289da;width:14px;height:14px;cursor:pointer;">
   </label>
- </div> <div class="auction-body"> <div style="font-size:10px;color:var(--text-muted);letter-spacing:1px;font-family:'Rajdhani',sans-serif;">현재 매물</div> <div class="on-sale-card" id="on-sale-card" ondragover="onDragOver(event,'on-sale-card')" ondragleave="onDragLeave(event,'on-sale-card')" ondrop="onDropToSale(event)"> <div class="on-sale-empty">랜덤 선출 버튼을 눌러<br>경매를 시작하세요</div> </div> <div class="countdown-ring-wrap"> <div class="countdown-ring"> <svg width="64" height="64" viewBox="0 0 64 64"> <circle cx="32" cy="32" r="28"/> <circle cx="32" cy="32" r="28" class="progress-arc" id="cd-arc"/> </svg> <div class="countdown-num" id="cd-num">5</div> </div> <div style="display:flex;align-items:center;gap:6px;"> <div style="display:flex;flex-direction:column;align-items:center;gap:2px;"> <input type="number" id="cd-max-input" min="1" max="5" value="5" oninput="setCdMax(this.value)" style="width:36px;height:100%;background:var(--bg-dark);border:1px solid var(--border-subtle);border-radius:2px;padding:4px 6px;font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--gold);text-align:center;outline:none;"> <span style="font-size:8px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;letter-spacing:.5px;">MAX초</span> </div> <button class="btn-countdown" id="btn-cd" onclick="toggleCountdown()" disabled>카운트다운 <span style="font-size:9px;opacity:.6;letter-spacing:.5px;">(SPACE)</span></button> </div> </div> <div style="display:flex;gap:6px;"><button class="btn-pick-random" id="btn-pick" onclick="pickRandom()" style="flex:1;">🎲 랜덤 선출</button></div><div style="text-align:center;font-size:9px;color:var(--muted);font-family:Rajdhani,sans-serif;margin-top:3px;">또는 대기칸에서 카드를 위 매물칸으로 드래그</div> <div style="border-top:1px solid var(--border-subtle);padding-top:.5rem;display:flex;flex-direction:column;gap:6px;"> <button class="btn-primary" id="btn-bid-open" style="width:100%;font-size:12px;letter-spacing:2px;" disabled>낙찰 처리</button> <button class="btn-secondary" style="width:100%;font-size:11px;" onclick="sendToFail()">현재 매물 유찰 →</button> </div>
+ </div> <div class="auction-body"> <div style="font-size:10px;color:var(--text-muted);letter-spacing:1px;font-family:'Rajdhani',sans-serif;">현재 매물</div> <div class="on-sale-card" id="on-sale-card" ondragover="onDragOver(event,'on-sale-card')" ondragleave="onDragLeave(event,'on-sale-card')" ondrop="onDropToSale(event)"> <div class="on-sale-empty">랜덤 선출 버튼을 눌러<br>경매를 시작하세요</div> </div> <div class="countdown-ring-wrap"> <div class="countdown-ring"> <svg width="64" height="64" viewBox="0 0 64 64"> <circle cx="32" cy="32" r="28"/> <circle cx="32" cy="32" r="28" class="progress-arc" id="cd-arc"/> </svg> <div class="countdown-num" id="cd-num">5</div> </div> <div style="display:flex;align-items:center;gap:6px;"> <div style="display:flex;flex-direction:column;align-items:center;gap:2px;"> <input type="number" id="cd-max-input" min="1" max="30" value="5" oninput="setCdMax(this.value)" style="width:42px;height:100%;background:var(--bg-dark);border:1px solid var(--border-subtle);border-radius:2px;padding:4px 6px;font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--gold);text-align:center;outline:none;"> <span style="font-size:8px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;letter-spacing:.5px;">MAX초</span> </div> <button class="btn-countdown" id="btn-cd" onclick="toggleCountdown()" disabled>카운트다운 <span style="font-size:9px;opacity:.6;letter-spacing:.5px;">(SPACE)</span></button> </div> </div> <div style="display:flex;gap:6px;"><button class="btn-pick-random" id="btn-pick" onclick="pickRandom()" style="flex:1;">🎲 랜덤 선출</button></div><div style="text-align:center;font-size:9px;color:var(--muted);font-family:Rajdhani,sans-serif;margin-top:3px;">또는 대기칸에서 카드를 위 매물칸으로 드래그</div> <div style="border-top:1px solid var(--border-subtle);padding-top:.5rem;display:flex;flex-direction:column;gap:6px;"> <button class="btn-primary" id="btn-bid-open" style="width:100%;font-size:12px;letter-spacing:2px;" disabled>낙찰 처리</button> <button class="btn-secondary" style="width:100%;font-size:11px;" onclick="sendToFail()">현재 매물 유찰 →</button> </div>
 <div style="border-top:1px solid var(--border-subtle);padding:.75rem 1rem 1rem;">
   <div style="margin-bottom:.5rem;display:flex;align-items:center;justify-content:space-between;">
     <span style="font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:2px;color:var(--gold);">🏆 현재 매물 호가</span>
@@ -6068,7 +6068,7 @@ _saveLog('fail', failedName + ' 유찰');
 toast('유찰 처리되었습니다', 'ok');
 }
 function setCdMax(v) {
-  const n = Math.max(1, Math.min(5, parseInt(v)||5));
+  const n = Math.max(1, Math.min(30, parseInt(v)||5));
   cdMax = n;
   if (!cdRunning) {
     cdValue = n;
@@ -6121,11 +6121,13 @@ updateCdDisplay(cdMax);
 document.getElementById('btn-cd').innerHTML='중지 <span style="font-size:9px;opacity:.6;letter-spacing:.5px;">(SPACE)</span>';
 document.getElementById('btn-cd').classList.add('running');
 if (!_audioCtx) _getAudioCtx();
-_speakKorean(cdMax);
+if (cdMax > 5) { playCdSound(cdMax); } else { _speakKorean(cdMax); }
 cdInterval=setInterval(() =>{
 cdValue--;
 updateCdDisplay(cdValue);
-if (cdValue > 0) {
+if (cdValue > 5) {
+playCdSound(cdValue);
+} else if (cdValue > 0) {
 _speakKorean(cdValue);
 } else {
 _speakKorean('종료');
@@ -11341,7 +11343,7 @@ function playCdSound(n) {
       2: { freq: 520, dur: 0.20, vol: 0.6 },
       1: { freq: 660, dur: 0.22, vol: 0.65 },
     };
-    const { freq, dur, vol } = cfg[n] || { freq: 440, dur: 0.18, vol: 0.5 };
+    const { freq, dur, vol } = cfg[n] || { freq: 880, dur: 0.25, vol: 0.45 };
 
     // ① 메인 square wave — 명확한 클릭감
     const osc1 = ctx.createOscillator();

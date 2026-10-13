@@ -25,24 +25,27 @@ html,body{min-height:100%;background:var(--bg);color:var(--white);font-family:'N
 .page-header{
   background:linear-gradient(180deg,#0A1628,rgba(10,22,40,.97));
   border-bottom:1px solid var(--border-gold);
-  padding:.75rem 1.5rem;
-  display:flex;align-items:center;gap:1rem;
+  padding:.75rem 1rem;
+  display:flex;align-items:center;gap:.6rem;
   position:sticky;top:0;z-index:100;
   backdrop-filter:blur(8px);
+  min-width:0;
 }
-.logo-link{display:flex;align-items:center;gap:8px;text-decoration:none;color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;}
-.logo-diamond{width:8px;height:8px;background:var(--blue);transform:rotate(45deg);box-shadow:0 0 6px rgba(10,200,185,.5);}
-.header-center{flex:1;}
-.page-title{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;color:var(--white);}
+.logo-link{display:flex;align-items:center;gap:6px;text-decoration:none;color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;flex-shrink:0;}
+.logo-diamond{width:8px;height:8px;background:var(--blue);transform:rotate(45deg);box-shadow:0 0 6px rgba(10,200,185,.5);flex-shrink:0;}
+.header-center{flex:1;min-width:0;overflow:hidden;}
+.page-title{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .week-badge{
-  font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;
+  font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;
   color:var(--blue);background:rgba(10,200,185,.1);border:1px solid rgba(10,200,185,.25);
-  border-radius:3px;padding:2px 10px;margin-left:.5rem;vertical-align:middle;
+  border-radius:3px;padding:2px 8px;margin-left:.4rem;vertical-align:middle;
+  white-space:nowrap;
 }
 .header-back{
-  padding:5px 14px;border-radius:3px;border:1px solid var(--border);background:transparent;
+  padding:5px 10px;border-radius:3px;border:1px solid var(--border);background:transparent;
   color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;
   cursor:pointer;transition:all .15s;text-decoration:none;display:inline-flex;align-items:center;gap:4px;
+  flex-shrink:0;white-space:nowrap;
 }
 .header-back:hover{border-color:rgba(255,255,255,.15);color:var(--white);}
 
@@ -52,13 +55,16 @@ html,body{min-height:100%;background:var(--bg);color:var(--white);font-family:'N
 .loading-wrap{display:flex;align-items:center;justify-content:center;gap:12px;padding:5rem 2rem;font-family:'Rajdhani',sans-serif;font-size:13px;color:var(--muted);letter-spacing:1px;}
 
 /* ── MAIN LAYOUT ── */
-.main-wrap{max-width:1280px;margin:0 auto;padding:1.5rem 1.25rem;}
+.main-wrap{max-width:1280px;margin:0 auto;padding:1rem .75rem;}
 .split-grid{
   display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;
   animation:fadeIn .4s cubic-bezier(.22,1,.36,1) both;
 }
 @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
-@media(max-width:700px){.split-grid{grid-template-columns:1fr;}}
+@media(max-width:700px){
+  .split-grid{grid-template-columns:1fr;gap:.75rem;}
+  .main-wrap{padding:.75rem .5rem;}
+}
 
 /* ── SECTION HEADER ── */
 .section-head{
@@ -175,6 +181,39 @@ html,body{min-height:100%;background:var(--bg);color:var(--white);font-family:'N
 .rise-style{animation:cardSlideIn .3s cubic-bezier(.22,1,.36,1) both;}
 @keyframes cardSlideInR{from{opacity:0;transform:translateX(8px)}to{opacity:1;transform:none}}
 .drop-style{animation:cardSlideInR .3s cubic-bezier(.22,1,.36,1) both;}
+
+/* ── MOBILE ── */
+@media(max-width:480px){
+  .page-header{padding:.6rem .75rem;gap:.5rem;}
+  .logo-link{font-size:15px;}
+  .page-title{font-size:16px;letter-spacing:1px;}
+  .week-badge{display:none;}
+  .week-badge-mobile{display:block !important;}
+  .header-back{font-size:10px;padding:4px 8px;}
+
+  .rank-card-inner{padding:.55rem .75rem .55rem 1rem;gap:.55rem;}
+  .rank-num{font-size:16px;width:20px;}
+  .rank-avatar{width:30px;height:30px;}
+  .rank-name{font-size:12px;}
+  .rank-meta{gap:4px;margin-top:1px;}
+  .rank-tier{font-size:9px;padding:1px 5px;}
+  .rank-stat{font-size:9px;}
+  .rank-delta{font-size:17px;min-width:52px;}
+  .rank-rating{font-size:9px;}
+
+  .section-head{padding:.5rem .75rem;font-size:12px;}
+  .section-head .sh-count{display:none;}
+
+  .rank-detail-inner{padding:.75rem .75rem;}
+  .detail-chart-wrap{padding:.5rem;}
+  .detail-section{padding:.5rem .65rem;}
+  .detail-grid-2{grid-template-columns:1fr !important;}
+  .mini-table th{font-size:8px;}
+  .mini-table td{font-size:10px;padding:3px 4px;}
+  .champ-name{font-size:10px;}
+  .champ-wr{font-size:10px;}
+  .champ-games{font-size:9px;}
+}
 </style>
 </head>
 <body>
@@ -183,11 +222,14 @@ html,body{min-height:100%;background:var(--bg);color:var(--white);font-family:'N
 <header class="page-header">
   <a class="logo-link" href="javascript:history.back()"><div class="logo-diamond"></div>룽잉닷컴</a>
   <div class="header-center">
-    <span class="page-title">주간 레이팅 랭킹</span>
-    <span class="week-badge" id="week-badge">로딩 중...</span>
+    <div style="display:flex;align-items:baseline;gap:.4rem;flex-wrap:wrap;">
+      <span class="page-title">주간 레이팅 랭킹</span>
+      <span class="week-badge" id="week-badge">로딩 중...</span>
+    </div>
+    <div class="week-badge-mobile" id="week-badge-mobile" style="display:none;font-family:'Rajdhani',sans-serif;font-size:9px;color:var(--muted);letter-spacing:.5px;margin-top:1px;"></div>
   </div>
   <a class="header-back" href="javascript:history.back()">← 돌아가기</a>
-  <button onclick="runDiag()" style="padding:4px 10px;border-radius:3px;border:1px solid rgba(255,100,100,.4);background:rgba(255,100,100,.08);color:#ff6666;font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:1px;">🔍 진단</button>
+  <button onclick="runDiag()" style="padding:4px 10px;border-radius:3px;border:1px solid rgba(255,100,100,.4);background:rgba(255,100,100,.08);color:#ff6666;font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:1px;flex-shrink:0;">🔍 진단</button>
 </header>
 <div id="diag-out" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#0a0f13;z-index:9999;overflow:auto;padding:1.5rem;font-family:monospace;font-size:11px;line-height:1.6;color:#aaa;white-space:pre-wrap;"></div>
 
@@ -838,7 +880,9 @@ async function main() {
     allMembers = cached.allMembers || [];
     DD_VER = cached.ddVer || DD_VER;
     const { from, to } = getLastWeekRange();
-    document.getElementById('week-badge').textContent = toDateStr(from) + ' ~ ' + toDateStr(to);
+    const _wt = toDateStr(from) + ' ~ ' + toDateStr(to);
+    document.getElementById('week-badge').textContent = _wt;
+    document.getElementById('week-badge-mobile').textContent = _wt;
     if (cached.serverName) {
       document.querySelector('.page-title').textContent = cached.serverName + ' 주간 랭킹';
     }
@@ -866,7 +910,9 @@ async function main() {
 
     const { from, to } = getLastWeekRange();
     const fromStr = toDateStr(from), toStr = toDateStr(to);
-    document.getElementById('week-badge').textContent = fromStr + ' ~ ' + toStr;
+    const _wt2 = fromStr + ' ~ ' + toStr;
+    document.getElementById('week-badge').textContent = _wt2;
+    document.getElementById('week-badge-mobile').textContent = _wt2;
 
     // 커뮤니티 서버명 — membersAndRatings에서 이미 /server-info를 호출했으므로 serverName 활용
     if (membersAndRatings.serverName) {
