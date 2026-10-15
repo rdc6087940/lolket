@@ -815,30 +815,40 @@ tr.has-bg-effect td {
 
   <!-- ── 임시티어 관리 뷰 ── -->
   <div id="temp-tier-view" style="display:none;">
-    <div style="padding:.5rem 1rem;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border);">
-      <span style="font-size:12px;color:var(--muted);font-family:'Rajdhani',sans-serif;">임시티어 부여된 멤버 목록</span>
-      <span id="temp-tier-count" style="font-size:11px;color:var(--gold);font-family:'Rajdhani',sans-serif;font-weight:700;"></span>
-      <button onclick="loadTempTierTab()" style="margin-left:auto;padding:3px 10px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:11px;font-family:'Rajdhani',sans-serif;cursor:pointer;">↻ 새로고침</button>
+    <!-- 헤더 바 -->
+    <div style="padding:.75rem 1.25rem;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);background:linear-gradient(90deg,rgba(167,139,250,.06) 0%,transparent 60%);">
+      <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;">
+        <span style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:2px;color:#A78BFA;">임시티어 관리</span>
+        <span id="temp-tier-count" style="font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;color:#F59E0B;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.25);padding:1px 8px;border-radius:10px;"></span>
+      </div>
+      <button onclick="loadTempTierTab()" style="display:flex;align-items:center;gap:5px;padding:5px 12px;border-radius:4px;border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--muted);font-size:11px;font-family:'Rajdhani',sans-serif;font-weight:700;letter-spacing:.5px;cursor:pointer;transition:all .15s;" onmouseover="this.style.borderColor='rgba(167,139,250,.4)';this.style.color='#A78BFA';" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)';">
+        <span style="font-size:12px;">↻</span> 새로고침
+      </button>
     </div>
-    <div style="overflow-x:auto;">
-      <table class="stats-table" style="width:100%;">
+    <!-- 테이블 -->
+    <div style="overflow-x:auto;padding:.5rem 0;">
+      <table style="width:100%;border-collapse:collapse;font-family:'Rajdhani',sans-serif;">
         <thead>
-          <tr>
-            <th style="width:36px;">#</th>
-            <th>소환사</th>
-            <th>현재 티어</th>
-            <th>임시 티어</th>
-            <th>LP</th>
-            <th>게임수</th>
-            <th>승률</th>
-            <th>KDA</th>
-            <th style="width:80px;">관리</th>
+          <tr style="border-bottom:1px solid rgba(255,255,255,.08);">
+            <th style="width:40px;padding:8px 12px;text-align:center;font-size:10px;font-weight:700;letter-spacing:1px;color:var(--muted);text-transform:uppercase;">#</th>
+            <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;letter-spacing:1px;color:var(--muted);text-transform:uppercase;">소환사</th>
+            <th style="padding:8px 12px;text-align:center;font-size:10px;font-weight:700;letter-spacing:1px;color:var(--muted);text-transform:uppercase;">현재 티어</th>
+            <th style="padding:8px 12px;text-align:center;font-size:10px;font-weight:700;letter-spacing:1px;color:#A78BFA;text-transform:uppercase;">임시 티어</th>
+            <th style="padding:8px 12px;text-align:center;font-size:10px;font-weight:700;letter-spacing:1px;color:var(--muted);text-transform:uppercase;">부여일</th>
+            <th style="padding:8px 12px;text-align:center;font-size:10px;font-weight:700;letter-spacing:1px;color:var(--muted);text-transform:uppercase;">게임수</th>
+            <th style="padding:8px 12px;text-align:center;font-size:10px;font-weight:700;letter-spacing:1px;color:var(--muted);text-transform:uppercase;">승률</th>
+            <th style="padding:8px 12px;text-align:center;font-size:10px;font-weight:700;letter-spacing:1px;color:var(--muted);text-transform:uppercase;">KDA</th>
+            <th style="padding:8px 12px;text-align:center;font-size:10px;font-weight:700;letter-spacing:1px;color:#A78BFA;text-transform:uppercase;">레이팅 변화</th>
+            <th style="padding:8px 12px;text-align:center;font-size:10px;font-weight:700;letter-spacing:1px;color:var(--muted);text-transform:uppercase;">관리</th>
           </tr>
         </thead>
         <tbody id="temp-tier-tbody"></tbody>
       </table>
     </div>
-    <div id="temp-tier-empty" style="display:none;text-align:center;color:var(--muted);padding:3rem;font-family:'Rajdhani',sans-serif;">임시티어 부여된 멤버가 없습니다</div>
+    <div id="temp-tier-empty" style="display:none;text-align:center;padding:4rem 2rem;">
+      <div style="font-size:28px;margin-bottom:.75rem;opacity:.4;">🎯</div>
+      <div style="font-family:'Rajdhani',sans-serif;font-size:12px;color:var(--muted);letter-spacing:1px;">임시티어 부여된 멤버가 없습니다</div>
+    </div>
   </div>
 
   <!-- ── 멸망전 팀 시뮬레이션 뷰 ── -->
@@ -1763,6 +1773,12 @@ async function _cachedFetch(key, ttlSec, fetchFn) {
       <label style="font-family:'Rajdhani',sans-serif;font-size:10px;color:var(--muted);letter-spacing:.5px;display:block;margin-bottom:.3rem;">리그 포인트 (LP)</label>
       <input id="tt-lp-input" type="number" min="0" max="9999" placeholder="0"
         style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:3px;padding:5px 10px;color:var(--white);font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;outline:none;-moz-appearance:textfield;"
+        oninput="this.style.borderColor='var(--bacc)'">
+    </div>
+    <div style="margin-bottom:.6rem;">
+      <label style="font-family:'Rajdhani',sans-serif;font-size:10px;color:var(--muted);letter-spacing:.5px;display:block;margin-bottom:.3rem;">부여 날짜</label>
+      <input id="tt-date-input" type="date"
+        style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:3px;padding:5px 10px;color:var(--white);font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:600;outline:none;color-scheme:dark;"
         oninput="this.style.borderColor='var(--bacc)'">
     </div>
     <div class="tt-footer">
@@ -3301,16 +3317,22 @@ function renderTempTierCell(m) {
 function openTempTierPopup(puuId, name) {
   var member = filteredData.find(function(m){ return m.puu_id === puuId; });
   _ttCurrentMember = member || { puu_id: puuId };
-  _ttSelectedTier  = _tempTiers[puuId] || null;
+  var rawTt = _tempTiers[puuId] || null;
+  // _ttSelectedTier는 항상 tier 문자열로 정규화
+  _ttSelectedTier = rawTt ? (typeof rawTt === 'object' ? (rawTt.tier || null) : rawTt) : null;
   document.getElementById('tt-member-name').textContent = name + ' 의 임시 티어';
   document.getElementById('tt-remove-btn').style.display = _ttSelectedTier ? '' : 'none';
   // LP 입력칸 초기화
   var lpSection = document.getElementById('tt-lp-section');
   var lpInput = document.getElementById('tt-lp-input');
-  var existingLp = _tempTiers[puuId] && _tempTiers[puuId].lp !== undefined ? _tempTiers[puuId].lp : '';
+  var existingLp = rawTt && typeof rawTt === 'object' && rawTt.lp !== undefined ? rawTt.lp : '';
   var needLp = _ttSelectedTier && LP_TIERS.includes(parseTier(_ttSelectedTier).tier);
   lpSection.style.display = needLp ? '' : 'none';
-  lpInput.value = needLp ? (existingLp || '') : '';
+  lpInput.value = needLp ? (existingLp !== '' ? existingLp : '') : '';
+  // 날짜 입력칸 초기화 — 기존 값 있으면 복원, 없으면 오늘
+  var dateInput = document.getElementById('tt-date-input');
+  var existingDate = rawTt && typeof rawTt === 'object' && rawTt.assignedAt ? rawTt.assignedAt : '';
+  dateInput.value = existingDate || new Date().toISOString().slice(0, 10);
   // 티어 그리드 렌더
   var grid = document.getElementById('tt-tier-grid');
   grid.innerHTML = TIER_OPTIONS.map(function(t) {
@@ -3364,7 +3386,13 @@ async function saveTempTier(override) {
     var lpVal = parseInt(document.getElementById('tt-lp-input').value);
     lp = isNaN(lpVal) ? 0 : lpVal;
   }
-  var saveData = tier ? { tier: tier, lp: lp } : null;
+  // 날짜 포함 (YYYY-MM-DD)
+  var assignedAt = '';
+  try {
+    var dateEl = document.getElementById('tt-date-input');
+    assignedAt = dateEl && dateEl.value ? dateEl.value : new Date().toISOString().slice(0, 10);
+  } catch(e) { assignedAt = new Date().toISOString().slice(0, 10); }
+  var saveData = tier ? { tier: tier, lp: lp, assignedAt: assignedAt } : null;
   try {
     var res = await fetch(WORKER_URL + '/temp-tier-write', {
       method: 'POST',
@@ -3373,8 +3401,8 @@ async function saveTempTier(override) {
     });
     var json = await res.json();
     if (!json.ok) { alert('저장 실패: ' + (json.error||'')); return; }
-    // 임시티어 캐시 초기화 (수정 시 즉시 반영)
-    _tempTierCacheTs = 0;
+    // 임시티어 탭 캐시 무효화
+    _ttInvalidateCache();
     // 로컬 캐시 업데이트
     if (saveData) {
       _tempTiers[puuId] = saveData;
@@ -7862,7 +7890,7 @@ async function doomSimFetchPeak(e, puuId) {
 }
 
 function _doomSimGetScore(m, lane) {
-  // 최고 티어 기준으로 멸망전 점수 직접 계산
+  // 최고 티어 기준으로 내전 점수 직접 계산
   // _tempTiersCache에서 직접 조회 (임시티어 우선)
   var _cachedTemp = m.puu_id && _tempTiersCache[m.puu_id];
   var _tempTierStr = _cachedTemp ? (typeof _cachedTemp === 'string' ? _cachedTemp : (_cachedTemp.tier || null)) : (m._tempTier || null);
@@ -7872,7 +7900,7 @@ function _doomSimGetScore(m, lane) {
   var laneKey = lane || 'top';
   var HIGH = ['MASTER','GRANDMASTER','CHALLENGER'];
   var DIV_MAP = {'I':1,'II':2,'III':3,'IV':4,'1':1,'2':2,'3':3,'4':4};
-  // 멸망전 기본 점수 테이블
+  // 내전 점수 기본 테이블
   var DOOM_TABLE = [
     {tier:'MASTER+',minLp:1500,maxLp:99999,top:64,jg:69,mid:67,bot:68,sup:58},
     {tier:'MASTER+',minLp:1400,maxLp:1499,top:62,jg:67,mid:65,bot:66,sup:57},
@@ -8459,13 +8487,26 @@ function copyNickname(name, tag) {
 // ══════════════════════════════════════════════════
 // 임시티어 관리 탭
 // ══════════════════════════════════════════════════
+var _ttTabCache = null; // { tempTiers, ratingHistMap, ts }
+
+function _ttInvalidateCache() {
+  _ttTabCache = null;
+}
+
 async function loadTempTierTab() {
   var tbody = document.getElementById('temp-tier-tbody');
   var empty = document.getElementById('temp-tier-empty');
   var countEl = document.getElementById('temp-tier-count');
   if (!tbody) return;
 
-  tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--muted);">로드 중...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:2rem;color:var(--muted);">로드 중...</td></tr>';
+
+  // 캐시 히트 시 즉시 렌더링
+  if (_ttTabCache) {
+    _tempTiers = _ttTabCache.tempTiers;
+    _renderTempTierTable(tbody, empty, countEl, _ttTabCache.ratingHistMap);
+    return;
+  }
 
   // 임시티어 최신 로드
   try {
@@ -8481,12 +8522,94 @@ async function loadTempTierTab() {
   } catch(e) {}
 
   // 임시티어 있는 멤버만 필터
+  // 부여일이 있는 멤버만 레이팅 히스토리 조회
+  var membersWithDate = allData.filter(function(m) {
+    var tt = m.puu_id && _tempTiers && _tempTiers[m.puu_id];
+    return tt && typeof tt === 'object' && tt.assignedAt;
+  });
+
+  // ratingHistMap[puuId] = { before: {date, rating}, after: {date, rating} }
+  var ratingHistMap = {};
+  if (membersWithDate.length > 0) {
+    try {
+      // 1) shallow로 날짜 목록만 조회 (요청 1개)
+      var shallowRes = await fetch(WORKER_URL + '/db-public-read', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: 'communities/' + COMMUNITY_ID + '/rating_history', shallow: true })
+      });
+      var shallowJ = await shallowRes.json();
+      var allDates = (shallowJ.ok && shallowJ.data) ? Object.keys(shallowJ.data).sort() : [];
+
+      if (allDates.length > 0) {
+        // 2) 각 멤버당 before 날짜 1개 + after 날짜 1개만 선택 → 최대 멤버수 × 2 요청
+        var fetchTasks = [];
+        membersWithDate.forEach(function(m) {
+          var assignedAt = _tempTiers[m.puu_id].assignedAt;
+          // 날짜 키가 "YYYY-MM-DD_HHMM" 형식일 수 있으므로 앞 10자리로 비교
+          var beforeDates = allDates.filter(function(d) { return d.slice(0,10) < assignedAt; });
+          var afterDates  = allDates.filter(function(d) { return d.slice(0,10) >= assignedAt; });
+          // before: 직전 1개
+          if (beforeDates.length) {
+            var bd = beforeDates[beforeDates.length - 1];
+            fetchTasks.push(
+              fetch(WORKER_URL + '/db-public-read', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ path: 'communities/' + COMMUNITY_ID + '/rating_history/' + bd + '/' + m.puu_id })
+              }).then(function(r){ return r.json(); })
+                .then(function(j){ return { puuId: m.puu_id, role: 'before', date: bd, data: j.ok ? j.data : null }; })
+                .catch(function(){ return { puuId: m.puu_id, role: 'before', date: bd, data: null }; })
+            );
+          }
+          // after: 최신순 최대 5개 병렬 시도 → 결과 합산 후 유효한 것 중 가장 최근 사용
+          var afterCandidates = afterDates.slice(-5).reverse(); // 최신 5개, 최신순
+          afterCandidates.forEach(function(ad) {
+            fetchTasks.push(
+              fetch(WORKER_URL + '/db-public-read', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ path: 'communities/' + COMMUNITY_ID + '/rating_history/' + ad + '/' + m.puu_id })
+              }).then(function(r){ return r.json(); })
+                .then(function(j){ return { puuId: m.puu_id, role: 'after_candidate', date: ad, data: j.ok ? j.data : null }; })
+                .catch(function(){ return { puuId: m.puu_id, role: 'after_candidate', date: ad, data: null }; })
+            );
+          });
+        });
+
+        var results = await Promise.all(fetchTasks);
+        // before 확정
+        results.forEach(function(item) {
+          if (item.role !== 'before' || !item.data || item.data.rating === undefined) return;
+          if (!ratingHistMap[item.puuId]) ratingHistMap[item.puuId] = {};
+          ratingHistMap[item.puuId].before = { date: item.date, rating: item.data.rating };
+        });
+        // after_candidate 중 유효한 것 중 날짜 가장 최근 1개를 after로 확정
+        var afterCandMap = {}; // puuId → [ {date, rating} ]
+        results.forEach(function(item) {
+          if (item.role !== 'after_candidate' || !item.data || item.data.rating === undefined) return;
+          if (!afterCandMap[item.puuId]) afterCandMap[item.puuId] = [];
+          afterCandMap[item.puuId].push({ date: item.date, rating: item.data.rating });
+        });
+        Object.keys(afterCandMap).forEach(function(pid) {
+          var candidates = afterCandMap[pid].sort(function(a,b){ return b.date > a.date ? 1 : -1; });
+          if (candidates.length) {
+            if (!ratingHistMap[pid]) ratingHistMap[pid] = {};
+            ratingHistMap[pid].after = candidates[0]; // 가장 최근
+          }
+        });
+      }
+    } catch(e) {}
+  }
+
+  // 캐시 저장
+  _ttTabCache = { tempTiers: _tempTiers, ratingHistMap: ratingHistMap };
+
+  _renderTempTierTable(tbody, empty, countEl, ratingHistMap);
+}
+
+function _renderTempTierTable(tbody, empty, countEl, ratingHistMap) {
   var tempMembers = allData.filter(function(m) {
     return m.puu_id && _tempTiers && _tempTiers[m.puu_id];
   });
-
   countEl.textContent = tempMembers.length + '명';
-
   if (!tempMembers.length) {
     tbody.innerHTML = '';
     empty.style.display = '';
@@ -8494,39 +8617,94 @@ async function loadTempTierTab() {
   }
   empty.style.display = 'none';
 
-  // 임시티어 기준으로 정렬
-  var TIER_ORDER = { CHALLENGER:1, GRANDMASTER:2, MASTER:3, DIAMOND:4, EMERALD:5, PLATINUM:6, GOLD:7, SILVER:8, BRONZE:9, IRON:10, UNRANKED:11 };
+  var TIER_ORDER2 = { CHALLENGER:1, GRANDMASTER:2, MASTER:3, DIAMOND:4, EMERALD:5, PLATINUM:6, GOLD:7, SILVER:8, BRONZE:9, IRON:10, UNRANKED:11 };
+  var ROMAN_DIV2 = { 'I':1, 'II':2, 'III':3, 'IV':4 };
+  function ttSortKey2(puuId) {
+    var tt = _tempTiers[puuId];
+    var tierFull = (tt && (typeof tt === 'object' ? tt.tier : tt)) || 'UNRANKED';
+    var parts = tierFull.trim().toUpperCase().split(/\s+/);
+    var rawDiv = parts[1] || '';
+    var division = ROMAN_DIV2[rawDiv] || parseInt(rawDiv, 10) || 0;
+    var tierRank = TIER_ORDER2[parts[0]] || 11;
+    var lp = (tt && typeof tt === 'object' && tt.lp !== undefined) ? (tt.lp || 0) : 0;
+    return [tierRank, division, -lp];
+  }
   tempMembers.sort(function(a, b) {
-    var ta = ((_tempTiers[a.puu_id] && _tempTiers[a.puu_id].tier) || 'UNRANKED').toUpperCase();
-    var tb = ((_tempTiers[b.puu_id] && _tempTiers[b.puu_id].tier) || 'UNRANKED').toUpperCase();
-    var tierDiff = (TIER_ORDER[ta] || 11) - (TIER_ORDER[tb] || 11);
-    if (tierDiff !== 0) return tierDiff;
-    // 같은 티어면 LP 높은 순
-    var la = (_tempTiers[a.puu_id] && _tempTiers[a.puu_id].lp) || 0;
-    var lb = (_tempTiers[b.puu_id] && _tempTiers[b.puu_id].lp) || 0;
-    return lb - la;
+    var ka = ttSortKey2(a.puu_id), kb = ttSortKey2(b.puu_id);
+    for (var i = 0; i < ka.length; i++) { if (ka[i] !== kb[i]) return ka[i] - kb[i]; }
+    return 0;
   });
 
+  var HIGH_T = ['CHALLENGER','GRANDMASTER','MASTER'];
   tbody.innerHTML = tempMembers.map(function(m, i) {
     var tt = _tempTiers[m.puu_id];
-    var tierStr = typeof tt === 'string' ? tt : (tt && tt.tier ? tt.tier : '');
-    var lp = typeof tt === 'object' ? (tt && tt.lp !== undefined ? tt.lp : '') : '';
-    var tierColor = TIER_COLOR[tierStr.toUpperCase()] || 'var(--muted)';
-    var curTier = (m.tier || 'UNRANKED').split(' ')[0];
-    var curColor = TIER_COLOR[curTier.toUpperCase()] || 'var(--muted)';
+    var tierStr    = typeof tt === 'string' ? tt : (tt && tt.tier ? tt.tier : '');
+    var ttLp       = typeof tt === 'object' && tt && tt.lp !== undefined ? tt.lp : null;
+    var assignedAt = typeof tt === 'object' && tt && tt.assignedAt ? tt.assignedAt : null;
+
+    // 현재 티어
+    var curTierFull = (m.tier || 'UNRANKED');
+    var curTierKey  = curTierFull.split(' ')[0].toUpperCase();
+    var curLp = (HIGH_T.includes(curTierKey) && m.league_points !== undefined) ? m.league_points : undefined;
+    var curTierHtml = renderTierBadge(curTierFull, curLp);
+
+    // 임시 티어 배지 (마스터+ LP 포함)
+    var ttBadgeHtml = renderTierBadge(tierStr, ttLp !== null ? ttLp : undefined);
+
+    // 부여 날짜 표시
+    var dateHtml;
+    if (assignedAt) {
+      var parts = assignedAt.split('-');
+      var dateLabel = parts.length >= 3 ? (parts[0].slice(2) + '.' + parts[1] + '.' + parts[2]) : assignedAt;
+      dateHtml = '<span style="font-family:Rajdhani,sans-serif;font-size:11px;color:var(--muted);">' + dateLabel + '</span>';
+    } else {
+      dateHtml = '<span style="color:var(--muted);font-size:11px;">—</span>';
+    }
+
+    // 레이팅 변화 계산: before/after 각 1개씩만 fetch한 결과 사용
+    var ratingDeltaHtml;
+    var hist = ratingHistMap[m.puu_id] || {};
+    var rBefore = hist.before ? hist.before.rating : null;
+    var rAfter  = hist.after  ? hist.after.rating  : null;
+    if (!assignedAt) {
+      ratingDeltaHtml = '<span style="font-family:Rajdhani,sans-serif;font-size:10px;color:var(--muted);opacity:.6;">날짜 미설정</span>';
+    } else if (rBefore !== null && rAfter !== null && rBefore > 0) {
+      var delta = Math.round(rAfter - rBefore);
+      var pct   = ((rAfter - rBefore) / rBefore * 100).toFixed(1);
+      var dColor = delta > 0 ? '#3CB371' : delta < 0 ? '#E05050' : '#A0A8B0';
+      var dSign  = delta > 0 ? '+' : '';
+      ratingDeltaHtml =
+        '<div style="display:flex;flex-direction:column;align-items:center;gap:2px;">' +
+        '<span style="font-family:Rajdhani,sans-serif;font-size:13px;font-weight:800;color:'+dColor+';">' + dSign + delta + '</span>' +
+        '<span style="font-family:Rajdhani,sans-serif;font-size:10px;color:'+dColor+';opacity:.8;">' + dSign + pct + '%</span>' +
+        '<span style="font-family:Rajdhani,sans-serif;font-size:10px;color:var(--muted);">' + Math.round(rBefore) + ' → ' + Math.round(rAfter) + '</span>' +
+        '</div>';
+    } else {
+      ratingDeltaHtml = '<span style="font-family:Rajdhani,sans-serif;font-size:11px;color:var(--muted);">—</span>';
+    }
+
     var winRate = m.cnt > 0 ? Math.round(m.win / m.cnt * 100) : 0;
-    return '<tr>' +
-      '<td style="text-align:center;color:var(--muted);font-size:11px;">' + (i+1) + '</td>' +
-      '<td><span class="s-name tt-copy" data-name="' + esc(m.riot_name) + '" data-tag="' + esc(m.riot_tag) + '" style="cursor:pointer;text-decoration:underline dotted;">' + esc(m.riot_name) + '</span> <span class="s-tag">#' + esc(m.riot_tag) + '</span></td>' +
-      '<td style="color:' + curColor + ';font-family:Rajdhani,sans-serif;font-size:12px;">' + esc(m.tier || 'UNRANKED') + '</td>' +
-      '<td style="color:' + tierColor + ';font-family:Rajdhani,sans-serif;font-size:13px;font-weight:700;">' + esc(tierStr) + '</td>' +
-      '<td style="text-align:center;font-family:Rajdhani,sans-serif;">' + (lp !== '' ? lp : '-') + '</td>' +
-      '<td style="text-align:center;font-family:Rajdhani,sans-serif;">' + (m.cnt || 0) + '</td>' +
-      '<td style="text-align:center;font-family:Rajdhani,sans-serif;">' + winRate + '%</td>' +
-      '<td style="text-align:center;font-family:Rajdhani,sans-serif;">' + (m.kda || 0).toFixed(2) + '</td>' +
-      '<td style="text-align:center;">' +
-        '<button class="tt-edit-btn" data-puu="' + m.puu_id + '" style="padding:2px 8px;border-radius:2px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:10px;font-family:Rajdhani,sans-serif;cursor:pointer;margin-right:3px;">수정</button>' +
-        '<button class="tt-remove-btn" data-puu="' + m.puu_id + '" data-name="' + esc(m.riot_name) + '" style="padding:2px 8px;border-radius:2px;border:1px solid rgba(192,48,48,.4);background:transparent;color:#E05050;font-size:10px;font-family:Rajdhani,sans-serif;cursor:pointer;">해제</button>' +
+    var winColor = winRate >= 60 ? '#3CB371' : winRate >= 50 ? '#A0A8B0' : '#E05050';
+    var isOdd = i % 2 === 1;
+
+    return '<tr style="border-bottom:1px solid rgba(255,255,255,.04);'+(isOdd?'background:rgba(255,255,255,.015);':'')+'" '+
+        'onmouseover="this.style.background=\'rgba(167,139,250,.06)\'" '+
+        'onmouseout="this.style.background=\''+(isOdd?'rgba(255,255,255,.015)':'transparent')+'\'">' +
+      '<td style="text-align:center;padding:10px 12px;font-size:11px;color:var(--muted);font-family:Rajdhani,sans-serif;">' + (i+1) + '</td>' +
+      '<td style="padding:10px 12px;">' +
+        '<span class="s-name tt-copy" data-name="' + esc(m.riot_name) + '" data-tag="' + esc(m.riot_tag) + '" style="cursor:pointer;font-family:\'Noto Sans KR\',sans-serif;font-size:13px;color:var(--white);font-weight:500;" title="클릭하여 복사">' + esc(m.riot_name) + '</span>' +
+        ' <span style="font-family:Rajdhani,sans-serif;font-size:11px;color:var(--muted);">#' + esc(m.riot_tag) + '</span>' +
+      '</td>' +
+      '<td style="padding:10px 12px;text-align:center;">' + curTierHtml + '</td>' +
+      '<td style="padding:10px 12px;text-align:center;">' + ttBadgeHtml + '</td>' +
+      '<td style="padding:10px 12px;text-align:center;">' + dateHtml + '</td>' +
+      '<td style="padding:10px 12px;text-align:center;font-family:Rajdhani,sans-serif;font-size:12px;color:var(--muted);">' + (m.cnt || 0) + '</td>' +
+      '<td style="padding:10px 12px;text-align:center;font-family:Rajdhani,sans-serif;font-size:12px;font-weight:700;color:' + winColor + ';">' + winRate + '%</td>' +
+      '<td style="padding:10px 12px;text-align:center;font-family:Rajdhani,sans-serif;font-size:12px;color:var(--muted);">' + (m.kda || 0).toFixed(2) + '</td>' +
+      '<td style="padding:10px 12px;text-align:center;">' + ratingDeltaHtml + '</td>' +
+      '<td style="padding:10px 12px;text-align:center;">' +
+        '<button class="tt-edit-btn" data-puu="' + m.puu_id + '" style="padding:3px 10px;border-radius:3px;border:1px solid rgba(167,139,250,.3);background:rgba(167,139,250,.08);color:#A78BFA;font-size:10px;font-family:Rajdhani,sans-serif;font-weight:700;cursor:pointer;margin-right:4px;letter-spacing:.5px;transition:all .15s;">수정</button>' +
+        '<button class="tt-remove-btn" data-puu="' + m.puu_id + '" data-name="' + esc(m.riot_name) + '" style="padding:3px 10px;border-radius:3px;border:1px solid rgba(224,80,80,.3);background:rgba(224,80,80,.06);color:#E05050;font-size:10px;font-family:Rajdhani,sans-serif;font-weight:700;cursor:pointer;letter-spacing:.5px;transition:all .15s;">해제</button>' +
       '</td>' +
       '</tr>';
   }).join('');
@@ -8558,6 +8736,7 @@ async function removeTempTier(puuId, name) {
     if (j.ok) {
       delete _tempTiers[puuId];
       try { localStorage.removeItem('temp_tiers_' + COMMUNITY_ID); } catch(e) {}
+      _ttInvalidateCache();
       loadTempTierTab();
     } else { alert('해제 실패: ' + (j.error || '')); }
   } catch(e) { alert('오류: ' + e.message); }
