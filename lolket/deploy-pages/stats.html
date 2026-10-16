@@ -8560,8 +8560,8 @@ async function loadTempTierTab() {
                 .catch(function(){ return { puuId: m.puu_id, role: 'before', date: bd, data: null }; })
             );
           }
-          // after: 최신순 최대 5개 병렬 시도 → 결과 합산 후 유효한 것 중 가장 최근 사용
-          var afterCandidates = afterDates.slice(-5).reverse(); // 최신 5개, 최신순
+          // after: 최신순 최대 10개 병렬 시도 → 결과 합산 후 유효한 것 중 가장 최근 사용
+          var afterCandidates = afterDates.slice(-10).reverse(); // 최신 10개, 최신순
           afterCandidates.forEach(function(ad) {
             fetchTasks.push(
               fetch(WORKER_URL + '/db-public-read', {
@@ -8665,7 +8665,8 @@ function _renderTempTierTable(tbody, empty, countEl, ratingHistMap) {
     var ratingDeltaHtml;
     var hist = ratingHistMap[m.puu_id] || {};
     var rBefore = hist.before ? hist.before.rating : null;
-    var rAfter  = hist.after  ? hist.after.rating  : null;
+    // after 없으면 현재 레이팅(_rating)으로 fallback
+    var rAfter  = hist.after ? hist.after.rating : (m._rating > 0 ? m._rating : null);
     if (!assignedAt) {
       ratingDeltaHtml = '<span style="font-family:Rajdhani,sans-serif;font-size:10px;color:var(--muted);opacity:.6;">날짜 미설정</span>';
     } else if (rBefore !== null && rAfter !== null && rBefore > 0) {
@@ -8673,11 +8674,19 @@ function _renderTempTierTable(tbody, empty, countEl, ratingHistMap) {
       var pct   = ((rAfter - rBefore) / rBefore * 100).toFixed(1);
       var dColor = delta > 0 ? '#3CB371' : delta < 0 ? '#E05050' : '#A0A8B0';
       var dSign  = delta > 0 ? '+' : '';
+      var afterLabel = hist.after ? '' : '<span style="font-family:Rajdhani,sans-serif;font-size:9px;color:var(--muted);opacity:.6;"> (현재)</span>';
       ratingDeltaHtml =
         '<div style="display:flex;flex-direction:column;align-items:center;gap:2px;">' +
         '<span style="font-family:Rajdhani,sans-serif;font-size:13px;font-weight:800;color:'+dColor+';">' + dSign + delta + '</span>' +
         '<span style="font-family:Rajdhani,sans-serif;font-size:10px;color:'+dColor+';opacity:.8;">' + dSign + pct + '%</span>' +
-        '<span style="font-family:Rajdhani,sans-serif;font-size:10px;color:var(--muted);">' + Math.round(rBefore) + ' → ' + Math.round(rAfter) + '</span>' +
+        '<span style="font-family:Rajdhani,sans-serif;font-size:10px;color:var(--muted);">' + Math.round(rBefore) + ' → ' + Math.round(rAfter) + afterLabel + '</span>' +
+        '</div>';
+    } else if (rAfter !== null && rAfter > 0) {
+      // before 없이 after만 있는 경우: 현재 레이팅만 표시
+      ratingDeltaHtml =
+        '<div style="display:flex;flex-direction:column;align-items:center;gap:2px;">' +
+        '<span style="font-family:Rajdhani,sans-serif;font-size:12px;font-weight:700;color:var(--sub);">' + Math.round(rAfter) + '</span>' +
+        '<span style="font-family:Rajdhani,sans-serif;font-size:9px;color:var(--muted);opacity:.7;">기준 전 기록 없음</span>' +
         '</div>';
     } else {
       ratingDeltaHtml = '<span style="font-family:Rajdhani,sans-serif;font-size:11px;color:var(--muted);">—</span>';
