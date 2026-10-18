@@ -1678,11 +1678,11 @@ function formatRank(e) {
   return `${e.tier} ${e.rank} ${e.leaguePoints}LP`;
 }
 
-// ── 경매 채팅 전송 (팀장 코드 인증) ──
+// ── 채팅 전송 (팀장 코드 / 관리자 세션 / 일반 닉네임) ──
 async function handleChatSend(request, env) {
   try {
     const body = await request.json();
-    const { matchId, communityId, captainCode, message } = body;
+    const { matchId, communityId, captainCode, message, adminName, nickname } = body;
     if (!matchId || !communityId || !message) return json({ ok: false, error: '필수값 누락' }, 400);
     if (!message.trim() || message.length > 200) return json({ ok: false, error: '메시지 오류' }, 400);
 
@@ -1690,18 +1690,33 @@ async function handleChatSend(request, env) {
     const secret = env.FB_DB_SECRET;
     const authQ = secret ? `?auth=${secret}` : '';
 
-    // 팀장 코드 검증
-    let senderName = '관리자';
+    let senderName = '';
     let teamName = '';
+    let isCaptain = false;
+    let isGuest = false;
+
     if (captainCode) {
+      // 1) 팀장 코드 검증
       const codeRes = await fetch(`${dbUrl}/communities/${communityId}/matches/${matchId}/captainCodes/${captainCode}.json${authQ}`);
       const codeData = await codeRes.json();
       if (!codeData) return json({ ok: false, error: '유효하지 않은 코드' }, 403);
       senderName = codeData.captainName || '팀장';
       teamName = codeData.teamName || '';
+      isCaptain = true;
+    } else if (adminName !== undefined) {
+      // 2) 편집페이지 관리자 — 별도 인증 없이 허용
+      senderName = adminName ? (adminName + ' 관리자') : '관리자';
+    } else if (nickname) {
+      // 3) 일반 비회원: 닉네임 검증 (2~12자, 금지어 제외)
+      const nick = nickname.trim();
+      if (nick.length < 2 || nick.length > 12) return json({ ok: false, error: '닉네임 형식 오류' }, 400);
+      if (/관리자|팀장|admin/i.test(nick)) return json({ ok: false, error: '사용 불가 닉네임' }, 400);
+      senderName = nick;
+      isGuest = true;
+    } else {
+      return json({ ok: false, error: '인증이 필요합니다' }, 401);
     }
 
-    // Firebase serverTimestamp 대신 Date.now() 사용 (REST API 제한)
     const msgId = `msg_${Date.now()}_${Math.random().toString(36).slice(2,7)}`;
     const msgObj = {
       id: msgId,
@@ -1709,7 +1724,8 @@ async function handleChatSend(request, env) {
       teamName,
       message: message.trim(),
       ts: Date.now(),
-      isCaptain: !!captainCode,
+      isCaptain,
+      isGuest,
     };
     await fetch(`${dbUrl}/communities/${communityId}/matches/${matchId}/chat/${msgId}.json${authQ}`,
       { method: 'PUT', body: JSON.stringify(msgObj) });

@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>패치노트 - 룽잉닷컴</title>
+<meta name="description" content="최신 패치노트부터 과거의 패치노트 정보를 확인하세요!">
+<meta property="og:title" content="패치노트 - 룽잉닷컴">
+<meta property="og:description" content="최신 패치노트부터 과거의 패치노트 정보를 확인하세요!">
+<meta property="og:image" content="https://roonging.com/images/og-patch.png">
+<meta property="og:image:width" content="1456">
+<meta property="og:image:height" content="816">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://roonging.com/patch">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="패치노트 - 룽잉닷컴">
+<meta name="twitter:description" content="최신 패치노트부터 과거의 패치노트 정보를 확인하세요!">
+<meta name="twitter:image" content="https://roonging.com/images/og-patch.png">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&family=Rajdhani:wght@600;700&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+:root { --bg:#0A0C10;--bg-panel:#111318;--bg-card:#151820;--border:#1A2232;--border-gold:rgba(200,170,110,.3);--gold:#C8AA6E;--blue:#0AC8B9;--text:#8899A6;--white:#D4D8E1;--red:#E04040;--green:#2DB87A; color-scheme:dark; }
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;tap-highlight-color:transparent;}
+*:focus{outline:none;}
+*:focus-visible{outline:2px solid rgba(10,200,185,.5);}
+body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-serif;min-height:100vh;}
+
+.top-bar{background:rgba(10,12,16,.95);border-bottom:1px solid var(--border);padding:.7rem 1.5rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;backdrop-filter:blur(8px);}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:3px;color:var(--gold);text-decoration:none;}
+.patch-badge{font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;color:var(--blue);letter-spacing:1px;background:rgba(10,200,185,.08);border:1px solid rgba(10,200,185,.25);padding:3px 10px;border-radius:2px;}
+.home-btn{font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;color:var(--text);text-decoration:none;letter-spacing:.5px;padding:4px 10px;border:1px solid var(--border);border-radius:2px;transition:all .15s;}
+.home-btn:hover{border-color:var(--gold);color:var(--gold);}
+
+.hero{border-bottom:1px solid var(--border-gold);padding:1.75rem 1.5rem 1.25rem;}
+.hero-inner{max-width:1100px;margin:0 auto;display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+.hero-title{font-family:'Bebas Neue',sans-serif;font-size:34px;letter-spacing:4px;color:var(--gold);}
+.hero-sub{font-size:11px;color:var(--text);font-family:'Rajdhani',sans-serif;letter-spacing:1px;margin-top:3px;}
+.official-link{font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;padding:7px 16px;background:rgba(200,170,110,.08);border:1px solid rgba(200,170,110,.4);border-radius:3px;color:var(--gold);cursor:pointer;text-decoration:none;white-space:nowrap;transition:all .15s;}
+.official-link:hover{background:rgba(200,170,110,.15);}
+
+/* 버전 셀렉터 */
+.version-bar{background:var(--bg-panel);border-bottom:1px solid var(--border);padding:.5rem 1.5rem;display:flex;align-items:center;gap:8px;overflow-x:auto;position:relative;}
+.version-bar::-webkit-scrollbar{height:3px;}
+.version-bar::-webkit-scrollbar-thumb{background:var(--border);}
+.ver-btn{font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:.5px;padding:4px 12px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text);cursor:pointer;white-space:nowrap;transition:color .15s, border-color .15s;flex-shrink:0;position:relative;z-index:1;}
+.ver-btn.active{border-color:transparent;color:var(--blue);}
+.ver-btn:hover:not(.active){border-color:var(--white);color:var(--white);}
+/* 슬라이딩 인디케이터 */
+.ver-indicator{position:absolute;top:50%;transform:translateY(-50%);height:26px;border-radius:20px;background:rgba(10,200,185,.08);border:1px solid var(--blue);pointer-events:none;transition:left .22s cubic-bezier(.4,0,.2,1), width .22s cubic-bezier(.4,0,.2,1);z-index:0;}
+
+/* 탭 */
+.tab-bar{max-width:1100px;margin:0 auto;padding:0 1.5rem;display:flex;border-bottom:1px solid var(--border);}
+.tab-wrap{background:var(--bg-panel);border-bottom:1px solid var(--border);}
+.tab-btn{font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;padding:.65rem 1.25rem;cursor:pointer;color:var(--text);border:none;background:none;border-bottom:2px solid transparent;transition:all .15s;}
+.tab-btn.active{color:var(--blue);border-bottom-color:var(--blue);}
+
+/* 통계 */
+.stats-row{display:flex;gap:16px;padding:.75rem 0;flex-wrap:wrap;}
+.stat-item{display:flex;align-items:center;gap:5px;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;}
+.stat-dot{width:8px;height:8px;border-radius:50%;}
+
+/* 필터/검색 */
+.filter-bar{display:flex;align-items:center;gap:8px;margin-bottom:1.25rem;flex-wrap:wrap;}
+@media(max-width:600px){
+  .filter-bar{flex-direction:column;align-items:stretch;}
+  .filter-bar .search-input{order:2;width:100%;}
+  .filter-chips-row{order:1;display:flex;gap:6px;flex-wrap:wrap;}
+}
+.search-input{flex:1;min-width:160px;background:var(--bg-panel);border:1px solid var(--border);border-radius:3px;padding:6px 12px;font-size:12px;color:var(--white);font-family:'Noto Sans KR',sans-serif;outline:none;}
+.search-input:focus{border-color:rgba(10,200,185,.4);}
+.filter-chip{font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:.5px;padding:4px 12px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text);cursor:pointer;transition:all .15s;}
+.filter-chip.active{border-color:var(--blue);background:rgba(10,200,185,.08);color:var(--blue);}
+.filter-chip:hover:not(.active){border-color:var(--white);color:var(--white);}
+
+/* 챔피언 그리드 */
+.champ-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:8px;}
+.champ-card{background:var(--bg-card);border:1px solid var(--border);border-radius:4px;overflow:hidden;cursor:pointer;transition:all .2s;position:relative;}
+.champ-card:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.5);}
+.champ-card.buff{border-color:rgba(45,184,122,.35);}
+.champ-card.nerf{border-color:rgba(224,64,64,.35);}
+.champ-card.adjust{border-color:rgba(200,170,110,.35);}
+.champ-card img{width:100%;aspect-ratio:1;display:block;object-fit:cover;}
+.champ-card-name{font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;text-align:center;padding:3px 4px;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.change-badge{position:absolute;top:3px;right:3px;width:15px;height:15px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;}
+.badge-buff{background:#2DB87A;color:#fff;}
+.badge-nerf{background:#E04040;color:#fff;}
+.badge-adjust{background:#C8AA6E;color:#000;}
+
+/* 아이템 그리드 */
+.item-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(70px,1fr));gap:8px;}
+.item-card{background:var(--bg-card);border:1px solid var(--border);border-radius:4px;overflow:hidden;cursor:pointer;transition:all .2s;text-align:center;padding:.5rem .25rem;position:relative;}
+.item-card:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.5);}
+.item-card.buff{border-color:rgba(45,184,122,.35);}
+.item-card.nerf{border-color:rgba(224,64,64,.35);}
+.item-card.adjust{border-color:rgba(200,170,110,.35);}
+.item-card img{width:46px;height:46px;border-radius:3px;object-fit:cover;}
+.item-card-name{font-family:'Rajdhani',sans-serif;font-size:9px;font-weight:700;color:var(--white);margin-top:4px;line-height:1.2;}
+
+/* 콘텐츠 전환 애니메이션 */
+@keyframes slideInRight{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:translateX(0)}}
+@keyframes slideInLeft{from{opacity:0;transform:translateX(-18px)}to{opacity:1;transform:translateX(0)}}
+.content-slide-right{animation:slideInRight .22s cubic-bezier(.4,0,.2,1) both;}
+.content-slide-left{animation:slideInLeft .22s cubic-bezier(.4,0,.2,1) both;}
+
+/* 메인 */
+.main{max-width:1100px;margin:0 auto;padding:1.25rem 1.5rem 4rem;}
+
+/* 팝업 */
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0);z-index:500;align-items:center;justify-content:center;padding:1rem;transition:background .2s ease;}
+.modal.show{display:flex;background:rgba(0,0,0,.88);}
+.modal-box{background:var(--bg-panel);border:1px solid var(--border-gold);border-radius:6px;max-width:600px;width:100%;max-height:90vh;overflow-y:auto;position:relative;opacity:0;transform:translateY(16px) scale(.97);transition:opacity .22s ease, transform .22s ease;}
+.modal.show .modal-box{opacity:1;transform:translateY(0) scale(1);}
+.modal-header{display:flex;align-items:center;gap:14px;padding:1.25rem 1.5rem;border-bottom:1px solid var(--border);background:rgba(200,170,110,.03);position:sticky;top:0;}
+.modal-splash{width:60px;height:60px;border-radius:4px;object-fit:cover;border:1px solid var(--border-gold);}
+.modal-title{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;color:var(--white);}
+.modal-close{position:absolute;top:1rem;right:1rem;background:none;border:none;color:var(--text);font-size:18px;cursor:pointer;width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:2px;}
+.modal-close:hover{color:var(--white);background:rgba(255,255,255,.06);}
+.modal-body{padding:1.25rem 1.5rem;}
+
+/* 변경 항목 */
+.change-group{margin-bottom:1rem;}
+.change-group-title{font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;color:var(--gold);margin-bottom:.5rem;text-transform:uppercase;}
+.change-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:.5rem 0;border-bottom:1px solid rgba(26,34,50,.6);}
+.change-row:last-child{border-bottom:none;}
+.change-label{font-size:12px;color:var(--white);font-weight:600;flex:1;line-height:1.4;}
+.change-note{font-size:10px;color:var(--text);margin-top:2px;}
+.change-vals{display:flex;align-items:center;gap:5px;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;flex-shrink:0;text-align:right;}
+.val-old{color:var(--text);text-decoration:line-through;}
+.val-new.up{color:#2DB87A;}
+.val-new.down{color:#E04040;}
+
+.loading{display:flex;align-items:center;gap:10px;padding:3rem;justify-content:center;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:13px;letter-spacing:1px;}
+.spinner{width:20px;height:20px;border:2px solid rgba(10,200,185,.2);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.empty{text-align:center;padding:3rem;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:13px;letter-spacing:1px;}
+.no-data{text-align:center;padding:4rem 2rem;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:14px;letter-spacing:1px;}
+</style>
+</head>
+<body>
+<div class="top-bar">
+  <a href="/" class="logo">ROONGING</a>
+  <span id="patch-badge" class="patch-badge">로딩 중...</span>
+  <a href="/" class="home-btn">← 홈</a>
+</div>
+
+<div class="hero">
+  <div class="hero-inner">
+    <div>
+      <div class="hero-title">패치노트</div>
+      <div class="hero-sub">LEAGUE OF LEGENDS · CHAMPION &amp; ITEM CHANGES</div>
+    </div>
+    <a id="official-link" href="#" target="_blank" class="official-link" style="display:none;">공식 패치노트 →</a>
+  </div>
+</div>
+
+<div id="version-bar" style="background:var(--bg-panel);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;position:relative;padding:.65rem 1.5rem;height:44px;box-sizing:border-box;">
+  <div class="ver-indicator" id="ver-indicator"></div>
+</div>
+
+<div class="tab-wrap">
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('champs',this)">챔피언</button>
+    <button class="tab-btn" onclick="switchTab('items',this)">아이템</button>
+  </div>
+</div>
+
+<div class="main" id="main-content">
+  <div class="loading" id="main-loading"><div class="spinner"></div>패치노트 불러오는 중...</div>
+</div>
+
+<div class="modal" id="detail-modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal-box" id="modal-box"></div>
+</div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getDatabase, ref, get } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+
+const WORKER = 'https://api.roonging.com';
+const DD_BASE = 'https://ddragon.leagueoflegends.com/cdn';
+
+let allPatchData = {};
+let patchVersions = [];
+let currentVersion = '';
+let currentTab = 'champs';
+let currentFilter = 'all';
+let ddVersion = '16.14.1';
+let allChamps = {};
+let _db = null;
+let _champSkillCache = {};
+
+async function init() {
+  try {
+    // DD 버전
+    const vRes = await fetch('https://ddragon.leagueoflegends.com/api/versions.json');
+    const vers = await vRes.json();
+    ddVersion = vers[0];
+
+    // 챔피언 데이터
+    const cRes = await fetch(`${DD_BASE}/${ddVersion}/data/ko_KR/champion.json`);
+    const cData = await cRes.json();
+    allChamps = cData.data;
+
+    // Firebase SDK로 직접 읽기 (항상 최신 데이터 우선)
+    const PATCH_CACHE_TTL = 24 * 60 * 60 * 1000; // 24시간으로 단축
+    const cacheKey = 'patch_global';
+    let gotData = false;
+
+    // Firebase에서 최신 데이터 먼저 로드 시도
+    try {
+      const cfgRes = await fetch(WORKER + '/firebase-config');
+      const firebaseConfig = await cfgRes.json();
+      let app;
+      try { app = initializeApp(firebaseConfig); }
+      catch(e4) {
+        const { getApps } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
+        app = getApps()[0];
+      }
+      _db = getDatabase(app);
+      const snap = await get(ref(_db, 'system/patch_notes'));
+      const fbData = snap.val();
+      if (fbData && typeof fbData === 'object' && Object.keys(fbData).length > 0) {
+        allPatchData = fbData;
+        try { localStorage.setItem(cacheKey, JSON.stringify({ data: fbData, ts: Date.now() })); } catch(e3) {}
+        gotData = true;
+      }
+    } catch(eFb) {
+      console.warn('Firebase 로드 실패, 캐시 사용:', eFb);
+      // Firebase 실패 시 캐시 폴백
+      try {
+        const cached = localStorage.getItem(cacheKey);
+        if (cached) {
+          const c = JSON.parse(cached);
+          if (c.data && Object.keys(c.data).length > 0) {
+            allPatchData = c.data;
+            gotData = true;
+          }
+        }
+      } catch(e2) {}
+    }
+
+    if (!gotData) {
+      document.getElementById('main-content').innerHTML = '<div class="no-data">등록된 패치노트가 없습니다.</div>';
+      return;
+    }
+
+    allPatchData = allPatchData;
+    patchVersions = Object.keys(allPatchData).sort((a, b) => {
+      const pa = a.replace(/_/g, '.').split('.').map(Number);
+      const pb = b.replace(/_/g, '.').split('.').map(Number);
+      for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+        if ((pa[i]||0) !== (pb[i]||0)) return (pb[i]||0) - (pa[i]||0);
+      }
+      return 0;
+    });
+    currentVersion = patchVersions[0] || '';
+
+    renderVersionBar();
+    renderContent();
+    // 초기 인디케이터 위치 (폰트/레이아웃 완료 후)
+    setTimeout(moveIndicator, 50);
+  } catch(e) {
+    document.getElementById('main-content').innerHTML = '<div class="no-data">오류: ' + e.message + '</div>';
+  }
+}
+
+function renderVersionBar() {
+  const bar = document.getElementById('version-bar');
+  // 인디케이터는 유지, 버튼만 교체
+  const indicator = document.getElementById('ver-indicator');
+  bar.innerHTML = '';
+  bar.appendChild(indicator);
+  patchVersions.forEach(v => {
+    const label = v.replace(/_/g, '.');
+    const btn = document.createElement('button');
+    btn.className = 'ver-btn' + (v === currentVersion ? ' active' : '');
+    btn.textContent = label;
+    btn.onclick = () => selectVersion(v);
+    bar.appendChild(btn);
+  });
+  requestAnimationFrame(() => moveIndicator());
+}
+
+function moveIndicator() {
+  const bar = document.getElementById('version-bar');
+  const indicator = document.getElementById('ver-indicator');
+  const activeBtn = bar.querySelector('.ver-btn.active');
+  if (!activeBtn || !indicator) return;
+  const barRect = bar.getBoundingClientRect();
+  const btnRect = activeBtn.getBoundingClientRect();
+  indicator.style.left = (btnRect.left - barRect.left + bar.scrollLeft) + 'px';
+  indicator.style.width = btnRect.width + 'px';
+}
+
+function selectVersion(v) {
+  const prevIdx = patchVersions.indexOf(currentVersion);
+  const nextIdx = patchVersions.indexOf(v);
+  const dir = nextIdx > prevIdx ? 'right' : 'left';
+  currentVersion = v;
+  // 필터 초기화
+  currentFilter = 'all';
+  document.querySelectorAll('.ver-btn').forEach(b => b.classList.toggle('active', b.textContent === v.replace(/_/g,'.')));
+  moveIndicator();
+  const activeBtn = document.querySelector('.ver-btn.active');
+  if (activeBtn) activeBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  renderContent(dir);
+}
+
+function renderContent(dir) {
+  const data = allPatchData[currentVersion];
+  if (!data) { document.getElementById('main-content').innerHTML = '<div class="no-data">데이터 없음</div>'; return; }
+
+  const ver = (data.version || currentVersion.replace(/_/g,'.')).replace(/_/g,'.');
+  document.getElementById('patch-badge').textContent = 'PATCH ' + ver;
+
+  const officialLink = document.getElementById('official-link');
+  officialLink.href = 'https://www.leagueoflegends.com/ko-kr/news/game-updates/league-of-legends-patch-' + ver.replace(/\./g,'-') + '-notes/';
+  officialLink.style.display = '';
+
+  const champs = data.champions || [];
+  const items = data.items || [];
+
+  const buffs = champs.filter(c => c.type === 'buff').length;
+  const nerfs = champs.filter(c => c.type === 'nerf').length;
+  const adjusts = champs.filter(c => c.type === 'adjust').length;
+
+  const mc = document.getElementById('main-content');
+  if (dir) {
+    const cls = dir === 'right' ? 'content-slide-right' : 'content-slide-left';
+    mc.classList.remove('content-slide-right','content-slide-left');
+    void mc.offsetWidth; // reflow
+    mc.classList.add(cls);
+  }
+  mc.innerHTML = `
+    <div class="stats-row">
+      <div class="stat-item"><span class="stat-dot" style="background:#2DB87A;"></span>${buffs}개 버프</div>
+      <div class="stat-item"><span class="stat-dot" style="background:#E04040;"></span>${nerfs}개 너프</div>
+      <div class="stat-item"><span class="stat-dot" style="background:#C8AA6E;"></span>${adjusts}개 조정</div>
+      <div class="stat-item" style="margin-left:auto;"><span class="stat-dot" style="background:#5B6474;"></span>아이템 ${items.length}개</div>
+    </div>
+    <div id="tab-champs">
+      <div class="filter-bar">
+        <div class="filter-chips-row">
+          <button class="filter-chip active" onclick="setFilter('all',this)">전체</button>
+          <button class="filter-chip" onclick="setFilter('buff',this)">🟢 버프</button>
+          <button class="filter-chip" onclick="setFilter('nerf',this)">🔴 너프</button>
+          <button class="filter-chip" onclick="setFilter('adjust',this)">🟡 조정</button>
+        </div>
+        <input type="text" class="search-input" id="search-input" placeholder="챔피언 검색..." oninput="filterRender()">
+      </div>
+      <div class="champ-grid" id="champ-grid"></div>
+      <div class="empty" id="champ-empty" style="display:none;">검색 결과가 없습니다.</div>
+    </div>
+    <div id="tab-items" style="display:none;">
+      <div class="item-grid" id="item-grid"></div>
+      <div class="empty" id="item-empty" style="display:none;">변경된 아이템이 없습니다.</div>
+    </div>`;
+
+  renderChampGrid();
+  renderItemGrid();
+}
+
+function getChampData(champId) {
+  return Object.values(allChamps).find(c => c.id === champId) || null;
+}
+
+function renderChampGrid() {
+  const data = allPatchData[currentVersion];
+  const champs = (data?.champions || []);
+  const query = (document.getElementById('search-input')?.value || '').toLowerCase();
+
+  const TYPE_ORDER = { buff: 0, nerf: 1, adjust: 2 };
+  const filtered = champs.filter(c => {
+    const cd = getChampData(c.champId);
+    const name = (cd?.name || c.nameKo || c.champId || '').toLowerCase();
+    const matchQ = !query || name.includes(query) || (c.champId||'').toLowerCase().includes(query);
+    const matchF = currentFilter === 'all' || c.type === currentFilter;
+    return matchQ && matchF;
+  }).sort((a, b) => (TYPE_ORDER[a.type] ?? 9) - (TYPE_ORDER[b.type] ?? 9));
+
+  const grid = document.getElementById('champ-grid');
+  const empty = document.getElementById('champ-empty');
+  if (!grid) return;
+
+  if (filtered.length === 0) {
+    grid.style.display = 'none';
+    if (empty) empty.style.display = '';
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+  grid.style.display = 'grid';
+
+  grid.innerHTML = filtered.map(c => {
+    const cd = getChampData(c.champId);
+    const name = cd?.name || c.nameKo || c.champId;
+    const imgSrc = c.champId ? `${DD_BASE}/${ddVersion}/img/champion/${c.champId}.png` : '';
+    const badgeClass = c.type === 'buff' ? 'badge-buff' : c.type === 'nerf' ? 'badge-nerf' : 'badge-adjust';
+    const badgeIcon = c.type === 'buff' ? '▲' : c.type === 'nerf' ? '▼' : '◆';
+    return `<div class="champ-card ${c.type}" onclick='openChampDetail(${JSON.stringify(c.champId)})'>
+      <div class="change-badge ${badgeClass}">${badgeIcon}</div>
+      <img src="${imgSrc}" alt="${name}" onerror="this.src='https://ddragon.leagueoflegends.com/cdn/img/profileicon/0.png'">
+      <div class="champ-card-name">${name}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderItemGrid() {
+  const data = allPatchData[currentVersion];
+  const items = data?.items || [];
+  const grid = document.getElementById('item-grid');
+  const empty = document.getElementById('item-empty');
+  if (!grid) return;
+
+  if (items.length === 0) {
+    grid.style.display = 'none';
+    if (empty) empty.style.display = '';
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+  grid.style.display = 'grid';
+
+  const TYPE_ORDER_I = { buff: 0, nerf: 1, adjust: 2 };
+  const sortedItems = [...items].sort((a, b) => (TYPE_ORDER_I[a.type] ?? 9) - (TYPE_ORDER_I[b.type] ?? 9));
+  grid.innerHTML = sortedItems.map(item => {
+    const imgSrc = item.itemId ? `${DD_BASE}/${ddVersion}/img/item/${item.itemId}.png` : '';
+    const badgeClass = item.type === 'buff' ? 'badge-buff' : item.type === 'nerf' ? 'badge-nerf' : 'badge-adjust';
+    const badgeIcon = item.type === 'buff' ? '▲' : item.type === 'nerf' ? '▼' : '◆';
+    return `<div class="item-card ${item.type}" onclick='openItemDetail(${JSON.stringify(item.itemId)})'>
+      <div class="change-badge ${badgeClass}">${badgeIcon}</div>
+      <img src="${imgSrc}" alt="${item.nameKo}" onerror="this.style.display='none'">
+      <div class="item-card-name">${item.nameKo || item.itemId}</div>
+    </div>`;
+  }).join('');
+}
+
+async function loadChampSkills(champId) {
+  if (_champSkillCache[champId]) return _champSkillCache[champId];
+  const ckey = 'dd_skills_' + ddVersion + '_' + champId;
+  try {
+    const cached = localStorage.getItem(ckey);
+    if (cached) { _champSkillCache[champId] = JSON.parse(cached); return _champSkillCache[champId]; }
+  } catch(e) {}
+  try {
+    const r = await fetch(`${DD_BASE}/${ddVersion}/data/ko_KR/champion/${champId}.json`);
+    const j = await r.json();
+    const c = j.data && j.data[champId];
+    if (!c) return null;
+    const skillData = {
+      spells: c.spells.map(s => ({ id: s.id, name: s.name, image: s.image.full })),
+      passive: { name: c.passive.name, image: c.passive.image.full }
+    };
+    _champSkillCache[champId] = skillData;
+    try { localStorage.setItem(ckey, JSON.stringify(skillData)); } catch(e2) {}
+    return skillData;
+  } catch(e) { return null; }
+}
+
+function getSkillImgUrl(champId, skill) {
+  const skills = _champSkillCache[champId];
+  if (!skills) return '';
+  const map = { Q: 0, W: 1, E: 2, R: 3 };
+  if (skill === 'P' || skill === '패시브' || skill === '기본지속효과') {
+    return `${DD_BASE}/${ddVersion}/img/passive/${skills.passive.image}`;
+  }
+  if (map[skill] !== undefined && skills.spells[map[skill]]) {
+    return `${DD_BASE}/${ddVersion}/img/spell/${skills.spells[map[skill]].image}`;
+  }
+  return '';
+}
+
+function getSkillName(champId, skill) {
+  const skills = _champSkillCache[champId];
+  if (!skills) return '';
+  const map = { Q: 0, W: 1, E: 2, R: 3 };
+  if (skill === 'P' || skill === '패시브') return skills.passive.name;
+  if (map[skill] !== undefined && skills.spells[map[skill]]) return skills.spells[map[skill]].name;
+  return '';
+}
+
+function buildChangesHtml(changes, champId) {
+  const SKILL_COLOR = {Q:'#4FC3F7',W:'#81C784',E:'#FF8A65',R:'#CE93D8',P:'#FFD54F'};
+  return (changes||[]).map(ch => {
+    const skillColor = SKILL_COLOR[ch.skill] || '#8FA3B4';
+    let skillHtml = '';
+    if (ch.skill) {
+      skillHtml = `<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;">`;
+      const imgUrl = champId ? getSkillImgUrl(champId, ch.skill) : '';
+      if (imgUrl) {
+        skillHtml += `<img src="${imgUrl}" style="width:22px;height:22px;border-radius:3px;border:1px solid ${skillColor}55;" onerror="this.style.display='none'">`;
+      } else if (ch.skill !== '기본능력치') {
+        skillHtml += `<span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:4px;background:${skillColor}33;border:1px solid ${skillColor}66;font-size:10px;font-weight:700;color:${skillColor};">${ch.skill}</span>`;
+      }
+      const skillName = ch.skillName || (champId ? getSkillName(champId, ch.skill) : '');
+      if (skillName) {
+        skillHtml += `<span style="font-size:11px;font-weight:700;color:var(--white);">${skillName}</span>`;
+      }
+      skillHtml += '</div>';
+    }
+    const entriesHtml = (ch.entries||[]).map(e => {
+      const eColor = e.type==='buff' ? '#27AE60' : e.type==='nerf' ? '#E05050' : '#8FA3B4';
+      let inner = '';
+      if (e.label) inner += `<div style="font-size:9px;color:var(--text);letter-spacing:1px;margin-bottom:2px;">${e.label}</div>`;
+      if (e.before) {
+        const combined = (e.before||'') + ' → ' + (e.after||'');
+        if (combined.length <= 40) {
+          inner += `<div style="font-size:11px;"><span style="color:var(--text);text-decoration:line-through;">${e.before}</span><span style="color:var(--text);margin:0 4px;">→</span><span style="color:${eColor};font-weight:600;">${e.after||''}</span></div>`;
+        } else {
+          inner += `<div style="font-size:11px;color:var(--text);text-decoration:line-through;">${e.before}</div>`;
+          inner += `<div style="font-size:9px;color:var(--text);margin:1px 0;">↓</div>`;
+          inner += `<div style="font-size:11px;color:${eColor};font-weight:600;">${e.after||''}</div>`;
+        }
+      } else if (e.after) {
+        inner += `<div style="font-size:11px;color:${eColor};font-weight:600;">${e.after}</div>`;
+      }
+      return `<div style="margin-left:${ch.skill?'26px':'0'};margin-bottom:5px;">${inner}</div>`;
+    }).join('');
+    return `<div class="change-group">${skillHtml}${entriesHtml}</div>`;
+  }).join('');
+}
+
+async function openChampDetail(champId) {
+  const data = allPatchData[currentVersion];
+  const c = (data?.champions || []).find(ch => ch.champId === champId);
+  if (!c) return;
+  // 스킬 이미지 미리 로드
+  await loadChampSkills(champId);
+  const cd = getChampData(champId);
+  const name = cd?.name || c.nameKo || champId;
+  const imgSrc = champId ? `${DD_BASE}/${ddVersion}/img/champion/${champId}.png` : '';
+  const typeColor = c.type === 'buff' ? '#2DB87A' : c.type === 'nerf' ? '#E04040' : '#C8AA6E';
+  const typeLabel = c.type === 'buff' ? '버프' : c.type === 'nerf' ? '너프' : '조정';
+  const changesHtml = buildChangesHtml(c.changes, champId);
+
+  document.getElementById('modal-box').innerHTML = `
+    <div class="modal-header">
+      <img class="modal-splash" src="${imgSrc}" alt="${name}">
+      <div>
+        <div class="modal-title">${name}</div>
+        <div style="font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;color:${typeColor};letter-spacing:1.5px;margin-top:3px;">● ${typeLabel.toUpperCase()}</div>
+      </div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">${changesHtml || '<div class="empty">변경 상세 정보 없음</div>'}</div>`;
+  const m = document.getElementById('detail-modal');
+  m.style.display = 'flex';
+  requestAnimationFrame(() => requestAnimationFrame(() => m.classList.add('show')));
+}
+
+function openItemDetail(itemId) {
+  const data = allPatchData[currentVersion];
+  const item = (data?.items || []).find(i => i.itemId === itemId);
+  if (!item) return;
+  const imgSrc = itemId ? `${DD_BASE}/${ddVersion}/img/item/${itemId}.png` : '';
+  const typeColor = item.type === 'buff' ? '#2DB87A' : item.type === 'nerf' ? '#E04040' : '#C8AA6E';
+  const typeLabel = item.type === 'buff' ? '버프' : item.type === 'nerf' ? '너프' : '조정';
+  const changesHtml = buildChangesHtml(item.changes);
+
+  document.getElementById('modal-box').innerHTML = `
+    <div class="modal-header">
+      <img class="modal-splash" src="${imgSrc}" alt="${item.nameKo}">
+      <div>
+        <div class="modal-title">${item.nameKo || itemId}</div>
+        <div style="font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;color:${typeColor};letter-spacing:1.5px;margin-top:3px;">● ${typeLabel.toUpperCase()}</div>
+      </div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">${changesHtml || '<div class="empty">변경 상세 정보 없음</div>'}</div>`;
+  const m = document.getElementById('detail-modal');
+  m.style.display = 'flex';
+  requestAnimationFrame(() => requestAnimationFrame(() => m.classList.add('show')));
+}
+
+function closeModal() {
+  const m = document.getElementById('detail-modal');
+  m.classList.remove('show');
+  m.addEventListener('transitionend', () => { m.style.display = 'none'; }, { once: true });
+}
+
+function switchTab(tab, btn) {
+  currentTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  const tc = document.getElementById('tab-champs');
+  const ti = document.getElementById('tab-items');
+  if (tc) tc.style.display = tab === 'champs' ? '' : 'none';
+  if (ti) ti.style.display = tab === 'items' ? '' : 'none';
+}
+
+function setFilter(f, el) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  if (el) el.classList.add('active');
+  renderChampGrid();
+}
+
+function filterRender() { renderChampGrid(); }
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+// onclick에서 접근 가능하도록 window에 바인딩
+window.openChampDetail = openChampDetail;
+window.openItemDetail = openItemDetail;
+window.switchTab = switchTab;
+window.setFilter = setFilter;
+window.filterRender = filterRender;
+window.selectVersion = selectVersion;
+window.moveIndicator = moveIndicator;
+window.closeModal = closeModal;
+window.openChampDetail = openChampDetail;
+window.openItemDetail = openItemDetail;
+
+init();
+</script>
+</body>
+</html>

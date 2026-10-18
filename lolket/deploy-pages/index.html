@@ -1643,7 +1643,7 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
  
  
  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
- import { getDatabase, ref, set, get, onValue, remove, serverTimestamp, runTransaction }
+ import { getDatabase, ref, set, get, onValue, remove, serverTimestamp, runTransaction, query, limitToLast }
  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
  // Firebase 설정을 Worker에서 동적으로 로드 (키 노출 방지)
  const _workerBase = 'https://api.roonging.com';
@@ -1657,8 +1657,15 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
  
  const app = initializeApp(firebaseConfig);
  const db = getDatabase(app);
- 
- 
+
+ // 채팅 IIFE (일반 script)에서 접근할 수 있도록 전역 노출
+ window._fbDb       = db;
+ window._fbRef      = ref;
+ window._fbOnValue  = onValue;
+ window._fbQuery    = query;
+ window._fbLimitToLast = limitToLast;
+ window._fb = true; // 준비 완료 신호
+
  async function fbSet(matchId, data) {
  const cid = window._currentCommunityId || 'default';
  const path = matchId ? `communities/${cid}/matches/${matchId}` : null;
@@ -2717,6 +2724,7 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
     <button onclick="openPointsModal()" title="포인트 설정" style="padding:5px 10px;border-radius:2px;border:1px solid rgba(200,170,110,.4);background:rgba(200,170,110,.06);color:var(--gold);font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">💰 포인트</button>
     <button onclick="openSwapModal()" title="선수 교체" style="padding:5px 10px;border-radius:2px;border:1px solid rgba(157,72,224,.4);background:rgba(157,72,224,.06);color:#B97EEA;font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">🔄 교체</button>
     <button onclick="openDraftOrderModal()" title="팀뽑기 순서" style="padding:5px 10px;border-radius:2px;border:1px solid rgba(200,170,110,.4);background:rgba(200,170,110,.06);color:var(--gold);font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">🎲 뽑기</button>
+    <button onclick="reshuffleAuctionOrder()" title="선출 순서 재섞기" style="padding:5px 10px;border-radius:2px;border:1px solid rgba(200,170,110,.4);background:rgba(200,170,110,.06);color:var(--gold);font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">🔀 순서섞기</button>
     <button onclick="openHyperFearlessBan()" title="챔피언 추첨" style="padding:5px 10px;border-radius:2px;border:1px solid rgba(10,200,185,.4);background:rgba(10,200,185,.06);color:var(--blue-bright);font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">🎯 추첨</button>
     <button onclick="copyTeamBuilderImage()" title="이미지 복사" style="padding:5px 10px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--text-muted);font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">🖼 이미지</button>
   </div>
@@ -2747,8 +2755,19 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
         <div id="auction-discord-knob" style="position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:var(--text-muted);transition:all .2s;"></div>
       </div>
     </label>
+    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:4px 10px;border-radius:4px;border:1px solid rgba(200,170,110,.3);background:rgba(200,170,110,.04);transition:all .15s;" title="선출 순서를 미리 확인합니다">
+      <span style="font-family:'Rajdhani',sans-serif;font-size:12px;color:var(--gold);letter-spacing:1px;font-weight:700;white-space:nowrap;">선출순서</span>
+      <div id="auction-order-track" style="position:relative;width:36px;height:18px;border-radius:9px;background:var(--bg-panel);border:1px solid var(--border-subtle);transition:background .2s;cursor:pointer;flex-shrink:0;" onclick="toggleAuctionOrderVisible(event)">
+        <div id="auction-order-knob" style="position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:var(--text-muted);transition:all .2s;"></div>
+      </div>
+    </label>
   </div>
- </div> <div class="auction-body"> <div style="font-size:10px;color:var(--text-muted);letter-spacing:1px;font-family:'Rajdhani',sans-serif;">현재 매물</div> <div class="on-sale-card" id="on-sale-card" ondragover="onDragOver(event,'on-sale-card')" ondragleave="onDragLeave(event,'on-sale-card')" ondrop="onDropToSale(event)"> <div class="on-sale-empty">랜덤 선출 버튼을 눌러<br>경매를 시작하세요</div> </div> <div class="countdown-ring-wrap"> <div class="countdown-ring"> <svg width="64" height="64" viewBox="0 0 64 64"> <circle cx="32" cy="32" r="28"/> <circle cx="32" cy="32" r="28" class="progress-arc" id="cd-arc"/> </svg> <div class="countdown-num" id="cd-num">5</div> </div> <div style="display:flex;align-items:center;gap:6px;"> <div style="display:flex;flex-direction:column;align-items:center;gap:2px;"> <input type="number" id="cd-max-input" min="1" max="30" value="5" oninput="setCdMax(this.value)" style="width:42px;height:100%;background:var(--bg-dark);border:1px solid var(--border-subtle);border-radius:2px;padding:4px 6px;font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--gold);text-align:center;outline:none;"> <span style="font-size:8px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;letter-spacing:.5px;">MAX초</span> </div> <button class="btn-countdown" id="btn-cd" onclick="toggleCountdown()" disabled>카운트다운 <span style="font-size:9px;opacity:.6;letter-spacing:.5px;">(SPACE)</span></button> </div> </div> <div style="display:flex;gap:6px;"><button class="btn-pick-random" id="btn-pick" onclick="pickRandom()" style="flex:1;">🎲 랜덤 선출</button></div><div style="text-align:center;font-size:9px;color:var(--muted);font-family:Rajdhani,sans-serif;margin-top:3px;">또는 대기칸에서 카드를 위 매물칸으로 드래그</div> <div style="border-top:1px solid var(--border-subtle);padding-top:.5rem;display:flex;flex-direction:column;gap:6px;"> <button class="btn-primary" id="btn-bid-open" style="width:100%;font-size:12px;letter-spacing:2px;" disabled>낙찰 처리</button> <button class="btn-secondary" style="width:100%;font-size:11px;" onclick="sendToFail()">현재 매물 유찰 →</button> </div>
+ </div> <div class="auction-body"> <div style="font-size:10px;color:var(--text-muted);letter-spacing:1px;font-family:'Rajdhani',sans-serif;">현재 매물</div> <div class="on-sale-card" id="on-sale-card" ondragover="onDragOver(event,'on-sale-card')" ondragleave="onDragLeave(event,'on-sale-card')" ondrop="onDropToSale(event)"> <div class="on-sale-empty">랜덤 선출 버튼을 눌러<br>경매를 시작하세요</div> </div> <div class="countdown-ring-wrap"> <div class="countdown-ring"> <svg width="64" height="64" viewBox="0 0 64 64"> <circle cx="32" cy="32" r="28"/> <circle cx="32" cy="32" r="28" class="progress-arc" id="cd-arc"/> </svg> <div class="countdown-num" id="cd-num">5</div> </div> <div style="display:flex;align-items:center;gap:6px;"> <div style="display:flex;flex-direction:column;align-items:center;gap:2px;"> <input type="number" id="cd-max-input" min="1" max="30" value="5" oninput="setCdMax(this.value)" style="width:42px;height:100%;background:var(--bg-dark);border:1px solid var(--border-subtle);border-radius:2px;padding:4px 6px;font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--gold);text-align:center;outline:none;"> <span style="font-size:8px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;letter-spacing:.5px;">MAX초</span> </div> <button class="btn-countdown" id="btn-cd" onclick="toggleCountdown()" disabled>카운트다운 <span style="font-size:9px;opacity:.6;letter-spacing:.5px;">(SPACE)</span></button> </div> </div> <div style="display:flex;gap:6px;"><button class="btn-pick-random" id="btn-pick" onclick="pickRandom()" style="flex:1;">🎲 랜덤 선출</button></div><div style="text-align:center;font-size:9px;color:var(--muted);font-family:Rajdhani,sans-serif;margin-top:3px;">또는 대기칸에서 카드를 위 매물칸으로 드래그</div>
+<!-- 선출 순서 공개 UI -->
+<div id="auction-order-section" style="display:none;border-top:1px solid var(--border-subtle);margin-top:.5rem;padding-top:.5rem;">
+  <div style="font-family:'Rajdhani',sans-serif;font-size:10px;color:var(--gold);letter-spacing:1.5px;font-weight:700;margin-bottom:.4rem;">선출 순서</div>
+  <div id="auction-order-list" style="display:flex;align-items:center;overflow-x:auto;padding-bottom:6px;cursor:grab;user-select:none;" onmousedown="_orderDragStart(event)" onmousemove="_orderDragMove(event)" onmouseup="_orderDragEnd(event)" onmouseleave="_orderDragEnd(event)"></div>
+</div> <div style="border-top:1px solid var(--border-subtle);padding-top:.5rem;display:flex;flex-direction:column;gap:6px;"> <button class="btn-primary" id="btn-bid-open" style="width:100%;font-size:12px;letter-spacing:2px;" disabled>낙찰 처리</button> <button class="btn-secondary" style="width:100%;font-size:11px;" onclick="sendToFail()">현재 매물 유찰 →</button> </div>
 <div style="border-top:1px solid var(--border-subtle);padding:.75rem 1rem 1rem;">
   <div style="margin-bottom:.5rem;display:flex;align-items:center;justify-content:space-between;">
     <span style="font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:2px;color:var(--gold);">🏆 현재 매물 호가</span>
@@ -5462,9 +5481,12 @@ let cdValue=cdMax;
 let normalPool=[];
 let auctionPool=[];
 let failedMembers=[];
+let _auctionOrder=[]; // 미리 섞인 선출 순서
+let _auctionOrderVisible=false; // 선출순서 공개 토글 상태
 async function showScreen(id){
 document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
 document.getElementById(id).classList.add('active');
+currentScreen = id;
 }
 async function goBackToStage1(){
 if (!confirm('1단계로 돌아가면 내전 종류 선택이 초기화됩니다. 계속할까요?')) return;
@@ -5499,12 +5521,18 @@ const pips=document.querySelectorAll('.stage-pip');
 pips[3].classList.remove('active', 'done');
 pips[2].classList.remove('done'); pips[2].classList.add('active');
 bracketRounds=[]; extraMatches=[];
-const screen=matchType === 'normal'?'screen-3-normal':'screen-3-auction';
+const screen = matchType === 'normal' ? 'screen-3-normal' : matchType === 'lane' ? 'screen-3-lane' : 'screen-3-auction';
 showScreen(screen);
 match.status='팀 짜기';
 gaEvent('stage_progress', { stage: 3, match_type: matchType, community_id: window._currentCommunityId });
 await saveCurrentMatch();
 if (matchType === 'normal'){renderNormalPool(); renderNormalTeams(); checkNormalConditions();}
+else if (matchType === 'lane'){
+  // 이미 팀이 배치되어 있으면 초기화하지 않고 렌더만 다시
+  if (!laneTeams || !laneTeams.length) { initLaneBuilder(); }
+  else { renderLaneBuilder(); }
+  setTimeout(renderLaneRatioChart, 50);
+}
 else{renderAuctionPool(); renderAuctionTeams(); renderFailZone(); renderOnSale(); checkAuctionConditions();}
 toast('3단계로 돌아갔습니다', 'ok');
 }
@@ -5562,6 +5590,7 @@ auctionPool=[...members];
 failedMembers=[];
 onSaleMember=null;
 teams=[];
+_auctionOrder=_shuffleArr([...members]);
 showScreen('screen-3-auction');
 match.status='팀 짜기';
 await saveCurrentMatch();
@@ -5715,6 +5744,8 @@ async function goToStage4(){
 if (matchType === 'lane' && typeof convertLaneTeamsToTeams === 'function') {
   convertLaneTeamsToTeams();
 }
+// 4단계 진입 시 채팅 Firebase 구독 즉시 해제 (연결/다운로드 차단)
+if (typeof window._chatDetachFn === 'function') window._chatDetachFn();
 const pips=document.querySelectorAll('.stage-pip');
 pips[2].classList.remove('active'); pips[2].classList.add('done');
 pips[3].classList.add('active');
@@ -6071,17 +6102,141 @@ if (btnBidOn) btnBidOn.disabled=false;
 async function pickRandom(){
 if (auctionPool.length === 0) return;
 if (onSaleMember) return toast('현재 매물을 먼저 처리하세요', 'err');
-const idx=Math.floor(Math.random()*auctionPool.length);
-onSaleMember=auctionPool[idx];
-auctionPool.splice(idx, 1);
+// _auctionOrder에서 auctionPool에 아직 남아있는 첫 번째 멤버 선출
+var picked = null;
+for (var i = 0; i < _auctionOrder.length; i++) {
+  var candidate = _auctionOrder[i];
+  var poolIdx = auctionPool.findIndex(function(m){ return m.id === candidate.id; });
+  if (poolIdx !== -1) {
+    picked = auctionPool[poolIdx];
+    auctionPool.splice(poolIdx, 1);
+    break;
+  }
+}
+if (!picked) {
+  // fallback: 순서 배열에 없는 경우(유찰 후 재선출 등)
+  var idx=Math.floor(Math.random()*auctionPool.length);
+  picked=auctionPool[idx];
+  auctionPool.splice(idx, 1);
+}
+onSaleMember=picked;
 renderAuctionPool();
 renderOnSale();
+renderAuctionOrderUI(); // 선출 순서 UI 갱신
 if (typeof resetBidLeader === 'function') resetBidLeader();
 saveCurrentMatch();
 toast(`${onSaleMember.name} 선출!`, 'ok');
 // 상세 보기 모드 ON 이면 spotlight 업데이트
 var _spotlightOn = document.getElementById('a-teams-area') && document.getElementById('a-teams-area').style.display === 'none';
 if (_spotlightOn) renderAuctionSpotlight();
+}
+
+// ── 선출 순서 유틸 ──
+function _shuffleArr(arr) {
+  var a = arr.slice();
+  for (var i = a.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+  }
+  return a;
+}
+
+function reshuffleAuctionOrder() {
+  // 남은 pool + 현재 매물 + 유찰자 전부 포함해서 재섞기
+  var remaining = [...auctionPool];
+  if (onSaleMember) remaining.push(onSaleMember);
+  failedMembers.forEach(function(m){ remaining.push(m); });
+  _auctionOrder = _shuffleArr(remaining);
+  renderAuctionOrderUI();
+  saveCurrentMatch();
+  toast('선출 순서를 다시 섞었습니다', 'ok');
+}
+
+function toggleAuctionOrderVisible(e) {
+  if (e) { e.preventDefault(); e.stopPropagation(); }
+  _auctionOrderVisible = !_auctionOrderVisible;
+  // 토글 knob UI 갱신
+  var knob = document.getElementById('auction-order-knob');
+  var track = document.getElementById('auction-order-track');
+  if (knob && track) {
+    if (_auctionOrderVisible) {
+      knob.style.left = '18px'; knob.style.background = 'var(--gold)';
+      track.style.background = 'rgba(200,170,110,0.35)'; track.style.borderColor = 'rgba(200,170,110,0.6)';
+    } else {
+      knob.style.left = '2px'; knob.style.background = 'var(--text-muted)';
+      track.style.background = 'var(--bg-panel)'; track.style.borderColor = 'var(--border-subtle)';
+    }
+  }
+  var wrap = document.getElementById('auction-order-section');
+  if (wrap) wrap.style.display = _auctionOrderVisible ? 'block' : 'none';
+  // 비회원 팝업도 동기화
+  var uvWrap = document.getElementById('cap-bid-order-section');
+  if (uvWrap) uvWrap.style.display = _auctionOrderVisible ? 'block' : 'none';
+  if (_auctionOrderVisible) renderAuctionOrderUI();
+}
+
+function renderAuctionOrderUI() {
+  if (!_auctionOrderVisible) return;
+  // 현재 auctionPool에 남아있는 멤버 ID 목록
+  var poolIds = new Set(auctionPool.map(function(m){ return m.id; }));
+  var onSaleId = onSaleMember ? onSaleMember.id : null;
+
+  // _auctionOrder에서 아직 선출 안 된 순서 추출
+  var remaining = _auctionOrder.filter(function(m){
+    return poolIds.has(m.id) || m.id === onSaleId;
+  });
+
+  function makeCard(m, idx, isOnSale) {
+    var tier = _formatMemberTier(m);
+    var label = (m.name || '') + (tier ? ' ' + tier : '');
+    var bg = isOnSale
+      ? 'background:rgba(200,170,110,0.12);border-color:rgba(200,170,110,0.5);'
+      : 'background:var(--bg-dark);border-color:var(--border-subtle);';
+    var numColor = isOnSale ? 'color:var(--gold);' : 'color:var(--text-muted);';
+    return '<div style="display:inline-flex;align-items:center;flex-shrink:0;">'
+      + '<div style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 10px;border-radius:3px;border:1px solid;'+ bg +'min-width:72px;">'
+      + '<span style="font-family:\'Rajdhani\',sans-serif;font-size:9px;font-weight:700;letter-spacing:1px;'+ numColor +'">'+ (idx+1) +'</span>'
+      + '<span style="font-family:\'Noto Sans KR\',sans-serif;font-size:10px;color:var(--text-white);white-space:nowrap;text-align:center;line-height:1.3;">'+ _escHtml(label) +'</span>'
+      + '</div>'
+      + (idx < remaining.length - 1
+          ? '<span style="color:var(--text-muted);font-size:12px;padding:0 4px;flex-shrink:0;">→</span>'
+          : '')
+      + '</div>';
+  }
+
+  var html = remaining.map(function(m, idx) {
+    return makeCard(m, idx, m.id === onSaleId);
+  }).join('');
+
+  if (!html) html = '<span style="font-size:11px;color:var(--text-muted);font-family:\'Noto Sans KR\',sans-serif;">모든 선수가 선출되었습니다</span>';
+
+  var adminEl = document.getElementById('auction-order-list');
+  if (adminEl) adminEl.innerHTML = html;
+  var uvEl = document.getElementById('cap-bid-order-list');
+  if (uvEl) uvEl.innerHTML = html;
+}
+
+function _escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── 선출 순서 드래그 스크롤 ──
+var _orderDragging = false, _orderDragX = 0, _orderDragEl = null;
+function _orderDragStart(e) {
+  _orderDragging = true; _orderDragX = e.clientX; _orderDragEl = e.currentTarget;
+  _orderDragEl.style.cursor = 'grabbing';
+}
+function _orderDragMove(e) {
+  if (!_orderDragging || !_orderDragEl) return;
+  var dx = e.clientX - _orderDragX;
+  _orderDragEl.scrollLeft -= dx;
+  _orderDragX = e.clientX;
+}
+function _orderDragEnd(e) {
+  if (!_orderDragEl) return;
+  _orderDragging = false;
+  _orderDragEl.style.cursor = 'grab';
+  _orderDragEl = null;
 }
 
 // ── 경매 상세 보기 토글 ──
@@ -6236,7 +6391,11 @@ async function renderAuctionSpotlight() {
       if (cjRes.ok) {
         var cjJson = await cjRes.json();
         window._auctionChampMap = {};
-        Object.values(cjJson.data).forEach(function(c){ window._auctionChampMap[c.key] = c.id; });
+        window._auctionChampNameKo = {};
+        Object.values(cjJson.data).forEach(function(c){
+          window._auctionChampMap[c.key] = c.id;
+          window._auctionChampNameKo[c.key] = c.name; // 한글명
+        });
         _cm = window._auctionChampMap;
       }
     } catch(e) {}
@@ -6576,20 +6735,27 @@ async function renderAuctionSpotlight() {
     return wrNum >= 60 ? '#3CB371' : wrNum >= 50 ? '#5B9CF6' : '#E05050';
   }
   function _champIconHtml(c, size) {
-    var cn = _cm[String(c.champion_id)] || String(c.champion_id);
+    var ckey = String(c.champion_id);
+    var cn = _cm[ckey] || ckey;
+    var cnKo = (window._auctionChampNameKo && window._auctionChampNameKo[ckey]) || cn;
     var wrNum = (c.wins !== undefined && c.games) ? Math.round(c.wins / c.games * 100)
               : (c.win_rate !== undefined ? (c.win_rate <= 1 ? Math.round(c.win_rate*100) : Math.round(c.win_rate)) : null);
     var sz = size || 28;
-    var wrColor = wrNum !== null ? _champWrColor(wrNum) : 'var(--text-muted)';
-    // 아이콘(왼) + 오른쪽에 챔피언명/판수/승률 세로 배치
-    return '<div style="display:flex;align-items:center;gap:7px;padding:3px 0;">' +
+    var wrColor = wrNum !== null ? _champWrColor(wrNum) : '#5B6474';
+    var wrBg   = wrNum !== null ? (wrNum >= 60 ? 'rgba(10,200,185,0.12)' : wrNum < 45 ? 'rgba(192,48,48,0.12)' : 'rgba(91,100,116,0.15)') : 'transparent';
+    var wrBorder = wrNum !== null ? (wrNum >= 60 ? 'rgba(10,200,185,0.35)' : wrNum < 45 ? 'rgba(192,48,48,0.35)' : 'rgba(91,100,116,0.3)') : 'transparent';
+    return '<div style="display:flex;align-items:center;gap:8px;padding:3px 0;">' +
       '<img src="https://ddragon.leagueoflegends.com/cdn/'+DD_VER2+'/img/champion/'+cn+'.png"' +
-      ' style="width:'+sz+'px;height:'+sz+'px;border-radius:5px;border:1px solid var(--border-subtle);object-fit:cover;flex-shrink:0;"' +
+      ' style="width:'+sz+'px;height:'+sz+'px;border-radius:4px;border:1px solid rgba(200,170,110,0.25);object-fit:cover;flex-shrink:0;"' +
       ' onerror="this.style.opacity=0.2">' +
-      '<div style="display:flex;flex-direction:column;gap:1px;min-width:0;">' +
-        '<span style="font-family:Rajdhani,sans-serif;font-size:12px;font-weight:700;color:var(--text-primary);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+cn+'</span>' +
-        '<span style="font-family:Rajdhani,sans-serif;font-size:11px;color:var(--text-muted);line-height:1.2;">'+(c.games||0)+'판</span>' +
-        (wrNum !== null ? '<span style="font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;line-height:1.2;color:'+wrColor+';">'+wrNum+'%</span>' : '') +
+      '<div style="display:flex;flex-direction:column;gap:3px;min-width:0;">' +
+        '<span style="font-family:\'Black Han Sans\',sans-serif;font-size:13px;font-weight:400;color:#E8E0D0;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:0.5px;">'+cnKo+'</span>' +
+        '<div style="display:flex;gap:5px;align-items:center;">' +
+          '<span style="font-family:Rajdhani,sans-serif;font-size:12px;font-weight:600;color:#8A9BB0;line-height:1;">'+(c.games||0)+'게임</span>' +
+          (wrNum !== null ?
+            '<span style="font-family:Rajdhani,sans-serif;font-size:12px;font-weight:700;line-height:1;color:'+wrColor+';background:'+wrBg+';border:1px solid '+wrBorder+';padding:0 5px;border-radius:2px;">'+wrNum+'%</span>'
+            : '') +
+        '</div>' +
       '</div>' +
       '</div>';
   }
@@ -6624,7 +6790,7 @@ async function renderAuctionSpotlight() {
           '</div>' +
           // 챔피언 목록 (세로)
           '<div style="display:flex;flex-direction:column;gap:2px;width:100%;">' +
-          top3.map(function(c){ return _champIconHtml(c, 34); }).join('') +
+          top3.map(function(c){ return _champIconHtml(c, 42); }).join('') +
           '</div>' +
           '</div>';
       }).filter(Boolean);
@@ -13435,6 +13601,7 @@ _laneTeams: matchType === 'lane' ? laneTeams.map(function(t) {
 _normalPool: normalPool,
 _auctionPool: auctionPool,
 _failedMembers: failedMembers,
+_auctionOrder: _auctionOrder,
 _onSaleMember: onSaleMember,
 _bidLeader: _bidLeaderPrice > 0 ? { price: _bidLeaderPrice, team: _bidLeaderTeam, locked: _bidLocked } : null,
 _bidLocked: _bidLocked,
@@ -13479,6 +13646,10 @@ normalPool = snapshot._normalPool || [];
 auctionPool = snapshot._auctionPool || [];
 failedMembers = snapshot._failedMembers || [];
 onSaleMember = snapshot._onSaleMember || null;
+// 선출 순서 복원 (없으면 현재 pool 기준으로 새로 섞기)
+_auctionOrder = snapshot._auctionOrder && snapshot._auctionOrder.length > 0
+  ? snapshot._auctionOrder
+  : _shuffleArr([...(snapshot._auctionPool || []), ...(snapshot._failedMembers || [])].concat(snapshot._onSaleMember ? [snapshot._onSaleMember] : []));
 // 최고 경매가 복원
 if (snapshot._bidLeader && snapshot._bidLeader.price > 0) {
   _bidLeaderPrice = snapshot._bidLeader.price;
@@ -13581,6 +13752,10 @@ document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
 const el = document.getElementById(screenId);
 if (el) el.classList.add('active');
 currentScreen = screenId;
+// 채팅 visibility 업데이트 (showScreen/showScreenRaw를 우회하는 경로이므로 직접 호출)
+if (typeof window._updateChatVisibility === 'function') {
+  window._updateChatVisibility(screenId);
+}
 }
 async function goToList() {
 if (match && match.id) await saveCurrentMatch().catch(() => {});
@@ -17881,6 +18056,12 @@ function closeCaptainCodes() {
 
       <!-- 호가 결과 메시지 -->
       <div id="cap-bid-result" style="padding:.6rem 1rem;font-size:12px;font-family:'Noto Sans KR',sans-serif;display:none;"></div>
+
+      <!-- 선출 순서 공개 UI (비회원) -->
+      <div id="cap-bid-order-section" style="display:none;border-top:1px solid var(--border-subtle);padding:.75rem 1rem;">
+        <div style="font-family:'Rajdhani',sans-serif;font-size:10px;color:var(--gold);letter-spacing:1.5px;font-weight:700;margin-bottom:.4rem;">선출 순서</div>
+        <div id="cap-bid-order-list" style="display:flex;align-items:center;overflow-x:auto;padding-bottom:6px;cursor:grab;user-select:none;" onmousedown="_orderDragStart(event)" onmousemove="_orderDragMove(event)" onmouseup="_orderDragEnd(event)" onmouseleave="_orderDragEnd(event)"></div>
+      </div>
     </div>
 
   </div>
@@ -18114,6 +18295,36 @@ function _capBidUpdateFromSnapshot(snapshot) {
       leaderEl.style.display = 'none';
       leaderTeamEl.style.display = 'none';
     }
+  }
+
+  // 선출 순서: 비회원 팝업에서 snapshot의 _auctionOrder 반영
+  if (snapshot._auctionOrder && snapshot._auctionOrder.length > 0) {
+    _auctionOrder = snapshot._auctionOrder;
+  }
+  // 비회원 팝업에서의 선출 순서 렌더 (snapshot 기준)
+  if (_auctionOrderVisible) {
+    var _snapPool = snapshot._auctionPool || [];
+    var _snapOnSale = snapshot._onSaleMember;
+    var _snapPoolIds = new Set(_snapPool.map(function(m){ return m.id; }));
+    var _snapOnSaleId = _snapOnSale ? _snapOnSale.id : null;
+    var _remaining = _auctionOrder.filter(function(m){
+      return _snapPoolIds.has(m.id) || m.id === _snapOnSaleId;
+    });
+    function _mkCard2(m, idx, isOnSale) {
+      var tier = (typeof _formatMemberTier === 'function') ? _formatMemberTier(m) : (m.tier||'');
+      var label = (m.name||'') + (tier ? ' '+tier : '');
+      var bg = isOnSale ? 'background:rgba(200,170,110,0.12);border-color:rgba(200,170,110,0.5);' : 'background:var(--bg-dark);border-color:var(--border-subtle);';
+      var nc = isOnSale ? 'color:var(--gold);' : 'color:var(--text-muted);';
+      return '<div style="display:inline-flex;align-items:center;flex-shrink:0;">'
+        + '<div style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 10px;border-radius:3px;border:1px solid;'+bg+'min-width:72px;">'
+        + '<span style="font-family:\'Rajdhani\',sans-serif;font-size:9px;font-weight:700;letter-spacing:1px;'+nc+'">'+(idx+1)+'</span>'
+        + '<span style="font-family:\'Noto Sans KR\',sans-serif;font-size:10px;color:var(--text-white);white-space:nowrap;text-align:center;line-height:1.3;">'+String(label).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</span>'
+        + '</div>'
+        + (idx < _remaining.length-1 ? '<span style="color:var(--text-muted);font-size:12px;padding:0 4px;flex-shrink:0;">→</span>' : '')
+        + '</div>';
+    }
+    var _uvEl = document.getElementById('cap-bid-order-list');
+    if (_uvEl) _uvEl.innerHTML = _remaining.map(function(m,i){ return _mkCard2(m,i,m.id===_snapOnSaleId); }).join('') || '<span style="font-size:11px;color:var(--text-muted);">모든 선수가 선출되었습니다</span>';
   }
 }
 
@@ -21827,6 +22038,688 @@ function showLaneMismatchPopup(opts) {
 
   document.getElementById('modal-lane-mismatch').style.display = 'flex';
 }
+</script>
+
+<!-- ══════════════════════════════════════════════
+     실시간 채팅 플로팅 UI
+     - 3단계 편집 화면(screen-3-*) + 비회원 링크(screen-v)에서 표시
+     - Firebase onValue로 실시간 구독
+     - /chat-send Worker API로 메시지 전송
+════════════════════════════════════════════════ -->
+<style>
+/* 채팅 플로팅 버튼 */
+#chat-float-btn {
+  position: fixed;
+  bottom: 88px;
+  right: 24px;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0AC8B9 0%, #0a9e92 100%);
+  border: none;
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(10,200,185,0.4), 0 2px 6px rgba(0,0,0,0.4);
+  z-index: 9000;
+  transition: transform .15s, box-shadow .15s;
+}
+#chat-float-btn:hover { transform: scale(1.08); box-shadow: 0 6px 20px rgba(10,200,185,0.55), 0 2px 8px rgba(0,0,0,0.5); }
+#chat-float-btn svg { width: 24px; height: 24px; fill: #0A1628; }
+#chat-float-badge {
+  position: absolute;
+  top: -2px; right: -2px;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: #E84057;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  font-family: Rajdhani, sans-serif;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #0A1628;
+}
+
+/* 채팅 플로팅 창 */
+#chat-float-panel {
+  position: fixed;
+  bottom: 152px;
+  right: 24px;
+  width: 320px;
+  height: 420px;
+  max-height: calc(100vh - 120px);
+  background: #0D1B2E;
+  border: 1px solid rgba(10,200,185,0.25);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  z-index: 8999;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(10,200,185,0.1);
+  transform: translateY(20px);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform .25s cubic-bezier(.22,1,.36,1), opacity .2s ease;
+}
+#chat-float-panel.chat-open {
+  transform: translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+#chat-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: .6rem .9rem;
+  border-bottom: 1px solid rgba(200,170,110,0.12);
+  background: rgba(200,170,110,0.04);
+  border-radius: 12px 12px 0 0;
+  flex-shrink: 0;
+}
+#chat-panel-title {
+  font-family: Rajdhani, sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #0AC8B9;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+#chat-panel-close {
+  background: none;
+  border: none;
+  color: #5B6474;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: color .12s, background .12s;
+}
+#chat-panel-close:hover { color: #E8E0D0; background: rgba(255,255,255,0.06); }
+#chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: .6rem .75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  scroll-behavior: smooth;
+}
+#chat-messages::-webkit-scrollbar { width: 4px; }
+#chat-messages::-webkit-scrollbar-track { background: transparent; }
+#chat-messages::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+.chat-msg {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  max-width: 100%;
+}
+.chat-msg-meta {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.chat-msg-sender {
+  font-family: Rajdhani, sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  color: #5B6474;
+  letter-spacing: .3px;
+}
+.chat-msg-sender.is-captain { color: #C8AA6E; }
+.chat-msg-sender.is-admin { color: #0AC8B9; }
+.chat-msg-time {
+  font-family: Rajdhani, sans-serif;
+  font-size: 9px;
+  color: #3a4050;
+}
+.chat-msg-bubble {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 12px;
+  color: #C8D4E0;
+  line-height: 1.45;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 6px;
+  padding: 4px 8px;
+  word-break: break-word;
+  display: inline-block;
+  max-width: 100%;
+}
+.chat-msg-bubble.is-mine {
+  background: rgba(10,200,185,0.1);
+  border-color: rgba(10,200,185,0.2);
+  color: #E8E0D0;
+}
+.chat-msg-bubble.is-system {
+  background: transparent;
+  border: none;
+  color: #5B6474;
+  font-size: 10px;
+  font-style: italic;
+  padding: 2px 0;
+}
+.chat-msg-empty {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 11px;
+  color: #3a4050;
+  text-align: center;
+  margin: auto;
+}
+#chat-input-row {
+  display: flex;
+  gap: 6px;
+  padding: .5rem .75rem;
+  border-top: 1px solid rgba(255,255,255,0.05);
+  flex-shrink: 0;
+}
+#chat-input {
+  flex: 1;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 6px;
+  color: #E8E0D0;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 12px;
+  padding: 5px 8px;
+  outline: none;
+  transition: border-color .12s;
+}
+#chat-input:focus { border-color: rgba(10,200,185,0.4); }
+#chat-input::placeholder { color: #3a4050; }
+#chat-send-btn {
+  background: #0AC8B9;
+  border: none;
+  border-radius: 6px;
+  color: #0A1628;
+  font-family: Rajdhani, sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 0 10px;
+  cursor: pointer;
+  transition: background .12s;
+  flex-shrink: 0;
+}
+#chat-send-btn:hover { background: #0de8d7; }
+#chat-send-btn:disabled { background: #1a2a3a; color: #3a4050; cursor: not-allowed; }
+/* 닉네임 설정 화면 */
+#chat-nickname-screen {
+  flex: 1;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 1.5rem 1.25rem;
+}
+#chat-nickname-screen .chat-nick-title {
+  font-family: Rajdhani, sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: #E8E0D0;
+  letter-spacing: .5px;
+}
+#chat-nickname-screen .chat-nick-desc {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 11px;
+  color: #5B6474;
+  text-align: center;
+  line-height: 1.6;
+}
+#chat-nick-input {
+  width: 100%;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 6px;
+  color: #E8E0D0;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 13px;
+  padding: 8px 10px;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color .12s;
+  text-align: center;
+}
+#chat-nick-input:focus { border-color: rgba(10,200,185,0.5); }
+#chat-nick-input::placeholder { color: #3a4050; }
+#chat-nick-confirm {
+  width: 100%;
+  background: #0AC8B9;
+  border: none;
+  border-radius: 6px;
+  color: #0A1628;
+  font-family: Rajdhani, sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 8px 0;
+  cursor: pointer;
+  letter-spacing: .5px;
+  transition: background .12s;
+}
+#chat-nick-confirm:hover { background: #0de8d7; }
+#chat-nick-err {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 10px;
+  color: #E84057;
+  min-height: 14px;
+}
+/* 닉네임 표시 (헤더 내) */
+#chat-nick-label {
+  font-family: Rajdhani, sans-serif;
+  font-size: 10px;
+  color: #5B6474;
+  letter-spacing: .3px;
+  cursor: pointer;
+  border-bottom: 1px dashed #3a4050;
+  transition: color .12s;
+}
+#chat-nick-label:hover { color: #0AC8B9; }
+@media (max-width: 768px) {
+  #chat-float-btn { bottom: 72px; right: 1rem; width: 44px; height: 44px; }
+  #chat-float-panel { bottom: 128px; right: 1rem; width: calc(100vw - 2rem); max-width: 340px; height: 380px; }
+}
+</style>
+
+<!-- 채팅 플로팅 버튼 -->
+<button id="chat-float-btn" onclick="_chatToggle()" title="채팅">
+  <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <path d="M20 2H4C2.897 2 2 2.897 2 4v13c0 1.103.897 2 2 2h11l4 4V4c0-1.103-.897-2-2-2zm-3 9H7v-2h10v2zm-4-4H7V5h6v2z"/>
+  </svg>
+  <span id="chat-float-badge"></span>
+</button>
+
+<!-- 채팅 플로팅 창 -->
+<div id="chat-float-panel">
+  <div id="chat-panel-header">
+    <div id="chat-panel-title">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="#0AC8B9"><path d="M20 2H4C2.897 2 2 2.897 2 4v13c0 1.103.897 2 2 2h11l4 4V4c0-1.103-.897-2-2-2z"/></svg>
+      내전 채팅
+      <span id="chat-nick-label" onclick="_chatChangeNick()" title="닉네임 변경"></span>
+    </div>
+    <button id="chat-panel-close" onclick="_chatToggle()">✕</button>
+  </div>
+  <!-- 닉네임 설정 화면 -->
+  <div id="chat-nickname-screen">
+    <div class="chat-nick-title">💬 채팅 닉네임 설정</div>
+    <div class="chat-nick-desc">채팅에서 사용할 닉네임을 입력해 주세요.<br>닉네임은 언제든지 변경할 수 있습니다.</div>
+    <input id="chat-nick-input" type="text" placeholder="닉네임 입력 (2~12자)" maxlength="12"
+      onkeydown="if(event.key==='Enter'){_chatNickConfirm();}">
+    <div id="chat-nick-err"></div>
+    <button id="chat-nick-confirm" onclick="_chatNickConfirm()">채팅 시작</button>
+  </div>
+  <!-- 메시지 목록 -->
+  <div id="chat-messages"><div class="chat-msg-empty">아직 메시지가 없습니다</div></div>
+  <!-- 입력창 -->
+  <div id="chat-input-row">
+    <input id="chat-input" type="text" placeholder="메시지 입력..." maxlength="200"
+      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();_chatSend();}">
+    <button id="chat-send-btn" onclick="_chatSend()">전송</button>
+  </div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  // ── 상태 ──
+  var _chatOpen = false;
+  var _chatUnsub = null;
+  var _chatMessages = [];
+  var _chatUnread = 0;
+  var _chatLastTs = 0;
+  var _chatCid = null;
+  var _chatMid = null;
+  var _chatVisible = false;
+  var _chatNick = null; // 현재 세션의 닉네임 (일반 비회원용)
+
+  var _NICK_KEY = 'roonging_chat_nick'; // localStorage 키
+
+  // ── 채팅 버튼 표시 조건 ──
+  var _CHAT_SCREENS = ['screen-3-normal','screen-3-auction','screen-3-lane','screen-v'];
+  function _isChatScreen(scr) { return _CHAT_SCREENS.indexOf(scr) !== -1; }
+
+  // ── 발신자 정보 결정 (우선순위 순) ──
+  // 반환: { name, code, role, isAdmin, isCaptain, isGuest }
+  function _getSenderInfo() {
+    // 1) 관리자 — currentCommunity가 로드돼 있으면 편집페이지 = 관리자
+    if (typeof currentCommunity !== 'undefined' && currentCommunity) {
+      var cname = currentCommunity.name || '관리자';
+      return { name: cname + ' 관리자', role: 'admin', isAdmin: true };
+    }
+    // 2) 팀장 코드 인증 비회원
+    if (typeof _capBidCode !== 'undefined' && _capBidCode) {
+      var tname = (typeof _capBidTeamName !== 'undefined' ? _capBidTeamName : '팀장');
+      return { name: tname + ' 팀장', code: _capBidCode, role: 'captain', isCaptain: true };
+    }
+    // 3) 닉네임 설정한 일반 비회원
+    var nick = _chatNick || _loadNick();
+    if (nick) {
+      return { name: nick, role: 'guest', isGuest: true };
+    }
+    // 4) 닉네임 미설정
+    return { role: 'none' };
+  }
+
+  // 닉네임 로드/저장
+  function _loadNick() {
+    try { return localStorage.getItem(_NICK_KEY) || null; } catch(e) { return null; }
+  }
+  function _saveNick(nick) {
+    _chatNick = nick;
+    try { localStorage.setItem(_NICK_KEY, nick); } catch(e) {}
+    // 헤더 닉네임 레이블 갱신
+    var lbl = document.getElementById('chat-nick-label');
+    if (lbl) lbl.textContent = nick;
+  }
+
+  // ── 닉네임 설정 화면 표시/숨김 ──
+  function _showNickScreen() {
+    document.getElementById('chat-nickname-screen').style.display = 'flex';
+    document.getElementById('chat-messages').style.display = 'none';
+    document.getElementById('chat-input-row').style.display = 'none';
+    var nickInput = document.getElementById('chat-nick-input');
+    var savedNick = _loadNick();
+    if (nickInput) {
+      nickInput.value = savedNick || '';
+      setTimeout(function(){ nickInput.focus(); nickInput.select(); }, 200);
+    }
+    document.getElementById('chat-nick-err').textContent = '';
+  }
+
+  function _hideNickScreen() {
+    document.getElementById('chat-nickname-screen').style.display = 'none';
+    document.getElementById('chat-messages').style.display = 'flex';
+    document.getElementById('chat-input-row').style.display = 'flex';
+  }
+
+  // 닉네임 확인 버튼
+  window._chatNickConfirm = function() {
+    var input = document.getElementById('chat-nick-input');
+    var err   = document.getElementById('chat-nick-err');
+    if (!input) return;
+    var nick = input.value.trim();
+    if (nick.length < 2) { err.textContent = '닉네임은 2자 이상이어야 합니다'; return; }
+    if (nick.length > 12) { err.textContent = '닉네임은 12자 이하여야 합니다'; return; }
+    // 금지어: 관리자, 팀장
+    if (/관리자|팀장|admin/i.test(nick)) { err.textContent = '사용할 수 없는 닉네임입니다'; return; }
+    _saveNick(nick);
+    _hideNickScreen();
+    _renderMessages();
+    // Firebase 구독이 아직 안 됐으면 지금 시작
+    if (!_chatUnsub) _chatAttach();
+    setTimeout(function(){
+      var chatInput = document.getElementById('chat-input');
+      if (chatInput) chatInput.focus();
+    }, 100);
+  };
+
+  // 닉네임 변경 (헤더 레이블 클릭)
+  window._chatChangeNick = function() {
+    var sender = _getSenderInfo();
+    if (sender.isAdmin || sender.isCaptain) return; // 관리자/팀장은 변경 불가
+    _showNickScreen();
+  };
+
+  // ── 채팅창 열기/닫기 ──
+  window._chatToggle = function() {
+    if (_chatOpen) _chatClose(); else _chatOpenFn();
+  };
+
+  function _chatOpenFn() {
+    _chatOpen = true;
+    var panel = document.getElementById('chat-float-panel');
+    if (panel) panel.classList.add('chat-open');
+    _chatUnread = 0;
+    _chatLastTs = Date.now();
+    _updateBadge();
+    _updateNickLabel();
+
+    var sender = _getSenderInfo();
+    if (sender.role === 'none') {
+      // 닉네임 미설정 → 닉네임 화면 표시
+      _showNickScreen();
+    } else {
+      _hideNickScreen();
+      // 구독 메시지가 이미 있으면 즉시 렌더, 없으면 빈 상태로 표시
+      _renderMessages();
+      // Firebase 구독이 아직 안 됐으면 지금 시작
+      if (!_chatUnsub) _chatAttach();
+      setTimeout(function(){
+        var inp = document.getElementById('chat-input');
+        if (inp) inp.focus();
+      }, 250);
+    }
+  }
+
+  function _chatClose() {
+    _chatOpen = false;
+    var panel = document.getElementById('chat-float-panel');
+    if (panel) panel.classList.remove('chat-open');
+    _chatLastTs = Date.now();
+    _updateBadge();
+  }
+
+  function _updateNickLabel() {
+    var lbl = document.getElementById('chat-nick-label');
+    if (!lbl) return;
+    var sender = _getSenderInfo();
+    if (sender.isGuest && sender.name) {
+      lbl.textContent = sender.name;
+      lbl.title = '클릭하여 닉네임 변경';
+      lbl.style.display = 'inline';
+    } else {
+      lbl.style.display = 'none';
+    }
+  }
+
+  // ── 화면 표시 제어 ──
+  function _updateChatVisibility(screenId) {
+    var btn = document.getElementById('chat-float-btn');
+    if (!btn) return;
+    var show = _isChatScreen(screenId);
+    btn.style.display = show ? 'flex' : 'none';
+    _chatVisible = show;
+    if (!show && _chatOpen) _chatClose();
+    if (show) _chatInitForScreen(screenId);
+    else _chatDetach();
+  }
+  // enterMatchMode() 등 showScreen/showScreenRaw를 우회하는 경로에서 호출 가능하도록 전역 노출
+  window._updateChatVisibility = _updateChatVisibility;
+
+  // ── 내전 ID 파악 ──
+  function _getChatIds() {
+    if (typeof match !== 'undefined' && match && match.id && window._currentCommunityId) {
+      return { cid: window._currentCommunityId, mid: match.id };
+    }
+    var snap = window._uvLastSnapshot || window._uvSnapshot;
+    if (snap && snap.id) {
+      var cid = snap.communityId || window._currentCommunityId;
+      if (cid) return { cid: cid, mid: snap.id };
+    }
+    var mp = new URLSearchParams(location.search).get('match');
+    if (mp) {
+      var parts = mp.split('__');
+      if (parts.length >= 2) return { cid: parts[0], mid: parts.slice(1).join('__') };
+    }
+    return null;
+  }
+
+  // ── Firebase 구독 ──
+  function _chatInitForScreen(screenId, _retry) {
+    var ids = _getChatIds();
+    if (!ids) {
+      if ((_retry || 0) < 8) {
+        setTimeout(function(){ _chatInitForScreen(screenId, (_retry||0)+1); }, 600);
+      }
+      return;
+    }
+    if (_chatCid === ids.cid && _chatMid === ids.mid) return; // 이미 구독 중
+    _chatDetach();
+    _chatCid = ids.cid;
+    _chatMid = ids.mid;
+    _chatMessages = [];
+    _chatLastTs = 0;
+    _chatAttach();
+  }
+
+  var _CHAT_LIMIT = 100; // 최근 100개 메시지만 구독 (다운로드 절감)
+
+  function _chatAttach() {
+    if (!_chatCid || !_chatMid) return;
+    // Firebase는 type="module" 안에 있어서 window._fb* 로 노출
+    var _db  = window._fbDb;
+    var _ref = window._fbRef;
+    var _ov  = window._fbOnValue;
+    var _q   = window._fbQuery;
+    var _ltl = window._fbLimitToLast;
+    if (!_db || !_ref || !_ov) {
+      setTimeout(_chatAttach, 600); return;
+    }
+    try {
+      var chatPath = 'communities/' + _chatCid + '/matches/' + _chatMid + '/chat';
+      var chatRef  = _ref(_db, chatPath);
+      // limitToLast: 최근 N개만 받아 초기 다운로드 절감
+      var chatQuery = (_q && _ltl) ? _q(chatRef, _ltl(_CHAT_LIMIT)) : chatRef;
+      _chatUnsub = _ov(chatQuery, function(snap) {
+        var raw = snap.val() || {};
+        _chatMessages = Object.values(raw).sort(function(a,b){ return (a.ts||0)-(b.ts||0); });
+        _countUnread();
+        _renderMessages();
+      }, function(err) { console.warn('[chat] 구독 오류:', err.message); });
+    } catch(e) { console.warn('[chat] attach 오류:', e.message); }
+  }
+
+  function _chatDetach() {
+    if (_chatUnsub) { try { _chatUnsub(); } catch(e){} _chatUnsub = null; }
+    _chatCid = null; _chatMid = null;
+    _chatMessages = []; _chatUnread = 0;
+    _updateBadge();
+  }
+  // 외부(goToStage4 등)에서 호출 가능하도록 노출
+  window._chatDetachFn = _chatDetach;
+
+  // ── 미열람 뱃지 ──
+  function _countUnread() {
+    if (_chatOpen) { _chatLastTs = Date.now(); _chatUnread = 0; }
+    else { _chatUnread = _chatMessages.filter(function(m){ return (m.ts||0) > _chatLastTs; }).length; }
+    _updateBadge();
+  }
+  function _updateBadge() {
+    var badge = document.getElementById('chat-float-badge');
+    if (!badge) return;
+    if (_chatUnread > 0 && !_chatOpen) {
+      badge.style.display = 'flex';
+      badge.textContent = _chatUnread > 99 ? '99+' : String(_chatUnread);
+    } else { badge.style.display = 'none'; }
+  }
+
+  // ── 메시지 렌더 ──
+  function _renderMessages() {
+    var el = document.getElementById('chat-messages');
+    if (!el) return;
+    if (!_chatMessages.length) {
+      el.innerHTML = '<div class="chat-msg-empty">아직 메시지가 없습니다</div>';
+      return;
+    }
+    var sender = _getSenderInfo();
+    var myName = sender.name || null;
+    var html = _chatMessages.map(function(m) {
+      var isMine = !!(myName && m.sender === myName);
+      // 역할별 발신자 색상
+      var senderCls = m.isCaptain ? 'is-captain' : (m.isGuest ? '' : 'is-admin');
+      var ts = m.ts ? new Date(m.ts).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}) : '';
+      var bubbleCls = 'chat-msg-bubble' + (isMine ? ' is-mine' : '') + (m.type==='system' ? ' is-system' : '');
+      var senderLabel = _esc(m.sender||'');
+      if (m.teamName) senderLabel += ' <span style="color:#5B6474;font-weight:400">· ' + _esc(m.teamName) + '</span>';
+      return '<div class="chat-msg">' +
+        '<div class="chat-msg-meta">' +
+          '<span class="chat-msg-sender ' + senderCls + '">' + senderLabel + '</span>' +
+          '<span class="chat-msg-time">' + ts + '</span>' +
+        '</div>' +
+        '<div class="' + bubbleCls + '">' + _esc(m.message||'') + '</div>' +
+      '</div>';
+    }).join('');
+    el.innerHTML = html;
+    requestAnimationFrame(function(){ el.scrollTop = el.scrollHeight; });
+  }
+
+  function _esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ── 메시지 전송 ──
+  window._chatSend = function() {
+    var input = document.getElementById('chat-input');
+    var btn   = document.getElementById('chat-send-btn');
+    if (!input) return;
+    var text = input.value.trim();
+    if (!text || !_chatCid || !_chatMid) return;
+
+    var sender = _getSenderInfo();
+    if (sender.role === 'none') { _chatChangeNick(); return; } // 닉네임 없으면 닉네임 화면으로
+
+    btn.disabled = true;
+    var body = { matchId: _chatMid, communityId: _chatCid, message: text };
+
+    if (sender.isCaptain) {
+      // 팀장: captainCode로 인증
+      body.captainCode = sender.code;
+    } else if (sender.isAdmin) {
+      // 관리자(편집페이지): adminName만 전달, 별도 인증 없음
+      var cname = (typeof currentCommunity !== 'undefined' && currentCommunity) ? currentCommunity.name : null;
+      body.adminName = cname || '';
+    } else {
+      // 일반 비회원: nickname 전달
+      body.nickname = sender.name;
+    }
+
+    fetch((typeof RIOT_PROXY_URL !== 'undefined' ? RIOT_PROXY_URL : 'https://api.roonging.com') + '/chat-send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    }).then(function(r){ return r.json(); }).then(function(res) {
+      if (res.ok) { input.value = ''; }
+      else { console.warn('[chat] 전송 실패:', res.error); }
+    }).catch(function(e){ console.warn('[chat] 전송 오류:', e.message); })
+    .finally(function(){ btn.disabled = false; input.focus(); });
+  };
+
+  // ── showScreen / showScreenRaw 후킹 ──
+  function _hookShowScreen() {
+    var _origShow = window.showScreen;
+    var _origRaw  = window.showScreenRaw;
+    if (typeof _origShow === 'function') {
+      window.showScreen = async function(id) {
+        var result = await _origShow.call(this, id);
+        _updateChatVisibility(id);
+        return result;
+      };
+    }
+    if (typeof _origRaw === 'function') {
+      window.showScreenRaw = function(id) {
+        _origRaw.call(this, id);
+        _updateChatVisibility(id);
+      };
+    }
+  }
+
+  // ── 초기화 ──
+  document.addEventListener('DOMContentLoaded', function() {
+    // 저장된 닉네임 미리 로드
+    _chatNick = _loadNick();
+    setTimeout(_hookShowScreen, 100);
+    setTimeout(function() {
+      if (typeof currentScreen !== 'undefined' && _isChatScreen(currentScreen)) {
+        _updateChatVisibility(currentScreen);
+      }
+    }, 500);
+  });
+
+})();
 </script>
 </body>
 </html>
