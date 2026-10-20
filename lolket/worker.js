@@ -103,6 +103,13 @@ export default {
       return fetch(request);
     }
 
+    // 크롤러가 ranking 페이지 요청 시 동적 OG HTML 반환
+    if (path === '/ranking' || path === '/ranking.html') {
+      const ua = request.headers.get('User-Agent') || '';
+      if (isCrawler(ua)) return handleOgProxyRanking(request, env);
+      return fetch(request);
+    }
+
     // 디스코드 Interactions
     // 디스코드 슬래시 명령어 등록
     // 길드 커맨드 삭제 (등록된 모든 커뮤니티의 discordServerId 기반)
@@ -3691,7 +3698,7 @@ function isCrawler(userAgent) {
   return CRAWLERS.some(c => userAgent.includes(c));
 }
 
-// 커뮤니티별 OG 설정
+// 커뮤니티별 OG 설정 (stats 페이지)
 const COMMUNITY_OG = {
   'c_1786029938203': {
     image: 'https://roonging.com/og-hyeokgo.png',
@@ -3702,6 +3709,20 @@ const COMMUNITY_OG = {
     image: 'https://roonging.com/og-banner.jpg',
     title: '롤하냥 내전전적',
     description: '내전 전적 | 통계 | 분석 플랫폼'
+  },
+  'c_1792039312075': {
+    image: 'https://roonging.com/og-rolhaejo.png',
+    title: '롤해조 내전 전적',
+    description: '롤 내전 커뮤니티 No.1 롤해조의 내전 전적 페이지입니다.'
+  }
+};
+
+// 커뮤니티별 OG 설정 (ranking 페이지)
+const COMMUNITY_OG_RANKING = {
+  'c_1792039312075': {
+    image: 'https://roonging.com/og-rolhaejo.png',
+    title: '롤해조 주간 랭킹',
+    description: '롤 내전 커뮤니티 No.1 롤해조의 주간 랭킹 페이지입니다.'
   }
 };
 
@@ -3716,6 +3737,46 @@ async function handleOgProxy(request, env) {
   const ogTitle = og ? og.title : '룽잉닷컴 전적 사이트';
   const ogDesc = og ? og.description : 'LoL 내전 전적 통계 플랫폼';
   const pageUrl = 'https://roonging.com/stats?server_id=' + serverId + '&cid=' + cid;
+
+  const html = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta property="og:type" content="website">
+<meta property="og:url" content="${pageUrl}">
+<meta property="og:title" content="${ogTitle}">
+<meta property="og:description" content="${ogDesc}">
+<meta property="og:image" content="${ogImage}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="${ogTitle}">
+<meta name="twitter:description" content="${ogDesc}">
+<meta name="twitter:image" content="${ogImage}">
+<meta http-equiv="refresh" content="0; url=${pageUrl}">
+<title>${ogTitle}</title>
+</head>
+<body>
+<script>location.replace('${pageUrl}');</script>
+</body>
+</html>`;
+
+  return new Response(html, {
+    headers: { 'Content-Type': 'text/html;charset=UTF-8', 'Cache-Control': 'public,max-age=3600' }
+  });
+}
+
+async function handleOgProxyRanking(request, env) {
+  const url = new URL(request.url);
+  const cid = url.searchParams.get('cid') || '';
+  const serverId = url.searchParams.get('server_id') || '';
+
+  // 커뮤니티별 OG 설정 확인
+  const og = COMMUNITY_OG_RANKING[cid];
+  const ogImage = og ? og.image : 'https://roonging.com/og-image-v2.png';
+  const ogTitle = og ? og.title : '룽잉닷컴 랭킹';
+  const ogDesc = og ? og.description : 'LoL 내전 주간 랭킹 플랫폼';
+  const pageUrl = 'https://roonging.com/ranking?cid=' + cid + '&server_id=' + serverId;
 
   const html = `<!DOCTYPE html>
 <html>
