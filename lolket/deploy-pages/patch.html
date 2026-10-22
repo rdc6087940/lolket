@@ -38,9 +38,10 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
 .official-link:hover{background:rgba(200,170,110,.15);}
 
 /* 버전 셀렉터 */
-.version-bar{background:var(--bg-panel);border-bottom:1px solid var(--border);padding:.5rem 1.5rem;display:flex;align-items:center;gap:8px;overflow-x:auto;position:relative;}
-.version-bar::-webkit-scrollbar{height:3px;}
-.version-bar::-webkit-scrollbar-thumb{background:var(--border);}
+.version-bar{background:var(--bg-panel);border-bottom:1px solid var(--border);padding:.5rem 0;position:relative;}
+.version-bar-inner{max-width:1100px;margin:0 auto;padding:0 1.5rem;display:flex;align-items:center;gap:8px;overflow-x:auto;position:relative;}
+.version-bar-inner::-webkit-scrollbar{height:3px;}
+.version-bar-inner::-webkit-scrollbar-thumb{background:var(--border);}
 .ver-btn{font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:.5px;padding:4px 12px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text);cursor:pointer;white-space:nowrap;transition:color .15s, border-color .15s;flex-shrink:0;position:relative;z-index:1;}
 .ver-btn.active{border-color:transparent;color:var(--blue);}
 .ver-btn:hover:not(.active){border-color:var(--white);color:var(--white);}
@@ -152,8 +153,10 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
   </div>
 </div>
 
-<div id="version-bar" style="background:var(--bg-panel);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;position:relative;padding:.65rem 1.5rem;height:44px;box-sizing:border-box;">
-  <div class="ver-indicator" id="ver-indicator"></div>
+<div id="version-bar" class="version-bar">
+  <div class="version-bar-inner" id="version-bar-inner" style="overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;height:44px;box-sizing:border-box;">
+    <div class="ver-indicator" id="ver-indicator"></div>
+  </div>
 </div>
 
 <div class="tab-wrap">
@@ -264,30 +267,31 @@ async function init() {
 }
 
 function renderVersionBar() {
-  const bar = document.getElementById('version-bar');
+  const inner = document.getElementById('version-bar-inner');
   // 인디케이터는 유지, 버튼만 교체
   const indicator = document.getElementById('ver-indicator');
-  bar.innerHTML = '';
-  bar.appendChild(indicator);
+  inner.innerHTML = '';
+  inner.appendChild(indicator);
   patchVersions.forEach(v => {
     const label = v.replace(/_/g, '.');
     const btn = document.createElement('button');
     btn.className = 'ver-btn' + (v === currentVersion ? ' active' : '');
     btn.textContent = label;
     btn.onclick = () => selectVersion(v);
-    bar.appendChild(btn);
+    inner.appendChild(btn);
   });
   requestAnimationFrame(() => moveIndicator());
 }
 
 function moveIndicator() {
-  const bar = document.getElementById('version-bar');
+  const bar = document.getElementById('version-bar-inner');
   const indicator = document.getElementById('ver-indicator');
   const activeBtn = bar.querySelector('.ver-btn.active');
   if (!activeBtn || !indicator) return;
   const barRect = bar.getBoundingClientRect();
   const btnRect = activeBtn.getBoundingClientRect();
   indicator.style.left = (btnRect.left - barRect.left + bar.scrollLeft) + 'px';
+
   indicator.style.width = btnRect.width + 'px';
 }
 
