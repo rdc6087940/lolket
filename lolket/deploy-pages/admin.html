@@ -327,7 +327,8 @@ body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg-darkest); c
           <div>
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;">
               <div class="section-title" style="margin-bottom:0;flex:1;">등록된 커넥트 서버</div>
-              <div style="display:flex;gap:6px;">
+              <div style="display:flex;gap:6px;align-items:center;">
+                <input id="connect-search" type="text" placeholder="서버명 검색…" oninput="_connectPage=0;renderConnectList()" style="padding:4px 8px;font-size:11px;font-family:'Rajdhani',sans-serif;background:var(--bg2);border:1px solid var(--border);border-radius:2px;color:var(--text);width:120px;outline:none;">
                 <button class="btn-sm" style="border-color:rgba(10,200,185,.4);color:var(--blue-bright);background:rgba(10,200,185,.06);" onclick="syncDeeplolServers()">🔄 딥롤 전체 업데이트</button>
                 <button class="btn-sm btn-blue" onclick="openAddConnectModal()">+ 추가</button>
               </div>
@@ -338,10 +339,11 @@ body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg-darkest); c
                   <th>서버명</th><th>서버 ID</th><th>멤버수</th><th>일일게임</th><th>액션</th>
                 </tr></thead>
                 <tbody id="connect-list-tbody">
-                  <tr class="loading-row"><td colspan="3"><div class="spinner" style="margin:0 auto;"></div></td></tr>
+                  <tr class="loading-row"><td colspan="5"><div class="spinner" style="margin:0 auto;"></div></td></tr>
                 </tbody>
               </table>
             </div>
+            <div id="connect-list-pagination" style="display:flex;align-items:center;justify-content:center;gap:4px;padding:.5rem 0;"></div>
           </div>
 
           <!-- 유저 소속 분석 -->
@@ -360,6 +362,28 @@ body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg-darkest); c
           </div>
 
         </div>
+
+        <!-- 커뮤니티 멤버 중복 비교 -->
+        <div style="margin-top:1.5rem;">
+          <div class="section-title">커뮤니티 멤버 중복 비교</div>
+          <div class="table-wrap" style="padding:1rem;">
+            <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin-bottom:1rem;">
+              <div class="form-group" style="margin-bottom:0;">
+                <label class="form-label">커뮤니티 A 서버 ID</label>
+                <input class="form-input" type="text" id="mc-server-a" placeholder="예) 12345" style="width:180px;">
+              </div>
+              <div class="form-group" style="margin-bottom:0;">
+                <label class="form-label">커뮤니티 B 서버 ID</label>
+                <input class="form-input" type="text" id="mc-server-b" placeholder="예) 67890" style="width:180px;" onkeydown="if(event.key==='Enter')runMemberCompare()">
+              </div>
+              <button class="btn-sm btn-blue" onclick="runMemberCompare()">🔍 비교 조회</button>
+            </div>
+            <div id="mc-result">
+              <div style="text-align:center;color:var(--muted);font-size:12px;padding:1.5rem;">서버 ID를 입력하고 비교 조회를 실행하세요</div>
+            </div>
+          </div>
+        </div>
+
       </div>
 
       <!-- ⚙️ 시스템 설정 -->
@@ -865,21 +889,8 @@ async function syncDeeplolServers() {
     _trackedConnects = updated;
 
     // 테이블 다시 렌더링
-    const rows = Object.values(_trackedConnects)
-      .filter(function(c) { return c; })
-      .sort(function(a, b) { return (b.pNum || 0) - (a.pNum || 0); })
-      .map(function(c) { return [c.serverId || '', c]; });
-    document.getElementById('connect-list-tbody').innerHTML = rows.length
-      ? rows.map(([id, c]) => `
-          <tr>
-            <td><span style="font-weight:600;">${esc(c.name||'—')}</span></td>
-            <td><span style="font-family:Rajdhani,sans-serif;font-size:11px;color:var(--muted);">${esc(c.serverId||id)}</span></td>
-            <td><span style="font-family:Rajdhani,sans-serif;font-size:11px;color:var(--text);">${c.pNum != null ? c.pNum.toLocaleString() + '명' : '—'}</span></td>
-            <td><span style="font-family:Rajdhani,sans-serif;font-size:11px;color:var(--blue-bright);">${c.todayGames != null ? c.todayGames + '게임' : '—'}</span></td>
-            <td><button class="btn-xs btn-red" onclick="removeConnect('${esc(id)}')">제거</button></td>
-          </tr>`)
-        .join('')
-      : '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:1.5rem;">등록된 커넥트 없음</td></tr>';
+    _connectPage = 0;
+    renderConnectList();
 
     alert(`✅ ${list.length}개 커넥트 서버 업데이트 완료!`);
   } catch(e) {
@@ -894,6 +905,52 @@ var _trackedConnects = {}; // { id: { name, serverId } }
 var _connectCache = {};    // { puuId: { ts, results: [...] } }
 const DEEPLOL_API = 'https://b2c-api-cdn.deeplol.gg';
 const CONNECT_CACHE_TTL = 24 * 60 * 60 * 1000; // 24시간
+const CONNECT_PAGE_SIZE = 10;
+var _connectPage = 0; // 현재 페이지 (0-based)
+
+function renderConnectList() {
+  const q = ((document.getElementById('connect-search') || {}).value || '').trim().toLowerCase();
+  // 멤버수 내림차순 정렬 + 검색 필터
+  let rows = Object.entries(_trackedConnects)
+    .filter(([id, c]) => !q || (c.name || '').toLowerCase().includes(q) || (c.serverId || id).toLowerCase().includes(q))
+    .sort((a, b) => (b[1].pNum || 0) - (a[1].pNum || 0));
+  const total = rows.length;
+  const totalPages = Math.ceil(total / CONNECT_PAGE_SIZE) || 1;
+  if (_connectPage >= totalPages) _connectPage = Math.max(0, totalPages - 1);
+  const pageRows = rows.slice(_connectPage * CONNECT_PAGE_SIZE, (_connectPage + 1) * CONNECT_PAGE_SIZE);
+
+  document.getElementById('connect-list-tbody').innerHTML = pageRows.length
+    ? pageRows.map(([id, c]) => `
+        <tr>
+          <td><span style="font-weight:600;">${esc(c.name||'—')}</span></td>
+          <td><span style="font-family:Rajdhani,sans-serif;font-size:11px;color:var(--muted);">${esc(c.serverId||id)}</span></td>
+          <td><span style="font-family:Rajdhani,sans-serif;font-size:11px;color:var(--text);">${c.pNum != null ? c.pNum.toLocaleString() + '명' : '—'}</span></td>
+          <td><span style="font-family:Rajdhani,sans-serif;font-size:11px;color:var(--blue-bright);">${c.todayGames != null ? c.todayGames + '게임' : '—'}</span></td>
+          <td><button class="btn-xs btn-red" onclick="removeConnect('${esc(id)}')">제거</button></td>
+        </tr>`)
+      .join('')
+    : '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:1.5rem;">등록된 커넥트 없음</td></tr>';
+
+  // 페이지네이션 UI
+  const pgEl = document.getElementById('connect-list-pagination');
+  if (!pgEl) return;
+  if (totalPages <= 1) { pgEl.innerHTML = ''; return; }
+
+  const btnStyle = (active) => `padding:3px 9px;border-radius:2px;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;border:1px solid ${active ? 'rgba(10,200,185,.5)' : 'var(--border)'};background:${active ? 'rgba(10,200,185,.12)' : 'transparent'};color:${active ? 'var(--blue)' : 'var(--muted)'};`;
+  let pgHtml = `<span style="font-family:'Rajdhani',sans-serif;font-size:11px;color:var(--muted);margin-right:4px;">${total}개 · </span>`;
+  pgHtml += `<button style="${btnStyle(false)}" onclick="_connectPage=Math.max(0,_connectPage-1);renderConnectList()" ${_connectPage===0?'disabled':''}>‹</button>`;
+  // 현재 페이지 기준 앞뒤 2개씩 최대 5개 버튼
+  let pgStart = Math.max(0, _connectPage - 2);
+  let pgEnd = Math.min(totalPages - 1, pgStart + 4);
+  if (pgEnd - pgStart < 4) pgStart = Math.max(0, pgEnd - 4);
+  if (pgStart > 0) pgHtml += `<span style="font-family:'Rajdhani',sans-serif;font-size:11px;color:var(--muted);padding:0 2px;">…</span>`;
+  for (let i = pgStart; i <= pgEnd; i++) {
+    pgHtml += `<button style="${btnStyle(i===_connectPage)}" onclick="_connectPage=${i};renderConnectList()">${i+1}</button>`;
+  }
+  if (pgEnd < totalPages - 1) pgHtml += `<span style="font-family:'Rajdhani',sans-serif;font-size:11px;color:var(--muted);padding:0 2px;">…</span>`;
+  pgHtml += `<button style="${btnStyle(false)}" onclick="_connectPage=Math.min(${totalPages-1},_connectPage+1);renderConnectList()" ${_connectPage===totalPages-1?'disabled':''}>›</button>`;
+  pgEl.innerHTML = pgHtml;
+}
 
 async function loadConnectTab() {
   document.getElementById('connect-list-tbody').innerHTML =
@@ -907,18 +964,8 @@ async function loadConnectTab() {
     } else {
       _trackedConnects = j || {};
     }
-    const rows = Object.entries(_trackedConnects);
-    document.getElementById('connect-list-tbody').innerHTML = rows.length
-      ? rows.map(([id, c]) => `
-          <tr>
-            <td><span style="font-weight:600;">${esc(c.name||'—')}</span></td>
-            <td><span style="font-family:Rajdhani,sans-serif;font-size:11px;color:var(--muted);">${esc(c.serverId||id)}</span></td>
-            <td><span style="font-family:Rajdhani,sans-serif;font-size:11px;color:var(--text);">${c.pNum != null ? c.pNum.toLocaleString() + '명' : '—'}</span></td>
-            <td><span style="font-family:Rajdhani,sans-serif;font-size:11px;color:var(--blue-bright);">${c.todayGames != null ? c.todayGames + '게임' : '—'}</span></td>
-            <td><button class="btn-xs btn-red" onclick="removeConnect('${esc(id)}')">제거</button></td>
-          </tr>`)
-        .join('')
-      : '<tr><td colspan="3" style="text-align:center;color:var(--muted);padding:1.5rem;">등록된 커넥트 없음</td></tr>';
+    _connectPage = 0;
+    renderConnectList();
     // 캐시 로드 (localStorage)
     _connectCache = {};
     try {
@@ -1078,6 +1125,325 @@ function renderConnectResult(results, name, tag, ts, fromCache) {
     </table>`;
 }
 
+
+// ── 커뮤니티 멤버 중복 비교 ──
+var _mcOverlapItems = [];
+var _mcNameA = '', _mcNameB = '';
+
+function renderMcChart(nameA, nameB, items) {
+  const wrap = document.getElementById('mc-chart-wrap');
+  if (!wrap) return;
+
+  const now = Date.now();
+  const DAY = 86400000;
+  const PERIODS = [
+    { label: '1주 이내',   max: 7   * DAY },
+    { label: '1개월 이내', max: 30  * DAY },
+    { label: '3개월 이내', max: 90  * DAY },
+    { label: '6개월 이내', max: 180 * DAY },
+    { label: '6개월 이상', max: Infinity  }
+  ];
+
+  // 각 시기별 atob / btoa 카운트
+  const buckets = PERIODS.map(() => ({ atob: 0, btoa: 0, unknown: 0 }));
+
+  items.forEach(({ mA, mB }) => {
+    const tsA = mA.creation_timestamp || mA.last_game_at || mA.lastAt || 0;
+    const tsB = mB.creation_timestamp || mB.last_game_at || mB.lastAt || 0;
+    const nA = tsA ? (tsA > 1e12 ? tsA : tsA * 1000) : 0;
+    const nB = tsB ? (tsB > 1e12 ? tsB : tsB * 1000) : 0;
+
+    if (!nA || !nB) { buckets[4].unknown++; return; }
+
+    // 유출 기준: 나중에 활동한 커뮤니티의 최근게임 날짜로 시기 분류
+    const laterTs = Math.max(nA, nB);
+    const elapsed = now - laterTs;
+    const direction = nA < nB ? 'atob' : 'btoa'; // A가 더 오래됨 → A→B 유입
+
+    let placed = false;
+    for (let i = 0; i < PERIODS.length; i++) {
+      if (elapsed < PERIODS[i].max) { buckets[i][direction]++; placed = true; break; }
+    }
+    if (!placed) buckets[4][direction]++;
+  });
+
+  const maxVal = Math.max(...buckets.map(b => b.atob + b.btoa + b.unknown), 1);
+  const COLOR_ATOB = 'rgba(10,200,185,.75)';
+  const COLOR_BTOA = 'rgba(245,158,11,.75)';
+  const COLOR_UNK  = 'rgba(120,120,140,.4)';
+  const BAR_H = 28;
+  const LABEL_W = 90;
+  const CHART_W = 340;
+
+  let svgRows = '';
+  PERIODS.forEach((p, i) => {
+    const b = buckets[i];
+    const total = b.atob + b.btoa + b.unknown;
+    const wAtob  = Math.round((b.atob  / maxVal) * CHART_W);
+    const wBtoa  = Math.round((b.btoa  / maxVal) * CHART_W);
+    const wUnk   = Math.round((b.unknown / maxVal) * CHART_W);
+    const y = i * (BAR_H + 8);
+
+    svgRows += `
+      <text x="${LABEL_W - 6}" y="${y + BAR_H / 2 + 5}" text-anchor="end"
+        font-family="Rajdhani,sans-serif" font-size="11" fill="var(--muted)">${p.label}</text>`;
+
+    // 스택 바: atob | btoa | unknown
+    let xOff = LABEL_W;
+    if (wAtob > 0) {
+      svgRows += `<rect x="${xOff}" y="${y}" width="${wAtob}" height="${BAR_H}" rx="2" fill="${COLOR_ATOB}"/>`;
+      if (wAtob > 20) svgRows += `<text x="${xOff + wAtob/2}" y="${y + BAR_H/2 + 4}" text-anchor="middle"
+        font-family="Rajdhani,sans-serif" font-size="10" font-weight="700" fill="#fff">${b.atob}</text>`;
+      xOff += wAtob;
+    }
+    if (wBtoa > 0) {
+      svgRows += `<rect x="${xOff}" y="${y}" width="${wBtoa}" height="${BAR_H}" rx="2" fill="${COLOR_BTOA}"/>`;
+      if (wBtoa > 20) svgRows += `<text x="${xOff + wBtoa/2}" y="${y + BAR_H/2 + 4}" text-anchor="middle"
+        font-family="Rajdhani,sans-serif" font-size="10" font-weight="700" fill="#fff">${b.btoa}</text>`;
+      xOff += wBtoa;
+    }
+    if (wUnk > 0) {
+      svgRows += `<rect x="${xOff}" y="${y}" width="${wUnk}" height="${BAR_H}" rx="2" fill="${COLOR_UNK}"/>`;
+      xOff += wUnk;
+    }
+
+    // 오른쪽 총계
+    svgRows += `<text x="${LABEL_W + CHART_W + 8}" y="${y + BAR_H/2 + 4}"
+      font-family="Rajdhani,sans-serif" font-size="11" fill="var(--muted)">${total}명</text>`;
+  });
+
+  const svgH = PERIODS.length * (BAR_H + 8) - 8 + 10;
+
+  wrap.innerHTML = `
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:1rem;">
+      <div style="font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;color:var(--text);margin-bottom:.6rem;">
+        📊 시기별 유입·유출 분포
+      </div>
+      <svg viewBox="0 0 ${LABEL_W + CHART_W + 60} ${svgH + 10}" style="width:100%;max-width:520px;overflow:visible;">
+        <g transform="translate(0,5)">${svgRows}</g>
+      </svg>
+      <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:.6rem;">
+        <span style="display:flex;align-items:center;gap:5px;font-family:'Rajdhani',sans-serif;font-size:11px;color:var(--muted);">
+          <span style="width:12px;height:12px;border-radius:2px;background:${COLOR_ATOB};display:inline-block;"></span>
+          ${esc(nameA)} → ${esc(nameB)}
+        </span>
+        <span style="display:flex;align-items:center;gap:5px;font-family:'Rajdhani',sans-serif;font-size:11px;color:var(--muted);">
+          <span style="width:12px;height:12px;border-radius:2px;background:${COLOR_BTOA};display:inline-block;"></span>
+          ${esc(nameB)} → ${esc(nameA)}
+        </span>
+        <span style="display:flex;align-items:center;gap:5px;font-family:'Rajdhani',sans-serif;font-size:11px;color:var(--muted);">
+          <span style="width:12px;height:12px;border-radius:2px;background:${COLOR_UNK};display:inline-block;"></span>
+          날짜 미확인
+        </span>
+      </div>
+    </div>`;
+}
+
+function renderMcTable(filter) {
+  // filter: 'all' | 'atob' | 'btoa'
+  const resultEl = document.getElementById('mc-result');
+  if (!resultEl || !_mcOverlapItems.length) return;
+
+  // 버튼 활성 상태 업데이트
+  ['mc-btn-all','mc-btn-atob','mc-btn-btoa','mc-btn-reset'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const isActive = (id === 'mc-btn-' + filter) || (filter === 'all' && id === 'mc-btn-all');
+    el.style.background = isActive ? 'rgba(10,200,185,.18)' : 'transparent';
+    el.style.borderColor = isActive ? 'rgba(10,200,185,.6)' : 'var(--border)';
+    el.style.color = isActive ? 'var(--blue)' : 'var(--muted)';
+  });
+
+  let items = _mcOverlapItems;
+  if (filter === 'atob') {
+    // A의 최근게임이 B보다 이전 → A에서 먼저 활동, B로 유입
+    items = _mcOverlapItems.filter(({ mA, mB }) => {
+      const tsA = mA.creation_timestamp || mA.last_game_at || mA.lastAt || 0;
+      const tsB = mB.creation_timestamp || mB.last_game_at || mB.lastAt || 0;
+      const nA = tsA > 1e12 ? tsA : tsA * 1000;
+      const nB = tsB > 1e12 ? tsB : tsB * 1000;
+      return nA && nB && nA < nB;
+    });
+  } else if (filter === 'btoa') {
+    // B의 최근게임이 A보다 이전 → B에서 먼저 활동, A로 유입
+    items = _mcOverlapItems.filter(({ mA, mB }) => {
+      const tsA = mA.creation_timestamp || mA.last_game_at || mA.lastAt || 0;
+      const tsB = mB.creation_timestamp || mB.last_game_at || mB.lastAt || 0;
+      const nA = tsA > 1e12 ? tsA : tsA * 1000;
+      const nB = tsB > 1e12 ? tsB : tsB * 1000;
+      return nA && nB && nB < nA;
+    });
+  }
+
+  const tbody = document.getElementById('mc-tbody');
+  if (!tbody) return;
+
+  if (items.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:1.5rem;">해당하는 멤버가 없습니다.</td></tr>';
+  } else {
+    tbody.innerHTML = items.map(({ mA, mB }, idx) => {
+      const nickA = mA.riot_name || mA.game_name || mA.summoner_name || '—';
+      const tagA  = mA.riot_tag  || mA.tag_line  || '';
+      const nickB = mB.riot_name || mB.game_name || mB.summoner_name || '—';
+      const tagB  = mB.riot_tag  || mB.tag_line  || '';
+      const tsA = mA.creation_timestamp || mA.last_game_at || mA.lastAt || null;
+      const tsB = mB.creation_timestamp || mB.last_game_at || mB.lastAt || null;
+      const fmtTs = ts => ts ? timeAgo(ts > 1e12 ? ts : ts * 1000) : '—';
+      const cntA = mA.cnt != null ? mA.cnt + '판' : '—';
+      const cntB = mB.cnt != null ? mB.cnt + '판' : '—';
+      // 유입 방향 표시
+      let dirTag = '';
+      if (tsA && tsB) {
+        const nA = tsA > 1e12 ? tsA : tsA * 1000;
+        const nB = tsB > 1e12 ? tsB : tsB * 1000;
+        if (nA < nB) dirTag = '<span style="font-size:10px;background:rgba(10,200,185,.15);color:var(--blue);border-radius:2px;padding:1px 4px;margin-left:4px;">→B</span>';
+        else if (nB < nA) dirTag = '<span style="font-size:10px;background:rgba(245,158,11,.15);color:#F59E0B;border-radius:2px;padding:1px 4px;margin-left:4px;">→A</span>';
+      }
+      return `<tr>
+        <td style="color:var(--muted);font-size:11px;">${idx + 1}${dirTag}</td>
+        <td><span style="font-weight:700;">${esc(nickA)}</span><span style="color:var(--muted);font-size:10px;">${tagA ? '#'+esc(tagA) : ''}</span></td>
+        <td style="font-family:'Rajdhani',sans-serif;font-size:12px;">${cntA}</td>
+        <td style="color:var(--muted);font-size:11px;">${fmtTs(tsA)}</td>
+        <td><span style="font-weight:600;">${esc(nickB)}</span><span style="color:var(--muted);font-size:10px;">${tagB ? '#'+esc(tagB) : ''}</span></td>
+        <td style="font-family:'Rajdhani',sans-serif;font-size:12px;">${cntB}</td>
+        <td style="color:var(--muted);font-size:11px;">${fmtTs(tsB)}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  // 필터 결과 카운트 업데이트
+  const countEl = document.getElementById('mc-filter-count');
+  if (countEl) countEl.textContent = `${items.length}명 표시 중`;
+}
+
+async function runMemberCompare() {
+  var serverA = (document.getElementById('mc-server-a') || {}).value.trim();
+  var serverB = (document.getElementById('mc-server-b') || {}).value.trim();
+  var resultEl = document.getElementById('mc-result');
+  if (!resultEl) return;
+  if (!serverA || !serverB) {
+    resultEl.innerHTML = '<div style="color:#F59E0B;font-size:12px;">두 서버 ID를 모두 입력해주세요.</div>';
+    return;
+  }
+  resultEl.innerHTML = '<div style="display:flex;align-items:center;gap:8px;color:var(--muted);font-size:12px;"><div class="spinner"></div> 멤버 조회 중...</div>';
+
+  // Worker /server-info 경유 (analyzeConnect와 동일한 방식)
+  async function fetchServerMembers(serverId) {
+    try {
+      const res = await fetch(WORKER_URL + '/server-info', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ serverId })
+      });
+      const j = await res.json();
+      if (!j.ok || !j.data) return null;
+      const members = (j.data.tournament_stats && j.data.tournament_stats.tournament_stats_all_list) || [];
+      const serverName = j.data.server_name || j.data.serverName || ('서버 ' + serverId);
+      return { members, serverName };
+    } catch(e) { return null; }
+  }
+
+  try {
+    const [dataA, dataB] = await Promise.all([
+      fetchServerMembers(serverA),
+      fetchServerMembers(serverB)
+    ]);
+
+    if (!dataA) { resultEl.innerHTML = '<div style="color:#E05050;font-size:12px;">❌ 커뮤니티 A 서버 정보 조회 실패. 서버 ID를 확인해주세요.</div>'; return; }
+    if (!dataB) { resultEl.innerHTML = '<div style="color:#E05050;font-size:12px;">❌ 커뮤니티 B 서버 정보 조회 실패. 서버 ID를 확인해주세요.</div>'; return; }
+
+    const membersA = dataA.members;
+    const membersB = dataB.members;
+    const nameA = dataA.serverName;
+    const nameB = dataB.serverName;
+
+    // riot_name+riot_tag 기준으로 매칭 (puu_id 있으면 우선)
+    const mapA = {};
+    membersA.forEach(m => {
+      const pid = m.puu_id || m.puuid || m.puuId;
+      const nameKey = ((m.riot_name || m.game_name || m.summoner_name || '') + '#' + (m.riot_tag || m.tag_line || '')).toLowerCase().trim();
+      if (pid) mapA['puu:' + pid] = m;
+      if (nameKey && nameKey !== '#') mapA['name:' + nameKey] = m;
+    });
+    const mapB = {};
+    membersB.forEach(m => {
+      const pid = m.puu_id || m.puuid || m.puuId;
+      const nameKey = ((m.riot_name || m.game_name || m.summoner_name || '') + '#' + (m.riot_tag || m.tag_line || '')).toLowerCase().trim();
+      if (pid) mapB['puu:' + pid] = m;
+      if (nameKey && nameKey !== '#') mapB['name:' + nameKey] = m;
+    });
+
+    // puu_id 기준 중복, 없으면 닉네임 기준으로 폴백
+    const seenNames = new Set();
+    const overlapItems = [];
+    membersA.forEach(mA => {
+      const pid = mA.puu_id || mA.puuid || mA.puuId;
+      const nameKey = ((mA.riot_name || mA.game_name || mA.summoner_name || '') + '#' + (mA.riot_tag || mA.tag_line || '')).toLowerCase().trim();
+
+      let mB = null;
+      if (pid && mapB['puu:' + pid]) {
+        mB = mapB['puu:' + pid];
+      } else if (nameKey && nameKey !== '#' && mapB['name:' + nameKey]) {
+        mB = mapB['name:' + nameKey];
+      }
+      if (!mB) return;
+
+      // 중복 방지
+      const dedupeKey = pid || nameKey;
+      if (seenNames.has(dedupeKey)) return;
+      seenNames.add(dedupeKey);
+      overlapItems.push({ mA, mB, pid: pid || '' });
+    });
+
+    // 합산 판수 내림차순 정렬
+    overlapItems.sort((a, b) => {
+      const sumA = (a.mA.cnt || 0) + (a.mB.cnt || 0);
+      const sumB = (b.mA.cnt || 0) + (b.mB.cnt || 0);
+      return sumB - sumA;
+    });
+
+    // 전역에 저장 (필터 버튼용)
+    _mcOverlapItems = overlapItems;
+    _mcNameA = nameA;
+    _mcNameB = nameB;
+
+    const btnBase = 'padding:4px 10px;border-radius:2px;font-family:\'Rajdhani\',sans-serif;font-size:11px;font-weight:700;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);transition:all .15s;';
+    let html = `
+    <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:.75rem;align-items:center;">
+      <div style="font-family:'Rajdhani',sans-serif;font-size:12px;color:var(--muted);">A: <span style="color:var(--blue);font-weight:700;">${esc(nameA)}</span> · ${membersA.length}명</div>
+      <div style="font-family:'Rajdhani',sans-serif;font-size:12px;color:var(--muted);">B: <span style="color:var(--blue);font-weight:700;">${esc(nameB)}</span> · ${membersB.length}명</div>
+      <div style="font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;color:#F59E0B;">중복: ${overlapItems.length}명</div>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:.75rem;align-items:center;">
+      <button id="mc-btn-all"  style="${btnBase}" onclick="renderMcTable('all')">전체</button>
+      <button id="mc-btn-atob" style="${btnBase}" onclick="renderMcTable('atob')">${esc(nameA)} → ${esc(nameB)} 유입</button>
+      <button id="mc-btn-btoa" style="${btnBase}" onclick="renderMcTable('btoa')">${esc(nameB)} → ${esc(nameA)} 유입</button>
+      <button id="mc-btn-reset" style="${btnBase}border-color:rgba(224,80,80,.4);color:#E05050;" onclick="renderMcTable('all')">↺ 초기화</button>
+      <span id="mc-filter-count" style="font-family:'Rajdhani',sans-serif;font-size:11px;color:var(--muted);margin-left:4px;"></span>
+    </div>`;
+
+    if (overlapItems.length === 0) {
+      html += '<div style="text-align:center;color:var(--muted);font-size:12px;padding:1.5rem;">중복 멤버가 없습니다.</div>';
+      resultEl.innerHTML = html;
+    } else {
+      html += `<div id="mc-chart-wrap" style="margin-bottom:1.25rem;"></div>
+      <div style="overflow-x:auto;">
+        <table class="data-table">
+          <thead><tr>
+            <th>#</th>
+            <th>닉네임 (${esc(nameA)})</th><th>판수</th><th>최근 게임</th>
+            <th>닉네임 (${esc(nameB)})</th><th>판수</th><th>최근 게임</th>
+          </tr></thead>
+          <tbody id="mc-tbody"></tbody>
+        </table>
+      </div>`;
+      resultEl.innerHTML = html;
+      renderMcChart(nameA, nameB, overlapItems);
+      renderMcTable('all');
+    }
+  } catch(e) {
+    resultEl.innerHTML = '<div style="color:#E05050;font-size:12px;">❌ 오류: ' + esc(String(e)) + '</div>';
+  }
+}
 
 // ── 수동 Cron 실행 ──
 async function runCron(type) {

@@ -924,6 +924,7 @@ async function handleDbPublicRead(request, env) {
     /^system\/connect_cache$/,
     /^system\/connect_cache\/[^/]+$/,
     /^communities\/[^/]+\/calendar/,
+    /^communities\/[^/]+\/ranking_ai_analysis($|\/)/,
   ];
   if (!publicRead.some(r => r.test(dbPath))) {
     return json({ ok: false, error: '허용되지 않는 경로입니다' }, 403);
@@ -1452,6 +1453,10 @@ function checkPermission(session, dbPath, requireRole) {
     // 자신의 커뮤니티인지 확인
     const cidFromPath = dbPath.split('/')[1];
     if (session.communityId && session.communityId === cidFromPath) return true;
+  }
+  // 마스터 전용 — 주간 랭킹 AI 분석 저장
+  if (/^communities\/[^/]+\/ranking_ai_analysis($|\/)/.test(dbPath)) {
+    if (session.role === 'master') return true;
   }
   // 관리자 이상 블랙리스트 쓰기 허용
   if (/^blacklist\//.test(dbPath)) return true;
