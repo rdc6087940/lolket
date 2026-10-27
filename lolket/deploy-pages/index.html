@@ -2379,6 +2379,16 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
   </div>
   <img id="cm-banner-preview" class="cm-img-preview" alt="미리보기">
 </div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding:.75rem 0;border-top:1px solid rgba(255,255,255,.05);">
+  <div>
+    <div style="font-size:11px;font-family:'Rajdhani',sans-serif;font-weight:700;letter-spacing:1px;color:var(--white);">승률 / 레이팅 공개</div>
+    <div style="font-size:10px;color:var(--text-muted);font-family:'Noto Sans KR',sans-serif;margin-top:2px;">ON 시 전적 페이지에서 모든 유저에게 승률·레이팅 정보 표시</div>
+  </div>
+  <button id="cm-stats-public-btn" onclick="toggleCmStatsPublic()" style="width:48px;height:26px;border-radius:13px;border:none;cursor:pointer;transition:all .2s;background:#2D3748;position:relative;">
+    <span id="cm-stats-public-dot" style="position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#718096;transition:all .2s;"></span>
+  </button>
+  <input type="hidden" id="cm-stats-public" value="false">
+</div>
 <div class="cm-official-row" id="cm-official-row">
   <label class="cm-official-toggle"><input type="checkbox" id="cm-official" onchange="_updateOfficialPreview(this.checked)"><span class="cm-official-toggle-slider"></span></label>
   <span style="font-size:12px;color:var(--text-muted);">공식 커뮤니티로 지정</span>
@@ -2899,9 +2909,11 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
 <div class="modal-overlay" id="extra-match-modal" style="display:none;"> <div class="modal" style="max-width:480px;"> <div class="modal-title">추가 대진 관리</div> <div style="font-size:12px;color:var(--text-muted);margin-bottom:1rem;">토너먼트 외 추가 경기를 설정합니다.</div> <div class="extra-match-list" id="extra-match-list"></div> <div style="margin-top:.75rem;"> <button class="btn-secondary" style="width:100%;font-size:12px;" onclick="addExtraMatch()">+ 대진 추가</button> </div> <div class="modal-actions"> <button class="btn-primary" onclick="closeExtraMatchModal()">닫기</button> </div> </div>
 </div> <div id="screen-5" class="screen"> <div class="results-wrap">
   <!-- 탭 -->
-  <div style="display:flex;gap:6px;margin-bottom:1.25rem;">
+  <div style="display:flex;gap:6px;margin-bottom:1.25rem;flex-wrap:wrap;">
     <button id="s5-tab-result" class="uv-tab-btn active" onclick="s5SwitchTab('result')">📊 내전 결과</button>
     <button id="s5-tab-bracket" class="uv-tab-btn" onclick="s5SwitchTab('bracket')">🏆 토너먼트 대진표</button>
+    <button class="uv-tab-btn" onclick="openUserView(match);uvSwitchTab('analysis');" style="background:rgba(10,200,185,.08);border-color:rgba(10,200,185,.4);color:var(--blue-bright);">🔍 대진 분석</button>
+    <button class="uv-tab-btn" onclick="goBackToStage4()" style="background:rgba(200,170,110,.06);border-color:rgba(200,170,110,.3);color:var(--gold);">◀ 4단계로 이전</button>
   </div>
   <!-- 탭1: 기존 내전 결과 -->
   <div id="s5-panel-result">
@@ -3161,7 +3173,8 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
         <div id="uva-champ-cards" style="margin-bottom:1.5rem;"></div>
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:.9rem;">
           <span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:rgba(10,200,185,.15);border:1px solid rgba(10,200,185,.4);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;color:var(--blue-bright);">4</span>
-          <span style="font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;color:var(--text-white);text-transform:uppercase;">밴픽 추천</span>
+          <span style="font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;color:var(--text-white);text-transform:uppercase;">밴 추천</span>
+          <span style="font-family:'Rajdhani',sans-serif;font-size:10px;color:var(--text-muted);font-weight:600;">상대팀 기준 · 최대 10개</span>
         </div>
         <div id="uva-banpick" style="display:flex;flex-direction:column;gap:6px;"></div>
         <button onclick="uvaReset()" style="margin-top:1.5rem;width:100%;padding:9px;border-radius:3px;background:transparent;border:1px solid var(--border-subtle);color:var(--text-muted);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1.5px;cursor:pointer;transition:all .15s;" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'" onmouseout="this.style.borderColor='var(--border-subtle)';this.style.color='var(--text-muted)'">↺ 다시 분석</button>
@@ -6621,25 +6634,15 @@ async function renderAuctionSpotlight() {
               var laneArr = cctTotal[lk] || [];
               console.log('[auction] lane', lk, 'arr length:', laneArr.length);
               var champMap = {};
+              // 구조 A만 사용: champion_id !== 0인 row가 내 플레이 챔피언 데이터
+              // stats_by_enemy는 상대 챔피언 데이터이므로 절대 사용하지 않음
               laneArr.forEach(function(row) {
-                // 구조 A: champion_id != 0이면 row 자체가 챔피언 데이터
                 if (row.champion_id && row.champion_id !== 0 && (row.games || 0) > 0) {
                   var cid = String(row.champion_id);
                   if (!champMap[cid]) champMap[cid] = { champion_id: row.champion_id, games: 0, wins: 0, losses: 0 };
                   champMap[cid].games  += (row.games  || 0);
                   champMap[cid].wins   += (row.wins   || 0);
                   champMap[cid].losses += (row.losses || 0);
-                }
-                // 구조 B: stats_by_enemy 배열 안에 챔피언별 데이터
-                if (row.stats_by_enemy && row.stats_by_enemy.length) {
-                  row.stats_by_enemy.forEach(function(c) {
-                    if (!c.champion_id || c.champion_id === 0 || !(c.games || 0)) return;
-                    var cid = String(c.champion_id);
-                    if (!champMap[cid]) champMap[cid] = { champion_id: c.champion_id, games: 0, wins: 0, losses: 0 };
-                    champMap[cid].games  += (c.games  || 0);
-                    champMap[cid].wins   += (c.wins   || 0);
-                    champMap[cid].losses += (c.losses || 0);
-                  });
                 }
               });
               var sorted = Object.values(champMap).sort(function(a,b){ return b.games - a.games; });
@@ -8056,6 +8059,17 @@ const em=extraMatches.find(m => m.id === id);
 if (!em) return;
 if (side === 'a') em.teamAId=val?parseInt(val):null;
 else em.teamBId=val?parseInt(val):null;
+}
+async function goBackToStage4(){
+  if (!confirm('4단계로 돌아가면 입력한 결과 데이터가 초기화됩니다. 계속할까요?')) return;
+  const pips=document.querySelectorAll('.stage-pip');
+  pips[4].classList.remove('active','done');
+  pips[3].classList.remove('done'); pips[3].classList.add('active');
+  resultMatches=[];
+  showScreen('screen-4');
+  match.status='내전 진행';
+  await saveCurrentMatch();
+  toast('4단계로 돌아갔습니다', 'ok');
 }
 async function goToStage5(){
 const pips=document.querySelectorAll('.stage-pip');
@@ -10325,6 +10339,7 @@ const officialRow2 = document.getElementById('cm-official-row');
 if (officialRow2) officialRow2.style.display = isMaster ? '' : 'none';
 const _oc = document.getElementById('cm-official');
 if (_oc) { _oc.checked = false; _updateOfficialPreview(false); }
+setCmStatsPublic(false);
 document.getElementById('community-modal').style.display = 'flex';
 }
 function openCommunityEditModal(cid) {
@@ -10343,6 +10358,8 @@ if (document.getElementById('cm-deeplol-id')) document.getElementById('cm-deeplo
       // 기본 출석 설정
       const defaultAttend = c.defaultAttend === true || c.defaultAttend === 'true';
       setCmDefaultAttend(defaultAttend);
+      const statsPublic = c.statsPublic === true || c.statsPublic === 'true';
+      setCmStatsPublic(statsPublic);
 const dcInput = document.getElementById('cm-discord-channel');
 if (dcInput) dcInput.value = c.discordChannelId || '';
 const dsInput = document.getElementById('cm-discord-server-id');
@@ -10438,6 +10455,7 @@ try {
     alarmAuto: alarmAuto || false,
     alarmTemplate: alarmTemplate || '',
     defaultAttend: defaultAttend || false,
+    statsPublic: !!(document.getElementById('cm-stats-public')?.value === 'true'),
     bannerImage: finalBanner || null,
   };
 
@@ -21529,6 +21547,20 @@ function setCmDefaultAttend(val) {
   dot.style.background = val ? '#fff' : '#718096';
   dot.style.left = val ? '25px' : '3px';
 }
+function toggleCmStatsPublic() {
+  var cur = document.getElementById('cm-stats-public').value === 'true';
+  setCmStatsPublic(!cur);
+}
+function setCmStatsPublic(val) {
+  var btn = document.getElementById('cm-stats-public-btn');
+  var dot = document.getElementById('cm-stats-public-dot');
+  var inp = document.getElementById('cm-stats-public');
+  if (!btn) return;
+  inp.value = val ? 'true' : 'false';
+  btn.style.background = val ? '#10B981' : '#2D3748';
+  dot.style.background = val ? '#fff' : '#718096';
+  dot.style.left = val ? '25px' : '3px';
+}
 
 
 // ══════════════════════════════════════════════════
@@ -23682,6 +23714,7 @@ function showLaneMismatchPopup(opts) {
     // ── 1단계: DeepLol puu_id 조회 ───────────────────
     _uvaSetProgress(0, total * 2, '소환사 정보 조회 중… (0/' + total + ')');
     _uvaChampData = {};
+    window._auctionChampStatCache = {}; // 분석 시작 시 캐시 초기화 (중복합산 방지)
     var pmap = window._communityPuuMap || {};
 
     async function _uvaGetDeepLolPuuId(m) {
@@ -23760,47 +23793,62 @@ function showLaneMismatchPopup(opts) {
     _uvaRenderBanPick(myTeam, enemyTeam);
   };
 
+  // API 라인키 매핑: LANE_KEYS → DeepLol API 키
+  var _uvaApiLaneMap = { top: 'Top', jg: 'Jungle', mid: 'Middle', bot: 'Bot', sup: 'Supporter' };
+
+  // _uvaChampData 구조: { puuid: { top:[...], jg:[...], mid:[...], bot:[...], sup:[...] } }
+  // 각 라인 배열은 games 내림차순 정렬된 { champion_id, games, wins } 배열
+
   async function _uvaFetchChamps(puuid) {
     try {
-      var url = 'https://b2c-api-cdn.deeplol.gg/summoner/champion-stat?puu_id='
-        + encodeURIComponent(puuid) + '&season=27&platform_id=KR';
-      var res = await fetch(url);
-      if (!res.ok) { console.warn('[uva] champion-stat HTTP', res.status, 'for', puuid); return; }
-      var json = await res.json();
-      var cct = json.counter_champion_stats;
-      var total = cct && cct.total && cct.total.enemy_champion_stats;
-      if (!total) { console.warn('[uva] no enemy_champion_stats in response for', puuid, 'keys:', json && Object.keys(json)); return; }
-      // 모든 라인의 챔피언을 합쳐서 games 합산
-      // 두 가지 구조 처리:
-      //   A) row.champion_id != 0 → row 자체가 챔피언 데이터
-      //   B) row.stats_by_enemy[] → 하위 배열에 챔피언별 데이터
-      var champMap = {};
-      var laneKeys2 = ['Top','Jungle','Middle','Bot','Supporter'];
-      laneKeys2.forEach(function(lk) {
-        var laneArr = total[lk] || [];
-        laneArr.forEach(function(row) {
-          // 구조 A
-          if (row.champion_id && row.champion_id !== 0 && (row.games || 0) > 0) {
-            var cid = String(row.champion_id);
-            if (!champMap[cid]) champMap[cid] = { champion_id: cid, games: 0, wins: 0 };
-            champMap[cid].games += (row.games || 0);
-            champMap[cid].wins  += (row.wins  || 0);
-          }
-          // 구조 B
-          if (row.stats_by_enemy && row.stats_by_enemy.length) {
-            row.stats_by_enemy.forEach(function(c) {
-              if (!c.champion_id || c.champion_id === 0 || !(c.games || 0)) return;
-              var cid = String(c.champion_id);
-              if (!champMap[cid]) champMap[cid] = { champion_id: cid, games: 0, wins: 0 };
-              champMap[cid].games += (c.games || 0);
-              champMap[cid].wins  += (c.wins  || 0);
-            });
-          }
+      // 경매 카드 캐시 재사용 (이미 올바른 데이터가 있으면 새로 fetch 안 함)
+      var cached = window._auctionChampStatCache && window._auctionChampStatCache[puuid];
+      var cctByLane = null;
+      if (cached && cached.byLane && Object.keys(cached.byLane).length) {
+        cctByLane = cached.byLane; // { Top:[...], Jungle:[...], Middle:[...], Bot:[...], Supporter:[...] }
+        console.log('[uva] champ cache hit for', puuid.slice(0,8));
+      } else {
+        var url = 'https://b2c-api-cdn.deeplol.gg/summoner/champion-stat?puu_id='
+          + encodeURIComponent(puuid) + '&season=27&platform_id=KR';
+        var res = await fetch(url);
+        if (!res.ok) { console.warn('[uva] champion-stat HTTP', res.status, 'for', puuid); return; }
+        var json = await res.json();
+        var cct = json.counter_champion_stats;
+        var total = cct && cct.total && cct.total.enemy_champion_stats;
+        if (!total) { console.warn('[uva] no enemy_champion_stats for', puuid); return; }
+
+        var apiLaneKeys = ['Top','Jungle','Middle','Bot','Supporter'];
+        cctByLane = {};
+        apiLaneKeys.forEach(function(lk) {
+          var laneArr = total[lk] || [];
+          var champMap = {};
+          // 구조 A만 사용: champion_id !== 0인 row가 내 플레이 챔피언 데이터
+          // stats_by_enemy는 상대 챔피언 데이터이므로 절대 사용하지 않음
+          laneArr.forEach(function(row) {
+            if (row.champion_id && row.champion_id !== 0 && (row.games || 0) > 0) {
+              var cid = String(row.champion_id);
+              if (!champMap[cid]) champMap[cid] = { champion_id: row.champion_id, games: 0, wins: 0 };
+              champMap[cid].games += (row.games || 0);
+              champMap[cid].wins  += (row.wins  || 0);
+            }
+          });
+          var sorted = Object.values(champMap).sort(function(a,b){ return b.games - a.games; });
+          if (sorted.length) cctByLane[lk] = sorted;
         });
+        // 캐시에도 저장
+        window._auctionChampStatCache = window._auctionChampStatCache || {};
+        window._auctionChampStatCache[puuid] = { byLane: cctByLane, fetchedAt: Date.now() };
+      }
+
+      // API 키(Top/Jungle/Middle/Bot/Supporter) → LANE_KEYS(top/jg/mid/bot/sup) 변환
+      var byLane = {};
+      LANE_KEYS.forEach(function(lane) {
+        var apiKey = _uvaApiLaneMap[lane];
+        byLane[lane] = cctByLane[apiKey] || [];
       });
-      var sorted = Object.values(champMap).sort(function(a, b) { return b.games - a.games; });
-      _uvaChampData[puuid] = sorted;
-      console.log('[uva] fetched', sorted.length, 'champs for', puuid);
+      _uvaChampData[puuid] = byLane;
+      console.log('[uva] champs for', puuid.slice(0,8), '→ top:', byLane.top.length, 'jg:', byLane.jg.length, 'mid:', byLane.mid.length, 'bot:', byLane.bot.length, 'sup:', byLane.sup.length,
+        byLane.mid[0] ? '| mid#1='+byLane.mid[0].champion_id+' '+byLane.mid[0].games+'판' : '');
     } catch(e) { console.error('[uva] _uvaFetchChamps error for', puuid, e); }
   }
 
@@ -23860,7 +23908,9 @@ function showLaneMismatchPopup(opts) {
 
   function _uvaMemberChampRow(m, lane, cm, ddv, isEnemy) {
     var _mpuuid = m._dpId || m.puu_id || m.puuid;
-    var champs = (_mpuuid && _uvaChampData[_mpuuid]) || [];
+    // 라인별 챔피언 데이터 사용: _uvaChampData[puuid] = { top:[...], jg:[...], ... }
+    var _laneData = _mpuuid && _uvaChampData[_mpuuid];
+    var champs = (_laneData && lane && _laneData[lane]) || [];
     var laneLabel = lane ? LANE_KO_A[lane] : '?';
     var nameTag = _esc(m.name||'') + (m.tag ? '<span style="color:var(--text-muted);font-size:9px;">#'+_esc(m.tag)+'</span>' : '');
     var tierRaw = (m.soloTier || 'UNRANKED').toUpperCase();
@@ -23924,47 +23974,59 @@ function showLaneMismatchPopup(opts) {
   // memberId 정규화: id 있으면 id, 없으면 name
   function _uvaMemberId(m) { return m.id || m.name; }
 
-  // ── 밴픽 추천 ────────────────────────────────
+  // ── 밴 추천 ────────────────────────────────
   function _uvaRenderBanPick(myTeam, enemyTeam) {
     var container = document.getElementById('uva-banpick');
     if (!container) return;
     var cm = window._cm || window._auctionChampMap || {};
-    // 챔피언 데이터 디버그
-    console.log('[uva] banpick cm keys:', Object.keys(cm).length, '_uvaChampData keys:', Object.keys(_uvaChampData).length);
 
     var recs = _uvaComputeRecs(myTeam, enemyTeam, cm);
+    console.log('[uva-recs] total:', recs.length, recs.map(function(r){return r.priority+':'+r.champName+'('+r.score+')';}).join(', '));
     if (recs.length === 0) {
       container.innerHTML = '<div style="font-size:12px;color:var(--text-muted);padding:.5rem;">분석할 데이터가 부족합니다</div>';
       return;
     }
 
-    var html = '';
-    var showRecs = recs.slice(0, Math.max(5, Math.min(10, recs.length)));
+    var ddv = window._ddVersion || '14.10.1';
+    var showRecs = recs.slice(0, 10);
+    var html = '<div style="display:flex;flex-direction:column;gap:5px;">';
     showRecs.forEach(function(rec, i) {
-      var ddv = window._ddVersion || '14.10.1';
-      var imgUrl = ddv ? 'https://ddragon.leagueoflegends.com/cdn/'+ddv+'/img/champion/'+encodeURIComponent(rec.champName)+'.png' : '';
-      var typeColor = rec.type === '밴 추천' ? '#E05050' : 'var(--blue-bright)';
-      var typeBg = rec.type === '밴 추천' ? 'rgba(192,48,48,.12)' : 'rgba(10,200,185,.12)';
-      var typeBorder = rec.type === '밴 추천' ? 'rgba(192,48,48,.4)' : 'rgba(10,200,185,.4)';
-      html += '<div style="display:flex;align-items:center;gap:10px;padding:.6rem .75rem;background:var(--bg-panel);border:1px solid var(--border-subtle);border-radius:3px;">';
-      html += '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:18px;color:var(--gold);width:22px;flex-shrink:0;text-align:center;">'+(i+1)+'</div>';
+      var imgUrl = 'https://ddragon.leagueoflegends.com/cdn/'+ddv+'/img/champion/'+encodeURIComponent(rec.champName)+'.png';
+      // 순위별 강조 색상
+      var rankColor = i === 0 ? '#F4C84A' : i === 1 ? '#C0C0C0' : i === 2 ? '#CD7F32' : 'var(--text-muted)';
+      // 태그 색상 (우선순위별)
+      var tagColor, tagBg, tagBorder, tagLabel;
+      if (rec.priority === 1) {
+        tagLabel = rec.isTwo ? '투챔 밴' : '원챔 밴';
+        tagColor = '#FF6B6B'; tagBg = 'rgba(255,107,107,.13)'; tagBorder = 'rgba(255,107,107,.4)';
+      } else if (rec.priority === 2) {
+        tagLabel = '수비 밴';
+        tagColor = '#F4A845'; tagBg = 'rgba(244,168,69,.13)'; tagBorder = 'rgba(244,168,69,.4)';
+      } else if (rec.priority === 3) {
+        tagLabel = '공격 밴';
+        tagColor = 'var(--blue-bright)'; tagBg = 'rgba(10,200,185,.13)'; tagBorder = 'rgba(10,200,185,.4)';
+      } else {
+        tagLabel = '고티어 밴';
+        tagColor = '#BF68F5'; tagBg = 'rgba(191,104,245,.13)'; tagBorder = 'rgba(191,104,245,.4)';
+      }
+      html += '<div style="display:flex;align-items:center;gap:10px;padding:.55rem .75rem;background:var(--bg-panel);border:1px solid var(--border-subtle);border-radius:3px;">';
+      html += '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:16px;color:'+rankColor+';width:20px;flex-shrink:0;text-align:center;">'+(i+1)+'</div>';
       html += '<div style="width:32px;height:32px;border-radius:3px;overflow:hidden;background:var(--bg-dark);border:1px solid var(--border-subtle);flex-shrink:0;">';
-      if (imgUrl) html += '<img src="'+imgUrl+'" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display=\'none\'" loading="lazy">';
+      html += '<img src="'+imgUrl+'" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display=\'none\'" loading="lazy">';
       html += '</div>';
       html += '<div style="flex:1;min-width:0;">';
       html += '<div style="font-size:12px;font-weight:700;color:var(--text-white);">'+_esc(rec.champName)+'</div>';
-      html += '<div style="font-size:11px;color:var(--text-muted);margin-top:1px;">'+_esc(rec.reason)+'</div>';
+      html += '<div style="font-size:11px;color:var(--text-muted);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+_esc(rec.reason)+'</div>';
       html += '</div>';
-      html += '<div style="font-family:\'Rajdhani\',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;padding:2px 8px;border-radius:2px;background:'+typeBg+';border:1px solid '+typeBorder+';color:'+typeColor+';white-space:nowrap;">'+_esc(rec.type)+'</div>';
+      html += '<div style="font-family:\'Rajdhani\',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;padding:2px 8px;border-radius:2px;background:'+tagBg+';border:1px solid '+tagBorder+';color:'+tagColor+';white-space:nowrap;">'+tagLabel+'</div>';
       html += '</div>';
     });
+    html += '</div>';
     container.innerHTML = html;
   }
 
   function _uvaComputeRecs(myTeam, enemyTeam, cm) {
     var recs = [];
-    var snap = window._uvSnapshot;
-    var allMembers = snap && snap._members || [];
 
     function _getMember(teamObj, memberId) {
       var sid = String(memberId || '');
@@ -23974,120 +24036,174 @@ function showLaneMismatchPopup(opts) {
     function _getTierScore(m) {
       var t = (m.soloTier || '').toUpperCase();
       var d = parseInt(m.soloDivision || '4', 10);
+      var lp = parseInt(m.soloLP || '0', 10) || 0;
       var tierMap = { IRON:1, BRONZE:2, SILVER:3, GOLD:4, PLATINUM:5, EMERALD:6, DIAMOND:7, MASTER:8, GRANDMASTER:9, CHALLENGER:10 };
-      var base = (tierMap[t] || 1) * 10;
-      return base + (4 - Math.min(d-1, 3));
+      var tier = tierMap[t] || 1;
+      // 마스터/그마/챌 → LP 직접 반영 (기본 800점 + LP)
+      if (tier >= 8) return 800 + lp;
+      // 일반 티어 → 100점 단위, 디비전 보정 (4→0, 3→1, 2→2, 1→3)
+      return tier * 100 + (4 - Math.min(d, 4));
     }
 
-    function _getChamps(m) {
+    function _getChamps(m, lane) {
       var _kid = m._dpId || m.puu_id || m.puuid;
-      return (_kid && _uvaChampData[_kid]) || [];
+      if (!_kid || !_uvaChampData[_kid]) return [];
+      var stored = _uvaChampData[_kid];
+      // 이전 버전 flat 배열로 저장된 경우 무시 (byLane 객체 구조만 사용)
+      if (Array.isArray(stored)) return [];
+      var byLane = stored;
+      // lane이 지정되면 해당 라인만
+      if (lane && Array.isArray(byLane[lane])) {
+        return byLane[lane];
+      }
+      // fallback: 전체 라인 합산
+      var all = {};
+      LANE_KEYS.forEach(function(l) {
+        (byLane[l] || []).forEach(function(c) {
+          var cid = String(c.champion_id);
+          if (!all[cid]) all[cid] = { champion_id: c.champion_id, games: 0, wins: 0 };
+          all[cid].games += c.games; all[cid].wins += c.wins;
+        });
+      });
+      return Object.values(all).sort(function(a, b) { return b.games - a.games; });
     }
 
-    console.log('[uva] myLanes:', JSON.stringify(_uvaMyLanes), 'enemyLanes:', JSON.stringify(_uvaEnemyLanes));
-    console.log('[uva] myMembers:', (myTeam.members||[]).map(function(m){return (m.id||m.name);}));
-    console.log('[uva] enemyMembers:', (enemyTeam.members||[]).map(function(m){return (m.id||m.name);}));
-
-    // 각 라인별 비교
+    // ── 우선순위 1: 원챔/투챔 유저 감지 → 최우선 밴
     LANE_KEYS.forEach(function(lane) {
-      var myMemberId = _uvaMyLanes[lane];
       var enemyMemberId = _uvaEnemyLanes[lane];
-      if (!myMemberId || !enemyMemberId) { console.log('[uva] lane', lane, 'missing memberId'); return; }
-      var myM = _getMember(myTeam, myMemberId);
+      if (!enemyMemberId) return;
       var enemyM = _getMember(enemyTeam, enemyMemberId);
-      if (!myM || !enemyM) { console.log('[uva] lane', lane, 'member not found: my=', myMemberId, 'enemy=', enemyMemberId); return; }
+      if (!enemyM) return;
+      var champs = _getChamps(enemyM, lane);
+      if (!champs.length) return;
+      var laneLabel = LANE_KO_A[lane];
 
-      var myChamps = _getChamps(myM);
-      var enemyChamps = _getChamps(enemyM);
-      var myScore = _getTierScore(myM);
-      var enemyScore = _getTierScore(enemyM);
+      var c1 = champs[0], c2 = champs[1] || null;
+      // 원챔/투챔은 c1 절대 판수 + c2 대비 비율로 판단
+      // c1이 c2의 4배 이상이면 원챔, c1+c2가 전체의 70% 이상이면 투챔
+      var totalGames = champs.reduce(function(s, c) { return s + c.games; }, 0);
+      var ratio1 = totalGames > 0 ? c1.games / totalGames : 0;
+      var ratio12 = totalGames > 0 && c2 ? (c1.games + c2.games) / totalGames : ratio1;
+      var vsC2Ratio = c2 && c2.games > 0 ? c1.games / c2.games : 99;
 
-      // ── Priority 1: 원챔/이챔 감지 (상대팀 기준) → 밴 추천
-      if (enemyChamps.length >= 1) {
-        var top1 = enemyChamps[0];
-        var top2 = enemyChamps[1];
-        var top3 = enemyChamps[2];
-        var laneLabel = LANE_KO_A[lane];
-        var cname1 = cm[String(top1.champion_id||'')] || String(top1.champion_id||'');
+      // 원챔: c1 >= 30판 AND (c2 없거나 c1이 c2의 4배 이상)
+      var isOneChamp = c1.games >= 30 && vsC2Ratio >= 4;
 
-        // 원챔: 1위 100판 이상, 2위 대비 5배 이상
-        var isOneChamp = top1.games >= 100 && (!top2 || top1.games >= top2.games * 5);
-        // 이챔: 상위 2개 합산 150판 이상, 3위 대비 10배 이상
-        var isTwoChamp = top2 && (top1.games + top2.games) >= 150 && (!top3 || (top1.games + top2.games) >= top3.games * 10);
+      // 투챔: c1+c2 >= 50판 AND 전체 중 상위2 비율 60% 이상 (원챔 제외)
+      var isTwoChamp = !isOneChamp && c2 &&
+        (c1.games + c2.games) >= 50 && ratio12 >= 0.60;
 
-        if (isOneChamp) {
-          recs.push({
-            champName: cname1,
-            type: '밴 추천',
-            reason: laneLabel + ' ' + _esc(enemyM.name||'') + ' 원챔 (' + top1.games + '판)',
-            score: 100 + top1.games * 0.1
-          });
-        } else if (isTwoChamp) {
-          var cname2 = cm[String(top2.champion_id||'')] || String(top2.champion_id||'');
-          recs.push({
-            champName: cname1,
-            type: '밴 추천',
-            reason: laneLabel + ' ' + _esc(enemyM.name||'') + ' 이챔 1번 (' + top1.games + '판)',
-            score: 90 + top1.games * 0.05
-          });
-          recs.push({
-            champName: cname2,
-            type: '밴 추천',
-            reason: laneLabel + ' ' + _esc(enemyM.name||'') + ' 이챔 2번 (' + top2.games + '판)',
-            score: 89 + top2.games * 0.05
-          });
-        }
-      }
-
-      // ── Priority 2: 수비적 밴 (우리 라인이 불리할 때 상대 주력챔 밴)
-      if (myScore < enemyScore - 10 && enemyChamps.length >= 1) {
-        var laneLabel2 = LANE_KO_A[lane];
-        var ec1 = enemyChamps[0];
-        var ecname = cm[String(ec1.champion_id||'')] || String(ec1.champion_id||'');
-        var gap = enemyScore - myScore;
+      if (isOneChamp) {
+        var cname1 = cm[String(c1.champion_id||'')] || String(c1.champion_id||'');
+        var wr1 = c1.games > 0 ? Math.round(c1.wins / c1.games * 100) : 0;
         recs.push({
-          champName: ecname,
-          type: '밴 추천',
-          reason: laneLabel2 + ' 수비밴 (티어차 '+gap+', '+_esc(enemyM.name||'')+' '+ec1.games+'판)',
-          score: 70 + gap
+          champName: cname1,
+          reason: laneLabel + ' ' + _esc(enemyM.name||'') + ' 원챔 · ' + c1.games + '판 ' + wr1 + '%',
+          score: 20000 + c1.games,
+          priority: 1, isTwo: false
         });
-      }
-
-      // ── Priority 3: 공격적 밴 (우리 라인이 유리할 때 상대 연습챔 밴)
-      if (myScore > enemyScore + 10 && enemyChamps.length >= 1) {
-        var laneLabel3 = LANE_KO_A[lane];
-        var ec1b = enemyChamps[0];
-        var ecname2 = cm[String(ec1b.champion_id||'')] || String(ec1b.champion_id||'');
-        var gap2 = myScore - enemyScore;
+      } else if (isTwoChamp) {
+        var cn1 = cm[String(c1.champion_id||'')] || String(c1.champion_id||'');
+        var cn2 = cm[String(c2.champion_id||'')] || String(c2.champion_id||'');
+        var wr1b = c1.games > 0 ? Math.round(c1.wins / c1.games * 100) : 0;
+        var wr2b = c2.games > 0 ? Math.round(c2.wins / c2.games * 100) : 0;
         recs.push({
-          champName: ecname2,
-          type: '밴 추천',
-          reason: laneLabel3 + ' 공격밴 (우위 '+gap2+', '+_esc(enemyM.name||'')+' 주력챔 제거)',
-          score: 60 + gap2
+          champName: cn1,
+          reason: laneLabel + ' ' + _esc(enemyM.name||'') + ' 투챔(1) · ' + c1.games + '판 ' + wr1b + '%',
+          score: 19500 + c1.games,
+          priority: 1, isTwo: true
         });
-      }
-
-      // ── Priority 4: 우리팀 고숙련도 픽 추천
-      if (myChamps.length >= 1) {
-        var laneLabel4 = LANE_KO_A[lane];
-        var mc1 = myChamps[0];
-        var mcname = cm[String(mc1.champion_id||'')] || String(mc1.champion_id||'');
-        var wr1 = mc1.games > 0 ? Math.round(mc1.wins / mc1.games * 100) : 0;
         recs.push({
-          champName: mcname,
-          type: '픽 추천',
-          reason: laneLabel4 + ' ' + _esc(myM.name||'') + ' 주력 ('+mc1.games+'판·'+wr1+'%)',
-          score: 50 + mc1.games * 0.05 + wr1 * 0.3
+          champName: cn2,
+          reason: laneLabel + ' ' + _esc(enemyM.name||'') + ' 투챔(2) · ' + c2.games + '판 ' + wr2b + '%',
+          score: 19400 + c2.games,
+          priority: 1, isTwo: true
         });
       }
     });
 
-    // 점수 정렬 후 중복 챔피언 제거
+    // ── 우선순위 2 & 3: 라인별 티어 격차 계산 → 가장 격차 큰 라인 우선
+    var laneGaps = [];
+    LANE_KEYS.forEach(function(lane) {
+      var myMemberId    = _uvaMyLanes[lane];
+      var enemyMemberId = _uvaEnemyLanes[lane];
+      if (!myMemberId || !enemyMemberId) return;
+      var myM    = _getMember(myTeam, myMemberId);
+      var enemyM = _getMember(enemyTeam, enemyMemberId);
+      if (!myM || !enemyM) return;
+      var myScore    = _getTierScore(myM);
+      var enemyScore = _getTierScore(enemyM);
+      laneGaps.push({ lane: lane, myM: myM, enemyM: enemyM, myScore: myScore, enemyScore: enemyScore, gap: enemyScore - myScore });
+    });
+    // 격차 절댓값 내림차순 정렬
+    laneGaps.sort(function(a, b) { return Math.abs(b.gap) - Math.abs(a.gap); });
+
+    laneGaps.forEach(function(lg, idx) {
+      var laneLabel = LANE_KO_A[lg.lane];
+      var champs = _getChamps(lg.enemyM, lg.lane);
+      if (!champs.length) return;
+      var c1 = champs[0];
+      var wr = c1.games > 0 ? Math.round(c1.wins / c1.games * 100) : 0;
+      var cname = cm[String(c1.champion_id||'')] || String(c1.champion_id||'');
+      // 격차 크기 기반 점수 (앞 라인일수록 높은 우선순위)
+      var gapBonus = Math.abs(lg.gap) * 10 - idx * 50;
+
+      if (lg.gap > 0) {
+        // 수비밴: 상대가 강함 → 상대 주력픽 밴
+        recs.push({
+          champName: cname,
+          reason: laneLabel + ' ' + _esc(lg.enemyM.name||'') + ' 수비밴 · 티어차 ' + lg.gap + ' · ' + c1.games + '판 ' + wr + '%',
+          score: 15000 + gapBonus,
+          priority: 2, isTwo: false
+        });
+      } else if (lg.gap < 0) {
+        // 공격밴: 우리가 강함 → 상대 주력픽 제거로 격차 극대화
+        recs.push({
+          champName: cname,
+          reason: laneLabel + ' ' + _esc(lg.enemyM.name||'') + ' 공격밴 · 우위 ' + Math.abs(lg.gap) + ' · ' + c1.games + '판 ' + wr + '%',
+          score: 12000 + gapBonus,
+          priority: 3, isTwo: false
+        });
+      }
+    });
+
+    // ── 우선순위 4: 상대팀 레이팅 높은 순으로 주력챔 밴
+    // 멤버 → 라인 역매핑
+    var enemyMemberLaneMap = {};
+    LANE_KEYS.forEach(function(lane) {
+      var mid2 = _uvaEnemyLanes[lane];
+      if (mid2) enemyMemberLaneMap[String(mid2)] = lane;
+    });
+    var enemyByTier = (enemyTeam.members || []).slice().sort(function(a, b) {
+      return _getTierScore(b) - _getTierScore(a);
+    });
+    enemyByTier.forEach(function(m, idx) {
+      var memberLane = enemyMemberLaneMap[String(m.id || m.name)] || null;
+      var champs = _getChamps(m, memberLane); // 라인별, 없으면 fallback 전체합산
+      if (!champs.length) return;
+      var tierScore = _getTierScore(m);
+      // 주력 top2 챔피언 추가
+      champs.slice(0, 2).forEach(function(c, cidx) {
+        var cname = cm[String(c.champion_id||'')] || String(c.champion_id||'');
+        var wr = c.games > 0 ? Math.round(c.wins / c.games * 100) : 0;
+        var tc = _uvaTierColor(m.soloTier || 'UNRANKED');
+        var tierDisplay = (m.soloTier||'UNRANKED').toUpperCase();
+        if (m.soloDivision) tierDisplay += ' ' + m.soloDivision;
+        recs.push({
+          champName: cname,
+          reason: _esc(m.name||'') + ' (' + tierDisplay + ') · ' + c.games + '판 ' + wr + '%',
+          score: 5000 + tierScore * 10 - idx * 100 - cidx * 30,
+          priority: 4, isTwo: false
+        });
+      });
+    });
+
+    // 점수 내림차순 정렬 후 중복 챔피언 제거, 최대 10개
     recs.sort(function(a, b) { return b.score - a.score; });
     var seen = {};
     var result = [];
     recs.forEach(function(r) {
-      if (!seen[r.champName]) {
+      if (!seen[r.champName] && result.length < 10) {
         seen[r.champName] = true;
         result.push(r);
       }
