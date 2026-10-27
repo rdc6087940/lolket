@@ -1445,9 +1445,19 @@ async function loadData(){
           var _cmJson = await _cmRes.json();
           console.log('[statsPublic] communities_info response:', JSON.stringify(_cmJson).slice(0,300));
           if (_cmJson.ok && _cmJson.data && (_cmJson.data.statsPublic === true || _cmJson.data.statsPublic === 'true')) {
-            document.body.classList.add('admin-unlocked');
-            var _dmRlTabPub = document.getElementById('dm-tab-rating-log');
-            if (_dmRlTabPub) _dmRlTabPub.style.display = '';
+            // 오늘 요일 체크 (0=일,1=월,...,6=토 → JS getDay()와 맞춤)
+            // index.html은 0=월,...,6=일 순서로 저장 → JS getDay(): 0=일,1=월,...,6=토
+            // 매핑: JS(0=일)→저장(6), JS(1=월)→저장(0), ..., JS(6=토)→저장(5)
+            var _todayJS = new Date().getDay(); // 0=일,1=월,...,6=토
+            var _todayIdx = _todayJS === 0 ? 6 : _todayJS - 1; // 저장 인덱스로 변환
+            var _days = _cmJson.data.statsPublicDays;
+            var _dayOk = !Array.isArray(_days) || _days.length === 0 || _days.indexOf(_todayIdx) !== -1;
+            console.log('[statsPublic] today idx:', _todayIdx, 'days:', JSON.stringify(_days), 'ok:', _dayOk);
+            if (_dayOk) {
+              document.body.classList.add('admin-unlocked');
+              var _dmRlTabPub = document.getElementById('dm-tab-rating-log');
+              if (_dmRlTabPub) _dmRlTabPub.style.display = '';
+            }
           }
         } catch(e) { console.error('[statsPublic] error:', e); }
       })();

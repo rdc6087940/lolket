@@ -2389,6 +2389,18 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
   </button>
   <input type="hidden" id="cm-stats-public" value="false">
 </div>
+<div id="cm-stats-days-row" style="display:none;padding:.5rem 0 .75rem 0;border-bottom:1px solid rgba(255,255,255,.05);">
+  <div style="font-size:10px;color:var(--text-muted);font-family:'Noto Sans KR',sans-serif;margin-bottom:.5rem;">공개 요일 선택 (비활성 요일엔 가림)</div>
+  <div style="display:flex;gap:6px;">
+    <button class="cm-day-btn active" data-day="0" onclick="toggleCmDay(0)" style="width:34px;height:34px;border-radius:6px;border:1px solid rgba(16,185,129,.5);background:rgba(16,185,129,.15);color:#10B981;font-size:11px;font-family:'Noto Sans KR',sans-serif;cursor:pointer;font-weight:600;transition:all .15s;">월</button>
+    <button class="cm-day-btn active" data-day="1" onclick="toggleCmDay(1)" style="width:34px;height:34px;border-radius:6px;border:1px solid rgba(16,185,129,.5);background:rgba(16,185,129,.15);color:#10B981;font-size:11px;font-family:'Noto Sans KR',sans-serif;cursor:pointer;font-weight:600;transition:all .15s;">화</button>
+    <button class="cm-day-btn active" data-day="2" onclick="toggleCmDay(2)" style="width:34px;height:34px;border-radius:6px;border:1px solid rgba(16,185,129,.5);background:rgba(16,185,129,.15);color:#10B981;font-size:11px;font-family:'Noto Sans KR',sans-serif;cursor:pointer;font-weight:600;transition:all .15s;">수</button>
+    <button class="cm-day-btn active" data-day="3" onclick="toggleCmDay(3)" style="width:34px;height:34px;border-radius:6px;border:1px solid rgba(16,185,129,.5);background:rgba(16,185,129,.15);color:#10B981;font-size:11px;font-family:'Noto Sans KR',sans-serif;cursor:pointer;font-weight:600;transition:all .15s;">목</button>
+    <button class="cm-day-btn active" data-day="4" onclick="toggleCmDay(4)" style="width:34px;height:34px;border-radius:6px;border:1px solid rgba(16,185,129,.5);background:rgba(16,185,129,.15);color:#10B981;font-size:11px;font-family:'Noto Sans KR',sans-serif;cursor:pointer;font-weight:600;transition:all .15s;">금</button>
+    <button class="cm-day-btn active" data-day="5" onclick="toggleCmDay(5)" style="width:34px;height:34px;border-radius:6px;border:1px solid rgba(16,185,129,.5);background:rgba(16,185,129,.15);color:#10B981;font-size:11px;font-family:'Noto Sans KR',sans-serif;cursor:pointer;font-weight:600;transition:all .15s;">토</button>
+    <button class="cm-day-btn active" data-day="6" onclick="toggleCmDay(6)" style="width:34px;height:34px;border-radius:6px;border:1px solid rgba(16,185,129,.5);background:rgba(16,185,129,.15);color:#10B981;font-size:11px;font-family:'Noto Sans KR',sans-serif;cursor:pointer;font-weight:600;transition:all .15s;">일</button>
+  </div>
+</div>
 <div class="cm-official-row" id="cm-official-row">
   <label class="cm-official-toggle"><input type="checkbox" id="cm-official" onchange="_updateOfficialPreview(this.checked)"><span class="cm-official-toggle-slider"></span></label>
   <span style="font-size:12px;color:var(--text-muted);">공식 커뮤니티로 지정</span>
@@ -10340,6 +10352,7 @@ if (officialRow2) officialRow2.style.display = isMaster ? '' : 'none';
 const _oc = document.getElementById('cm-official');
 if (_oc) { _oc.checked = false; _updateOfficialPreview(false); }
 setCmStatsPublic(false);
+setCmStatsDays(null);
 document.getElementById('community-modal').style.display = 'flex';
 }
 function openCommunityEditModal(cid) {
@@ -10360,6 +10373,7 @@ if (document.getElementById('cm-deeplol-id')) document.getElementById('cm-deeplo
       setCmDefaultAttend(defaultAttend);
       const statsPublic = c.statsPublic === true || c.statsPublic === 'true';
       setCmStatsPublic(statsPublic);
+      setCmStatsDays(Array.isArray(c.statsPublicDays) ? c.statsPublicDays : null);
 const dcInput = document.getElementById('cm-discord-channel');
 if (dcInput) dcInput.value = c.discordChannelId || '';
 const dsInput = document.getElementById('cm-discord-server-id');
@@ -10456,6 +10470,7 @@ try {
     alarmTemplate: alarmTemplate || '',
     defaultAttend: defaultAttend || false,
     statsPublic: !!(document.getElementById('cm-stats-public')?.value === 'true'),
+    statsPublicDays: getCmStatsDays(),
     bannerImage: finalBanner || null,
   };
 
@@ -21560,6 +21575,54 @@ function setCmStatsPublic(val) {
   btn.style.background = val ? '#10B981' : '#2D3748';
   dot.style.background = val ? '#fff' : '#718096';
   dot.style.left = val ? '25px' : '3px';
+  var daysRow = document.getElementById('cm-stats-days-row');
+  if (daysRow) daysRow.style.display = val ? '' : 'none';
+}
+function toggleCmDay(dayIndex) {
+  var btns = document.querySelectorAll('.cm-day-btn');
+  btns.forEach(function(b) {
+    if (parseInt(b.getAttribute('data-day')) === dayIndex) {
+      var isActive = b.classList.contains('active');
+      if (isActive) {
+        b.classList.remove('active');
+        b.style.border = '1px solid rgba(255,255,255,.1)';
+        b.style.background = 'rgba(255,255,255,.03)';
+        b.style.color = 'var(--text-muted)';
+      } else {
+        b.classList.add('active');
+        b.style.border = '1px solid rgba(16,185,129,.5)';
+        b.style.background = 'rgba(16,185,129,.15)';
+        b.style.color = '#10B981';
+      }
+    }
+  });
+}
+function getCmStatsDays() {
+  var result = [];
+  document.querySelectorAll('.cm-day-btn.active').forEach(function(b) {
+    result.push(parseInt(b.getAttribute('data-day')));
+  });
+  return result;
+}
+function setCmStatsDays(days) {
+  // days: 배열 [0,1,2,...] (0=월,1=화,...,6=일), null/undefined 면 전체 활성
+  var allDays = [0,1,2,3,4,5,6];
+  var activeDays = (Array.isArray(days) && days.length > 0) ? days : allDays;
+  document.querySelectorAll('.cm-day-btn').forEach(function(b) {
+    var d = parseInt(b.getAttribute('data-day'));
+    var on = activeDays.indexOf(d) !== -1;
+    if (on) {
+      b.classList.add('active');
+      b.style.border = '1px solid rgba(16,185,129,.5)';
+      b.style.background = 'rgba(16,185,129,.15)';
+      b.style.color = '#10B981';
+    } else {
+      b.classList.remove('active');
+      b.style.border = '1px solid rgba(255,255,255,.1)';
+      b.style.background = 'rgba(255,255,255,.03)';
+      b.style.color = 'var(--text-muted)';
+    }
+  });
 }
 
 

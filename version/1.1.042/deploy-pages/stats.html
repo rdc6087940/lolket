@@ -411,6 +411,19 @@ tbody td{padding:.55rem 1rem;font-size:12px;vertical-align:middle;}
   .page-header { flex-direction:column; gap:.25rem; }
 }
 
+/* ── 승률/레이팅 모자이크 (비관리자 블러) ── */
+.sensitive-blur {
+  filter: blur(6px);
+  user-select: none;
+  pointer-events: none;
+  transition: filter .3s ease;
+}
+body.admin-unlocked .sensitive-blur {
+  filter: none;
+  user-select: auto;
+  pointer-events: auto;
+}
+
 /* ── 모바일 필터 ── */
 @media(max-width:768px){
   .filter-bar{
@@ -806,6 +819,10 @@ tr.has-bg-effect td {
       style="display:none;padding:5px 14px;border-radius:2px 2px 0 0;border:1px solid var(--border);border-bottom:none;background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;white-space:nowrap;flex-shrink:0;">
       🎯 임시티어 관리
     </button>
+    <button class="main-tab-btn admin-only" id="tab-member-compare" onclick="switchMainTab('member-compare')"
+      style="display:none;padding:5px 14px;border-radius:2px 2px 0 0;border:1px solid var(--border);border-bottom:none;background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;white-space:nowrap;flex-shrink:0;">
+      🔗 멤버 중복 비교
+    </button>
   </div>
 
   <!-- ── 관찰 분석 뷰 ── -->
@@ -974,6 +991,28 @@ tr.has-bg-effect td {
     </div>
   </div>
 
+  <!-- ── 멤버 중복 비교 뷰 (admin-only) ── -->
+  <div id="member-compare-view" style="display:none;">
+    <div style="padding:.75rem 1.25rem;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);background:linear-gradient(90deg,rgba(10,200,185,.06) 0%,transparent 60%);">
+      <span style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:2px;color:var(--blue);">멤버 중복 비교</span>
+      <span style="font-family:'Rajdhani',sans-serif;font-size:11px;color:var(--muted);">두 커뮤니티의 딥롤 커넥트 서버 ID를 입력해 중복 멤버를 조회합니다</span>
+    </div>
+    <div style="padding:1rem 1.25rem;display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;border-bottom:1px solid var(--border);">
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <label style="font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.5px;">커뮤니티 A 서버 ID</label>
+        <input id="mc-server-a" type="text" placeholder="예: 12345" style="background:var(--bg-dark);border:1px solid var(--border);border-radius:3px;padding:6px 10px;color:var(--white);font-family:'Rajdhani',sans-serif;font-size:12px;outline:none;width:180px;" onfocus="this.style.borderColor='rgba(10,200,185,.5)'" onblur="this.style.borderColor='var(--border)'">
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <label style="font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.5px;">커뮤니티 B 서버 ID</label>
+        <input id="mc-server-b" type="text" placeholder="예: 67890" style="background:var(--bg-dark);border:1px solid var(--border);border-radius:3px;padding:6px 10px;color:var(--white);font-family:'Rajdhani',sans-serif;font-size:12px;outline:none;width:180px;" onfocus="this.style.borderColor='rgba(10,200,185,.5)'" onblur="this.style.borderColor='var(--border)'">
+      </div>
+      <button onclick="runMemberCompare()" style="padding:6px 18px;border-radius:3px;border:1px solid rgba(10,200,185,.4);background:rgba(10,200,185,.08);color:var(--blue);font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:.5px;cursor:pointer;transition:all .15s;" onmouseover="this.style.background='rgba(10,200,185,.16)'" onmouseout="this.style.background='rgba(10,200,185,.08)'">🔍 비교 조회</button>
+    </div>
+    <div id="mc-result" style="padding:1rem 1.25rem;">
+      <div style="text-align:center;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:12px;padding:2rem;">서버 ID를 입력하고 비교 조회를 실행하세요</div>
+    </div>
+  </div>
+
   <!-- ── 레이팅 변화 랭킹 뷰 ── -->
   <div id="rating-rank-view" style="display:none;padding:1rem;">
     <div style="display:flex;gap:8px;align-items:center;margin-bottom:1rem;flex-wrap:wrap;">
@@ -1052,12 +1091,14 @@ tr.has-bg-effect td {
 var _statsAdminToken = (function(){ try{ return localStorage.getItem('sa_token')||''; }catch(e){ return ''; } })();
 var _statsMasterToken = (function(){ try{ return localStorage.getItem('sa_master_token')||''; }catch(e){ return ''; } })();
 var _statsAdminRole  = (function(){ try{ return localStorage.getItem('sa_role')||''; }catch(e){ return ''; } })();
-// 이미 로그인된 경우 임시티어 탭 표시
+// 이미 로그인된 경우 admin-only 탭 표시
 (function() {
   if (_statsAdminRole === 'master' || _statsAdminRole === 'admin') {
     document.addEventListener('DOMContentLoaded', function() {
       var _ttTab = document.getElementById('tab-temp-tier');
       if (_ttTab) _ttTab.style.display = '';
+      var _mcTab = document.getElementById('tab-member-compare');
+      if (_mcTab) _mcTab.style.display = '';
     });
   }
 })();
@@ -1356,6 +1397,9 @@ async function loadData(){
     }
     // 이미 관리자 로그인된 경우 UI 복원 (_statsAdminToken)
     if (_statsAdminToken && _statsAdminRole) {
+      document.body.classList.add('admin-unlocked');
+      var _dmRlTabInit = document.getElementById('dm-tab-rating-log');
+      if (_dmRlTabInit) _dmRlTabInit.style.display = '';
       var adminStatus = document.getElementById('admin-status');
       var adminStatusText = document.getElementById('admin-status-text');
       var adminLoginBtn = document.getElementById('btn-admin-login');
@@ -1386,6 +1430,37 @@ async function loadData(){
           var el = document.getElementById(bid); if (el) el.style.display = '';
         });
       }
+    }
+    // 커뮤니티 설정에서 statsPublic 읽기 → ON이면 자동 언락
+    console.log('[statsPublic-SYNC] reached, COMMUNITY_ID=', COMMUNITY_ID, 'WORKER_URL=', WORKER_URL);
+    if (COMMUNITY_ID) {
+      console.log('[statsPublic-SYNC] entering if block, starting fetch...');
+      (async function() {
+        try {
+          console.log('[statsPublic-ASYNC] fetch start');
+          var _cmRes = await fetch(WORKER_URL + '/db-public-read', {
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ path: 'communities_info/' + COMMUNITY_ID, _nocache: Date.now() })
+          });
+          var _cmJson = await _cmRes.json();
+          console.log('[statsPublic] communities_info response:', JSON.stringify(_cmJson).slice(0,300));
+          if (_cmJson.ok && _cmJson.data && (_cmJson.data.statsPublic === true || _cmJson.data.statsPublic === 'true')) {
+            // 오늘 요일 체크 (0=일,1=월,...,6=토 → JS getDay()와 맞춤)
+            // index.html은 0=월,...,6=일 순서로 저장 → JS getDay(): 0=일,1=월,...,6=토
+            // 매핑: JS(0=일)→저장(6), JS(1=월)→저장(0), ..., JS(6=토)→저장(5)
+            var _todayJS = new Date().getDay(); // 0=일,1=월,...,6=토
+            var _todayIdx = _todayJS === 0 ? 6 : _todayJS - 1; // 저장 인덱스로 변환
+            var _days = _cmJson.data.statsPublicDays;
+            var _dayOk = !Array.isArray(_days) || _days.length === 0 || _days.indexOf(_todayIdx) !== -1;
+            console.log('[statsPublic] today idx:', _todayIdx, 'days:', JSON.stringify(_days), 'ok:', _dayOk);
+            if (_dayOk) {
+              document.body.classList.add('admin-unlocked');
+              var _dmRlTabPub = document.getElementById('dm-tab-rating-log');
+              if (_dmRlTabPub) _dmRlTabPub.style.display = '';
+            }
+          }
+        } catch(e) { console.error('[statsPublic] error:', e); }
+      })();
     }
     allData=(json.tournament_stats&&json.tournament_stats.tournament_stats_all_list)||[];
     // sticker 조회용 전역 목록 저장
@@ -1498,7 +1573,7 @@ function renderPage(){
       <td>${renderTempTierCell(m)}</td>
       <td><div class="champ-list">${champs}</div></td>
       <td><span class="kda-val ${kc}">${kv}</span></td>
-      <td><div class="wr-wrap">
+      <td><div class="wr-wrap sensitive-blur">
         <span class="wn">${w}</span>
         <div class="wr-bar"><div class="wr-inner"><div class="bw" style="width:${wp}%"></div><div class="bl" style="width:${lp}%"></div></div></div>
         <span class="wl">${l}</span>
@@ -1506,7 +1581,7 @@ function renderPage(){
       </div></td>
       <td class="col-games">${t}</td>
       <td class="col-recent">${timeAgo(m.creation_timestamp)}</td>
-      <td style="width:68px;text-align:center;">${buildRatingCell(m._rating, m._ratingBreakdown, m.cnt)}</td>
+      <td style="width:68px;text-align:center;" class="sensitive-blur">${buildRatingCell(m._rating, m._ratingBreakdown, m.cnt)}</td>
       <td style="width:60px;text-align:center;">${(function(){ var r=calcMMR(m, allData); return r ? '<span style="font-size:11px;font-weight:700;color:#A78BFA;">'+r.mmr+'</span><div style="font-size:9px;color:var(--muted);">MMR</div>' : '<span style="color:var(--muted);font-size:10px;">—</span>'; })()}</td>
       <td style="width:52px;text-align:center;">
         <div style="display:flex;gap:3px;justify-content:center;align-items:center;">
@@ -1541,9 +1616,9 @@ function renderMobileCards(slice, start) {
       var cn = champMap[String(cid)] || String(cid);
       return '<img src="'+DD_ICON(cn)+'" onerror="this.style.opacity=0.15" loading="lazy">';
     }).join('');
-    var ratingHtml = (m.cnt >= 10 && m._rating)
+    var ratingHtml = '<span class="sensitive-blur">' + ((m.cnt >= 10 && m._rating)
       ? '<span class="mc-rating">⭐ '+Math.round(m._rating)+'</span>'
-      : '<span style="font-size:10px;color:var(--muted);font-family:Rajdhani,sans-serif;">배치중</span>';
+      : '<span style="font-size:10px;color:var(--muted);font-family:Rajdhani,sans-serif;">배치중</span>') + '</span>';
     var tempTier = _tempTiers && m.puu_id && _tempTiers[m.puu_id] ? _tempTiers[m.puu_id].tier : null;
     var tempHtml = tempTier ? '<span style="font-family:Rajdhani,sans-serif;font-size:10px;color:#F59E0B;background:rgba(245,158,11,.1);padding:1px 5px;border-radius:2px;">임시 '+esc(tempTier)+'</span>' : '';
 
@@ -1566,10 +1641,10 @@ function renderMobileCards(slice, start) {
       '</div>' +
       '<div class="mc-stats">' +
         '<span><div class="val">'+t+'</div>게임</span>' +
-        '<span><div class="val">'+w+'승 '+l+'패</div>'+pct+'</span>' +
+        '<span class="sensitive-blur"><div class="val">'+w+'승 '+l+'패</div>'+pct+'</span>' +
         '<span><div class="val">'+kv+'</div>KDA</span>' +
       '</div>' +
-      (t > 0 ? '<div style="margin-top:.4rem;height:4px;border-radius:2px;overflow:hidden;background:rgba(255,255,255,.08);display:flex;">' +
+      (t > 0 ? '<div class="sensitive-blur" style="margin-top:.4rem;height:4px;border-radius:2px;overflow:hidden;background:rgba(255,255,255,.08);display:flex;">' +
         '<div style="width:'+(w/t*100).toFixed(1)+'%;background:#4a9eff;"></div>' +
         '<div style="width:'+(l/t*100).toFixed(1)+'%;background:#e05050;"></div>' +
       '</div>' : '') +
@@ -1863,7 +1938,7 @@ async function _cachedFetch(key, ttlSec, fetchFn) {
       <button id="dm-tab-analysis" onclick="switchDetailTab('analysis')"
         style="padding:4px 10px;border-radius:2px 2px 0 0;border:1px solid var(--border);border-bottom:2px solid var(--blue);background:rgba(10,200,185,.08);color:var(--blue);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:.5px;">📊 분석</button>
       <button id="dm-tab-rating-log" onclick="switchDetailTab('rating-log')"
-        style="padding:4px 10px;border-radius:2px 2px 0 0;border:1px solid var(--border);border-bottom:none;background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:.5px;">📈 레이팅 로그</button>
+        style="padding:4px 10px;border-radius:2px 2px 0 0;border:1px solid var(--border);border-bottom:none;background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:.5px;display:none;">📈 레이팅 로그</button>
       <button id="dm-tab-weekly" onclick="switchDetailTab('weekly')"
         style="padding:4px 10px;border-radius:2px 2px 0 0;border:1px solid var(--border);border-bottom:none;background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:.5px;">🎯 주간 미션</button>
       <button id="dm-tab-comments" onclick="switchDetailTab('comments')"
@@ -2353,9 +2428,9 @@ async function openDetail(memberData) {
   // 초기 ratingHtml 불필요 (renderDetail에서 슬롯 업데이트)
   document.getElementById('dm-stats').innerHTML =
     '<div class="dm-stat"><div class="dm-stat-val">'+t+'</div><div class="dm-stat-lbl">게임 수</div></div>' +
-    '<div id="dm-rating-slot"></div>' +
+    '<div id="dm-rating-slot" class="sensitive-blur"></div>' +
     '<div style="font-family:Rajdhani,sans-serif;font-size:10px;color:var(--muted);align-self:center;">'+modeLabel+'</div>' +
-    '<div class="dm-stat"><div class="dm-stat-val" style="color:var(--gold)">'+pct+'%</div><div class="dm-stat-lbl">승률</div></div>' +
+    '<div class="dm-stat sensitive-blur"><div class="dm-stat-val" style="color:var(--gold)">'+pct+'%</div><div class="dm-stat-lbl">승률</div></div>' +
     '<div class="dm-stat"><div class="dm-stat-val" style="color:#A0A8B0">'+(memberData.kda?memberData.kda.toFixed(2):'—')+'</div><div class="dm-stat-lbl">KDA</div></div>';
   document.getElementById('dm-content').innerHTML =
     '<div class="dm-loading"><div class="spinner"></div> 매치 데이터 분석 중...</div>';
@@ -3255,11 +3330,16 @@ async function doStatsAdminLogin() {
     } catch(e) {}
     document.getElementById('admin-login-overlay').classList.remove('open');
     document.getElementById('btn-admin-login').style.display = 'none';
+    document.body.classList.add('admin-unlocked');
+    var _dmRatingLogTab = document.getElementById('dm-tab-rating-log');
+    if (_dmRatingLogTab) _dmRatingLogTab.style.display = '';
     var statusEl = document.getElementById('admin-status');
     statusEl.style.display = 'flex';
-    // 임시티어 관리 탭 표시 (관리자 이상)
+    // 임시티어 관리 탭 / 멤버 중복 비교 탭 표시 (관리자 이상)
     var _ttTab = document.getElementById('tab-temp-tier');
     if (_ttTab) _ttTab.style.display = '';
+    var _mcTab = document.getElementById('tab-member-compare');
+    if (_mcTab) _mcTab.style.display = '';
     document.getElementById('admin-status-text').textContent = (_statsAdminRole === 'master' ? '👑 마스터' : '🔑 관리자') + ' ' + id;
     // 마스터 전용 버튼 표시
     if (_statsAdminRole === 'master') {
@@ -3286,6 +3366,9 @@ function statsAdminLogout() {
   _statsAdminToken = '';
   _statsAdminRole  = '';
   try { localStorage.removeItem('sa_token'); localStorage.removeItem('sa_role'); localStorage.removeItem('sa_id'); localStorage.removeItem('sa_pw'); } catch(e) {}
+  document.body.classList.remove('admin-unlocked');
+  var _dmRlTab = document.getElementById('dm-tab-rating-log');
+  if (_dmRlTab) _dmRlTab.style.display = 'none';
   document.getElementById('btn-admin-login').style.display = '';
   document.getElementById('admin-status').style.display = 'none';
   // 마스터 전용 버튼 숨기기
@@ -3511,6 +3594,10 @@ function switchDetailTab(tab) {
     analysisTab.style.color        = 'var(--blue)';
     if (contentEl) contentEl.style.display = '';
   } else if (tab === 'rating-log') {
+    if (!document.body.classList.contains('admin-unlocked')) {
+      // 비관리자 접근 차단 — 분석 탭 유지
+      switchDetailTab('analysis'); return;
+    }
     logTab.style.borderBottom = '2px solid var(--gold)';
     logTab.style.background   = 'rgba(200,170,110,.08)';
     logTab.style.color        = 'var(--gold)';
@@ -3765,7 +3852,8 @@ function switchMainTab(tab) {
   var nickLogTab2 = document.getElementById('tab-nickname-log');
   var doomSimTab2 = document.getElementById('tab-doom-sim');
   var tempTierTab2 = document.getElementById('tab-temp-tier');
-  [statsTab, ratingTab, communityTab, scoutTab, nickLogTab2, doomSimTab2, tempTierTab2].forEach(function(t) {
+  var memberCompareTab2 = document.getElementById('tab-member-compare');
+  [statsTab, ratingTab, communityTab, scoutTab, nickLogTab2, doomSimTab2, tempTierTab2, memberCompareTab2].forEach(function(t) {
     if (t) { t.style.borderBottom='none'; t.style.background='transparent'; t.style.color='var(--muted)'; }
   });
   var pagination = document.getElementById('pagination');
@@ -3780,6 +3868,8 @@ function switchMainTab(tab) {
   if (doomSimViewEl) doomSimViewEl.style.display = 'none';
   var tempTierViewEl = document.getElementById('temp-tier-view');
   if (tempTierViewEl) tempTierViewEl.style.display = 'none';
+  var memberCompareViewEl = document.getElementById('member-compare-view');
+  if (memberCompareViewEl) memberCompareViewEl.style.display = 'none';
   if (filterBar) filterBar.style.display = 'none';
   if (mobileCards) mobileCards.style.display = 'none';
   if (mobileSortBar) mobileSortBar.style.display = 'none';
@@ -3845,6 +3935,15 @@ function switchMainTab(tab) {
     if (tempTierViewEl) {
       tempTierViewEl.style.display = '';
       loadTempTierTab();
+    }
+  } else if (tab === 'member-compare') {
+    if (memberCompareTab2) {
+      memberCompareTab2.style.borderBottom = '2px solid var(--blue)';
+      memberCompareTab2.style.background   = 'rgba(10,200,185,.08)';
+      memberCompareTab2.style.color        = 'var(--blue)';
+    }
+    if (memberCompareViewEl) {
+      memberCompareViewEl.style.display = '';
     }
   }
 }
@@ -3967,8 +4066,8 @@ function _buildRankTable(entries, isRise) {
     html += '<tr style="border-bottom:1px solid rgba(255,255,255,.03);">' +
       '<td style="padding:5px 6px;color:var(--muted);">' + (i+1) + '</td>' +
       '<td style="padding:5px 6px;color:var(--white);">' + esc(e.name) + '</td>' +
-      '<td style="padding:5px 6px;text-align:right;font-weight:700;color:' + color + ';">' + sign + delta + '</td>' +
-      '<td style="padding:5px 6px;text-align:right;color:var(--gold);">' + Math.round(e.data.endRating) + '</td>' +
+      '<td style="padding:5px 6px;text-align:right;font-weight:700;color:' + color + ';" class="sensitive-blur">' + sign + delta + '</td>' +
+      '<td style="padding:5px 6px;text-align:right;color:var(--gold);" class="sensitive-blur">' + Math.round(e.data.endRating) + '</td>' +
       '</tr>';
   });
   html += '</tbody></table>';
@@ -8491,6 +8590,103 @@ var _ttTabCache = null; // { tempTiers, ratingHistMap, ts }
 
 function _ttInvalidateCache() {
   _ttTabCache = null;
+}
+
+// ── 멤버 중복 비교 ──
+async function runMemberCompare() {
+  var serverA = (document.getElementById('mc-server-a') || {}).value.trim();
+  var serverB = (document.getElementById('mc-server-b') || {}).value.trim();
+  var resultEl = document.getElementById('mc-result');
+  if (!resultEl) return;
+  if (!serverA || !serverB) {
+    resultEl.innerHTML = '<div style="color:#F59E0B;font-family:Rajdhani,sans-serif;font-size:12px;padding:1rem;">두 서버 ID를 모두 입력해주세요.</div>';
+    return;
+  }
+  resultEl.innerHTML = '<div style="text-align:center;color:var(--muted);font-family:Rajdhani,sans-serif;font-size:12px;padding:2rem;"><div class="spinner" style="margin:0 auto 8px;"></div>멤버 조회 중...</div>';
+
+  async function fetchServerMembers(serverId) {
+    try {
+      var res = await fetch('https://b2c-api-cdn.deeplol.gg/tournament/server_info?server_id=' + encodeURIComponent(serverId), {
+        headers: { 'Referer': 'https://www.deeplol.gg/' }
+      });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch(e) { return null; }
+  }
+
+  try {
+    var [dataA, dataB] = await Promise.all([
+      fetchServerMembers(serverA),
+      fetchServerMembers(serverB)
+    ]);
+
+    if (!dataA) { resultEl.innerHTML = '<div style="color:#F87171;font-family:Rajdhani,sans-serif;font-size:12px;padding:1rem;">커뮤니티 A 서버 정보 조회 실패. 서버 ID를 확인해주세요.</div>'; return; }
+    if (!dataB) { resultEl.innerHTML = '<div style="color:#F87171;font-family:Rajdhani,sans-serif;font-size:12px;padding:1rem;">커뮤니티 B 서버 정보 조회 실패. 서버 ID를 확인해주세요.</div>'; return; }
+
+    // 멤버 목록 추출 (puu_id 기준)
+    var membersA = dataA.members || dataA.member_list || [];
+    var membersB = dataB.members || dataB.member_list || [];
+    var nameA = dataA.server_name || ('서버 ' + serverA);
+    var nameB = dataB.server_name || ('서버 ' + serverB);
+
+    // puu_id → 멤버 정보 맵
+    var mapA = {};
+    membersA.forEach(function(m) {
+      var pid = m.puu_id || m.puuid || m.puuId;
+      if (pid) mapA[pid] = m;
+    });
+    var mapB = {};
+    membersB.forEach(function(m) {
+      var pid = m.puu_id || m.puuid || m.puuId;
+      if (pid) mapB[pid] = m;
+    });
+
+    // 교집합
+    var overlap = Object.keys(mapA).filter(function(pid) { return !!mapB[pid]; });
+
+    var html = '<div style="display:flex;flex-wrap:wrap;gap:16px;margin-bottom:1rem;align-items:center;">';
+    html += '<div style="font-family:Rajdhani,sans-serif;font-size:11px;color:var(--muted);">A: <span style="color:var(--blue);font-weight:700;">' + escHtml(nameA) + '</span> · ' + membersA.length + '명</div>';
+    html += '<div style="font-family:Rajdhani,sans-serif;font-size:11px;color:var(--muted);">B: <span style="color:var(--blue);font-weight:700;">' + escHtml(nameB) + '</span> · ' + membersB.length + '명</div>';
+    html += '<div style="font-family:Rajdhani,sans-serif;font-size:12px;font-weight:700;color:#F59E0B;">중복 멤버: ' + overlap.length + '명</div>';
+    html += '</div>';
+
+    if (overlap.length === 0) {
+      html += '<div style="text-align:center;color:var(--muted);font-family:Rajdhani,sans-serif;font-size:12px;padding:2rem;">중복 멤버가 없습니다.</div>';
+    } else {
+      html += '<div style="overflow-x:auto;">';
+      html += '<table style="width:100%;border-collapse:collapse;font-family:Rajdhani,sans-serif;font-size:12px;">';
+      html += '<thead><tr style="border-bottom:1px solid var(--border);">';
+      html += '<th style="text-align:left;padding:6px 10px;color:var(--muted);font-size:10px;font-weight:700;letter-spacing:.5px;">#</th>';
+      html += '<th style="text-align:left;padding:6px 10px;color:var(--muted);font-size:10px;font-weight:700;letter-spacing:.5px;">닉네임 (A)</th>';
+      html += '<th style="text-align:left;padding:6px 10px;color:var(--muted);font-size:10px;font-weight:700;letter-spacing:.5px;">닉네임 (B)</th>';
+      html += '<th style="text-align:left;padding:6px 10px;color:var(--muted);font-size:10px;font-weight:700;letter-spacing:.5px;">PUU ID</th>';
+      html += '</tr></thead><tbody>';
+      overlap.forEach(function(pid, idx) {
+        var mA = mapA[pid];
+        var mB = mapB[pid];
+        var nickA = mA.game_name || mA.summoner_name || mA.nickname || '-';
+        var nickB = mB.game_name || mB.summoner_name || mB.nickname || '-';
+        var tagA = mA.tag_line ? ('#' + mA.tag_line) : '';
+        var tagB = mB.tag_line ? ('#' + mB.tag_line) : '';
+        var rowBg = idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,.02)';
+        html += '<tr style="border-bottom:1px solid rgba(255,255,255,.04);background:' + rowBg + ';">';
+        html += '<td style="padding:7px 10px;color:var(--muted);font-size:10px;">' + (idx + 1) + '</td>';
+        html += '<td style="padding:7px 10px;color:var(--white);font-weight:700;">' + escHtml(nickA) + '<span style="color:var(--muted);font-size:10px;">' + escHtml(tagA) + '</span></td>';
+        html += '<td style="padding:7px 10px;color:var(--white);">' + escHtml(nickB) + '<span style="color:var(--muted);font-size:10px;">' + escHtml(tagB) + '</span></td>';
+        html += '<td style="padding:7px 10px;color:var(--muted);font-size:10px;word-break:break-all;">' + escHtml(pid) + '</td>';
+        html += '</tr>';
+      });
+      html += '</tbody></table></div>';
+    }
+
+    resultEl.innerHTML = html;
+  } catch(e) {
+    resultEl.innerHTML = '<div style="color:#F87171;font-family:Rajdhani,sans-serif;font-size:12px;padding:1rem;">오류 발생: ' + escHtml(String(e)) + '</div>';
+  }
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 async function loadTempTierTab() {
