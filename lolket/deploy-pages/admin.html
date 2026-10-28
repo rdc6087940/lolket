@@ -1070,14 +1070,9 @@ async function analyzeConnect() {
 
     const results = await Promise.all(connects.map(async c => {
       try {
-        // Worker /server-info 사용 (stats.html과 동일한 방식)
-        const res = await fetch('https://api.roonging.com/server-info', {
-          method: 'POST', headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({ serverId: c.serverId })
-        });
-        const j = await res.json();
-        if (!j.ok || !j.data) return null;
-        const members = j.data?.tournament_stats?.tournament_stats_all_list || [];
+        const data = await _fetchServerInfoRaw(c.serverId);
+        if (!data) return null;
+        const members = (data.tournament_stats && data.tournament_stats.tournament_stats_all_list) || [];
         const member = members.find(function(m){
           return m.riot_name?.toLowerCase().trim() === riotName &&
                  m.riot_tag?.toLowerCase().trim()  === riotTag;
@@ -1367,17 +1362,38 @@ function renderMcTable(filter, page) {
 var _taServerCache = {}; // { serverId: { name, members, ts } }
 const TA_CACHE_TTL = 30 * 60 * 1000; // 30분
 
+async function _fetchServerInfoDirect(sid) {
+  try {
+    const res = await fetch('https://b2c-api-cdn.deeplol.gg/tournament/server_info?server_id=' + sid, {
+      headers: { 'Referer': 'https://www.deeplol.gg/' }
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch(e) { return null; }
+}
+async function _fetchServerInfoWorker(sid) {
+  try {
+    const res = await fetch(WORKER_URL + '/server-info', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ serverId: sid })
+    });
+    const j = await res.json();
+    if (!j.ok || !j.data) return null;
+    return j.data;
+  } catch(e) { return null; }
+}
+async function _fetchServerInfoRaw(sid) {
+  const direct = await _fetchServerInfoDirect(sid);
+  if (direct) return direct;
+  return await _fetchServerInfoWorker(sid);
+}
 async function fetchServerInfoCached(sid) {
   const cached = _taServerCache[sid];
   if (cached && Date.now() - cached.ts < TA_CACHE_TTL) return cached;
-  const r = await fetch(WORKER_URL + '/server-info', {
-    method: 'POST', headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ serverId: sid })
-  });
-  const j = await r.json();
-  if (!j.ok || !j.data) return null;
-  const members = (j.data.tournament_stats && j.data.tournament_stats.tournament_stats_all_list) || [];
-  const name = j.data.server_name || j.data.serverName || ('서버 ' + sid);
+  const data = await _fetchServerInfoRaw(sid);
+  if (!data) return null;
+  const members = (data.tournament_stats && data.tournament_stats.tournament_stats_all_list) || [];
+  const name = data.server_name || data.serverName || ('서버 ' + sid);
   const result = { name, members, ts: Date.now() };
   _taServerCache[sid] = result;
   return result;
@@ -1599,19 +1615,12 @@ async function runMemberCompare() {
   }
   resultEl.innerHTML = '<div style="display:flex;align-items:center;gap:8px;color:var(--muted);font-size:12px;"><div class="spinner"></div> 멤버 조회 중...</div>';
 
-  // Worker /server-info 경유 (analyzeConnect와 동일한 방식)
   async function fetchServerMembers(serverId) {
-    try {
-      const res = await fetch(WORKER_URL + '/server-info', {
-        method: 'POST', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ serverId })
-      });
-      const j = await res.json();
-      if (!j.ok || !j.data) return null;
-      const members = (j.data.tournament_stats && j.data.tournament_stats.tournament_stats_all_list) || [];
-      const serverName = j.data.server_name || j.data.serverName || ('서버 ' + serverId);
-      return { members, serverName };
-    } catch(e) { return null; }
+    const data = await _fetchServerInfoRaw(serverId);
+    if (!data) return null;
+    const members = (data.tournament_stats && data.tournament_stats.tournament_stats_all_list) || [];
+    const serverName = data.server_name || data.serverName || ('서버 ' + serverId);
+    return { members, serverName };
   }
 
   try {
