@@ -451,6 +451,22 @@ export default {
     if (path === '/db-public-read' && request.method === 'POST') {
       return handleDbPublicRead(request, env);
     }
+    // your.gg API 프록시 (CORS 우회)
+    if (path === '/yourgg-profile' && request.method === 'POST') {
+      return handleYourGGProfile(request, env);
+    }
+    // deeplol 매치 리스트 프록시 (CORS 우회)
+    if (path === '/deeplol-matches' && request.method === 'POST') {
+      return handleDeeplolMatches(request, env);
+    }
+    // deeplol 매치 상세 프록시 (CORS 우회)
+    if (path === '/deeplol-match' && request.method === 'POST') {
+      return handleDeeplolMatch(request, env);
+    }
+    // deeplol 소환사 조회 (riotName+riotTag → puuId)
+    if (path === '/deeplol-summoner' && request.method === 'POST') {
+      return handleDeeplolSummoner(request, env);
+    }
     if (path === '/chat-send' && request.method === 'POST') {
       return handleChatSend(request, env);
     }
@@ -579,6 +595,22 @@ export default {
     }
     if (path === '/comment-delete' && request.method === 'POST') {
       return handleCommentDelete(request, env);
+    }
+    // ── 소환사 연동 ──
+    if (path === '/discord-link-set' && request.method === 'POST') {
+      return handleDiscordLinkSet(request, env);
+    }
+    if (path === '/discord-link-get' && request.method === 'POST') {
+      return handleDiscordLinkGet(request, env);
+    }
+    if (path === '/discord-link-delete' && request.method === 'POST') {
+      return handleDiscordLinkDelete(request, env);
+    }
+    if (path === '/discord-link-update' && request.method === 'POST') {
+      return handleDiscordLinkUpdate(request, env);
+    }
+    if (path === '/discord-link-list' && request.method === 'POST') {
+      return handleDiscordLinkList(request, env);
     }
     if (path === '/cron-rating-test' && request.method === 'POST') {
       let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
@@ -868,6 +900,117 @@ async function handleLogin(request, env) {
     return json({ ok: false, error: '알 수 없는 type' }, 400);
   } catch (e) {
     return json({ ok: false, error: '서버 오류', detail: e.message }, 500);
+  }
+}
+
+// ══ your.gg API 프록시 ══
+async function handleYourGGProfile(request, env) {
+  let body;
+  try { body = await request.json(); } catch { return json({ ok: false, error: '잘못된 요청' }, 400); }
+  const { riotName, riotTag } = body;
+  if (!riotName || !riotTag) return json({ ok: false, error: 'riotName, riotTag 필요' }, 400);
+  const encoded = encodeURIComponent(riotName + '-' + riotTag);
+  const url = `https://api.your.gg/kr/api/profile/by-riot-id/${encoded}?lang=ko&matchCategory=&listMatchCategory=`;
+  try {
+    const res = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'application/json',
+        'Referer': 'https://your.gg/',
+        'Origin': 'https://your.gg'
+      }
+    });
+    if (!res.ok) {
+      const txt = await res.text();
+      return json({ ok: false, error: 'your.gg API 오류: ' + res.status, detail: txt.slice(0, 200) }, 502);
+    }
+    const data = await res.json();
+    return json({ ok: true, data });
+  } catch (e) {
+    return json({ ok: false, error: e.message }, 500);
+  }
+}
+
+// ══ deeplol 매치 리스트 프록시 ══
+async function handleDeeplolMatches(request, env) {
+  let body;
+  try { body = await request.json(); } catch { return json({ ok: false, error: '잘못된 요청' }, 400); }
+  const { puuId, offset = 0, count = 20 } = body;
+  if (!puuId) return json({ ok: false, error: 'puuId 필요' }, 400);
+  const url = `https://b2c-api-cdn.deeplol.gg/match/matches?puu_id=${encodeURIComponent(puuId)}&platform_id=KR&offset=${offset}&count=${count}&queue_type=ALL&champion_id=0&only_list=1&last_updated_at=0`;
+  try {
+    const res = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'application/json',
+        'Referer': 'https://www.deeplol.gg/',
+        'Origin': 'https://www.deeplol.gg'
+      }
+    });
+    if (!res.ok) {
+      const txt = await res.text();
+      return json({ ok: false, error: 'deeplol API 오류: ' + res.status, detail: txt.slice(0, 200) }, 502);
+    }
+    const data = await res.json();
+    return json({ ok: true, data });
+  } catch (e) {
+    return json({ ok: false, error: e.message }, 500);
+  }
+}
+
+// ══ deeplol 매치 상세 프록시 ══
+async function handleDeeplolMatch(request, env) {
+  let body;
+  try { body = await request.json(); } catch { return json({ ok: false, error: '잘못된 요청' }, 400); }
+  const { matchId } = body;
+  if (!matchId) return json({ ok: false, error: 'matchId 필요' }, 400);
+  const url = `https://b2c-api-cdn.deeplol.gg/match/match-cached?match_id=${encodeURIComponent(matchId)}&platform_id=KR`;
+  try {
+    const res = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'application/json',
+        'Referer': 'https://www.deeplol.gg/',
+        'Origin': 'https://www.deeplol.gg'
+      }
+    });
+    if (!res.ok) {
+      const txt = await res.text();
+      return json({ ok: false, error: 'deeplol API 오류: ' + res.status, detail: txt.slice(0, 200) }, 502);
+    }
+    const data = await res.json();
+    return json({ ok: true, data });
+  } catch (e) {
+    return json({ ok: false, error: e.message }, 500);
+  }
+}
+
+// ══ deeplol 소환사 조회 (riotName+riotTag → puuId) ══
+async function handleDeeplolSummoner(request, env) {
+  let body;
+  try { body = await request.json(); } catch { return json({ ok: false, error: '잘못된 요청' }, 400); }
+  const { riotName, riotTag } = body;
+  if (!riotName || !riotTag) return json({ ok: false, error: 'riotName, riotTag 필요' }, 400);
+  const url = `https://b2c-api-cdn.deeplol.gg/summoner/summoner?riot_id_name=${encodeURIComponent(riotName)}&riot_id_tag_line=${encodeURIComponent(riotTag)}&platform_id=KR`;
+  try {
+    const res = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'application/json',
+        'Referer': 'https://www.deeplol.gg/',
+        'Origin': 'https://www.deeplol.gg'
+      }
+    });
+    if (!res.ok) {
+      const txt = await res.text();
+      return json({ ok: false, error: 'deeplol summoner API 오류: ' + res.status, detail: txt.slice(0, 200) }, 502);
+    }
+    const data = await res.json();
+    // deeplol 응답: summoner_basic_info_dict.puu_id
+    const puuId = data?.summoner_basic_info_dict?.puu_id || null;
+    return json({ ok: !!puuId, puuId, raw: data });
+  } catch (e) {
+    return json({ ok: false, error: e.message }, 500);
   }
 }
 
@@ -5987,4 +6130,128 @@ async function handlePeakTiersWrite(request, env) {
     });
   }));
   return json({ ok: true, count: entries.length });
+}
+
+// ══════════════════════════════════════════════════
+// 소환사 연동 (Discord ↔ Summoner)
+// Firebase 경로: discord_link/{discordId}/{cid} = { riotName, riotTag, linkedAt }
+// ══════════════════════════════════════════════════
+
+// 연동 저장 (최초 1회만, 이미 연동된 경우 거부)
+async function handleDiscordLinkSet(request, env) {
+  let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
+  const { discordId, discordName, discordAvatar, cid, riotName, riotTag } = body;
+  if (!discordId || !cid || !riotName || !riotTag) return json({ok:false,error:'필수값 누락'},400);
+
+  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth='+secret : '';
+
+  // 이미 해당 cid에 연동됐는지 확인
+  const existing = await fetch(`${dbUrl}/discord_link/${discordId}/${cid}.json${authQ}`);
+  if (existing.ok) {
+    const data = await existing.json();
+    if (data && data.riotName) {
+      return json({ok:false,error:'already_linked', current:{riotName:data.riotName,riotTag:data.riotTag}},409);
+    }
+  }
+
+  const linkData = {
+    discordId, discordName: discordName||'', discordAvatar: discordAvatar||'',
+    cid, riotName, riotTag, linkedAt: Date.now()
+  };
+  const res = await fetch(`${dbUrl}/discord_link/${discordId}/${cid}.json${authQ}`, {
+    method: 'PUT', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(linkData)
+  });
+  if (!res.ok) return json({ok:false,error:'저장 실패'},500);
+  return json({ok:true, data:linkData});
+}
+
+// 연동 조회 (discordId + cid로 조회)
+async function handleDiscordLinkGet(request, env) {
+  let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
+  const { discordId, cid } = body;
+  if (!discordId || !cid) return json({ok:false,error:'필수값 누락'},400);
+
+  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth='+secret : '';
+  const res = await fetch(`${dbUrl}/discord_link/${discordId}/${cid}.json${authQ}`);
+  if (!res.ok) return json({ok:false,error:'조회 실패'},500);
+  const data = await res.json();
+  if (!data) return json({ok:true, linked:false});
+  return json({ok:true, linked:true, data});
+}
+
+// 연동 해제 (관리자 전용 — 세션 토큰 검증)
+async function handleDiscordLinkDelete(request, env) {
+  let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
+  const { token, discordId, cid } = body;
+  if (!token || !discordId || !cid) return json({ok:false,error:'필수값 누락'},400);
+
+  const session = getSession(token);
+  if (!session || (session.role !== 'master' && session.role !== 'admin')) {
+    return json({ok:false,error:'권한 없음'},403);
+  }
+
+  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth='+secret : '';
+  const res = await fetch(`${dbUrl}/discord_link/${discordId}/${cid}.json${authQ}`, { method:'DELETE' });
+  if (!res.ok) return json({ok:false,error:'삭제 실패'},500);
+  return json({ok:true});
+}
+
+// 연동 수정 (관리자 전용)
+async function handleDiscordLinkUpdate(request, env) {
+  let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
+  const { token, discordId, cid, riotName, riotTag } = body;
+  if (!token || !discordId || !cid || !riotName || !riotTag) return json({ok:false,error:'필수값 누락'},400);
+
+  const session = getSession(token);
+  if (!session || (session.role !== 'master' && session.role !== 'admin')) {
+    return json({ok:false,error:'권한 없음'},403);
+  }
+
+  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth='+secret : '';
+
+  // 기존 데이터 읽기
+  const existing = await fetch(`${dbUrl}/discord_link/${discordId}/${cid}.json${authQ}`);
+  const prev = existing.ok ? await existing.json() : {};
+
+  const updated = { ...prev, riotName, riotTag, updatedAt: Date.now() };
+  const res = await fetch(`${dbUrl}/discord_link/${discordId}/${cid}.json${authQ}`, {
+    method:'PUT', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(updated)
+  });
+  if (!res.ok) return json({ok:false,error:'수정 실패'},500);
+  return json({ok:true, data:updated});
+}
+
+// 연동 목록 조회 (관리자 전용 — cid 기준)
+async function handleDiscordLinkList(request, env) {
+  let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
+  const { token, cid } = body;
+  if (!token || !cid) return json({ok:false,error:'필수값 누락'},400);
+
+  const session = getSession(token);
+  if (!session || (session.role !== 'master' && session.role !== 'admin')) {
+    return json({ok:false,error:'권한 없음'},403);
+  }
+
+  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth='+secret : '';
+
+  // discord_link 전체 읽기 후 cid 필터
+  const res = await fetch(`${dbUrl}/discord_link.json${authQ}`);
+  if (!res.ok) return json({ok:false,error:'조회 실패'},500);
+  const all = await res.json();
+  if (!all) return json({ok:true, list:[]});
+
+  const list = [];
+  for (const [discordId, cids] of Object.entries(all)) {
+    if (cids && cids[cid]) {
+      list.push({ discordId, ...cids[cid] });
+    }
+  }
+  return json({ok:true, list});
 }

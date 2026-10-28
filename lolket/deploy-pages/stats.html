@@ -720,6 +720,8 @@ tr.has-bg-effect td {
         <div id="discord-status" style="display:none;align-items:center;gap:6px;">
           <img id="discord-avatar" src="" style="width:22px;height:22px;border-radius:50%;border:1px solid rgba(114,137,218,.3);">
           <span id="discord-name" style="font-family:'Rajdhani',sans-serif;font-size:11px;color:#7289da;font-weight:700;"></span>
+          <button id="btn-summoner-link" onclick="openSummonerLinkPopup()" style="display:none;padding:3px 10px;border-radius:2px;border:1px solid rgba(114,137,218,.35);background:rgba(114,137,218,.1);color:#7289da;font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;">🔗 소환사 연동</button>
+          <button id="btn-my-page" onclick="goToMyPage()" style="display:none;padding:3px 10px;border-radius:2px;border:1px solid rgba(10,200,185,.35);background:rgba(10,200,185,.08);color:var(--blue-bright);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;">⭐ 내 페이지</button>
           <button onclick="discordLogout()" style="padding:3px 8px;border-radius:2px;border:1px solid rgba(114,137,218,.2);background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;">로그아웃</button>
         </div>
         <button id="discord-login-btn" onclick="discordHeaderLogin()" style="display:none;padding:4px 10px;border-radius:3px;border:1px solid rgba(114,137,218,.4);background:rgba(114,137,218,.08);color:#7289da;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;align-items:center;gap:5px;">
@@ -727,6 +729,7 @@ tr.has-bg-effect td {
         </button>
         <div id="admin-status" style="display:none;align-items:center;gap:6px;">
           <span id="admin-status-text" style="font-family:'Rajdhani',sans-serif;font-size:11px;color:var(--blue);"></span>
+          <button id="btn-userpage-manage" onclick="openUserPageManage()" style="display:none;padding:3px 10px;border-radius:2px;border:1px solid rgba(200,170,110,.35);background:rgba(200,170,110,.08);color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;">🛡️ 유저페이지 관리</button>
           <button onclick="statsAdminLogout()" style="padding:3px 8px;border-radius:2px;border:1px solid rgba(255,255,255,.1);background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;">로그아웃</button>
         </div>
         <button id="btn-admin-login" onclick="openAdminLogin()"
@@ -1825,6 +1828,29 @@ async function _cachedFetch(key, ttlSec, fetchFn) {
 </script>
 
 
+
+<!-- ── 소환사 연동 팝업 ── -->
+<div id="summoner-link-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:3000;align-items:center;justify-content:center;">
+  <div style="background:#0D1620;border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:1.75rem;width:360px;max-width:92vw;position:relative;">
+    <button onclick="closeSummonerLinkPopup()" style="position:absolute;top:.75rem;right:.75rem;background:transparent;border:none;color:var(--muted);font-size:18px;cursor:pointer;line-height:1;">✕</button>
+    <div style="font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;color:var(--white);letter-spacing:.5px;margin-bottom:.3rem;">🔗 소환사 연동</div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:1rem;font-family:'Noto Sans KR',sans-serif;">이 커뮤니티 멤버와 Discord 계정을 연동합니다.<br>한 번 연동하면 관리자 없이는 변경할 수 없습니다.</div>
+    <div style="position:relative;margin-bottom:.75rem;">
+      <input id="sl-search" type="text" placeholder="소환사명 검색 (이름#태그 또는 이름만)" oninput="slSearch()"
+        style="width:100%;padding:.6rem .75rem;background:#111820;border:1px solid rgba(255,255,255,.1);border-radius:5px;color:var(--white);font-family:'Noto Sans KR',sans-serif;font-size:12px;outline:none;">
+    </div>
+    <div id="sl-results" style="max-height:220px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;margin-bottom:.75rem;"></div>
+    <div id="sl-selected" style="display:none;background:rgba(10,200,185,.06);border:1px solid rgba(10,200,185,.2);border-radius:5px;padding:.6rem .75rem;margin-bottom:.75rem;">
+      <div style="font-size:10px;color:var(--muted);margin-bottom:3px;">선택된 소환사</div>
+      <div id="sl-selected-name" style="font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;color:var(--blue-bright);"></div>
+    </div>
+    <div id="sl-msg" style="font-size:11px;color:#E05050;margin-bottom:.5rem;min-height:16px;font-family:'Noto Sans KR',sans-serif;"></div>
+    <button id="sl-confirm-btn" onclick="confirmSummonerLink()" disabled
+      style="width:100%;padding:.65rem;border-radius:5px;border:none;background:#2D3748;color:#718096;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;cursor:not-allowed;transition:all .2s;">
+      연동하기
+    </button>
+  </div>
+</div>
 
 <!-- ── 관리자 로그인 모달 ── -->
 <div class="admin-login-overlay" id="admin-login-overlay">
@@ -3355,6 +3381,9 @@ async function doStatsAdminLogin() {
     // 후원 편집 버튼 (관리자 이상)
     var _btnDon = document.getElementById('btn-donation-edit');
     if (_btnDon) _btnDon.style.display = '';
+    // 유저페이지 관리 버튼 (관리자 이상)
+    var _btnUpm = document.getElementById('btn-userpage-manage');
+    if (_btnUpm) _btnUpm.style.display = '';
     renderPage();
   } catch(e) {
     document.getElementById('al-err').textContent = '오류: ' + e.message;
@@ -3371,8 +3400,8 @@ function statsAdminLogout() {
   if (_dmRlTab) _dmRlTab.style.display = 'none';
   document.getElementById('btn-admin-login').style.display = '';
   document.getElementById('admin-status').style.display = 'none';
-  // 마스터 전용 버튼 숨기기
-  ['btn-weekly-mission','btn-nickname-run','btn-init-rating','btn-cron-test','btn-update-all-peak'].forEach(function(id) {
+  // 마스터/관리자 전용 버튼 숨기기
+  ['btn-weekly-mission','btn-nickname-run','btn-init-rating','btn-cron-test','btn-update-all-peak','btn-userpage-manage'].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
@@ -4336,6 +4365,8 @@ if (window.location.search.includes('code=') || window.location.search.includes(
 
 
 // Discord 헤더 상태 업데이트
+var _discordLinkData = null; // 현재 연동 정보
+
 function updateDiscordHeader() {
   var el = document.getElementById('discord-status');
   var loginBtn = document.getElementById('discord-login-btn');
@@ -4352,10 +4383,159 @@ function updateDiscordHeader() {
     } else if (avatarEl) {
       avatarEl.style.display = 'none';
     }
+    // 연동 여부 확인 후 버튼 표시
+    if (COMMUNITY_ID) checkSummonerLink();
   } else {
     el.style.display = 'none';
     if (loginBtn) loginBtn.style.display = 'flex';
+    var slBtn = document.getElementById('btn-summoner-link');
+    var mpBtn = document.getElementById('btn-my-page');
+    if (slBtn) slBtn.style.display = 'none';
+    if (mpBtn) mpBtn.style.display = 'none';
   }
+}
+
+// 연동 여부 조회 후 버튼 상태 업데이트
+async function checkSummonerLink() {
+  var slBtn = document.getElementById('btn-summoner-link');
+  var mpBtn = document.getElementById('btn-my-page');
+  if (!_discordUser || !COMMUNITY_ID) return;
+  try {
+    var res = await fetch(WORKER_URL + '/discord-link-get', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ discordId: _discordUser.id, cid: COMMUNITY_ID })
+    });
+    var j = await res.json();
+    if (j.ok && j.linked && j.data) {
+      _discordLinkData = j.data;
+      if (slBtn) slBtn.style.display = 'none';
+      if (mpBtn) mpBtn.style.display = '';
+    } else {
+      _discordLinkData = null;
+      if (slBtn) slBtn.style.display = '';
+      if (mpBtn) mpBtn.style.display = 'none';
+    }
+  } catch(e) {
+    if (slBtn) slBtn.style.display = '';
+    if (mpBtn) mpBtn.style.display = 'none';
+  }
+}
+
+// 소환사 연동 팝업 열기
+var _slSelectedMember = null;
+function openSummonerLinkPopup() {
+  if (!COMMUNITY_ID) { alert('커뮤니티 ID가 없습니다.'); return; }
+  _slSelectedMember = null;
+  document.getElementById('sl-search').value = '';
+  document.getElementById('sl-results').innerHTML = '';
+  document.getElementById('sl-selected').style.display = 'none';
+  document.getElementById('sl-msg').textContent = '';
+  var confirmBtn = document.getElementById('sl-confirm-btn');
+  confirmBtn.disabled = true;
+  confirmBtn.style.background = '#2D3748';
+  confirmBtn.style.color = '#718096';
+  confirmBtn.style.cursor = 'not-allowed';
+  document.getElementById('summoner-link-overlay').style.display = 'flex';
+  setTimeout(function(){ document.getElementById('sl-search').focus(); }, 100);
+}
+function closeSummonerLinkPopup() {
+  document.getElementById('summoner-link-overlay').style.display = 'none';
+}
+document.addEventListener('DOMContentLoaded', function() {
+  var overlay = document.getElementById('summoner-link-overlay');
+  if (overlay) overlay.addEventListener('click', function(e) {
+    if (e.target === overlay) closeSummonerLinkPopup();
+  });
+});
+
+function slSearch() {
+  var q = (document.getElementById('sl-search').value || '').toLowerCase().trim();
+  var resultsEl = document.getElementById('sl-results');
+  if (!q || !allData || allData.length === 0) { resultsEl.innerHTML = ''; return; }
+  var filtered = allData.filter(function(m) {
+    var full = (m.riot_name + '#' + m.riot_tag).toLowerCase();
+    return full.includes(q) || m.riot_name.toLowerCase().includes(q);
+  }).slice(0, 10);
+  if (!filtered.length) {
+    resultsEl.innerHTML = '<div style="font-size:11px;color:var(--muted);padding:.5rem;text-align:center;">검색 결과 없음</div>';
+    return;
+  }
+  resultsEl.innerHTML = filtered.map(function(m) {
+    return '<div onclick=\'slSelectMember(' + JSON.stringify(JSON.stringify(m)) + ')\' style="padding:.5rem .75rem;border-radius:4px;border:1px solid rgba(255,255,255,.05);background:#111820;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:border-color .15s;" onmouseover="this.style.borderColor=\'rgba(10,200,185,.3)\'" onmouseout="this.style.borderColor=\'rgba(255,255,255,.05)\'">' +
+      '<span style="font-family:\'Rajdhani\',sans-serif;font-weight:700;font-size:13px;color:var(--white);">' + esc(m.riot_name) + '<span style="color:var(--muted);font-size:11px;">#' + esc(m.riot_tag) + '</span></span>' +
+      '<span style="font-size:10px;color:var(--muted);">' + (m.tier||'—') + '</span>' +
+      '</div>';
+  }).join('');
+}
+
+function slSelectMember(memberJson) {
+  var m = JSON.parse(memberJson);
+  _slSelectedMember = m;
+  document.getElementById('sl-selected').style.display = '';
+  document.getElementById('sl-selected-name').textContent = m.riot_name + '#' + m.riot_tag;
+  document.getElementById('sl-results').innerHTML = '';
+  document.getElementById('sl-search').value = '';
+  document.getElementById('sl-msg').textContent = '';
+  var confirmBtn = document.getElementById('sl-confirm-btn');
+  confirmBtn.disabled = false;
+  confirmBtn.style.background = 'rgba(10,200,185,.15)';
+  confirmBtn.style.color = 'var(--blue-bright)';
+  confirmBtn.style.cursor = 'pointer';
+  confirmBtn.style.border = '1px solid rgba(10,200,185,.4)';
+}
+
+async function confirmSummonerLink() {
+  if (!_slSelectedMember || !_discordUser || !COMMUNITY_ID) return;
+  var confirmBtn = document.getElementById('sl-confirm-btn');
+  confirmBtn.disabled = true;
+  confirmBtn.textContent = '연동 중...';
+  document.getElementById('sl-msg').textContent = '';
+  try {
+    var res = await fetch(WORKER_URL + '/discord-link-set', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        discordId: _discordUser.id,
+        discordName: _discordUser.displayName || _discordUser.username,
+        discordAvatar: _discordUser.avatar || '',
+        cid: COMMUNITY_ID,
+        riotName: _slSelectedMember.riot_name,
+        riotTag: _slSelectedMember.riot_tag
+      })
+    });
+    var j = await res.json();
+    if (j.ok) {
+      _discordLinkData = j.data;
+      closeSummonerLinkPopup();
+      checkSummonerLink();
+      alert('✅ ' + _slSelectedMember.riot_name + '#' + _slSelectedMember.riot_tag + ' 로 연동됐습니다!');
+    } else if (j.error === 'already_linked') {
+      document.getElementById('sl-msg').textContent = '이미 ' + j.current.riotName + '#' + j.current.riotTag + ' 로 연동된 계정입니다. 변경은 관리자에게 문의하세요.';
+      confirmBtn.disabled = false;
+      confirmBtn.textContent = '연동하기';
+    } else {
+      document.getElementById('sl-msg').textContent = '오류: ' + j.error;
+      confirmBtn.disabled = false;
+      confirmBtn.textContent = '연동하기';
+    }
+  } catch(e) {
+    document.getElementById('sl-msg').textContent = '네트워크 오류: ' + e.message;
+    confirmBtn.disabled = false;
+    confirmBtn.textContent = '연동하기';
+  }
+}
+
+function goToMyPage() {
+  if (!_discordLinkData || !COMMUNITY_ID) return;
+  var url = '/mypage?cid=' + encodeURIComponent(COMMUNITY_ID) +
+    '&did=' + encodeURIComponent(_discordUser.id);
+  if (SERVER_ID) url += '&server_id=' + encodeURIComponent(SERVER_ID);
+  window.open(url, '_blank');
+}
+
+function openUserPageManage() {
+  if (!COMMUNITY_ID) { alert('커뮤니티 ID가 없습니다.'); return; }
+  var url = '/mypage-manage?cid=' + encodeURIComponent(COMMUNITY_ID);
+  window.open(url, '_blank');
 }
 
 async function discordHeaderLogin() {

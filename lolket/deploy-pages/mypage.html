@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>내 페이지 — Roonging</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Bebas+Neue&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0c1117;
+      --bg2: #111923;
+      --bg3: #161f2e;
+      --bg4: #1a2535;
+      --border: rgba(255,255,255,.07);
+      --teal: #0AC8B9;
+      --blue: #5383E8;
+      --gold: #C8AA6E;
+      --white: #E2E8F0;
+      --muted: #4A5568;
+      --text: #718096;
+      --red: #E84057;
+      --green: #10B981;
+      --win: #5383E8;
+      --lose: #E84057;
+    }
+    *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+    body{background:var(--bg);color:var(--white);font-family:'Noto Sans KR',sans-serif;min-height:100vh;overflow-x:hidden}
+
+    /* 헤더 */
+    .hdr{display:flex;align-items:center;justify-content:space-between;padding:0 1rem;height:46px;background:var(--bg2);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:200}
+    .hdr-logo{font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:3px;color:var(--teal)}
+    .hdr-dc{display:none;align-items:center;gap:6px}
+    .hdr-dc img{width:22px;height:22px;border-radius:50%}
+    .hdr-dc span{font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;color:#7289da}
+
+    /* 탭 바 */
+    .tab-bar{display:flex;background:var(--bg2);border-bottom:1px solid var(--border);position:sticky;top:46px;z-index:190}
+    .tab-btn{flex:1;height:44px;background:none;border:none;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:.5px;cursor:pointer;position:relative;transition:color .2s}
+    .tab-btn.active{color:var(--teal)}
+    .tab-ind{position:absolute;bottom:0;height:2px;background:var(--teal);transition:left .25s cubic-bezier(.4,0,.2,1),width .25s cubic-bezier(.4,0,.2,1)}
+
+    /* 탭 패널 — 홈은 flex, 나머지는 block */
+    .tab-panel{display:none}
+    .tab-panel.active{display:block}
+    #tab-home.active{display:flex !important;gap:0}
+
+    /* 로딩/접근거부 */
+    #loading-screen,#access-denied{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:calc(100vh - 90px);gap:.75rem;padding:2rem;text-align:center}
+    .spinner{width:28px;height:28px;border:3px solid rgba(10,200,185,.15);border-top-color:var(--teal);border-radius:50%;animation:spin .7s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .deny-icon{font-size:36px}
+    .deny-msg{font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;color:var(--muted);max-width:280px;line-height:1.6}
+    .deny-sub{font-size:11px;color:#2D3748;max-width:260px;line-height:1.5}
+
+    /* 비공개 blur */
+    .priv{filter:blur(5px);user-select:none;pointer-events:none}
+
+    /* ── 사이드바 ── */
+    .side-panel{width:250px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);padding:1.25rem 1rem;display:flex;flex-direction:column;gap:.875rem;min-height:calc(100vh - 90px)}
+    .side-card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:.75rem}
+    .side-card-title{font-family:'Rajdhani',sans-serif;font-size:9px;font-weight:700;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:.6rem;display:flex;align-items:center;gap:5px}
+    .side-card-title::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.05)}
+
+    /* 프로필 */
+    .prof-av-wrap{text-align:center;padding:.5rem 0}
+    .prof-av{width:80px;height:80px;border-radius:50%;border:3px solid rgba(10,200,185,.35);object-fit:cover;background:var(--bg3);display:block;margin:0 auto}
+    .prof-name{font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;text-align:center;margin-top:.5rem;letter-spacing:.5px}
+    .prof-tag{font-size:11px;color:var(--muted);text-align:center;margin-top:1px}
+    .prof-badges{display:flex;justify-content:center;flex-wrap:wrap;gap:4px;margin-top:.5rem}
+
+    /* 랭크 */
+    .rank-block{display:flex;align-items:center;gap:.6rem;margin-bottom:.5rem}
+    .rank-block:last-child{margin-bottom:0}
+    .rank-emblem-wrap{width:40px;height:40px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-radius:6px;background:var(--bg4)}
+    .rank-tier-letter{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--gold);line-height:1}
+    .rank-info{flex:1;min-width:0}
+    .rank-type{font-size:9px;font-family:'Rajdhani',sans-serif;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+    .rank-tier{font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;color:var(--gold);line-height:1.1}
+    .rank-lp{font-size:11px;color:var(--text)}
+    .rank-wr{font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700}
+
+    /* 내전 종합 */
+    .custom-stats-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px}
+    .cs-item{text-align:center;padding:.35rem .25rem;background:var(--bg4);border-radius:4px}
+    .cs-val{font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700}
+    .cs-lbl{font-size:9px;color:var(--muted);font-family:'Rajdhani',sans-serif;text-transform:uppercase;margin-top:1px}
+
+    /* 승률 원 */
+    .wr-circle-wrap{position:relative;width:80px;height:80px;margin:0 auto .5rem}
+    .wr-circle-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+    .wr-val{font-family:'Rajdhani',sans-serif;font-size:17px;font-weight:700;line-height:1}
+    .wr-lbl{font-size:9px;color:var(--muted);font-family:'Rajdhani',sans-serif;margin-top:1px}
+    .wl-txt{font-family:'Rajdhani',sans-serif;font-size:11px;color:var(--muted);text-align:center;margin-top:.25rem}
+
+    /* 모스트 챔피언 */
+    .champ-side-item{display:flex;align-items:center;gap:7px;padding:.3rem 0;border-bottom:1px solid rgba(255,255,255,.04)}
+    .champ-side-item:last-child{border-bottom:none}
+    .champ-side-ico{width:28px;height:28px;border-radius:4px;object-fit:cover;flex-shrink:0;background:var(--bg4)}
+    .champ-side-name{font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .champ-side-wr{font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;min-width:30px;text-align:right}
+    .champ-side-cnt{font-size:10px;color:var(--muted)}
+
+    /* 플레이스타일 */
+    .radar-labels{display:flex;flex-direction:column;gap:.3rem}
+    .radar-row{display:flex;align-items:center;gap:.4rem}
+    .radar-lbl{font-family:'Rajdhani',sans-serif;font-size:10px;color:var(--text);min-width:50px}
+    .radar-bar{flex:1;height:4px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden}
+    .radar-fill{height:100%;border-radius:2px}
+    .radar-grade{font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;min-width:20px;text-align:right}
+
+    /* 활동 패턴 */
+    .act-bars{display:flex;gap:2px;align-items:flex-end;height:36px}
+    .act-bar{flex:1;border-radius:1px 1px 0 0;min-height:2px}
+    .act-labels{display:flex;gap:2px;margin-top:3px}
+    .act-lbl{flex:1;text-align:center;font-family:'Rajdhani',sans-serif;font-size:8px;color:var(--muted)}
+
+    /* ── 메인 패널 ── */
+    .main-panel{flex:1;min-width:0;padding:.875rem;overflow-x:hidden}
+    .section-title{font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:.5rem;display:flex;align-items:center;gap:6px}
+    .section-title::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.05)}
+
+    /* 매치 카드 — deeplol 스타일 */
+    .match-card{background:var(--bg2);border:1px solid var(--border);border-radius:6px;margin-bottom:.4rem;display:flex;align-items:stretch;overflow:hidden;cursor:pointer;transition:background .1s}
+    .match-card:hover{background:var(--bg3)}
+    .match-result-bar{width:5px;flex-shrink:0}
+    .match-body{flex:1;display:flex;align-items:center;padding:.5rem .75rem;gap:.6rem;min-width:0}
+    .match-champ-wrap{position:relative;flex-shrink:0}
+    .match-champ-img{width:42px;height:42px;border-radius:50%;object-fit:cover;background:var(--bg4);display:block}
+    .match-champ-lv{position:absolute;bottom:-2px;left:50%;transform:translateX(-50%);font-family:'Rajdhani',sans-serif;font-size:9px;font-weight:700;background:#000;border:1px solid rgba(255,255,255,.15);border-radius:3px;padding:0 3px;line-height:14px;white-space:nowrap}
+    .match-center{flex:1;min-width:0}
+    .match-champ-name{font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .match-kda{font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;margin-top:1px}
+    .match-kda-val{font-size:10px;color:var(--text);margin-left:5px;font-weight:600}
+    .match-sub{font-size:10px;color:var(--muted);margin-top:2px}
+    .match-right{text-align:right;flex-shrink:0;min-width:70px}
+    .match-result-txt{font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700}
+    .match-ai{font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;margin-top:1px}
+    .match-dur{font-size:10px;color:var(--muted)}
+    .match-ago{font-size:10px;color:var(--muted)}
+
+    /* 팀 미리보기 (매치 상세) */
+    .match-expand{display:none;background:var(--bg3);border-top:1px solid var(--border);padding:.5rem .75rem}
+    .match-expand.open{display:block}
+    .teams-wrap{display:grid;grid-template-columns:1fr 1fr;gap:.5rem}
+    .team-col{display:flex;flex-direction:column;gap:3px}
+    .team-label{font-family:'Rajdhani',sans-serif;font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;margin-bottom:3px}
+    .player-row{display:flex;align-items:center;gap:5px;padding:2px 0}
+    .player-champ{width:20px;height:20px;border-radius:3px;object-fit:cover;background:var(--bg4);flex-shrink:0}
+    .player-name{font-size:10px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}
+    .player-name.me{color:var(--white);font-weight:700}
+    .player-kda{font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;color:var(--muted);min-width:42px;text-align:right}
+
+    /* 더보기 */
+    .more-btn{width:100%;padding:.5rem;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;margin-top:.25rem;transition:color .15s}
+    .more-btn:hover{color:var(--teal)}
+
+    /* ── 요약 탭 ── */
+    #tab-summary{max-width:600px;margin:0 auto;padding:.875rem}
+    .sum-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:.4rem}
+    .sum-label{font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:2px;color:var(--teal)}
+    .copy-btn{padding:3px 10px;border-radius:4px;border:1px solid rgba(10,200,185,.3);background:rgba(10,200,185,.06);color:var(--teal);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:background .15s}
+    .copy-btn:hover{background:rgba(10,200,185,.15)}
+    .copy-msg{font-size:10px;color:var(--green);font-family:'Rajdhani',sans-serif;font-weight:700;min-height:14px;text-align:right;margin-bottom:.4rem}
+    #namecard{background:linear-gradient(135deg,#0a1e36,#0d2040,#0e2244);border:1px solid rgba(10,200,185,.18);border-radius:12px;padding:1.25rem;margin-bottom:.5rem;position:relative;overflow:hidden}
+    #namecard::after{content:'ROONGING';position:absolute;bottom:-6px;right:8px;font-family:'Bebas Neue',sans-serif;font-size:44px;color:rgba(10,200,185,.04);letter-spacing:4px;pointer-events:none}
+    .nc-top{display:flex;align-items:center;gap:.875rem;margin-bottom:.875rem}
+    .nc-av{width:50px;height:50px;border-radius:50%;border:2px solid rgba(10,200,185,.4);object-fit:cover;background:var(--bg3)}
+    .nc-name{font-family:'Rajdhani',sans-serif;font-size:17px;font-weight:700;letter-spacing:.5px}
+    .nc-tag{font-size:10px;color:var(--muted);margin-top:1px}
+    .nc-tier-badge{font-family:'Rajdhani',sans-serif;font-size:9px;font-weight:700;color:var(--gold);border:1px solid rgba(200,170,110,.25);border-radius:3px;padding:1px 5px;margin-top:3px;display:inline-block}
+    .nc-div{height:1px;background:rgba(255,255,255,.06);margin-bottom:.875rem}
+    .nc-stats{display:grid;grid-template-columns:repeat(4,1fr)}
+    .nc-stat{text-align:center;padding:.4rem .25rem;border-right:1px solid rgba(255,255,255,.05)}
+    .nc-stat:last-child{border-right:none}
+    .nc-sv{font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700}
+    .nc-sl{font-size:9px;color:var(--muted);font-family:'Rajdhani',sans-serif;margin-top:1px}
+    .nc-champs{display:flex;gap:4px;flex-wrap:wrap;margin-top:.65rem}
+    .nc-chip{display:flex;align-items:center;gap:4px;padding:2px 6px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:4px}
+    .nc-chip img{width:16px;height:16px;border-radius:2px;object-fit:cover;background:var(--bg4)}
+    .nc-chip span{font-family:'Rajdhani',sans-serif;font-size:10px;color:var(--text)}
+    .nc-footer{display:flex;align-items:center;justify-content:space-between;margin-top:.65rem;padding-top:.5rem;border-top:1px solid rgba(255,255,255,.05)}
+    .nc-comm{font-family:'Bebas Neue',sans-serif;font-size:10px;letter-spacing:2px;color:rgba(10,200,185,.35)}
+    .nc-date{font-size:10px;color:var(--muted);font-family:'Rajdhani',sans-serif}
+    #resume-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:1.25rem}
+    .rs-hd{display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem;padding-bottom:.65rem;border-bottom:1px solid var(--border)}
+    .rs-hd img{width:38px;height:38px;border-radius:50%;object-fit:cover;background:var(--bg4)}
+    .rs-title{font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700}
+    .rs-sub{font-size:10px;color:var(--muted)}
+    .rs-sec{margin-bottom:.75rem}
+    .rs-sec:last-child{margin-bottom:0}
+    .rs-sec-lbl{font-family:'Rajdhani',sans-serif;font-size:9px;font-weight:700;color:var(--teal);letter-spacing:1px;text-transform:uppercase;margin-bottom:.35rem;display:flex;align-items:center;gap:5px}
+    .rs-sec-lbl::after{content:'';flex:1;height:1px;background:rgba(10,200,185,.12)}
+    .rs-text{font-size:12px;color:var(--text);line-height:1.7}
+    .chip-row{display:flex;flex-wrap:wrap;gap:5px}
+    .chip{padding:2px 8px;border-radius:10px;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700}
+    .chip-teal{background:rgba(10,200,185,.08);border:1px solid rgba(10,200,185,.22);color:var(--teal)}
+    .chip-gold{background:rgba(200,170,110,.08);border:1px solid rgba(200,170,110,.25);color:var(--gold)}
+    .chip-blue{background:rgba(83,131,232,.08);border:1px solid rgba(83,131,232,.22);color:var(--blue)}
+
+    /* ── 디스코드 탭 ── */
+    #tab-discord{max-width:600px;margin:0 auto;padding:.875rem}
+    .dc-card{background:linear-gradient(135deg,#1a1f3a,#0e1525);border:1px solid rgba(114,137,218,.15);border-radius:10px;padding:1.25rem;margin-bottom:.75rem}
+    .dc-top{display:flex;align-items:center;gap:.875rem;margin-bottom:.875rem}
+    .dc-av{width:56px;height:56px;border-radius:50%;border:3px solid rgba(114,137,218,.4);object-fit:cover;background:var(--bg3)}
+    .dc-name{font-family:'Rajdhani',sans-serif;font-size:17px;font-weight:700;color:#7289da}
+    .dc-handle{font-size:11px;color:var(--muted)}
+    .dc-linked{font-size:11px;color:var(--text);margin-top:3px}
+    .dc-grid{display:grid;grid-template-columns:1fr 1fr;gap:.5rem}
+    .dc-stat{background:rgba(0,0,0,.25);border:1px solid rgba(114,137,218,.1);border-radius:6px;padding:.5rem .65rem}
+    .dc-stat-lbl{font-size:10px;color:var(--muted);font-family:'Rajdhani',sans-serif;font-weight:700;text-transform:uppercase;margin-bottom:2px}
+    .dc-stat-val{font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;color:#7289da}
+    .dc-notice{background:rgba(114,137,218,.05);border:1px solid rgba(114,137,218,.1);border-radius:8px;padding:.75rem;text-align:center;font-size:11px;color:var(--muted);line-height:1.6;font-family:'Rajdhani',sans-serif;font-weight:600}
+
+    /* ── 업적 탭 ── */
+    #tab-achievements{display:none;flex-direction:column;align-items:center;justify-content:center;min-height:calc(100vh - 90px);padding:2rem;text-align:center}
+    #tab-achievements.active{display:flex !important}
+    .ach-box{border:1px dashed rgba(255,255,255,.06);border-radius:12px;padding:2.5rem 2rem;max-width:240px;width:100%}
+    .ach-icon{font-size:40px;margin-bottom:.65rem}
+    .ach-title{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:3px;color:var(--muted);margin-bottom:.4rem}
+    .ach-sub{font-size:11px;color:#2D3748;line-height:1.7}
+
+    /* 반응형 */
+    @media(max-width:660px){
+      #tab-home.active{flex-direction:column !important}
+      .side-panel{width:100%;min-height:auto;border-right:none;border-bottom:1px solid var(--border)}
+    }
+    @media(max-width:400px){
+      .nc-stats{grid-template-columns:repeat(2,1fr)}
+    }
+  </style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-logo">ROONGING</div>
+  <div class="hdr-dc" id="hdr-dc">
+    <img id="hdr-dc-av" src="" alt="">
+    <span id="hdr-dc-nm"></span>
+  </div>
+</div>
+
+<div class="tab-bar" id="tab-bar" style="display:none">
+  <button class="tab-btn active" onclick="switchTab('home',this)">홈</button>
+  <button class="tab-btn" onclick="switchTab('summary',this)">요약</button>
+  <button class="tab-btn" onclick="switchTab('discord',this)">디스코드</button>
+  <button class="tab-btn" onclick="switchTab('achievements',this)">업적</button>
+  <div class="tab-ind" id="tab-ind"></div>
+</div>
+
+<div id="loading-screen">
+  <div class="spinner"></div>
+  <div style="font-size:11px;color:var(--muted);font-family:Rajdhani,sans-serif;margin-top:4px">불러오는 중...</div>
+</div>
+<div id="access-denied" style="display:none">
+  <div class="deny-icon">🔒</div>
+  <div class="deny-msg" id="deny-msg"></div>
+  <div class="deny-sub" id="deny-sub"></div>
+</div>
+
+<!-- 홈 탭 -->
+<div class="tab-panel" id="tab-home">
+  <div class="side-panel">
+    <div class="prof-av-wrap">
+      <img class="prof-av" id="prof-av" src="" alt="">
+      <div class="prof-name" id="prof-name">—</div>
+      <div class="prof-tag" id="prof-tag"></div>
+      <div class="prof-badges" id="prof-badges"></div>
+    </div>
+
+    <div class="side-card" id="rank-card" style="display:none">
+      <div class="side-card-title">🏆 랭크</div>
+      <div class="rank-block" id="solo-block" style="display:none">
+        <div class="rank-emblem-wrap"><div class="rank-tier-letter" id="solo-emb-letter">—</div></div>
+        <div class="rank-info">
+          <div class="rank-type">솔로랭크</div>
+          <div class="rank-tier" id="solo-tier">—</div>
+          <div class="rank-lp" id="solo-lp"></div>
+          <div class="rank-wr priv" id="solo-wr"></div>
+        </div>
+      </div>
+      <div class="rank-block" id="free-block" style="display:none">
+        <div class="rank-emblem-wrap"><div class="rank-tier-letter" id="free-emb-letter">—</div></div>
+        <div class="rank-info">
+          <div class="rank-type">자유랭크</div>
+          <div class="rank-tier" id="free-tier">—</div>
+          <div class="rank-lp" id="free-lp"></div>
+          <div class="rank-wr priv" id="free-wr"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-card" id="custom-stat-card" style="display:none">
+      <div class="side-card-title">⚔️ 내전 전적</div>
+      <div class="wr-circle-wrap">
+        <svg width="80" height="80" viewBox="0 0 80 80" style="transform:rotate(-90deg)">
+          <circle cx="40" cy="40" r="33" fill="none" stroke="rgba(255,255,255,.05)" stroke-width="6"/>
+          <circle cx="40" cy="40" r="33" fill="none" stroke="var(--win)" stroke-width="6"
+            stroke-linecap="round" stroke-dasharray="207.35" stroke-dashoffset="207.35"
+            id="wr-arc" style="transition:stroke-dashoffset .5s"/>
+        </svg>
+        <div class="wr-circle-center">
+          <div class="wr-val priv" id="custom-wr">—%</div>
+          <div class="wr-lbl">승률</div>
+        </div>
+      </div>
+      <div class="wl-txt priv" id="custom-wl">— 승 — 패</div>
+      <div style="height:.5rem"></div>
+      <div class="custom-stats-grid">
+        <div class="cs-item"><div class="cs-val" id="cs-kda">—</div><div class="cs-lbl">KDA</div></div>
+        <div class="cs-item"><div class="cs-val" id="cs-kills">—</div><div class="cs-lbl">평균K</div></div>
+        <div class="cs-item"><div class="cs-val" id="cs-deaths">—</div><div class="cs-lbl">평균D</div></div>
+        <div class="cs-item"><div class="cs-val" id="cs-assists">—</div><div class="cs-lbl">평균A</div></div>
+        <div class="cs-item"><div class="cs-val" id="cs-games">—</div><div class="cs-lbl">게임수</div></div>
+        <div class="cs-item"><div class="cs-val" id="cs-cs">—</div><div class="cs-lbl">평균CS</div></div>
+      </div>
+    </div>
+
+    <div class="side-card" id="champ-card" style="display:none">
+      <div class="side-card-title">🎮 모스트 챔피언</div>
+      <div id="champ-list"></div>
+    </div>
+
+    <div class="side-card" id="radar-card" style="display:none">
+      <div class="side-card-title">📊 플레이 스타일</div>
+      <div style="display:flex;gap:.5rem;align-items:center">
+        <svg id="radar-svg" width="80" height="80" viewBox="0 0 80 80" style="flex-shrink:0"></svg>
+        <div class="radar-labels" id="radar-labels"></div>
+      </div>
+    </div>
+
+    <div class="side-card" id="act-card" style="display:none">
+      <div class="side-card-title">⏰ 활동 패턴</div>
+      <div class="act-bars" id="act-bars"></div>
+      <div class="act-labels" id="act-labels"></div>
+      <div style="font-size:9px;color:var(--muted);margin-top:.3rem;text-align:right;font-family:Rajdhani,sans-serif">총 <span id="act-total">—</span>게임</div>
+    </div>
+  </div>
+
+  <div class="main-panel">
+    <div class="section-title">⚔️ 최근 게임</div>
+    <div id="match-list-wrap">
+      <div style="font-size:12px;color:var(--muted);padding:.5rem 0;font-family:Rajdhani,sans-serif">매치 데이터 로딩 중...</div>
+    </div>
+    <button class="more-btn" id="more-btn" onclick="loadMoreMatches()" style="display:none">▼ 더 보기</button>
+  </div>
+</div>
+
+<!-- 요약 탭 -->
+<div class="tab-panel" id="tab-summary">
+  <div class="sum-hd">
+    <div class="sum-label">🪪 명함</div>
+    <button class="copy-btn" onclick="copyCard('namecard','nc-msg')">📋 이미지 복사</button>
+  </div>
+  <div class="copy-msg" id="nc-msg"></div>
+  <div id="namecard">
+    <div class="nc-top">
+      <img class="nc-av" id="nc-av" src="" alt="">
+      <div>
+        <div class="nc-name" id="nc-name">—</div>
+        <div class="nc-tag" id="nc-tag-s"></div>
+        <div class="nc-tier-badge priv" id="nc-tier" style="display:none"></div>
+      </div>
+    </div>
+    <div class="nc-div"></div>
+    <div class="nc-stats">
+      <div class="nc-stat"><div class="nc-sv priv" id="nc-solo">—</div><div class="nc-sl">솔로랭크</div></div>
+      <div class="nc-stat"><div class="nc-sv priv" id="nc-wr">—</div><div class="nc-sl">내전승률</div></div>
+      <div class="nc-stat"><div class="nc-sv" id="nc-kda">—</div><div class="nc-sl">내전KDA</div></div>
+      <div class="nc-stat"><div class="nc-sv" id="nc-games">—</div><div class="nc-sl">내전게임</div></div>
+    </div>
+    <div class="nc-champs" id="nc-champs"></div>
+    <div class="nc-footer">
+      <div class="nc-comm" id="nc-comm">ROONGING</div>
+      <div class="nc-date" id="nc-date"></div>
+    </div>
+  </div>
+  <div style="margin-top:1.25rem"></div>
+  <div class="sum-hd">
+    <div class="sum-label">📄 자기소개서</div>
+    <button class="copy-btn" onclick="copyCard('resume-card','rs-msg')">📋 이미지 복사</button>
+  </div>
+  <div class="copy-msg" id="rs-msg"></div>
+  <div id="resume-card">
+    <div class="rs-hd">
+      <img id="rs-av" src="" alt="">
+      <div>
+        <div class="rs-title" id="rs-title">소환사 자기소개서</div>
+        <div class="rs-sub" id="rs-sub"></div>
+      </div>
+    </div>
+    <div class="rs-sec">
+      <div class="rs-sec-lbl">📌 기본 정보</div>
+      <div class="rs-text" id="rs-basic">—</div>
+    </div>
+    <div class="rs-sec" id="rs-style-sec" style="display:none">
+      <div class="rs-sec-lbl">🎮 플레이 스타일</div>
+      <div class="chip-row" id="rs-style-chips"></div>
+    </div>
+    <div class="rs-sec" id="rs-champ-sec" style="display:none">
+      <div class="rs-sec-lbl">🏆 주요 챔피언</div>
+      <div class="chip-row" id="rs-champ-chips"></div>
+    </div>
+    <div class="rs-sec" id="rs-stat-sec" style="display:none">
+      <div class="rs-sec-lbl">📊 내전 성적</div>
+      <div class="rs-text priv" id="rs-stat-text"></div>
+    </div>
+    <div class="rs-sec" id="rs-rank-sec" style="display:none">
+      <div class="rs-sec-lbl">🎖 랭크 현황</div>
+      <div class="rs-text" id="rs-rank-text"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 디스코드 탭 -->
+<div class="tab-panel" id="tab-discord">
+  <div class="dc-card">
+    <div class="dc-top">
+      <img class="dc-av" id="dc-av" src="" alt="">
+      <div>
+        <div class="dc-name" id="dc-name">—</div>
+        <div class="dc-handle" id="dc-handle"></div>
+        <div class="dc-linked">🔗 <span id="dc-summoner"></span></div>
+      </div>
+    </div>
+    <div class="dc-grid">
+      <div class="dc-stat"><div class="dc-stat-lbl">연동일시</div><div class="dc-stat-val" id="dc-linked-at">—</div></div>
+      <div class="dc-stat"><div class="dc-stat-lbl">커뮤니티</div><div class="dc-stat-val" id="dc-community">—</div></div>
+      <div class="dc-stat"><div class="dc-stat-lbl">솔로랭크</div><div class="dc-stat-val" id="dc-solo-rank">—</div></div>
+      <div class="dc-stat"><div class="dc-stat-lbl">자유랭크</div><div class="dc-stat-val" id="dc-free-rank">—</div></div>
+    </div>
+  </div>
+  <div class="dc-notice">🔒 Discord 연동 정보는 제한적으로 제공됩니다.<br>향후 업데이트에서 더 많은 정보를 제공할 예정입니다.</div>
+</div>
+
+<!-- 업적 탭 -->
+<div class="tab-panel" id="tab-achievements">
+  <div class="ach-box">
+    <div class="ach-icon">🏅</div>
+    <div class="ach-title">Coming Soon</div>
+    <div class="ach-sub">업적 및 트로피 시스템이<br>준비 중입니다.</div>
+  </div>
+</div>
+
+<script>
+var WORKER = 'https://api.roonging.com';
+var DEEPLOL = 'https://b2c-api-cdn.deeplol.gg';
+var params = new URLSearchParams(location.search);
+var CID = params.get('cid')||'';
+
+// Discord 로그인 정보
+var _du = null;
+try{ var _s=sessionStorage.getItem('discord_user'); if(_s) _du=JSON.parse(_s); }catch(e){}
+
+var _link = null;
+var _cmInfo = null;
+var _ygData = null;
+var _statsPublic = false;
+
+// 매치 관련
+var _matchIds = [];     // deeplol 매치ID 목록
+var _matchOffset = 0;   // deeplol offset
+var _matchRendered = 0; // 렌더된 수
+var _matchLoading = false;
+
+// 내전 분석 (Firebase)
+var _customAnalysis = null;
+var _champMap = {};  // champion_id(숫자) → champion_id(deeplol icon key)
+
+// deeplol champion icon
+function champIcon(cid){ return 'https://cdn.deeplol.gg/champion/'+cid+'/icon'; }
+function profIcon(iconId){ return 'https://cdn.deeplol.gg/profileicon/'+iconId+'.png'; }
+
+// 포지션
+var POS_KO={TOP:'탑',JUNGLE:'정글',MID:'미드',ADC:'원딜',SUPPORT:'서폿',UTILITY:'서폿',BOTTOM:'원딜',Unknown:'?'};
+var POS_COLOR={TOP:'#C8AA6E',JUNGLE:'#10B981',MID:'#5383E8',ADC:'#E84057',SUPPORT:'#9B59B6',UTILITY:'#9B59B6',BOTTOM:'#E84057'};
+function normPos(p){ if(!p) return 'Unknown'; var u=p.toUpperCase(); if(u==='UTILITY') return 'SUPPORT'; if(u==='BOTTOM') return 'ADC'; return u; }
+
+// 티어 첫글자 색상
+var TIER_COLOR={CHALLENGER:'#F4C874',GRANDMASTER:'#E84057',MASTER:'#9B59B6',DIAMOND:'#57A7C8',EMERALD:'#10B981',PLATINUM:'#1ABC9C',GOLD:'#C8AA6E',SILVER:'#A0A0B0',BRONZE:'#CD7F32',IRON:'#8A8A8A'};
+function tierLetter(tier){ if(!tier) return '?'; return tier[0].toUpperCase(); }
+function tierColor(tier){ if(!tier) return 'var(--muted)'; return TIER_COLOR[(tier+'').toUpperCase()]||'var(--muted)'; }
+
+// ── 탭 전환 ──
+var _curTab='home';
+function switchTab(id, btn){
+  if(_curTab===id) return;
+  _curTab=id;
+  document.querySelectorAll('.tab-panel').forEach(function(p){p.classList.remove('active');});
+  document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
+  document.getElementById('tab-'+id).classList.add('active');
+  if(btn) btn.classList.add('active');
+  setTimeout(function(){ updateInd(btn); },10);
+}
+function updateInd(btn){
+  var ind=document.getElementById('tab-ind');
+  var bar=document.getElementById('tab-bar');
+  if(!ind||!btn||!bar) return;
+  var br=bar.getBoundingClientRect(), b=btn.getBoundingClientRect();
+  ind.style.left=(b.left-br.left)+'px';
+  ind.style.width=b.width+'px';
+}
+window.addEventListener('resize',function(){ var a=document.querySelector('.tab-btn.active'); if(a) updateInd(a); });
+
+// ── 초기화 ──
+async function init(){
+  if(!CID){ showDenied('잘못된 접근입니다.','cid 파라미터가 없습니다.'); return; }
+  if(!_du||!_du.id){ showDenied('Discord 로그인이 필요합니다.','내전 전적 페이지에서 Discord 로그인 후 이용해 주세요.'); return; }
+
+  // 연동 확인
+  try{
+    var r=await fetch(WORKER+'/discord-link-get',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({discordId:_du.id,cid:CID})});
+    var j=await r.json();
+    if(!j.ok||!j.linked||!j.data){ showDenied((_du.displayName||_du.username)+' 님은 소환사 연동이 되어 있지 않습니다.','내전 전적 페이지에서 소환사 연동 후 이용해 주세요.'); return; }
+    _link=j.data;
+  }catch(e){ showDenied('네트워크 오류',e.message); return; }
+
+  // 병렬 로드
+  await Promise.all([loadCmInfo(), loadYourGG()]);
+
+  // your.gg 응답에서 puuid 추출해서 _link에 세팅
+  // (Firebase discord_link에는 puuId 필드가 없으므로 your.gg에서 가져옴)
+  if(!_link.puuId && _ygData && _ygData.summoner && _ygData.summoner.puuid){
+    _link.puuId = _ygData.summoner.puuid;
+  }
+  // your.gg도 실패했다면 deeplol summoner API로 조회
+  if(!_link.puuId){
+    try{
+      var sr=await fetch(WORKER+'/deeplol-summoner',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({riotName:_link.riotName,riotTag:_link.riotTag})});
+      var sj=await sr.json();
+      if(sj.ok&&sj.puuId) _link.puuId=sj.puuId;
+    }catch(e){}
+  }
+
+  // 내전 분석 (Firebase)
+  if(_link&&_link.puuId) await loadCustomAnalysis(_link.puuId);
+
+  // 렌더 후 매치 로드 (비동기)
+  render();
+  loadMatchList();
+}
+
+async function loadCmInfo(){
+  try{
+    var r=await fetch(WORKER+'/db-public-read',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({path:'communities_info/'+CID})});
+    var j=await r.json();
+    if(j.ok&&j.data){
+      _cmInfo=j.data;
+      var sp=j.data.statsPublic;
+      if(sp===true||sp==='true'){
+        var day=new Date().getDay(), idx=day===0?6:day-1;
+        var days=j.data.statsPublicDays;
+        if(!Array.isArray(days)||!days.length||days.indexOf(idx)!==-1) _statsPublic=true;
+      }
+    }
+  }catch(e){}
+}
+
+async function loadYourGG(){
+  if(!_link) return;
+  try{
+    var r=await fetch(WORKER+'/yourgg-profile',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({riotName:_link.riotName,riotTag:_link.riotTag})});
+    var j=await r.json();
+    if(j.ok&&j.data) _ygData=j.data;
+  }catch(e){}
+}
+
+async function loadCustomAnalysis(puuId){
+  try{
+    var r=await fetch(WORKER+'/member-analysis-read',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({communityId:CID,puuId:puuId,mode:'custom'})});
+    var j=await r.json();
+    if(j.ok&&j.data) _customAnalysis=j.data;
+  }catch(e){}
+}
+
+// ── deeplol 매치 로드 ──
+async function loadMatchList(){
+  if(!_link||!_link.puuId) return;
+  var wrap=document.getElementById('match-list-wrap');
+  try{
+    var r=await fetch(WORKER+'/deeplol-matches',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({puuId:_link.puuId,offset:_matchOffset,count:20})});
+    var j=await r.json();
+    if(!j.ok) throw new Error(j.error||'API 오류');
+    var raw=j.data;
+    // 응답 구조: 배열이거나 {match_list:[...]} 등 다양
+    var list=Array.isArray(raw)?raw:(raw.match_list||raw.matches||raw.data||[]);
+    if(!list.length){
+      if(_matchOffset===0) wrap.innerHTML='<div style="text-align:center;padding:1.5rem;font-size:12px;color:var(--muted);font-family:Rajdhani,sans-serif">최근 게임이 없습니다.</div>';
+      document.getElementById('more-btn').style.display='none';
+      return;
+    }
+    _matchIds=_matchIds.concat(list.map(function(m){return m.match_id||m;}));
+    _matchOffset+=list.length;
+    document.getElementById('more-btn').style.display=list.length>=20?'':'none';
+    await renderMatchBatch(list);
+  }catch(e){
+    if(_matchOffset===0) wrap.innerHTML='<div style="text-align:center;padding:1rem;font-size:11px;color:var(--muted);font-family:Rajdhani,sans-serif">매치 데이터를 불러올 수 없습니다.<br><span style="font-size:10px">'+esc(e.message)+'</span></div>';
+  }
+}
+
+async function loadMoreMatches(){
+  if(_matchLoading) return;
+  _matchLoading=true;
+  document.getElementById('more-btn').textContent='로딩 중...';
+  await loadMatchList();
+  _matchLoading=false;
+  document.getElementById('more-btn').textContent='▼ 더 보기';
+}
+
+// 배치로 매치 상세 로드 후 렌더
+async function renderMatchBatch(idList){
+  var wrap=document.getElementById('match-list-wrap');
+  if(_matchRendered===0) wrap.innerHTML='';
+
+  // 최대 10개씩 병렬 요청 (Worker 프록시 경유)
+  var ids=idList.slice(0,10).map(function(m){return m.match_id||m;});
+  var results=await Promise.allSettled(ids.map(function(id){
+    return fetch(WORKER+'/deeplol-match',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({matchId:id})})
+      .then(function(r){return r.json();})
+      .then(function(j){return j.ok?j.data:null;});
+  }));
+
+  results.forEach(function(res){
+    if(res.status!=='fulfilled') return;
+    var data=res.value;
+    if(!data||!data.match_basic_dict) return;
+    var html=buildMatchCard(data);
+    if(html) wrap.insertAdjacentHTML('beforeend',html);
+    _matchRendered++;
+  });
+}
+
+function buildMatchCard(data){
+  var basic=data.match_basic_dict;
+  var parts=data.participants_list||[];
+  if(!parts.length) return '';
+
+  // 내 파티시페인트 찾기
+  var me=parts.find(function(p){return p.puu_id===_link.puuId;})||parts[0];
+  var isWin=me.is_win;
+  var isRe=basic.is_remake||false;
+  var barCol=isRe?'var(--muted)':isWin?'var(--win)':'var(--lose)';
+  var rLbl=isRe?'RE':isWin?'승':'패';
+  var rCol=isRe?'var(--muted)':isWin?'var(--win)':'var(--lose)';
+
+  var fs=me.final_stat_dict||{};
+  var k=fs.kills||0, d=fs.deaths||0, a=fs.assists||0;
+  var kdaStr=k+'/'+d+'/'+a;
+  var kdaVal=d?(((k+a)/d).toFixed(2)):'Perfect';
+  var cs=fs.cs||0;
+  var aiScore=(me.ai_score||fs.ai_score||0).toFixed(0);
+  var pos=normPos(me.position);
+  var posKo=POS_KO[pos]||pos;
+  var posCol=POS_COLOR[pos]||'var(--muted)';
+  var champId=me.champion_id||0;
+  var lv=fs.champion_level||me.final_stat_dict&&me.final_stat_dict.champion_level||'?';
+
+  var dur=basic.game_duration||0;
+  var durStr=Math.floor(dur/60)+'분 '+String(dur%60).padStart(2,'0')+'초';
+  var ago=timeAgo(basic.creation_timestamp);
+
+  // 큐 타입
+  var qid=basic.queue_id||0;
+  var QUEUE={420:'솔로랭크',440:'자유랭크',400:'일반',430:'일반',450:'무작위총력전',700:'격전',900:'우르프',1700:'아레나',0:'커스텀'};
+  var qName=QUEUE[qid]||('큐'+qid);
+
+  // 팀 분리
+  var blue=parts.filter(function(p){return p.side==='BLUE';});
+  var red=parts.filter(function(p){return p.side==='RED';});
+  var cardId='mc-'+basic.match_id;
+
+  var teamHtml='<div class="match-expand" id="'+cardId+'">'
+    +'<div class="teams-wrap">'
+    +'<div class="team-col"><div class="team-label" style="color:var(--win)">블루팀</div>'
+    +blue.map(function(p){ return playerRow(p,p.puu_id===_link.puuId); }).join('')
+    +'</div>'
+    +'<div class="team-col"><div class="team-label" style="color:var(--lose)">레드팀</div>'
+    +red.map(function(p){ return playerRow(p,p.puu_id===_link.puuId); }).join('')
+    +'</div>'
+    +'</div>'
+  +'</div>';
+
+  return '<div class="match-card" onclick="toggleMatch(\''+cardId+'\')">'
+    +'<div class="match-result-bar" style="background:'+barCol+'"></div>'
+    +'<div style="flex:1">'
+    +'<div class="match-body">'
+      +'<div class="match-champ-wrap">'
+        +'<img class="match-champ-img" src="'+champIcon(champId)+'" onerror="this.style.opacity=.3" alt="">'
+        +'<div class="match-champ-lv">'+lv+'</div>'
+      +'</div>'
+      +'<div class="match-center">'
+        +'<div class="match-champ-name" style="color:'+posCol+'">'+esc(posKo)+'</div>'
+        +'<div class="match-kda">'+kdaStr+'<span class="match-kda-val">KDA '+kdaVal+'</span></div>'
+        +'<div class="match-sub">CS '+cs+' · '+qName+'</div>'
+      +'</div>'
+      +'<div class="match-right">'
+        +'<div class="match-result-txt" style="color:'+rCol+'">'+rLbl+'</div>'
+        +'<div class="match-ai" style="color:'+aiColor(+aiScore)+'">AI '+aiScore+'</div>'
+        +'<div class="match-dur">'+durStr+'</div>'
+        +'<div class="match-ago">'+ago+'</div>'
+      +'</div>'
+    +'</div>'
+    +teamHtml
+    +'</div>'
+  +'</div>';
+}
+
+function playerRow(p, isMe){
+  var fs=p.final_stat_dict||{};
+  var k=fs.kills||0, d=fs.deaths||0, a=fs.assists||0;
+  var name=p.riot_id_name||(p.summoner_name||'?');
+  return '<div class="player-row">'
+    +'<img class="player-champ" src="'+champIcon(p.champion_id||0)+'" onerror="this.style.opacity=.3" alt="">'
+    +'<div class="player-name'+(isMe?' me':'')+'">'+esc(name)+'</div>'
+    +'<div class="player-kda">'+k+'/'+d+'/'+a+'</div>'
+  +'</div>';
+}
+
+function toggleMatch(id){
+  var el=document.getElementById(id);
+  if(!el) return;
+  el.classList.toggle('open');
+}
+
+function aiColor(v){ if(v>=70) return 'var(--teal)'; if(v>=55) return 'var(--blue)'; if(v>=40) return 'var(--gold)'; return 'var(--muted)'; }
+function timeAgo(ts){
+  if(!ts) return '';
+  var sec=Math.floor((Date.now()-ts*1000)/1000);
+  if(sec<60) return '방금';
+  if(sec<3600) return Math.floor(sec/60)+'분 전';
+  if(sec<86400) return Math.floor(sec/3600)+'시간 전';
+  return Math.floor(sec/86400)+'일 전';
+}
+
+// ── 렌더 ──
+function render(){
+  document.getElementById('loading-screen').style.display='none';
+  document.getElementById('tab-bar').style.display='flex';
+  // 홈 탭 활성화
+  document.getElementById('tab-home').classList.add('active');
+
+  if(_statsPublic){
+    document.querySelectorAll('.priv').forEach(function(e){ e.classList.remove('priv'); });
+  }
+
+  document.getElementById('hdr-dc').style.display='flex';
+  if(_du.avatar) document.getElementById('hdr-dc-av').src=_du.avatar;
+  document.getElementById('hdr-dc-nm').textContent=_du.displayName||_du.username;
+
+  setTimeout(function(){ updateInd(document.querySelector('.tab-btn.active')); },50);
+
+  renderSide();
+  renderSummary();
+  renderDiscord();
+}
+
+// ── 사이드바 ──
+function renderSide(){
+  var ld=_link, yg=_ygData;
+
+  // 프로필 아이콘 — deeplol profileicon
+  var iconId=(yg&&yg.summoner&&yg.summoner.profileIconId)||(_du&&_du.profileIconId)||null;
+  var avatar=iconId?profIcon(iconId):(_du&&_du.avatar||'');
+  document.getElementById('prof-av').src=avatar;
+  document.getElementById('prof-name').textContent=ld.riotName||'—';
+  document.getElementById('prof-tag').textContent='#'+(ld.riotTag||'');
+
+  var badges=['<span class="chip chip-teal" style="font-size:10px">소환사 연동</span>'];
+  var soloR=yg&&yg.summoner&&yg.summoner.lastRank&&yg.summoner.lastRank.soloRank;
+  if(soloR&&soloR.tier) badges.push('<span class="chip chip-gold" style="font-size:10px">'+soloR.tier+'</span>');
+  document.getElementById('prof-badges').innerHTML=badges.join('');
+
+  // 랭크
+  if(yg&&yg.summoner&&yg.summoner.lastRank){
+    var lr=yg.summoner.lastRank;
+    document.getElementById('rank-card').style.display='';
+    function fillRank(prefix, rank){
+      if(!rank||!rank.tier) return;
+      document.getElementById(prefix+'-block').style.display='';
+      var letter=document.getElementById(prefix+'-emb-letter');
+      letter.textContent=tierLetter(rank.tier);
+      letter.style.color=tierColor(rank.tier);
+      document.getElementById(prefix+'-tier').textContent=rank.tier+(rank.division?' '+rank.division:'');
+      document.getElementById(prefix+'-lp').textContent=(rank.lp||0)+' LP';
+      var wr=(rank.winRate!=null?(rank.winRate*100).toFixed(1):null);
+      var txt=wr?wr+'% ('+(rank.win||0)+'승 '+(rank.lose||0)+'패)':'';
+      document.getElementById(prefix+'-wr').textContent=txt;
+      if(wr) document.getElementById(prefix+'-wr').style.color=parseFloat(wr)>=50?'var(--win)':'var(--lose)';
+    }
+    fillRank('solo', lr.soloRank);
+    fillRank('free', lr.freeRank);
+  }
+
+  // 내전 전적 (Firebase custom analysis)
+  var ca=_customAnalysis;
+  if(ca&&ca.matchList&&ca.matchList.length){
+    document.getElementById('custom-stat-card').style.display='';
+    var ml=ca.matchList;
+    var wins=ml.filter(function(m){return m.is_win&&!m.is_remake;}).length;
+    var total=ml.filter(function(m){return !m.is_remake;}).length;
+    var wr=total?((wins/total)*100).toFixed(1):null;
+    if(wr!==null){
+      document.getElementById('custom-wr').textContent=_statsPublic?wr+'%':'🔒';
+      document.getElementById('custom-wl').textContent=_statsPublic?(wins+'승 '+(total-wins)+'패'):'비공개';
+      var arc=document.getElementById('wr-arc');
+      var circ=207.35;
+      arc.setAttribute('stroke-dashoffset',(circ-circ*parseFloat(wr)/100).toFixed(2));
+      arc.setAttribute('stroke',parseFloat(wr)>=50?'var(--win)':'var(--lose)');
+    }
+    var kS=0,dS=0,aS=0,cS=0,cnt=0;
+    ml.forEach(function(m){ if(!m.is_remake){kS+=m.kills||0;dS+=m.deaths||0;aS+=m.assists||0;cS+=m.cs||0;cnt++;} });
+    if(cnt){
+      document.getElementById('cs-kda').textContent=dS?((kS+aS)/dS).toFixed(2):'Perfect';
+      document.getElementById('cs-kills').textContent=(kS/cnt).toFixed(1);
+      document.getElementById('cs-deaths').textContent=(dS/cnt).toFixed(1);
+      document.getElementById('cs-assists').textContent=(aS/cnt).toFixed(1);
+      document.getElementById('cs-games').textContent=total;
+      document.getElementById('cs-cs').textContent=(cS/cnt).toFixed(1);
+    }
+
+    // 모스트 챔피언 (내전)
+    var cstat={};
+    ml.forEach(function(m){ if(!m.champion_id||m.is_remake) return; var cid=String(m.champion_id); if(!cstat[cid]) cstat[cid]={w:0,t:0}; cstat[cid].t++; if(m.is_win) cstat[cid].w++; });
+    var carr=Object.entries(cstat).sort(function(a,b){return b[1].t-a[1].t;}).slice(0,5);
+    if(carr.length){
+      document.getElementById('champ-card').style.display='';
+      document.getElementById('champ-list').innerHTML=carr.map(function(e){
+        var wr2=e[1].t?(e[1].w/e[1].t*100):0;
+        var wc=wr2>=55?'var(--red)':wr2>=50?'var(--win)':'var(--lose)';
+        return '<div class="champ-side-item">'
+          +'<img class="champ-side-ico" src="'+champIcon(e[0])+'" onerror="this.style.opacity=.2" alt="">'
+          +'<span class="champ-side-name">#'+e[0]+'</span>'
+          +'<span class="champ-side-cnt">'+e[1].t+'판</span>'
+          +'<span class="champ-side-wr" style="color:'+wc+'">'+wr2.toFixed(0)+'%</span>'
+        +'</div>';
+      }).join('');
+    }
+  }
+
+  // 플레이스타일 (your.gg)
+  if(yg&&yg.summary&&yg.summary.stats&&yg.summary.stats.length) renderRadar(yg.summary.stats);
+  if(yg&&yg.activity) renderActivity(yg.activity);
+}
+
+function renderRadar(stats){
+  var MAP={TeamLuckRC:{label:'팀운',color:'#9B59B6'},Contribution:{label:'기여도',color:'var(--teal)'},LaningPhase:{label:'라인전',color:'var(--gold)'},Carry:{label:'캐리',color:'var(--red)'},PowerLevel:{label:'파워',color:'var(--blue)'}};
+  var axes=stats.map(function(s){ var m=MAP[s.category]||{label:s.category,color:'var(--text)'}; return {label:m.label,color:m.color,p:s.top||0}; });
+  if(!axes.length) return;
+  document.getElementById('radar-card').style.display='';
+  var cx=40,cy=40,r=32,n=axes.length;
+  function pt(i,f){ var a=(Math.PI*2*i/n)-Math.PI/2; return [cx+r*f*Math.cos(a),cy+r*f*Math.sin(a)]; }
+  var bg=axes.map(function(_,i){return pt(i,1);});
+  function ps(arr){return arr.map(function(p){return p[0].toFixed(1)+','+p[1].toFixed(1);}).join(' ');}
+  var poly=axes.map(function(ax,i){return pt(i,ax.p);});
+  var svg='';
+  [.25,.5,.75,1].forEach(function(f){ var gp=bg.map(function(p){return [cx+(p[0]-cx)*f,cy+(p[1]-cy)*f];}); svg+='<polygon points="'+ps(gp)+'" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="1"/>'; });
+  bg.forEach(function(p){ svg+='<line x1="'+cx+'" y1="'+cy+'" x2="'+p[0].toFixed(1)+'" y2="'+p[1].toFixed(1)+'" stroke="rgba(255,255,255,.05)" stroke-width="1"/>'; });
+  svg+='<polygon points="'+ps(poly)+'" fill="rgba(10,200,185,.15)" stroke="rgba(10,200,185,.7)" stroke-width="1.5"/>';
+  poly.forEach(function(p){ svg+='<circle cx="'+p[0].toFixed(1)+'" cy="'+p[1].toFixed(1)+'" r="2.5" fill="rgba(10,200,185,.9)"/>'; });
+  document.getElementById('radar-svg').innerHTML=svg;
+  function grade(p){ if(p>=.9) return {g:'SS',c:'var(--gold)'}; if(p>=.75) return {g:'S',c:'var(--teal)'}; if(p>=.6) return {g:'A',c:'var(--blue)'}; if(p>=.45) return {g:'B+',c:'var(--text)'}; return {g:'B',c:'var(--muted)'}; }
+  document.getElementById('radar-labels').innerHTML=axes.map(function(ax){ var g=grade(ax.p); return '<div class="radar-row"><div class="radar-lbl">'+ax.label+'</div><div class="radar-bar"><div class="radar-fill" style="width:'+(ax.p*100).toFixed(0)+'%;background:'+ax.color+'"></div></div><div class="radar-grade" style="color:'+g.c+'">'+g.g+'</div></div>'; }).join('');
+}
+
+function renderActivity(act){
+  var all=[].concat(act.am||[]).concat(act.pm||[]);
+  if(!all.length) return;
+  document.getElementById('act-card').style.display='';
+  document.getElementById('act-total').textContent=act.total||0;
+  var maxV=Math.max.apply(null,all)||1;
+  var cols=['rgba(255,255,255,.04)','#1a3a5c','#2770a8','#2c85c7','#0AC8B9'];
+  var bHtml='',lHtml='';
+  all.forEach(function(v,i){
+    var pct=v===0?2:Math.max(8,Math.round((v/maxV)*100));
+    var ci=v===0?0:Math.min(Math.floor((v/maxV)*(cols.length-1)),cols.length-1);
+    bHtml+='<div class="act-bar" style="height:'+pct+'%;background:'+cols[ci]+'" title="'+i+'시: '+v+'게임"></div>';
+    lHtml+='<div class="act-lbl">'+(i===0?'0':i===6?'6':i===12?'12':i===18?'18':'')+'</div>';
+  });
+  document.getElementById('act-bars').innerHTML=bHtml;
+  document.getElementById('act-labels').innerHTML=lHtml;
+}
+
+// ── 요약 탭 ──
+function renderSummary(){
+  var ld=_link, yg=_ygData, ca=_customAnalysis;
+  var iconId=yg&&yg.summoner&&yg.summoner.profileIconId;
+  var avatar=iconId?profIcon(iconId):(_du&&_du.avatar||'');
+  document.getElementById('nc-av').src=avatar;
+  document.getElementById('nc-name').textContent=ld.riotName||'—';
+  document.getElementById('nc-tag-s').textContent='#'+(ld.riotTag||'');
+  document.getElementById('nc-date').textContent=new Date().toLocaleDateString('ko-KR');
+  if(_cmInfo&&_cmInfo.name) document.getElementById('nc-comm').textContent=_cmInfo.name;
+
+  var soloR=yg&&yg.summoner&&yg.summoner.lastRank&&yg.summoner.lastRank.soloRank;
+  if(soloR&&soloR.tier){
+    document.getElementById('nc-tier').style.display='';
+    document.getElementById('nc-tier').textContent=soloR.tier+(soloR.division?' '+soloR.division:'');
+    if(_statsPublic) document.getElementById('nc-solo').textContent=soloR.tier+(soloR.division?' '+soloR.division:'');
+    else document.getElementById('nc-solo').textContent='🔒';
+  }
+
+  if(ca&&ca.matchList&&ca.matchList.length){
+    var ml=ca.matchList;
+    var wins=ml.filter(function(m){return m.is_win&&!m.is_remake;}).length;
+    var total=ml.filter(function(m){return !m.is_remake;}).length;
+    var wr=total?((wins/total)*100).toFixed(1):null;
+    var kS=0,dS=0,aS=0,cnt=0;
+    ml.forEach(function(m){ if(!m.is_remake){kS+=m.kills||0;dS+=m.deaths||0;aS+=m.assists||0;cnt++;} });
+    var kda=dS?((kS+aS)/dS).toFixed(2):'Perfect';
+    document.getElementById('nc-kda').textContent=kda;
+    document.getElementById('nc-games').textContent=total;
+    document.getElementById('nc-wr').textContent=_statsPublic&&wr?wr+'%':'🔒';
+
+    var cstat={};
+    ml.forEach(function(m){ if(!m.champion_id||m.is_remake) return; var cid=String(m.champion_id); if(!cstat[cid]) cstat[cid]=0; cstat[cid]++; });
+    var top3=Object.entries(cstat).sort(function(a,b){return b[1]-a[1];}).slice(0,3);
+    document.getElementById('nc-champs').innerHTML=top3.map(function(e){
+      return '<div class="nc-chip"><img src="'+champIcon(e[0])+'" onerror="this.style.display=\'none\'" alt=""><span>#'+esc(e[0])+'</span></div>';
+    }).join('');
+
+    document.getElementById('rs-stat-sec').style.display='';
+    document.getElementById('rs-stat-text').textContent=total+'경기 · 승률 '+(wr||'—')+'% · KDA '+kda;
+    document.getElementById('rs-champ-sec').style.display='';
+    document.getElementById('rs-champ-chips').innerHTML=top3.map(function(e,i){
+      return '<span class="chip '+(['chip-teal','chip-gold','chip-blue'][i%3])+'">챔프 #'+esc(e[0])+'</span>';
+    }).join('');
+  }
+
+  document.getElementById('rs-av').src=avatar;
+  document.getElementById('rs-title').textContent=(ld.riotName||'소환사')+'님의 자기소개서';
+  document.getElementById('rs-sub').textContent=new Date().toLocaleDateString('ko-KR')+' 기준';
+
+  var mainLane=(yg&&yg.mostChampions&&yg.mostChampions[0]&&yg.mostChampions[0].lane)||'';
+  var LANE_KO={Sup:'서포터',Adc:'원딜',Mid:'미드',Jug:'정글',Top:'탑'};
+  var laneKo=LANE_KO[mainLane]||mainLane||'미지정';
+  var tierStr=soloR?(soloR.tier+(soloR.division?' '+soloR.division:'')):'미기재';
+  document.getElementById('rs-basic').textContent=(ld.riotName||'?')+'#'+(ld.riotTag||'?')+'님은 '+laneKo+' 포지션으로 활동하며 솔로랭크 '+tierStr+'입니다.';
+
+  document.getElementById('rs-style-sec').style.display='';
+  var chips=[laneKo,'내전 경험자',tierStr];
+  var sumStats=yg&&yg.summary&&yg.summary.stats||[];
+  if(sumStats.length){var top=sumStats.reduce(function(a,b){return (a.top||0)>(b.top||0)?a:b},sumStats[0]);var STAT_KO={TeamLuckRC:'팀원복',Contribution:'기여형',LaningPhase:'라인전 강자',Carry:'캐리형',PowerLevel:'파워 레벨'}; if(top.category) chips.push(STAT_KO[top.category]||top.category);}
+  document.getElementById('rs-style-chips').innerHTML=chips.map(function(c,i){ return '<span class="chip '+(['chip-teal','chip-gold','chip-blue'][i%3])+'">'+esc(c)+'</span>'; }).join('');
+
+  if(soloR||(yg&&yg.summoner&&yg.summoner.lastRank&&yg.summoner.lastRank.freeRank)){
+    document.getElementById('rs-rank-sec').style.display='';
+    var parts=[];
+    if(soloR) parts.push('솔로랭크: '+soloR.tier+(soloR.division?' '+soloR.division:'')+' ('+soloR.lp+' LP)');
+    var fr=yg&&yg.summoner&&yg.summoner.lastRank&&yg.summoner.lastRank.freeRank;
+    if(fr) parts.push('자유랭크: '+fr.tier+(fr.division?' '+fr.division:'')+' ('+fr.lp+' LP)');
+    document.getElementById('rs-rank-text').textContent=parts.join(' / ');
+  }
+}
+
+// ── 디스코드 탭 ──
+function renderDiscord(){
+  if(!_du) return;
+  var iconId=_ygData&&_ygData.summoner&&_ygData.summoner.profileIconId;
+  var avatar=iconId?profIcon(iconId):(_du.avatar||'');
+  document.getElementById('dc-av').src=avatar||'https://cdn.discordapp.com/embed/avatars/0.png';
+  document.getElementById('dc-name').textContent=_du.displayName||_du.username||'—';
+  document.getElementById('dc-handle').textContent=_du.username||'';
+  if(_link) document.getElementById('dc-summoner').textContent=_link.riotName+'#'+_link.riotTag;
+  if(_link&&_link.linkedAt) document.getElementById('dc-linked-at').textContent=new Date(_link.linkedAt).toLocaleDateString('ko-KR');
+  if(_cmInfo&&_cmInfo.name) document.getElementById('dc-community').textContent=_cmInfo.name;
+  if(_ygData&&_ygData.summoner&&_ygData.summoner.lastRank){
+    var lr=_ygData.summoner.lastRank;
+    if(lr.soloRank) document.getElementById('dc-solo-rank').textContent=lr.soloRank.tier+(lr.soloRank.division?' '+lr.soloRank.division:'');
+    if(lr.freeRank) document.getElementById('dc-free-rank').textContent=lr.freeRank.tier+(lr.freeRank.division?' '+lr.freeRank.division:'');
+  }
+}
+
+// ── 이미지 복사 ──
+async function copyCard(elId, msgId){
+  var msg=document.getElementById(msgId);
+  msg.textContent='이미지 생성 중...'; msg.style.color='var(--text)';
+  try{
+    if(!window.html2canvas) await new Promise(function(res,rej){var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';s.onload=res;s.onerror=rej;document.head.appendChild(s);});
+    var canvas=await html2canvas(document.getElementById(elId),{backgroundColor:null,scale:2,useCORS:true,allowTaint:true,logging:false});
+    canvas.toBlob(async function(blob){
+      try{ await navigator.clipboard.write([new ClipboardItem({'image/png':blob})]); msg.textContent='✅ 클립보드에 복사됐습니다!'; msg.style.color='var(--green)'; }
+      catch(e){ var url=URL.createObjectURL(blob),a=document.createElement('a'); a.href=url; a.download=elId+'_'+Date.now()+'.png'; a.click(); URL.revokeObjectURL(url); msg.textContent='✅ 다운로드됐습니다.'; msg.style.color='var(--green)'; }
+      setTimeout(function(){msg.textContent='';},3000);
+    },'image/png');
+  }catch(e){ msg.textContent='❌ '+e.message; msg.style.color='var(--red)'; setTimeout(function(){msg.textContent='';},4000); }
+}
+
+// ── 유틸 ──
+function showDenied(msg,sub){
+  document.getElementById('loading-screen').style.display='none';
+  document.getElementById('access-denied').style.display='flex';
+  document.getElementById('deny-msg').textContent=msg;
+  document.getElementById('deny-sub').textContent=sub||'';
+}
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+init();
+</script>
+</body>
+</html>
