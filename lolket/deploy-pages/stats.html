@@ -340,6 +340,100 @@ tbody td{padding:.55rem 1rem;font-size:12px;vertical-align:middle;}
 .temp-tier-empty{font-family:'Rajdhani',sans-serif;font-size:10px;color:var(--muted);letter-spacing:.5px;border:1px dashed rgba(255,255,255,.1);border-radius:2px;padding:2px 6px;cursor:pointer;}
 .temp-tier-empty:hover{border-color:rgba(10,200,185,.3);color:var(--blue);}
 
+/* ── 업적 아이콘 (테이블 소환사명 옆) ── */
+.ach-badge{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:18px;height:18px;border-radius:50%;
+  background:linear-gradient(135deg,#C8AA6E,#7c5c1e);
+  border:1px solid rgba(200,170,110,.5);
+  font-size:11px;cursor:pointer;position:relative;
+  vertical-align:middle;margin-left:3px;flex-shrink:0;
+  transition:transform .15s,box-shadow .15s;
+}
+.ach-badge:hover{transform:scale(1.25);box-shadow:0 0 8px rgba(200,170,110,.6);}
+
+/* 업적 툴팁 */
+.ach-tooltip{
+  display:none;position:absolute;z-index:3000;
+  bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);
+  background:#0D1620;border:1px solid rgba(200,170,110,.35);border-radius:6px;
+  padding:.6rem .75rem;min-width:160px;max-width:220px;
+  pointer-events:none;text-align:left;
+}
+.ach-tooltip::after{
+  content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);
+  border:5px solid transparent;border-top-color:rgba(200,170,110,.35);
+}
+.ach-badge:hover .ach-tooltip{display:block;}
+.ach-tt-icon{font-size:20px;text-align:center;margin-bottom:.3rem;}
+.ach-tt-title{font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:1.5px;color:var(--gold);margin-bottom:.2rem;}
+.ach-tt-desc{font-family:'Noto Sans KR',sans-serif;font-size:10px;color:var(--sub);margin-bottom:.3rem;line-height:1.4;}
+.ach-tt-stars{color:#F59E0B;font-size:11px;letter-spacing:1px;}
+
+/* 업적 팝업 오버레이 */
+.ach-mgr-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:2500;display:none;align-items:flex-start;justify-content:center;padding:1.5rem 1rem;overflow-y:auto;}
+.ach-mgr-overlay.open{display:flex;}
+.ach-mgr-box{background:#0D1620;border:1px solid rgba(255,255,255,.1);border-radius:8px;width:100%;max-width:720px;overflow:hidden;flex-shrink:0;}
+.ach-mgr-head{display:flex;align-items:center;gap:.75rem;padding:.9rem 1.25rem;background:rgba(200,170,110,.06);border-bottom:1px solid rgba(255,255,255,.07);}
+.ach-mgr-title{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;color:var(--gold);}
+.ach-mgr-body{padding:1rem 1.25rem;}
+
+/* 업적 카드 (관리 목록) */
+.ach-card-list{display:flex;flex-direction:column;gap:8px;margin-bottom:1rem;}
+.ach-card{
+  display:flex;align-items:center;gap:.75rem;
+  background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:5px;
+  padding:.6rem .9rem;cursor:pointer;transition:border-color .15s;
+}
+.ach-card:hover{border-color:rgba(200,170,110,.3);}
+.ach-card-icon{font-size:22px;width:32px;text-align:center;flex-shrink:0;}
+.ach-card-info{flex:1;min-width:0;}
+.ach-card-title{font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:1px;color:var(--gold);}
+.ach-card-desc{font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ach-card-stars{color:#F59E0B;font-size:10px;}
+.ach-card-actions{display:flex;gap:5px;}
+.ach-act-btn{padding:3px 8px;border-radius:2px;border:1px solid;font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;}
+.ach-act-edit{border-color:rgba(10,200,185,.35);color:var(--blue);background:rgba(10,200,185,.06);}
+.ach-act-del{border-color:rgba(232,64,87,.35);color:var(--red);background:rgba(232,64,87,.06);}
+.ach-act-grant{border-color:rgba(200,170,110,.35);color:var(--gold);background:rgba(200,170,110,.06);}
+
+/* 업적 폼 */
+.ach-form-row{display:flex;gap:.5rem;margin-bottom:.5rem;align-items:center;}
+.ach-form-label{font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.5px;width:52px;flex-shrink:0;}
+.ach-form-input{flex:1;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:3px;padding:5px 8px;color:var(--white);font-family:'Noto Sans KR',sans-serif;font-size:11px;outline:none;}
+.ach-form-input:focus{border-color:var(--bacc);}
+.ach-stars-row{display:flex;gap:4px;flex-wrap:wrap;}
+.ach-star-btn{
+  width:28px;height:28px;border-radius:3px;border:1px solid rgba(255,255,255,.1);
+  background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;
+  cursor:pointer;transition:all .12s;
+}
+.ach-star-btn.selected{background:rgba(245,158,11,.12);border-color:rgba(245,158,11,.5);color:#F59E0B;}
+
+/* 업적 부여 팝업 */
+.ach-grant-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:3000;display:none;align-items:center;justify-content:center;}
+.ach-grant-overlay.open{display:flex;}
+.ach-grant-box{background:#0D1620;border:1px solid rgba(255,255,255,.1);border-radius:8px;width:340px;padding:1.25rem;}
+
+/* 업적 탭 (상세팝업) */
+#dm-achievements{overflow-y:auto;max-height:500px;padding:.75rem 1rem;}
+.ach-display-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:.75rem;}
+.ach-trophy-card{
+  display:flex;flex-direction:column;align-items:center;
+  background:linear-gradient(160deg,rgba(200,170,110,.08),rgba(255,255,255,.03));
+  border:1px solid rgba(200,170,110,.2);border-radius:8px;
+  padding:1.1rem .75rem;text-align:center;position:relative;
+  transition:transform .15s,box-shadow .15s;
+}
+.ach-trophy-card:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(200,170,110,.12);}
+.ach-trophy-icon{font-size:38px;margin-bottom:.5rem;filter:drop-shadow(0 2px 6px rgba(200,170,110,.3));}
+.ach-trophy-title{font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:1.5px;color:var(--gold);margin-bottom:.25rem;}
+.ach-trophy-desc{font-family:'Noto Sans KR',sans-serif;font-size:9px;color:var(--muted);line-height:1.45;margin-bottom:.4rem;}
+.ach-trophy-stars{color:#F59E0B;font-size:12px;letter-spacing:2px;}
+.ach-trophy-date{font-family:'Rajdhani',sans-serif;font-size:9px;color:rgba(255,255,255,.2);margin-top:.3rem;}
+.ach-trophy-card.stars-high{border-color:rgba(200,170,110,.45);background:linear-gradient(160deg,rgba(200,170,110,.14),rgba(255,255,255,.04));}
+.ach-empty-ach{text-align:center;padding:2.5rem;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:12px;letter-spacing:.5px;}
+
 /* ── 레이팅 로그 ── */
 .rl-row{display:flex;align-items:center;gap:10px;padding:.5rem .75rem;border-bottom:1px solid rgba(255,255,255,.04);font-family:'Rajdhani',sans-serif;font-size:11px;}
 .rl-row:hover{background:rgba(255,255,255,.02);}
@@ -730,6 +824,7 @@ tr.has-bg-effect td {
         <div id="admin-status" style="display:none;align-items:center;gap:6px;">
           <span id="admin-status-text" style="font-family:'Rajdhani',sans-serif;font-size:11px;color:var(--blue);"></span>
           <button id="btn-userpage-manage" onclick="openUserPageManage()" style="display:none;padding:3px 10px;border-radius:2px;border:1px solid rgba(200,170,110,.35);background:rgba(200,170,110,.08);color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;">🛡️ 유저페이지 관리</button>
+          <button id="btn-achievement-manage" onclick="openAchievementManager()" style="display:none;padding:3px 10px;border-radius:2px;border:1px solid rgba(200,170,110,.35);background:rgba(200,170,110,.08);color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;">🏆 업적 관리</button>
           <button onclick="statsAdminLogout()" style="padding:3px 8px;border-radius:2px;border:1px solid rgba(255,255,255,.1);background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;">로그아웃</button>
         </div>
         <button id="btn-admin-login" onclick="openAdminLogin()"
@@ -1419,6 +1514,12 @@ async function loadData(){
       // 후원 편집 버튼 표시 (관리자 이상)
       var btnDonEdit = document.getElementById('btn-donation-edit');
       if (btnDonEdit) btnDonEdit.style.display = '';
+      // 유저페이지 관리 버튼 표시 (관리자 이상)
+      var btnUpm = document.getElementById('btn-userpage-manage');
+      if (btnUpm) btnUpm.style.display = '';
+      // 업적 관리 버튼 표시 (관리자 이상)
+      var btnAchMgr = document.getElementById('btn-achievement-manage');
+      if (btnAchMgr) btnAchMgr.style.display = '';
     }
     // stats 관리자 세션 복원
     if (_statsAdminToken && _statsAdminRole) {
@@ -1433,38 +1534,14 @@ async function loadData(){
           var el = document.getElementById(bid); if (el) el.style.display = '';
         });
       }
+      // 유저페이지 관리 버튼 표시 (관리자 이상)
+      var saUpm = document.getElementById('btn-userpage-manage');
+      if (saUpm) saUpm.style.display = '';
+      // 업적 관리 버튼 표시 (관리자 이상)
+      var saAchMgr = document.getElementById('btn-achievement-manage');
+      if (saAchMgr) saAchMgr.style.display = '';
     }
-    // 커뮤니티 설정에서 statsPublic 읽기 → ON이면 자동 언락
-    console.log('[statsPublic-SYNC] reached, COMMUNITY_ID=', COMMUNITY_ID, 'WORKER_URL=', WORKER_URL);
-    if (COMMUNITY_ID) {
-      console.log('[statsPublic-SYNC] entering if block, starting fetch...');
-      (async function() {
-        try {
-          console.log('[statsPublic-ASYNC] fetch start');
-          var _cmRes = await fetch(WORKER_URL + '/db-public-read', {
-            method: 'POST', headers: {'Content-Type':'application/json'},
-            body: JSON.stringify({ path: 'communities_info/' + COMMUNITY_ID, _nocache: Date.now() })
-          });
-          var _cmJson = await _cmRes.json();
-          console.log('[statsPublic] communities_info response:', JSON.stringify(_cmJson).slice(0,300));
-          if (_cmJson.ok && _cmJson.data && (_cmJson.data.statsPublic === true || _cmJson.data.statsPublic === 'true')) {
-            // 오늘 요일 체크 (0=일,1=월,...,6=토 → JS getDay()와 맞춤)
-            // index.html은 0=월,...,6=일 순서로 저장 → JS getDay(): 0=일,1=월,...,6=토
-            // 매핑: JS(0=일)→저장(6), JS(1=월)→저장(0), ..., JS(6=토)→저장(5)
-            var _todayJS = new Date().getDay(); // 0=일,1=월,...,6=토
-            var _todayIdx = _todayJS === 0 ? 6 : _todayJS - 1; // 저장 인덱스로 변환
-            var _days = _cmJson.data.statsPublicDays;
-            var _dayOk = !Array.isArray(_days) || _days.length === 0 || _days.indexOf(_todayIdx) !== -1;
-            console.log('[statsPublic] today idx:', _todayIdx, 'days:', JSON.stringify(_days), 'ok:', _dayOk);
-            if (_dayOk) {
-              document.body.classList.add('admin-unlocked');
-              var _dmRlTabPub = document.getElementById('dm-tab-rating-log');
-              if (_dmRlTabPub) _dmRlTabPub.style.display = '';
-            }
-          }
-        } catch(e) { console.error('[statsPublic] error:', e); }
-      })();
-    }
+    // statsPublic 체크는 loadStatsPublic()에서 별도로 처리
     allData=(json.tournament_stats&&json.tournament_stats.tournament_stats_all_list)||[];
     // sticker 조회용 전역 목록 저장
     window._serverMemberList = allData;
@@ -1560,7 +1637,7 @@ function renderPage(){
     const lp=t?(l/t*100).toFixed(1):0;
     return `<tr data-puu="${m.puu_id}" class="${_rowEffects[m.puu_id] ? 'effect-'+_rowEffects[m.puu_id] : ''}">
       <td class="col-rank">${rank}</td>
-      <td><span class="s-name" onclick="copyNickname('${esc(m.riot_name)}','${esc(m.riot_tag)}')" style="cursor:pointer;" title="클릭하여 복사">${esc(m.riot_name)}</span> <span class="s-tag">#${esc(m.riot_tag)}</span>${_weeklyEmojis&&_weeklyEmojis[m.puu_id]?' '+_weeklyEmojis[m.puu_id].map(function(e){return '<span title="'+e.label+'" style="font-size:12px;cursor:default;">'+e.emoji+'</span>';}).join(''):''}</td>
+      <td><span class="s-name" onclick="copyNickname('${esc(m.riot_name)}','${esc(m.riot_tag)}')" style="cursor:pointer;" title="클릭하여 복사">${esc(m.riot_name)}</span> <span class="s-tag">#${esc(m.riot_tag)}</span>${_weeklyEmojis&&_weeklyEmojis[m.puu_id]?' '+_weeklyEmojis[m.puu_id].map(function(e){return '<span title="'+e.label+'" style="font-size:12px;cursor:default;">'+e.emoji+'</span>';}).join(''):''}${renderAchBadge(m.puu_id)}</td>
       <td><span class="pos-txt" style="color:${posC}">${posS}</span></td>
       <td>${(function(){
         var lp = undefined;
@@ -1632,6 +1709,7 @@ function renderMobileCards(slice, start) {
           '<span class="mc-name">'+esc(m.riot_name)+'</span>' +
           '<span class="mc-tag"> #'+esc(m.riot_tag)+'</span>' +
         (_weeklyEmojis && _weeklyEmojis[m.puu_id] ? _weeklyEmojis[m.puu_id].map(function(e){ return '<span title="'+e.label+'" style="font-size:12px;margin-left:2px;cursor:default;">'+e.emoji+'</span>'; }).join('') : '') +
+        renderAchBadge(m.puu_id) +
         '</div>' +
         '<span class="mc-pos" style="color:'+posC+'">'+posS+'</span>' +
       '</div>' +
@@ -1852,6 +1930,75 @@ async function _cachedFetch(key, ttlSec, fetchFn) {
   </div>
 </div>
 
+<!-- ── 업적 관리 팝업 ── -->
+<div class="ach-mgr-overlay" id="ach-mgr-overlay" onclick="if(event.target===this)closeAchievementManager()">
+  <div class="ach-mgr-box">
+    <div class="ach-mgr-head">
+      <span class="ach-mgr-title">🏆 업적 관리</span>
+      <button onclick="closeAchievementManager()" style="margin-left:auto;background:transparent;border:1px solid rgba(255,255,255,.1);border-radius:50%;width:26px;height:26px;color:var(--muted);cursor:pointer;font-size:13px;">✕</button>
+    </div>
+    <div class="ach-mgr-body">
+      <!-- 업적 추가/편집 폼 -->
+      <div id="ach-form-section" style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:5px;padding:.85rem;margin-bottom:1rem;display:none;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:1.5px;color:var(--gold);margin-bottom:.65rem;" id="ach-form-mode-label">+ 새 업적</div>
+        <div class="ach-form-row">
+          <span class="ach-form-label">아이콘</span>
+          <input class="ach-form-input" id="ach-fi-icon" placeholder="이모지 입력 (예: 🔥)" maxlength="4" style="width:80px;text-align:center;font-size:20px;">
+          <span style="font-size:10px;color:var(--muted);margin-left:8px;">이모지 또는 문자</span>
+        </div>
+        <div class="ach-form-row">
+          <span class="ach-form-label">타이틀</span>
+          <input class="ach-form-input" id="ach-fi-title" placeholder="업적 이름" maxlength="30">
+        </div>
+        <div class="ach-form-row">
+          <span class="ach-form-label">설명</span>
+          <input class="ach-form-input" id="ach-fi-desc" placeholder="업적 설명" maxlength="80">
+        </div>
+        <div class="ach-form-row" style="align-items:flex-start;">
+          <span class="ach-form-label" style="margin-top:6px;">명예</span>
+          <div>
+            <div class="ach-stars-row" id="ach-stars-row">
+              <!-- 별 1~10 버튼 동적 생성 -->
+            </div>
+            <div style="font-size:9px;color:var(--muted);margin-top:4px;">명예 수치: 별 1개(낮음) ~ 별 10개(최고)</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:.5rem;justify-content:flex-end;margin-top:.75rem;">
+          <button onclick="cancelAchievementForm()" style="padding:4px 12px;border-radius:2px;border:1px solid rgba(255,255,255,.1);background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;">취소</button>
+          <button onclick="saveAchievement()" style="padding:4px 14px;border-radius:2px;border:1px solid var(--bacc);background:rgba(10,200,185,.08);color:var(--blue);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;">저장</button>
+        </div>
+        <div id="ach-form-err" style="color:var(--red);font-family:'Rajdhani',sans-serif;font-size:10px;margin-top:.3rem;"></div>
+      </div>
+      <!-- 업적 목록 -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem;">
+        <div style="font-family:'Rajdhani',sans-serif;font-size:11px;color:var(--muted);">등록된 업적 <span id="ach-list-count">0</span>개</div>
+        <button onclick="openAchievementForm(null)" style="padding:4px 12px;border-radius:2px;border:1px solid rgba(200,170,110,.4);background:rgba(200,170,110,.08);color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;">+ 새 업적 추가</button>
+      </div>
+      <div class="ach-card-list" id="ach-card-list">
+        <div style="text-align:center;padding:1.5rem;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:12px;">로딩 중...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── 업적 부여 팝업 ── -->
+<div class="ach-grant-overlay" id="ach-grant-overlay" onclick="if(event.target===this)closeGrantPopup()">
+  <div class="ach-grant-box">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:1.5px;color:var(--gold);margin-bottom:.75rem;">🏆 업적 부여</div>
+    <div style="font-size:10px;color:var(--muted);font-family:'Rajdhani',sans-serif;margin-bottom:.5rem;" id="ach-grant-ach-info"></div>
+    <div style="font-size:10px;color:var(--muted);font-family:'Rajdhani',sans-serif;margin-bottom:.75rem;">부여할 멤버를 선택하세요</div>
+    <input id="ach-grant-search" placeholder="소환사명 검색..." oninput="filterGrantList(this.value)"
+      style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:3px;padding:6px 10px;color:var(--white);font-family:'Noto Sans KR',sans-serif;font-size:11px;outline:none;margin-bottom:.5rem;">
+    <div id="ach-grant-list" style="max-height:240px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;margin-bottom:.75rem;"></div>
+    <div id="ach-grant-selected-info" style="font-size:10px;color:var(--blue);font-family:'Rajdhani',sans-serif;min-height:14px;margin-bottom:.5rem;"></div>
+    <div style="display:flex;gap:.5rem;justify-content:flex-end;">
+      <button onclick="closeGrantPopup()" style="padding:4px 12px;border-radius:2px;border:1px solid rgba(255,255,255,.1);background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;">취소</button>
+      <button onclick="doGrantAchievement()" style="padding:4px 14px;border-radius:2px;border:1px solid rgba(200,170,110,.4);background:rgba(200,170,110,.08);color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;">부여</button>
+    </div>
+    <div id="ach-grant-err" style="color:var(--red);font-family:'Rajdhani',sans-serif;font-size:10px;margin-top:.3rem;"></div>
+  </div>
+</div>
+
 <!-- ── 관리자 로그인 모달 ── -->
 <div class="admin-login-overlay" id="admin-login-overlay">
   <div class="admin-login-box">
@@ -1975,6 +2122,8 @@ async function _cachedFetch(key, ttlSec, fetchFn) {
         style="padding:4px 10px;border-radius:2px 2px 0 0;border:1px solid var(--border);border-bottom:none;background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:.5px;">🏷️ 닉 변경</button>
       <button id="dm-tab-heatmap" onclick="switchDetailTab('heatmap')"
         style="padding:4px 10px;border-radius:2px 2px 0 0;border:1px solid var(--border);border-bottom:none;background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:.5px;">🕐 활동패턴</button>
+      <button id="dm-tab-achievements" onclick="switchDetailTab('achievements')"
+        style="padding:4px 10px;border-radius:2px 2px 0 0;border:1px solid var(--border);border-bottom:none;background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:.5px;">🏆 업적</button>
     </div>
     <div id="dm-content">
       <div class="dm-loading"><div class="spinner"></div> 분석 중...</div>
@@ -1993,6 +2142,7 @@ async function _cachedFetch(key, ttlSec, fetchFn) {
         <div style="padding:2rem;text-align:center;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:12px;">로딩 중...</div>
       </div>
     </div>
+    <div id="dm-achievements" style="display:none;"></div>
   </div>
 </div>
 
@@ -3384,6 +3534,8 @@ async function doStatsAdminLogin() {
     // 유저페이지 관리 버튼 (관리자 이상)
     var _btnUpm = document.getElementById('btn-userpage-manage');
     if (_btnUpm) _btnUpm.style.display = '';
+    var _btnAch = document.getElementById('btn-achievement-manage');
+    if (_btnAch) _btnAch.style.display = '';
     renderPage();
   } catch(e) {
     document.getElementById('al-err').textContent = '오류: ' + e.message;
@@ -3401,7 +3553,7 @@ function statsAdminLogout() {
   document.getElementById('btn-admin-login').style.display = '';
   document.getElementById('admin-status').style.display = 'none';
   // 마스터/관리자 전용 버튼 숨기기
-  ['btn-weekly-mission','btn-nickname-run','btn-init-rating','btn-cron-test','btn-update-all-peak','btn-userpage-manage'].forEach(function(id) {
+  ['btn-weekly-mission','btn-nickname-run','btn-init-rating','btn-cron-test','btn-update-all-peak','btn-userpage-manage','btn-achievement-manage'].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
@@ -3589,24 +3741,490 @@ document.getElementById('tt-overlay').addEventListener('click', function(e) {
 
 var _detailCurrentMemberForLog = null;
 
+// ══════════════════════════════════════════
+// 업적 시스템
+// ══════════════════════════════════════════
+var _achievementList = []; // 커뮤니티 업적 정의 목록
+var _memberAchievements = {}; // puuId → { achId: { grantedAt, grantedBy } }
+var _achListLoaded = false;
+var _achEditingId = null; // 현재 편집중인 업적 ID
+var _grantCurrentAchId = null; // 부여 팝업 대상 업적 ID
+var _grantSelectedPuuIds = new Set(); // 부여 선택된 멤버들
+
+function _achPath(sub) { return 'communities/' + COMMUNITY_ID + '/' + sub; }
+
+// ── 업적 정의 목록 로드 (캐시 없음, 매번 최신) ──
+async function loadAchievementList() {
+  if (!COMMUNITY_ID) return;
+  try {
+    var r = await fetch(WORKER_URL + '/db-public-read', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ path: _achPath('achievements') })
+    });
+    var j = await r.json();
+    if (j.ok && j.data) {
+      _achievementList = Object.entries(j.data).map(function(e) {
+        return Object.assign({ id: e[0] }, e[1]);
+      }).sort(function(a, b) { return (b.stars||0) - (a.stars||0); });
+    } else {
+      _achievementList = [];
+    }
+    _achListLoaded = true;
+  } catch(e) { console.error('[ach] load list error', e); }
+}
+
+// ── 멤버별 업적 목록 로드 ──
+async function loadMemberAchievementsAll() {
+  if (!COMMUNITY_ID) return;
+  try {
+    var r = await fetch(WORKER_URL + '/db-public-read', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ path: _achPath('member_achievements') })
+    });
+    var j = await r.json();
+    if (j.ok && j.data) {
+      _memberAchievements = j.data;
+    } else {
+      _memberAchievements = {};
+    }
+  } catch(e) { console.error('[ach] load member ach error', e); }
+}
+
+// ── 티어 아이콘 배지: puuId의 최고 중요도 최신 업적 ──
+function getTopAchievement(puuId) {
+  var grants = _memberAchievements[puuId];
+  if (!grants || !_achievementList.length) return null;
+  var achMap = {};
+  _achievementList.forEach(function(a) { achMap[a.id] = a; });
+  var entries = Object.entries(grants).map(function(e) {
+    var ach = achMap[e[0]];
+    if (!ach) return null;
+    return { ach: ach, grantedAt: e[1].grantedAt || 0 };
+  }).filter(Boolean);
+  if (!entries.length) return null;
+  // 최고 stars, 동점이면 최신 grantedAt
+  entries.sort(function(a, b) {
+    if (b.ach.stars !== a.ach.stars) return (b.ach.stars||0) - (a.ach.stars||0);
+    return (b.grantedAt > a.grantedAt ? 1 : -1);
+  });
+  return entries[0].ach;
+}
+
+// ── 별 렌더 ──
+function _renderStars(n) {
+  n = parseInt(n) || 0;
+  return '★'.repeat(n) + '☆'.repeat(Math.max(0, 10 - n));
+}
+function _renderStarsShort(n) {
+  n = parseInt(n) || 0;
+  return '★'.repeat(n);
+}
+
+// ── 테이블 소환사명 옆 업적 뱃지 렌더 ──
+function renderAchBadge(puuId) {
+  var ach = getTopAchievement(puuId);
+  if (!ach) return '';
+  var starsHtml = _renderStarsShort(ach.stars);
+  return '<span class="ach-badge" title="">' +
+    esc(ach.icon || '🏆') +
+    '<div class="ach-tooltip">' +
+      '<div class="ach-tt-icon">' + esc(ach.icon || '🏆') + '</div>' +
+      '<div class="ach-tt-title">' + esc(ach.title || '') + '</div>' +
+      (ach.desc ? '<div class="ach-tt-desc">' + esc(ach.desc) + '</div>' : '') +
+      '<div class="ach-tt-stars">' + starsHtml + '</div>' +
+    '</div>' +
+  '</span>';
+}
+
+// ── 관리 팝업 열기 ──
+async function openAchievementManager() {
+  var ov = document.getElementById('ach-mgr-overlay');
+  if (!ov) return;
+  ov.classList.add('open');
+  // 폼 닫기
+  var fs = document.getElementById('ach-form-section');
+  if (fs) fs.style.display = 'none';
+  // 별 버튼 초기화
+  _initAchStarBtns();
+  // 목록 로드
+  await loadAchievementList();
+  renderAchMgrList();
+}
+window.openAchievementManager = openAchievementManager;
+
+function closeAchievementManager() {
+  var ov = document.getElementById('ach-mgr-overlay');
+  if (ov) ov.classList.remove('open');
+}
+window.closeAchievementManager = closeAchievementManager;
+
+function _initAchStarBtns() {
+  var row = document.getElementById('ach-stars-row');
+  if (!row || row.children.length > 0) return;
+  for (var i = 1; i <= 10; i++) {
+    (function(n) {
+      var btn = document.createElement('button');
+      btn.className = 'ach-star-btn';
+      btn.textContent = n;
+      btn.dataset.val = n;
+      btn.onclick = function() {
+        document.querySelectorAll('.ach-star-btn').forEach(function(b) { b.classList.remove('selected'); });
+        this.classList.add('selected');
+      };
+      row.appendChild(btn);
+    })(i);
+  }
+}
+
+function renderAchMgrList() {
+  var listEl = document.getElementById('ach-card-list');
+  var countEl = document.getElementById('ach-list-count');
+  if (!listEl) return;
+  if (countEl) countEl.textContent = _achievementList.length;
+  if (!_achievementList.length) {
+    listEl.innerHTML = '<div style="text-align:center;padding:1.5rem;color:var(--muted);font-family:\'Rajdhani\',sans-serif;font-size:12px;">등록된 업적이 없습니다</div>';
+    return;
+  }
+  listEl.innerHTML = _achievementList.map(function(ach) {
+    return '<div class="ach-card">' +
+      '<div class="ach-card-icon">' + esc(ach.icon || '🏆') + '</div>' +
+      '<div class="ach-card-info">' +
+        '<div class="ach-card-title">' + esc(ach.title || '') + '</div>' +
+        '<div class="ach-card-desc">' + esc(ach.desc || '') + '</div>' +
+        '<div class="ach-card-stars">' + _renderStarsShort(ach.stars) + ' <span style="color:var(--muted);font-size:9px;">명예 ' + (ach.stars||0) + '성</span></div>' +
+      '</div>' +
+      '<div class="ach-card-actions">' +
+        '<button class="ach-act-btn ach-act-grant" onclick="openGrantPopup(\'' + esc(ach.id) + '\')">부여</button>' +
+        '<button class="ach-act-btn ach-act-edit" onclick="openAchievementForm(\'' + esc(ach.id) + '\')">편집</button>' +
+        '<button class="ach-act-btn ach-act-del" onclick="deleteAchievement(\'' + esc(ach.id) + '\')">삭제</button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function openAchievementForm(achId) {
+  _achEditingId = achId;
+  var fs = document.getElementById('ach-form-section');
+  if (!fs) return;
+  fs.style.display = '';
+  var lbl = document.getElementById('ach-form-mode-label');
+  if (lbl) lbl.textContent = achId ? '✏️ 업적 편집' : '+ 새 업적';
+  // 기존 값 채우기
+  var ach = achId ? _achievementList.find(function(a){ return a.id===achId; }) : null;
+  document.getElementById('ach-fi-icon').value  = ach ? (ach.icon||'') : '';
+  document.getElementById('ach-fi-title').value = ach ? (ach.title||'') : '';
+  document.getElementById('ach-fi-desc').value  = ach ? (ach.desc||'') : '';
+  var stars = ach ? (ach.stars||1) : 1;
+  document.querySelectorAll('.ach-star-btn').forEach(function(b) {
+    b.classList.toggle('selected', parseInt(b.dataset.val) === stars);
+  });
+  var errEl = document.getElementById('ach-form-err');
+  if (errEl) errEl.textContent = '';
+  fs.scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+window.openAchievementForm = openAchievementForm;
+
+function cancelAchievementForm() {
+  var fs = document.getElementById('ach-form-section');
+  if (fs) fs.style.display = 'none';
+  _achEditingId = null;
+}
+window.cancelAchievementForm = cancelAchievementForm;
+
+async function saveAchievement() {
+  var icon  = (document.getElementById('ach-fi-icon').value || '').trim();
+  var title = (document.getElementById('ach-fi-title').value || '').trim();
+  var desc  = (document.getElementById('ach-fi-desc').value || '').trim();
+  var starsSel = document.querySelector('.ach-star-btn.selected');
+  var stars = starsSel ? parseInt(starsSel.dataset.val) : 1;
+  var errEl = document.getElementById('ach-form-err');
+  if (!title) { if (errEl) errEl.textContent = '타이틀을 입력하세요'; return; }
+  if (!icon)  { if (errEl) errEl.textContent = '아이콘을 입력하세요'; return; }
+  if (errEl) errEl.textContent = '';
+
+  var achId = _achEditingId || ('ach_' + Date.now());
+  var data = { icon: icon, title: title, desc: desc, stars: stars };
+  if (!_achEditingId) data.createdAt = Date.now();
+
+  try {
+    var r = await fetch(WORKER_URL + '/db-admin-write', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        communityId: COMMUNITY_ID, token: _statsAdminToken,
+        adminId: _statsAdminId, adminPw: _statsAdminPw,
+        path: _achPath('achievements/' + achId),
+        data: data
+      })
+    });
+    var j = await r.json();
+    if (!j.ok) { if (errEl) errEl.textContent = '저장 실패: ' + (j.error||''); return; }
+    // 로컬 반영
+    if (_achEditingId) {
+      var idx = _achievementList.findIndex(function(a){ return a.id===achId; });
+      if (idx >= 0) _achievementList[idx] = Object.assign({ id: achId }, data);
+    } else {
+      _achievementList.unshift(Object.assign({ id: achId }, data));
+    }
+    _achievementList.sort(function(a,b){ return (b.stars||0)-(a.stars||0); });
+    cancelAchievementForm();
+    renderAchMgrList();
+    // 테이블 재렌더 (뱃지 반영)
+    renderPage();
+  } catch(e) { if (errEl) errEl.textContent = '오류: ' + e.message; }
+}
+window.saveAchievement = saveAchievement;
+
+async function deleteAchievement(achId) {
+  var ach = _achievementList.find(function(a){ return a.id===achId; });
+  if (!ach) return;
+  if (!confirm('업적 "' + ach.title + '"을 삭제할까요?\n부여된 기록도 모두 삭제됩니다.')) return;
+  try {
+    // 업적 정의 삭제
+    await fetch(WORKER_URL + '/db-admin-write', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        communityId: COMMUNITY_ID, token: _statsAdminToken,
+        adminId: _statsAdminId, adminPw: _statsAdminPw,
+        path: _achPath('achievements/' + achId), data: null
+      })
+    });
+    // 로컬 반영
+    _achievementList = _achievementList.filter(function(a){ return a.id!==achId; });
+    // 멤버 업적에서도 제거
+    Object.keys(_memberAchievements).forEach(function(puu) {
+      if (_memberAchievements[puu] && _memberAchievements[puu][achId]) {
+        delete _memberAchievements[puu][achId];
+      }
+    });
+    renderAchMgrList();
+    renderPage();
+  } catch(e) { alert('삭제 오류: ' + e.message); }
+}
+window.deleteAchievement = deleteAchievement;
+
+// ── 업적 부여 팝업 ──
+function openGrantPopup(achId) {
+  _grantCurrentAchId = achId;
+  _grantSelectedPuuIds = new Set();
+  var ov = document.getElementById('ach-grant-overlay');
+  if (!ov) return;
+  ov.classList.add('open');
+  var ach = _achievementList.find(function(a){ return a.id===achId; });
+  var infoEl = document.getElementById('ach-grant-ach-info');
+  if (infoEl && ach) infoEl.textContent = (ach.icon||'🏆') + ' ' + (ach.title||'');
+  var srch = document.getElementById('ach-grant-search');
+  if (srch) srch.value = '';
+  var errEl = document.getElementById('ach-grant-err');
+  if (errEl) errEl.textContent = '';
+  renderGrantList('');
+  updateGrantSelectedInfo();
+}
+window.openGrantPopup = openGrantPopup;
+
+function closeGrantPopup() {
+  var ov = document.getElementById('ach-grant-overlay');
+  if (ov) ov.classList.remove('open');
+}
+window.closeGrantPopup = closeGrantPopup;
+
+function renderGrantList(q) {
+  var listEl = document.getElementById('ach-grant-list');
+  if (!listEl) return;
+  var members = (allData || []).filter(function(m) {
+    if (!q) return true;
+    return (m.riot_name||'').toLowerCase().includes(q.toLowerCase());
+  });
+  if (!members.length) {
+    listEl.innerHTML = '<div style="text-align:center;padding:1rem;color:var(--muted);font-family:\'Rajdhani\',sans-serif;font-size:11px;">검색 결과 없음</div>';
+    return;
+  }
+  // 이미 부여된 멤버 표시
+  var grants = (_memberAchievements[_grantCurrentAchId] ? {} : {});
+  // ↑ achId → puuId 역방향 필요. 직접 순회
+  var alreadyGranted = new Set();
+  Object.entries(_memberAchievements).forEach(function(e) {
+    if (e[1] && e[1][_grantCurrentAchId]) alreadyGranted.add(e[0]);
+  });
+
+  listEl.innerHTML = members.map(function(m) {
+    var selected = _grantSelectedPuuIds.has(m.puu_id);
+    var already  = alreadyGranted.has(m.puu_id);
+    var bg = selected ? 'rgba(200,170,110,.12)' : already ? 'rgba(255,255,255,.03)' : 'transparent';
+    var border = selected ? '1px solid rgba(200,170,110,.4)' : '1px solid rgba(255,255,255,.06)';
+    return '<div onclick="toggleGrantMember(\'' + esc(m.puu_id) + '\')" style="display:flex;align-items:center;gap:.5rem;padding:5px 8px;border-radius:3px;cursor:pointer;background:' + bg + ';border:' + border + ';margin-bottom:3px;">' +
+      '<span style="font-size:13px;">' + (selected?'✅':already?'☑️':'⬜') + '</span>' +
+      '<span style="font-family:\'Noto Sans KR\',sans-serif;font-size:11px;color:var(--white);">' + esc(m.riot_name||m.name||'') + '</span>' +
+      '<span style="font-size:9px;color:var(--muted);">#' + esc(m.riot_tag||'') + '</span>' +
+      (already ? '<span style="margin-left:auto;font-size:9px;color:var(--gold);font-family:\'Rajdhani\',sans-serif;">보유중</span>' : '') +
+    '</div>';
+  }).join('');
+}
+
+function toggleGrantMember(puuId) {
+  if (_grantSelectedPuuIds.has(puuId)) {
+    _grantSelectedPuuIds.delete(puuId);
+  } else {
+    _grantSelectedPuuIds.add(puuId);
+  }
+  var srch = document.getElementById('ach-grant-search');
+  renderGrantList(srch ? srch.value : '');
+  updateGrantSelectedInfo();
+}
+window.toggleGrantMember = toggleGrantMember;
+
+function filterGrantList(q) { renderGrantList(q); }
+window.filterGrantList = filterGrantList;
+
+function updateGrantSelectedInfo() {
+  var el = document.getElementById('ach-grant-selected-info');
+  if (!el) return;
+  el.textContent = _grantSelectedPuuIds.size ? _grantSelectedPuuIds.size + '명 선택됨' : '';
+}
+
+async function doGrantAchievement() {
+  if (!_grantCurrentAchId || !_grantSelectedPuuIds.size) {
+    var errEl = document.getElementById('ach-grant-err');
+    if (errEl) errEl.textContent = '부여할 멤버를 선택하세요';
+    return;
+  }
+  var ach = _achievementList.find(function(a){ return a.id===_grantCurrentAchId; });
+  if (!ach) return;
+  var errEl = document.getElementById('ach-grant-err');
+  if (errEl) errEl.textContent = '';
+  try {
+    var updates = {};
+    var now = Date.now();
+    _grantSelectedPuuIds.forEach(function(puuId) {
+      updates[_achPath('member_achievements/' + puuId + '/' + _grantCurrentAchId)] = {
+        grantedAt: now, grantedBy: _statsAdminId || 'admin'
+      };
+    });
+    // 배치 write (multi-path)
+    var r = await fetch(WORKER_URL + '/db-admin-write', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        communityId: COMMUNITY_ID, token: _statsAdminToken,
+        adminId: _statsAdminId, adminPw: _statsAdminPw,
+        multiPath: updates
+      })
+    });
+    var j = await r.json();
+    if (!j.ok) { if (errEl) errEl.textContent = '부여 실패: ' + (j.error||''); return; }
+    // 로컬 캐시 반영
+    _grantSelectedPuuIds.forEach(function(puuId) {
+      if (!_memberAchievements[puuId]) _memberAchievements[puuId] = {};
+      _memberAchievements[puuId][_grantCurrentAchId] = { grantedAt: now, grantedBy: _statsAdminId || 'admin' };
+    });
+    closeGrantPopup();
+    renderPage(); // 뱃지 반영
+    alert('✅ ' + _grantSelectedPuuIds.size + '명에게 업적이 부여되었습니다!');
+  } catch(e) { if (errEl) errEl.textContent = '오류: ' + e.message; }
+}
+window.doGrantAchievement = doGrantAchievement;
+
+// ── 상세팝업 업적 탭 ──
+async function loadMemberAchievements(member) {
+  var el = document.getElementById('dm-achievements');
+  if (!el || !member) return;
+  el.innerHTML = '<div class="dm-loading"><div class="spinner"></div> 로딩 중...</div>';
+
+  // 멤버 보유 업적
+  try {
+    var r = await fetch(WORKER_URL + '/db-public-read', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ path: _achPath('member_achievements/' + member.puu_id) })
+    });
+    var j = await r.json();
+    var grants = (j.ok && j.data) ? j.data : {};
+
+    // 업적 정의 필요시 로드
+    if (!_achListLoaded) await loadAchievementList();
+    var achMap = {};
+    _achievementList.forEach(function(a){ achMap[a.id] = a; });
+
+    var items = Object.entries(grants).map(function(e) {
+      var ach = achMap[e[0]];
+      if (!ach) return null;
+      return { ach: ach, grantedAt: e[1].grantedAt||0 };
+    }).filter(Boolean);
+
+    // 별 높은 순, 동점이면 최신순
+    items.sort(function(a, b) {
+      if (b.ach.stars !== a.ach.stars) return (b.ach.stars||0) - (a.ach.stars||0);
+      return b.grantedAt - a.grantedAt;
+    });
+
+    if (!items.length) {
+      el.innerHTML = '<div class="ach-empty-ach">🏆<br><br>아직 받은 업적이 없습니다</div>';
+      return;
+    }
+
+    // 관리자는 업적 취소 버튼 표시
+    var isAdmin = isStatsAdmin();
+    el.innerHTML = '<div class="ach-display-grid">' +
+      items.map(function(item) {
+        var ach = item.ach;
+        var starsVal = parseInt(ach.stars)||0;
+        var isHigh = starsVal >= 7;
+        var dateStr = item.grantedAt ? new Date(item.grantedAt).toLocaleDateString('ko-KR') : '';
+        return '<div class="ach-trophy-card' + (isHigh?' stars-high':'') + '">' +
+          (isAdmin ? '<button onclick="revokeAchievement(\'' + esc(member.puu_id) + '\',\'' + esc(ach.id) + '\')" style="position:absolute;top:5px;right:5px;background:transparent;border:none;color:rgba(232,64,87,.4);font-size:10px;cursor:pointer;" title="업적 취소">✕</button>' : '') +
+          '<div class="ach-trophy-icon">' + esc(ach.icon||'🏆') + '</div>' +
+          '<div class="ach-trophy-title">' + esc(ach.title||'') + '</div>' +
+          (ach.desc ? '<div class="ach-trophy-desc">' + esc(ach.desc) + '</div>' : '') +
+          '<div class="ach-trophy-stars">' + _renderStarsShort(starsVal) + '</div>' +
+          (dateStr ? '<div class="ach-trophy-date">' + dateStr + '</div>' : '') +
+        '</div>';
+      }).join('') +
+    '</div>';
+  } catch(e) {
+    el.innerHTML = '<div class="ach-empty-ach">로딩 실패</div>';
+  }
+}
+window.loadMemberAchievements = loadMemberAchievements;
+
+// ── 업적 취소 (관리자) ──
+async function revokeAchievement(puuId, achId) {
+  var ach = _achievementList.find(function(a){ return a.id===achId; });
+  if (!confirm('업적 "' + (ach ? ach.title : achId) + '" 부여를 취소할까요?')) return;
+  try {
+    await fetch(WORKER_URL + '/db-admin-write', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        communityId: COMMUNITY_ID, token: _statsAdminToken,
+        adminId: _statsAdminId, adminPw: _statsAdminPw,
+        path: _achPath('member_achievements/' + puuId + '/' + achId),
+        data: null
+      })
+    });
+    if (_memberAchievements[puuId]) delete _memberAchievements[puuId][achId];
+    // 탭 재렌더
+    loadMemberAchievements(_currentMember);
+    renderPage();
+  } catch(e) { alert('오류: ' + e.message); }
+}
+window.revokeAchievement = revokeAchievement;
+
 function switchDetailTab(tab) {
-  var analysisTab  = document.getElementById('dm-tab-analysis');
-  var logTab       = document.getElementById('dm-tab-rating-log');
-  var weeklyTab    = document.getElementById('dm-tab-weekly');
-  var commTab      = document.getElementById('dm-tab-comments');
-  var memoTab      = document.getElementById('dm-tab-memo');
-  var nicknameTab  = document.getElementById('dm-tab-nickname');
-  var contentEl    = document.getElementById('dm-content');
-  var logEl        = document.getElementById('dm-rating-log');
-  var weeklyEl     = document.getElementById('dm-weekly');
-  var commEl       = document.getElementById('dm-comments');
-  var memoEl       = document.getElementById('dm-memo');
-  var nicknameEl   = document.getElementById('dm-nickname');
-  var heatmapEl    = document.getElementById('dm-heatmap');
+  var analysisTab    = document.getElementById('dm-tab-analysis');
+  var logTab         = document.getElementById('dm-tab-rating-log');
+  var weeklyTab      = document.getElementById('dm-tab-weekly');
+  var commTab        = document.getElementById('dm-tab-comments');
+  var memoTab        = document.getElementById('dm-tab-memo');
+  var nicknameTab    = document.getElementById('dm-tab-nickname');
+  var achTab         = document.getElementById('dm-tab-achievements');
+  var contentEl      = document.getElementById('dm-content');
+  var logEl          = document.getElementById('dm-rating-log');
+  var weeklyEl       = document.getElementById('dm-weekly');
+  var commEl         = document.getElementById('dm-comments');
+  var memoEl         = document.getElementById('dm-memo');
+  var nicknameEl     = document.getElementById('dm-nickname');
+  var heatmapEl      = document.getElementById('dm-heatmap');
+  var achEl          = document.getElementById('dm-achievements');
   if (!analysisTab) return;
 
   var heatmapTab = document.getElementById('dm-tab-heatmap');
-  [analysisTab, logTab, weeklyTab, commTab, memoTab, nicknameTab, heatmapTab].forEach(function(t) {
+  [analysisTab, logTab, weeklyTab, commTab, memoTab, nicknameTab, heatmapTab, achTab].forEach(function(t) {
     if (t) { t.style.borderBottom='none'; t.style.background='transparent'; t.style.color='var(--muted)'; }
   });
   if (contentEl)   contentEl.style.display  = 'none';
@@ -3616,6 +4234,7 @@ function switchDetailTab(tab) {
   if (memoEl)      memoEl.style.display     = 'none';
   if (nicknameEl)  nicknameEl.style.display = 'none';
   if (heatmapEl)   heatmapEl.style.display  = 'none';
+  if (achEl)       achEl.style.display      = 'none';
 
   if (tab === 'analysis') {
     analysisTab.style.borderBottom = '2px solid var(--blue)';
@@ -3658,6 +4277,13 @@ function switchDetailTab(tab) {
       heatmapTab.style.color        = '#FB923C';
     }
     if (heatmapEl) { heatmapEl.style.display = ''; renderActivityHeatmap(_currentMember); }
+  } else if (tab === 'achievements') {
+    if (achTab) {
+      achTab.style.borderBottom = '2px solid var(--gold)';
+      achTab.style.background   = 'rgba(200,170,110,.08)';
+      achTab.style.color        = 'var(--gold)';
+    }
+    if (achEl) { achEl.style.display = ''; loadMemberAchievements(_currentMember); }
   }
 }
 window.switchDetailTab = switchDetailTab;
@@ -4529,6 +5155,10 @@ function goToMyPage() {
   var url = '/mypage?cid=' + encodeURIComponent(COMMUNITY_ID) +
     '&did=' + encodeURIComponent(_discordUser.id);
   if (SERVER_ID) url += '&server_id=' + encodeURIComponent(SERVER_ID);
+  // deeplol puu_id 전달 (내전 전적 직접 조회용)
+  var key = (_discordLinkData.riotName||'').toLowerCase() + '#' + (_discordLinkData.riotTag||'').toLowerCase();
+  var puuId = window._puuIdMap && window._puuIdMap[key];
+  if (puuId) url += '&puu_id=' + encodeURIComponent(puuId);
   window.open(url, '_blank');
 }
 
@@ -6702,16 +7332,49 @@ function scoutFilterChamp(btn) {
 }
 
 
+// ── statsPublic 공개 요일 체크 ──
+async function loadStatsPublic() {
+  if (!COMMUNITY_ID) return;
+  try {
+    var _cmRes = await fetch(WORKER_URL + '/db-public-read', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ path: 'communities_info/' + COMMUNITY_ID, _nocache: Date.now() })
+    });
+    var _cmJson = await _cmRes.json();
+    if (_cmJson.ok && _cmJson.data && (_cmJson.data.statsPublic === true || _cmJson.data.statsPublic === 'true')) {
+      // KST(UTC+9) 기준 오늘 요일 계산 (모바일 기기 타임존 무관)
+      var _kstNow = new Date(new Date().getTime() + 9 * 60 * 60 * 1000);
+      var _todayJS = _kstNow.getUTCDay(); // 0=일,1=월,...,6=토
+      var _todayIdx = _todayJS === 0 ? 6 : _todayJS - 1; // 저장 인덱스: 0=월,...,6=일
+      var _days = _cmJson.data.statsPublicDays;
+      var _dayOk = !Array.isArray(_days) || _days.length === 0 || _days.indexOf(_todayIdx) !== -1;
+      if (_dayOk) {
+        document.body.classList.add('admin-unlocked');
+        var _dmRlTabPub = document.getElementById('dm-tab-rating-log');
+        if (_dmRlTabPub) _dmRlTabPub.style.display = '';
+        // admin-unlocked 추가 후 레이팅 데이터가 이미 로드된 상태이므로 재렌더
+        applyAll();
+      }
+    }
+  } catch(e) { console.error('[statsPublic] error:', e); }
+}
+
 // ── 페이지 초기화 ──
 document.addEventListener('DOMContentLoaded', function() {
   (async function() {
     await loadChampMap();
     await loadData();
     await loadAllRatings();
+    applyAll(); // 레이팅 데이터 로드 완료 후 재렌더
+    await loadStatsPublic(); // 레이팅 로드 완료 후 공개 요일 체크
     await loadRowEffects();
     await loadBgEffects();
     if (COMMUNITY_ID) {
       await loadTempTiers();
+      // 업적 데이터 로드 (비동기, 완료 후 테이블 재렌더)
+      Promise.all([loadAchievementList(), loadMemberAchievementsAll()]).then(function() {
+        renderPage();
+      });
       var loginBtn = document.getElementById('btn-admin-login');
       if (loginBtn) loginBtn.style.display = '';
     }

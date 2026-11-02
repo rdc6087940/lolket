@@ -211,6 +211,11 @@
     .riot-name { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 13px; color: var(--white); }
     .riot-tag { font-size: 10px; color: var(--muted); }
     .linked-at { font-size: 10px; color: var(--muted); white-space: nowrap; }
+    .td-clickable { cursor: pointer; position: relative; transition: background .15s; }
+    .td-clickable:hover { background: rgba(255,255,255,.05); }
+    .td-clickable:hover .riot-name { color: #7aa2f7; text-decoration: underline; }
+    .td-link-hint { position: absolute; top: 6px; right: 6px; font-size: 10px; color: var(--muted); opacity: 0; transition: opacity .15s; }
+    .td-clickable:hover .td-link-hint { opacity: 1; }
 
     .btn-action {
       padding: 3px 10px;
@@ -262,10 +267,50 @@
       border: 1px solid rgba(255,255,255,.1);
       border-radius: 10px;
       padding: 1.75rem;
-      width: 360px;
-      max-width: 92vw;
+      width: 400px;
+      max-width: 94vw;
       position: relative;
     }
+    /* 멤버 검색 드롭다운 */
+    .member-search-wrap { position: relative; margin-bottom: .5rem; }
+    .member-search-input {
+      width: 100%;
+      padding: .55rem .75rem;
+      background: #111820;
+      border: 1px solid rgba(10,200,185,.3);
+      border-radius: 5px;
+      color: var(--white);
+      font-family: 'Noto Sans KR', sans-serif;
+      font-size: 12px;
+      outline: none;
+    }
+    .member-search-input:focus { border-color: rgba(10,200,185,.6); }
+    .member-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0; right: 0;
+      background: #0D1A28;
+      border: 1px solid rgba(10,200,185,.25);
+      border-top: none;
+      border-radius: 0 0 5px 5px;
+      max-height: 180px;
+      overflow-y: auto;
+      z-index: 100;
+      display: none;
+    }
+    .member-dropdown.open { display: block; }
+    .member-item {
+      padding: .45rem .75rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      border-bottom: 1px solid rgba(255,255,255,.04);
+    }
+    .member-item:hover { background: rgba(10,200,185,.08); }
+    .member-item .mi-name { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 13px; color: var(--white); }
+    .member-item .mi-tag { font-size: 10px; color: var(--muted); }
+    .member-item .mi-tier { font-size: 10px; color: var(--gold); margin-left: auto; white-space: nowrap; }
     .edit-popup h4 {
       font-family: 'Rajdhani', sans-serif;
       font-size: 14px;
@@ -401,10 +446,15 @@
     <h4>✏️ 소환사 정보 수정</h4>
     <div class="edit-sub" id="edit-discord-info">Discord: —</div>
     <div class="edit-row">
-      <div class="edit-label">소환사명 (이름#태그)</div>
-      <input class="mpm-input" id="edit-riot-name" type="text" placeholder="예: 소환사명" style="margin-bottom:.35rem;">
-      <input class="mpm-input" id="edit-riot-tag" type="text" placeholder="태그 (예: KR1)">
+      <div class="edit-label" style="margin-bottom:.35rem;">소환사 검색</div>
+      <div class="member-search-wrap">
+        <input class="member-search-input" id="edit-member-search" type="text" placeholder="소환사명 검색..." autocomplete="off">
+        <div class="member-dropdown" id="edit-member-dropdown"></div>
+      </div>
+      <div id="edit-selected-info" style="display:none;margin-top:.5rem;padding:.45rem .65rem;background:rgba(10,200,185,.07);border:1px solid rgba(10,200,185,.25);border-radius:4px;font-family:'Rajdhani',sans-serif;font-size:12px;color:var(--blue-bright);"></div>
     </div>
+    <input type="hidden" id="edit-riot-name">
+    <input type="hidden" id="edit-riot-tag">
     <div class="edit-msg" id="edit-msg" style="color:var(--red);"></div>
     <div class="edit-actions">
       <button class="btn-cancel" onclick="closeEdit()">취소</button>
@@ -425,6 +475,99 @@ var _adminToken = '';
 var _adminRole = '';
 var _linkList = [];
 var _editTarget = null; // { discordId, cid, ... }
+var _memberList = []; // deeplol 멤버 목록
+var _serverIdCache = ''; // deeplolServerId 캐시 (마이페이지 URL 생성용)
+
+// deeplol server_info에서 멤버 목록 로드
+async function loadMemberList() {
+  if (_memberList.length) return;
+  if (!CID) return;
+  try {
+    // communities_info에서 deeplolServerId 조회
+    var r = await fetch(WORKER_URL + '/db-public-read', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ path: 'communities_info/' + CID + '/deeplolServerId' })
+    });
+    var rj = await r.json();
+    if (!rj.ok || !rj.data) return;
+    var serverId = rj.data;
+    _serverIdCache = serverId; // openMyPage()에서 재사용
+    var res = await fetch('https://b2c-api-cdn.deeplol.gg/tournament/server_info?server_id=' + serverId, {
+      headers: { 'Referer': 'https://www.deeplol.gg/' }
+    });
+    var info = await res.json();
+    _memberList = (info && info.tournament_stats && info.tournament_stats.tournament_stats_all_list) || [];
+  } catch(e) {}
+}
+
+var _filteredMembers = []; // 드롭다운에 표시 중인 목록
+
+function renderMemberDropdown(q) {
+  var dd = document.getElementById('edit-member-dropdown');
+  q = (q || '').trim().toLowerCase();
+  _filteredMembers = q
+    ? _memberList.filter(function(m) {
+        return (m.riot_name||'').toLowerCase().includes(q) || (m.riot_tag||'').toLowerCase().includes(q);
+      }).slice(0, 30)
+    : _memberList.slice(0, 30);
+  if (!_filteredMembers.length) {
+    dd.innerHTML = '<div class="member-item"><span class="mi-tag">검색 결과 없음</span></div>';
+  } else {
+    dd.innerHTML = _filteredMembers.map(function(m, i) {
+      var tier = m.tier_info && m.tier_info.tier
+        ? m.tier_info.tier.charAt(0).toUpperCase() + m.tier_info.tier.slice(1).toLowerCase() : '';
+      return '<div class="member-item" data-idx="' + i + '">' +
+        '<div><span class="mi-name">' + esc(m.riot_name) + '</span>' +
+        '<span class="mi-tag"> #' + esc(m.riot_tag) + '</span></div>' +
+        (tier ? '<span class="mi-tier">' + esc(tier) + '</span>' : '') +
+      '</div>';
+    }).join('');
+    // 이벤트 위임으로 클릭 처리
+    dd.querySelectorAll('.member-item[data-idx]').forEach(function(el) {
+      el.addEventListener('mousedown', function(e) {
+        e.preventDefault();
+        var idx = parseInt(this.getAttribute('data-idx'), 10);
+        selectMember(_filteredMembers[idx]);
+      });
+    });
+  }
+  dd.classList.add('open');
+}
+
+function selectMember(m) {
+  document.getElementById('edit-riot-name').value = m.riot_name || '';
+  document.getElementById('edit-riot-tag').value = m.riot_tag || '';
+  document.getElementById('edit-member-search').value = '';
+  document.getElementById('edit-member-dropdown').classList.remove('open');
+  var info = document.getElementById('edit-selected-info');
+  info.textContent = '✓ ' + (m.riot_name || '') + ' #' + (m.riot_tag || '');
+  info.style.display = 'block';
+}
+
+// 검색 input 이벤트 연결 (DOMContentLoaded 후)
+document.addEventListener('DOMContentLoaded', function() {
+  var searchEl = document.getElementById('edit-member-search');
+  if (!searchEl) return;
+  searchEl.addEventListener('input', function() {
+    if (_memberList.length) {
+      renderMemberDropdown(this.value);
+    } else {
+      var dd = document.getElementById('edit-member-dropdown');
+      dd.innerHTML = '<div class="member-item"><span class="mi-tag">로딩 중...</span></div>';
+      dd.classList.add('open');
+      loadMemberList().then(function() { renderMemberDropdown(searchEl.value); });
+    }
+  });
+  searchEl.addEventListener('focus', function() {
+    if (_memberList.length) renderMemberDropdown(this.value);
+  });
+  searchEl.addEventListener('blur', function() {
+    setTimeout(function() {
+      var dd = document.getElementById('edit-member-dropdown');
+      if (dd) dd.classList.remove('open');
+    }, 150);
+  });
+});
 
 // 자동 로그인 시도 (localStorage에 저장된 ID/PW로 재로그인)
 (async function() {
@@ -434,9 +577,16 @@ var _editTarget = null; // { discordId, cid, ... }
     if (id && pw && CID) {
       var res = await fetch(WORKER_URL + '/admin-login', {
         method: 'POST', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ id, pw, cid: CID })
+        body: JSON.stringify({ id, pw, type: 'master' })
       });
       var j = await res.json();
+      if (!j.ok) {
+        res = await fetch(WORKER_URL + '/admin-login', {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ id, pw, type: 'admin' })
+        });
+        j = await res.json();
+      }
       if (j.ok && (j.role === 'admin' || j.role === 'master')) {
         _adminToken = j.token;
         _adminRole = j.role;
@@ -455,11 +605,20 @@ async function alLogin() {
   if (!id || !pw) { errEl.textContent = 'ID와 비밀번호를 입력해주세요.'; return; }
   if (!CID) { errEl.textContent = 'cid 파라미터가 없습니다.'; return; }
   try {
+    // 마스터 로그인 시도
     var res = await fetch(WORKER_URL + '/admin-login', {
       method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ id, pw, cid: CID })
+      body: JSON.stringify({ id, pw, type: 'master' })
     });
     var j = await res.json();
+    // 마스터 실패 시 관리자 로그인 시도
+    if (!j.ok) {
+      res = await fetch(WORKER_URL + '/admin-login', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ id, pw, type: 'admin' })
+      });
+      j = await res.json();
+    }
     if (!j.ok) { errEl.textContent = j.error || '로그인 실패'; return; }
     _adminToken = j.token;
     _adminRole = j.role;
@@ -474,7 +633,7 @@ async function startLoad() {
   document.getElementById('loading-screen').style.display = 'flex';
   await loadLinks();
   document.getElementById('loading-screen').style.display = 'none';
-  document.getElementById('main-section').style.display = '';
+  document.getElementById('main-section').style.display = 'block';
 }
 
 async function loadLinks() {
@@ -521,14 +680,19 @@ function renderTable() {
       year:'2-digit', month:'2-digit', day:'2-digit',
       hour:'2-digit', minute:'2-digit'
     }) : '—';
+    var hasRiot = !!(item.riotName);
     return '<tr>' +
       '<td><div class="discord-cell">' +
         '<img src="' + esc(avatarSrc) + '" onerror="this.src=\'https://cdn.discordapp.com/embed/avatars/0.png\'">' +
         '<div><div class="discord-name">' + esc(item.discordName || '—') + '</div>' +
         '<div class="discord-id">' + esc(item.discordId) + '</div></div>' +
       '</div></td>' +
-      '<td><div class="riot-name">' + esc(item.riotName || '—') + '</div>' +
-        '<div class="riot-tag">#' + esc(item.riotTag || '') + '</div></td>' +
+      '<td class="td-mypage-link' + (hasRiot ? ' td-clickable' : '') + '"' +
+        (hasRiot ? ' onclick=\'openMyPage(' + JSON.stringify(JSON.stringify(item)) + ')\' title="마이페이지 열기"' : '') + '>' +
+        '<div class="riot-name">' + esc(item.riotName || '—') + '</div>' +
+        '<div class="riot-tag">#' + esc(item.riotTag || '') + '</div>' +
+        (hasRiot ? '<span class="td-link-hint">↗</span>' : '') +
+      '</td>' +
       '<td class="linked-at">' + esc(linkedAt) + '</td>' +
       '<td>' +
         '<button class="btn-action btn-edit" onclick=\'openEdit(' + JSON.stringify(JSON.stringify(item)) + ')\'>✏️ 수정</button>' +
@@ -536,6 +700,32 @@ function renderTable() {
       '</td>' +
     '</tr>';
   }).join('');
+}
+
+// 마이페이지 새탭으로 열기
+async function openMyPage(itemJson) {
+  var item = JSON.parse(itemJson);
+  if (!item.discordId) return;
+
+  // _memberList 로드 (serverId + deeplol server_info 포함) — loadMemberList()가 이미 처리
+  await loadMemberList();
+
+  // _memberList(deeplol server_info)에서 riotName+riotTag로 puu_id 조회
+  var puuId = '';
+  if (item.riotName && item.riotTag && _memberList.length) {
+    var found = _memberList.find(function(m) {
+      return (m.riot_name||'').toLowerCase() === (item.riotName||'').toLowerCase() &&
+             (m.riot_tag||'').toLowerCase() === (item.riotTag||'').toLowerCase();
+    });
+    if (found && found.puu_id) puuId = found.puu_id;
+  }
+
+  var url = '/mypage?cid=' + encodeURIComponent(CID) +
+    '&did=' + encodeURIComponent(item.discordId) +
+    '&admin_token=' + encodeURIComponent(_adminToken);
+  if (_serverIdCache) url += '&server_id=' + encodeURIComponent(_serverIdCache);
+  if (puuId) url += '&puu_id=' + encodeURIComponent(puuId);
+  window.open(url, '_blank');
 }
 
 function esc(str) {
@@ -550,9 +740,22 @@ function openEdit(itemJson) {
     'Discord: ' + (_editTarget.discordName || '—') + ' (' + _editTarget.discordId + ')';
   document.getElementById('edit-riot-name').value = _editTarget.riotName || '';
   document.getElementById('edit-riot-tag').value = _editTarget.riotTag || '';
+  document.getElementById('edit-member-search').value = '';
+  document.getElementById('edit-member-dropdown').classList.remove('open');
+  // 현재 연동된 소환사를 선택 표시로 초기 노출
+  var infoEl = document.getElementById('edit-selected-info');
+  if (_editTarget.riotName) {
+    infoEl.textContent = '현재: ' + _editTarget.riotName + ' #' + (_editTarget.riotTag || '');
+    infoEl.style.display = 'block';
+  } else {
+    infoEl.textContent = '';
+    infoEl.style.display = 'none';
+  }
   document.getElementById('edit-msg').textContent = '';
   document.getElementById('edit-overlay').style.display = 'flex';
-  setTimeout(function(){ document.getElementById('edit-riot-name').focus(); }, 100);
+  // 멤버 목록 미리 로드
+  loadMemberList();
+  setTimeout(function(){ document.getElementById('edit-member-search').focus(); }, 150);
 }
 
 function closeEdit() {
@@ -566,7 +769,7 @@ async function saveEdit() {
   var riotTag = (document.getElementById('edit-riot-tag').value || '').trim();
   var msgEl = document.getElementById('edit-msg');
   msgEl.textContent = '';
-  if (!riotName || !riotTag) { msgEl.textContent = '소환사명과 태그를 모두 입력해주세요.'; return; }
+  if (!riotName || !riotTag) { msgEl.textContent = '멤버를 검색해서 선택해주세요.'; return; }
   try {
     var res = await fetch(WORKER_URL + '/discord-link-update', {
       method: 'POST', headers: {'Content-Type':'application/json'},

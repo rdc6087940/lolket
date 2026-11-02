@@ -612,6 +612,9 @@ export default {
     if (path === '/discord-link-list' && request.method === 'POST') {
       return handleDiscordLinkList(request, env);
     }
+    if (path === '/admin-verify' && request.method === 'POST') {
+      return handleAdminVerify(request, env);
+    }
     if (path === '/cron-rating-test' && request.method === 'POST') {
       let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
       let session = getSession(body.token);
@@ -937,7 +940,7 @@ async function handleDeeplolMatches(request, env) {
   try { body = await request.json(); } catch { return json({ ok: false, error: '잘못된 요청' }, 400); }
   const { puuId, offset = 0, count = 20 } = body;
   if (!puuId) return json({ ok: false, error: 'puuId 필요' }, 400);
-  const url = `https://b2c-api-cdn.deeplol.gg/match/matches?puu_id=${encodeURIComponent(puuId)}&platform_id=KR&offset=${offset}&count=${count}&queue_type=ALL&champion_id=0&only_list=1&last_updated_at=0`;
+  const url = `https://b2c-api-cdn.deeplol.gg/match/matches?puu_id=${encodeURIComponent(puuId)}&platform_id=KR&offset=${offset}&count=${count}&queue_type=CUSTOM&champion_id=0&only_list=1&last_updated_at=1`;
   try {
     const res = await fetch(url, {
       headers: {
@@ -1068,6 +1071,7 @@ async function handleDbPublicRead(request, env) {
     /^system\/connect_cache\/[^/]+$/,
     /^communities\/[^/]+\/calendar/,
     /^communities\/[^/]+\/ranking_ai_analysis($|\/)/,
+    /^player_profiles\/[^/]+\/[^/]+\/profile$/, // 플레이어 자기소개/태그 (본인만 읽기)
   ];
   if (!publicRead.some(r => r.test(dbPath))) {
     return json({ ok: false, error: '허용되지 않는 경로입니다' }, 403);
@@ -1585,6 +1589,7 @@ function checkPermission(session, dbPath, requireRole) {
     /^recruit_applies\/[^/]+\//,    // 외전 신청
     /^match_alarms\/[^/]+$/,        // 내전 알람 예약 (로그인 관리자)
     /^match_index\/[^/]+$/,         // 내전-커뮤니티 인덱스 (Cron 조회용)
+    /^player_profiles\/[^/]+\/[^/]+\/profile$/, // 플레이어 자기소개/태그 (본인 저장)
   ];
   if (publicWrite.some(r => r.test(dbPath))) return true;
 
@@ -2803,11 +2808,11 @@ async function handleDiscordOAuthCallback(request, env) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(comment)
     });
-    return json({ ok: true, user: { id: user.id, username: user.username, displayName: comment.displayName, avatar: comment.avatar }, comment: { id: commentId, ...comment } });
+    return json({ ok: true, user: { id: user.id, username: user.username, displayName: comment.displayName, avatar: comment.avatar, banner: user.banner || null }, comment: { id: commentId, ...comment } });
   }
 
   // 텍스트 없이 인증만 한 경우 - 유저 정보만 반환
-  return json({ ok: true, user: { id: user.id, username: user.username, displayName: user.global_name || user.username, avatar: user.avatar ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png` : null } });
+  return json({ ok: true, user: { id: user.id, username: user.username, displayName: user.global_name || user.username, avatar: user.avatar ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png` : null, banner: user.banner || null } });
 }
 
 // 코멘트 읽기
@@ -6168,6 +6173,18 @@ async function handleDiscordLinkSet(request, env) {
 }
 
 // 연동 조회 (discordId + cid로 조회)
+// 관리자 토큰 검증 (mypage.html에서 admin_token URL 파라미터로 접근 시 사용)
+async function handleAdminVerify(request, env) {
+  let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
+  const { token } = body;
+  if (!token) return json({ok:false,error:'token 누락'},400);
+  const session = getSession(token);
+  if (!session || (session.role !== 'master' && session.role !== 'admin')) {
+    return json({ok:false,error:'권한 없음'},403);
+  }
+  return json({ok:true, role: session.role});
+}
+
 async function handleDiscordLinkGet(request, env) {
   let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
   const { discordId, cid } = body;
