@@ -373,7 +373,7 @@ tbody td{padding:.55rem 1rem;font-size:12px;vertical-align:middle;}
 /* 업적 팝업 오버레이 */
 .ach-mgr-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:2500;display:none;align-items:flex-start;justify-content:center;padding:1.5rem 1rem;overflow-y:auto;}
 .ach-mgr-overlay.open{display:flex;}
-.ach-mgr-box{background:#0D1620;border:1px solid rgba(255,255,255,.1);border-radius:8px;width:100%;max-width:720px;overflow:hidden;flex-shrink:0;}
+.ach-mgr-box{background:#0D1620;border:1px solid rgba(255,255,255,.1);border-radius:8px;width:100%;max-width:800px;overflow:hidden;flex-shrink:0;}
 .ach-mgr-head{display:flex;align-items:center;gap:.75rem;padding:.9rem 1.25rem;background:rgba(200,170,110,.06);border-bottom:1px solid rgba(255,255,255,.07);}
 .ach-mgr-title{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;color:var(--gold);}
 .ach-mgr-body{padding:1rem 1.25rem;}
@@ -413,7 +413,7 @@ tbody td{padding:.55rem 1rem;font-size:12px;vertical-align:middle;}
 /* 업적 부여 팝업 */
 .ach-grant-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:3000;display:none;align-items:center;justify-content:center;}
 .ach-grant-overlay.open{display:flex;}
-.ach-grant-box{background:#0D1620;border:1px solid rgba(255,255,255,.1);border-radius:8px;width:340px;padding:1.25rem;}
+.ach-grant-box{background:#0D1620;border:1px solid rgba(255,255,255,.1);border-radius:8px;width:340px;max-width:95vw;max-height:90vh;overflow-y:auto;padding:1.25rem;}
 
 /* 업적 탭 (상세팝업) */
 #dm-achievements{overflow-y:auto;max-height:500px;padding:.75rem 1rem;}
@@ -433,6 +433,27 @@ tbody td{padding:.55rem 1rem;font-size:12px;vertical-align:middle;}
 .ach-trophy-date{font-family:'Rajdhani',sans-serif;font-size:9px;color:rgba(255,255,255,.2);margin-top:.3rem;}
 .ach-trophy-card.stars-high{border-color:rgba(200,170,110,.45);background:linear-gradient(160deg,rgba(200,170,110,.14),rgba(255,255,255,.04));}
 .ach-empty-ach{text-align:center;padding:2.5rem;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:12px;letter-spacing:.5px;}
+
+/* 업적 아이콘 이미지 */
+.ach-badge img{width:16px;height:16px;object-fit:contain;border-radius:2px;display:block;}
+.ach-tt-icon img{width:36px;height:36px;object-fit:contain;border-radius:4px;}
+.ach-card-icon img{width:28px;height:28px;object-fit:contain;border-radius:3px;}
+.ach-trophy-icon img{width:56px;height:56px;object-fit:contain;border-radius:6px;filter:drop-shadow(0 2px 6px rgba(200,170,110,.3));}
+
+/* 업적 이미지 피커 */
+.ach-img-picker-overlay{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:4000;display:none;align-items:center;justify-content:center;}
+.ach-img-picker-overlay.open{display:flex;}
+.ach-img-picker-box{background:#0D1620;border:1px solid rgba(255,255,255,.1);border-radius:8px;width:600px;max-width:95vw;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;}
+.ach-img-picker-head{display:flex;align-items:center;justify-content:space-between;padding:.75rem 1rem;background:rgba(200,170,110,.06);border-bottom:1px solid rgba(255,255,255,.07);flex-shrink:0;}
+.ach-img-picker-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;padding:1rem;overflow-y:auto;}
+.ach-img-item{display:flex;flex-direction:column;align-items:center;gap:6px;padding:8px 6px;border-radius:6px;border:1px solid rgba(255,255,255,.07);cursor:pointer;transition:all .12s;}
+.ach-img-item:hover{border-color:rgba(200,170,110,.4);background:rgba(200,170,110,.06);}
+.ach-img-item.selected{border-color:var(--gold);background:rgba(200,170,110,.12);}
+.ach-img-item img{width:80px;height:80px;object-fit:contain;border-radius:5px;}
+.ach-img-item-name{font-family:'Noto Sans KR',sans-serif;font-size:9px;color:rgba(255,255,255,.7);text-align:center;word-break:break-all;line-height:1.4;width:100%;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+.ach-img-picker-footer{padding:.65rem 1rem;border-top:1px solid rgba(255,255,255,.07);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+/* 큰 이미지 미리보기 (트로피 카드용) */
+.ach-trophy-big-img{width:100%;max-height:160px;object-fit:contain;border-radius:6px;margin-bottom:.5rem;}
 
 /* ── 레이팅 로그 ── */
 .rl-row{display:flex;align-items:center;gap:10px;padding:.5rem .75rem;border-bottom:1px solid rgba(255,255,255,.04);font-family:'Rajdhani',sans-serif;font-size:11px;}
@@ -1941,10 +1962,49 @@ async function _cachedFetch(key, ttlSec, fetchFn) {
       <!-- 업적 추가/편집 폼 -->
       <div id="ach-form-section" style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:5px;padding:.85rem;margin-bottom:1rem;display:none;">
         <div style="font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:1.5px;color:var(--gold);margin-bottom:.65rem;" id="ach-form-mode-label">+ 새 업적</div>
-        <div class="ach-form-row">
-          <span class="ach-form-label">아이콘</span>
-          <input class="ach-form-input" id="ach-fi-icon" placeholder="이모지 입력 (예: 🔥)" maxlength="4" style="width:80px;text-align:center;font-size:20px;">
-          <span style="font-size:10px;color:var(--muted);margin-left:8px;">이모지 또는 문자</span>
+        <div class="ach-form-row" style="align-items:flex-start;">
+          <span class="ach-form-label" style="margin-top:6px;">아이콘</span>
+          <div style="flex:1;">
+            <!-- 현재 선택된 아이콘 미리보기 -->
+            <div id="ach-icon-preview" style="display:flex;align-items:center;gap:.5rem;margin-bottom:.4rem;">
+              <div id="ach-icon-preview-img" style="width:36px;height:36px;border:1px solid rgba(255,255,255,.1);border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:22px;background:rgba(255,255,255,.03);">🏆</div>
+              <div style="display:flex;flex-direction:column;gap:3px;">
+                <div style="font-size:9px;color:var(--muted);" id="ach-icon-preview-label">이모지 사용 중</div>
+                <button type="button" onclick="clearAchIcon()" id="ach-icon-clear-btn" style="display:none;padding:2px 7px;border-radius:2px;border:1px solid rgba(255,255,255,.1);background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:9px;cursor:pointer;">초기화</button>
+              </div>
+            </div>
+            <!-- 탭: 이모지 / 이미지 -->
+            <div style="display:flex;gap:4px;margin-bottom:.4rem;">
+              <button type="button" id="ach-icon-tab-emoji" onclick="switchAchIconTab('emoji')" style="padding:3px 10px;border-radius:2px;border:1px solid var(--bacc);background:rgba(10,200,185,.08);color:var(--blue);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;">이모지</button>
+              <button type="button" id="ach-icon-tab-image" onclick="switchAchIconTab('image')" style="padding:3px 10px;border-radius:2px;border:1px solid rgba(255,255,255,.1);background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;">이미지 선택</button>
+            </div>
+            <!-- 이모지 입력 -->
+            <div id="ach-icon-emoji-row" style="display:flex;align-items:center;gap:.5rem;">
+              <input class="ach-form-input" id="ach-fi-icon" placeholder="이모지 입력 (예: 🔥)" maxlength="4" style="width:80px;text-align:center;font-size:20px;" oninput="onAchEmojiInput()">
+              <span style="font-size:10px;color:var(--muted);">이모지 또는 문자</span>
+            </div>
+            <!-- 이미지 선택 버튼 -->
+            <div id="ach-icon-image-row" style="display:none;">
+              <button type="button" onclick="openAchImagePicker()" style="padding:4px 12px;border-radius:2px;border:1px solid rgba(200,170,110,.35);background:rgba(200,170,110,.06);color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;">📁 이미지 선택</button>
+              <input type="hidden" id="ach-fi-image-url">
+            </div>
+          </div>
+        </div>
+        <!-- 큰 이미지 (트로피 카드 상단 표시용) -->
+        <div class="ach-form-row" style="align-items:flex-start;">
+          <span class="ach-form-label" style="margin-top:6px;">큰 이미지</span>
+          <div style="flex:1;">
+            <div id="ach-bigimg-preview" style="display:none;margin-bottom:.4rem;">
+              <img id="ach-bigimg-preview-img" src="" alt="" style="max-width:100%;max-height:100px;object-fit:contain;border-radius:5px;border:1px solid rgba(255,255,255,.08);">
+              <span id="ach-bigimg-preview-name" style="display:block;font-family:'Rajdhani',sans-serif;font-size:9px;color:var(--muted);margin-top:3px;"></span>
+            </div>
+            <div style="display:flex;gap:.4rem;align-items:center;">
+              <button type="button" onclick="openAchImagePicker('big')" style="padding:4px 12px;border-radius:2px;border:1px solid rgba(200,170,110,.35);background:rgba(200,170,110,.06);color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;">📁 이미지 선택</button>
+              <button type="button" id="ach-bigimg-clear-btn" onclick="clearAchBigImg()" style="display:none;padding:3px 8px;border-radius:2px;border:1px solid rgba(255,255,255,.1);background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:9px;cursor:pointer;">제거</button>
+            </div>
+            <input type="hidden" id="ach-fi-big-image-url">
+            <div style="font-size:9px;color:var(--muted);margin-top:4px;">트로피 카드 상단에 크게 표시됩니다 (선택사항)</div>
+          </div>
         </div>
         <div class="ach-form-row">
           <span class="ach-form-label">타이틀</span>
@@ -1996,6 +2056,26 @@ async function _cachedFetch(key, ttlSec, fetchFn) {
       <button onclick="doGrantAchievement()" style="padding:4px 14px;border-radius:2px;border:1px solid rgba(200,170,110,.4);background:rgba(200,170,110,.08);color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;">부여</button>
     </div>
     <div id="ach-grant-err" style="color:var(--red);font-family:'Rajdhani',sans-serif;font-size:10px;margin-top:.3rem;"></div>
+  </div>
+</div>
+
+<!-- ── 업적 이미지 피커 팝업 ── -->
+<div class="ach-img-picker-overlay" id="ach-img-picker-overlay" onclick="if(event.target===this)closeAchImagePicker()">
+  <div class="ach-img-picker-box">
+    <div class="ach-img-picker-head">
+      <span style="font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:1.5px;color:var(--gold);" id="ach-img-picker-title">📁 이미지 선택</span>
+      <button onclick="closeAchImagePicker()" style="background:transparent;border:none;color:var(--muted);font-size:16px;cursor:pointer;line-height:1;">✕</button>
+    </div>
+    <div id="ach-img-picker-grid" class="ach-img-picker-grid">
+      <div style="color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:11px;text-align:center;padding:2rem;grid-column:1/-1;">로딩 중...</div>
+    </div>
+    <div class="ach-img-picker-footer">
+      <span id="ach-img-picker-sel-label" style="font-family:'Rajdhani',sans-serif;font-size:10px;color:var(--muted);">선택된 이미지 없음</span>
+      <div style="display:flex;gap:.5rem;">
+        <button onclick="closeAchImagePicker()" style="padding:4px 12px;border-radius:2px;border:1px solid rgba(255,255,255,.1);background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;">취소</button>
+        <button onclick="confirmAchImagePicker()" style="padding:4px 14px;border-radius:2px;border:1px solid var(--bacc);background:rgba(10,200,185,.08);color:var(--blue);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;">선택</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -3820,15 +3900,25 @@ function _renderStarsShort(n) {
   return '★'.repeat(n);
 }
 
+// ── 업적 아이콘 렌더 헬퍼 (이모지 or 이미지 URL) ──
+function renderAchIconHtml(ach, size) {
+  // size: 'badge'(16px), 'card'(28px), 'tooltip'(36px), 'trophy'(56px)
+  if (ach.imageUrl) {
+    var px = size === 'badge' ? 16 : size === 'card' ? 28 : size === 'tooltip' ? 36 : size === 'trophy' ? 56 : 20;
+    return '<img src="' + esc(ach.imageUrl) + '" alt="" loading="lazy" style="width:' + px + 'px;height:' + px + 'px;object-fit:contain;border-radius:3px;vertical-align:middle;">';
+  }
+  return esc(ach.icon || '🏆');
+}
+
 // ── 테이블 소환사명 옆 업적 뱃지 렌더 ──
 function renderAchBadge(puuId) {
   var ach = getTopAchievement(puuId);
   if (!ach) return '';
   var starsHtml = _renderStarsShort(ach.stars);
   return '<span class="ach-badge" title="">' +
-    esc(ach.icon || '🏆') +
+    renderAchIconHtml(ach, 'badge') +
     '<div class="ach-tooltip">' +
-      '<div class="ach-tt-icon">' + esc(ach.icon || '🏆') + '</div>' +
+      '<div class="ach-tt-icon">' + renderAchIconHtml(ach, 'tooltip') + '</div>' +
       '<div class="ach-tt-title">' + esc(ach.title || '') + '</div>' +
       (ach.desc ? '<div class="ach-tt-desc">' + esc(ach.desc) + '</div>' : '') +
       '<div class="ach-tt-stars">' + starsHtml + '</div>' +
@@ -3887,7 +3977,7 @@ function renderAchMgrList() {
   }
   listEl.innerHTML = _achievementList.map(function(ach) {
     return '<div class="ach-card">' +
-      '<div class="ach-card-icon">' + esc(ach.icon || '🏆') + '</div>' +
+      '<div class="ach-card-icon">' + renderAchIconHtml(ach, 'card') + '</div>' +
       '<div class="ach-card-info">' +
         '<div class="ach-card-title">' + esc(ach.title || '') + '</div>' +
         '<div class="ach-card-desc">' + esc(ach.desc || '') + '</div>' +
@@ -3902,6 +3992,180 @@ function renderAchMgrList() {
   }).join('');
 }
 
+// ── 아이콘 탭 전환 ──
+function switchAchIconTab(tab) {
+  var emojiRow = document.getElementById('ach-icon-emoji-row');
+  var imageRow = document.getElementById('ach-icon-image-row');
+  var tabEmoji = document.getElementById('ach-icon-tab-emoji');
+  var tabImage = document.getElementById('ach-icon-tab-image');
+  if (tab === 'emoji') {
+    if (emojiRow) emojiRow.style.display = '';
+    if (imageRow) imageRow.style.display = 'none';
+    if (tabEmoji) { tabEmoji.style.borderColor = 'var(--bacc)'; tabEmoji.style.color = 'var(--blue)'; tabEmoji.style.background = 'rgba(10,200,185,.08)'; }
+    if (tabImage) { tabImage.style.borderColor = 'rgba(255,255,255,.1)'; tabImage.style.color = 'var(--muted)'; tabImage.style.background = 'transparent'; }
+    // 이미지 URL 초기화
+    var imgUrl = document.getElementById('ach-fi-image-url');
+    if (imgUrl) imgUrl.value = '';
+  } else {
+    if (emojiRow) emojiRow.style.display = 'none';
+    if (imageRow) imageRow.style.display = '';
+    if (tabImage) { tabImage.style.borderColor = 'var(--bacc)'; tabImage.style.color = 'var(--blue)'; tabImage.style.background = 'rgba(10,200,185,.08)'; }
+    if (tabEmoji) { tabEmoji.style.borderColor = 'rgba(255,255,255,.1)'; tabEmoji.style.color = 'var(--muted)'; tabEmoji.style.background = 'transparent'; }
+  }
+}
+window.switchAchIconTab = switchAchIconTab;
+
+function onAchEmojiInput() {
+  var val = (document.getElementById('ach-fi-icon').value || '').trim();
+  _updateAchIconPreview(val ? 'emoji' : null, val, null);
+}
+window.onAchEmojiInput = onAchEmojiInput;
+
+function clearAchIcon() {
+  var iconInput = document.getElementById('ach-fi-icon');
+  var imgUrl    = document.getElementById('ach-fi-image-url');
+  if (iconInput) iconInput.value = '';
+  if (imgUrl)    imgUrl.value    = '';
+  _updateAchIconPreview(null, null, null);
+  switchAchIconTab('emoji');
+}
+window.clearAchIcon = clearAchIcon;
+
+function _updateAchIconPreview(type, emoji, imageUrl) {
+  var previewImg = document.getElementById('ach-icon-preview-img');
+  var labelEl    = document.getElementById('ach-icon-preview-label');
+  var clearBtn   = document.getElementById('ach-icon-clear-btn');
+  if (!previewImg) return;
+  if (type === 'image' && imageUrl) {
+    previewImg.innerHTML = '<img src="' + esc(imageUrl) + '" style="width:32px;height:32px;object-fit:contain;border-radius:4px;" alt="">';
+    if (labelEl) labelEl.textContent = '이미지 선택됨';
+    if (clearBtn) clearBtn.style.display = '';
+  } else if (type === 'emoji' && emoji) {
+    previewImg.textContent = emoji;
+    if (labelEl) labelEl.textContent = '이모지 사용 중';
+    if (clearBtn) clearBtn.style.display = '';
+  } else {
+    previewImg.textContent = '🏆';
+    if (labelEl) labelEl.textContent = '선택 없음 (기본값)';
+    if (clearBtn) clearBtn.style.display = 'none';
+  }
+}
+
+// ── GitHub 이미지 피커 ──
+var _achImgPickerSelectedUrl  = null;
+var _achImgPickerSelectedName = null;
+var _achImgPickerTarget = 'icon'; // 'icon' or 'big'
+var _achImgCache = null; // GitHub API 결과 캐시
+var GITHUB_ACH_IMAGES_API = 'https://api.github.com/repos/rdc6087940/lolket/contents/lolket/image%20asset/achievements';
+var GITHUB_RAW_BASE = 'https://raw.githubusercontent.com/rdc6087940/lolket/main/lolket/image%20asset/achievements/';
+
+async function openAchImagePicker(target) {
+  _achImgPickerTarget = target || 'icon';
+  var ov = document.getElementById('ach-img-picker-overlay');
+  if (!ov) return;
+  ov.classList.add('open');
+  _achImgPickerSelectedUrl  = null;
+  _achImgPickerSelectedName = null;
+  var titleEl  = document.getElementById('ach-img-picker-title');
+  var selLabel = document.getElementById('ach-img-picker-sel-label');
+  if (titleEl)  titleEl.textContent  = _achImgPickerTarget === 'big' ? '📁 큰 이미지 선택' : '📁 아이콘 이미지 선택';
+  if (selLabel) selLabel.textContent = '선택된 이미지 없음';
+  var grid = document.getElementById('ach-img-picker-grid');
+  if (grid) grid.innerHTML = '<div style="color:var(--muted);font-family:\'Rajdhani\',sans-serif;font-size:11px;text-align:center;padding:2rem;grid-column:1/-1;">로딩 중...</div>';
+  try {
+    // 캐시 활용
+    if (!_achImgCache) {
+      var res = await fetch(GITHUB_ACH_IMAGES_API, { headers: { 'Accept': 'application/vnd.github.v3+json' } });
+      if (!res.ok) throw new Error('GitHub API 오류 ' + res.status);
+      _achImgCache = await res.json();
+    }
+    var imgs = _achImgCache.filter(function(f) { return /\.(png|jpg|jpeg|gif|webp|svg)$/i.test(f.name); });
+    if (!imgs.length) {
+      if (grid) grid.innerHTML = '<div style="color:var(--muted);font-family:\'Rajdhani\',sans-serif;font-size:11px;text-align:center;padding:2rem;grid-column:1/-1;">이미지 파일 없음<br><span style="font-size:9px;">GitHub 레포에 이미지를 업로드해주세요</span></div>';
+      return;
+    }
+    if (grid) {
+      grid.innerHTML = imgs.map(function(f) {
+        var rawUrl = GITHUB_RAW_BASE + encodeURIComponent(f.name);
+        return '<div class="ach-img-item" data-url="' + esc(rawUrl) + '" data-name="' + esc(f.name) + '" onclick="selectAchImage(this)">' +
+          '<img src="' + esc(rawUrl) + '" alt="' + esc(f.name) + '" loading="lazy">' +
+          '<div class="ach-img-item-name">' + esc(f.name) + '</div>' +
+        '</div>';
+      }).join('');
+      // 기존 선택값 하이라이트
+      var curInputId = _achImgPickerTarget === 'big' ? 'ach-fi-big-image-url' : 'ach-fi-image-url';
+      var curUrl = (document.getElementById(curInputId) || {}).value;
+      if (curUrl) {
+        var curItem = grid.querySelector('[data-url="' + curUrl + '"]');
+        if (curItem) {
+          curItem.classList.add('selected');
+          _achImgPickerSelectedUrl  = curUrl;
+          _achImgPickerSelectedName = curItem.dataset.name;
+          if (selLabel) selLabel.textContent = curItem.dataset.name;
+          curItem.scrollIntoView({ block: 'center' });
+        }
+      }
+    }
+  } catch(e) {
+    if (grid) grid.innerHTML = '<div style="color:var(--muted);font-family:\'Rajdhani\',sans-serif;font-size:11px;text-align:center;padding:2rem;grid-column:1/-1;">로드 실패: ' + esc(e.message) + '</div>';
+  }
+}
+window.openAchImagePicker = openAchImagePicker;
+
+function selectAchImage(el) {
+  document.querySelectorAll('.ach-img-item').forEach(function(i){ i.classList.remove('selected'); });
+  el.classList.add('selected');
+  _achImgPickerSelectedUrl  = el.dataset.url;
+  _achImgPickerSelectedName = el.dataset.name;
+  var selLabel = document.getElementById('ach-img-picker-sel-label');
+  if (selLabel) selLabel.textContent = _achImgPickerSelectedName || '';
+}
+window.selectAchImage = selectAchImage;
+
+function confirmAchImagePicker() {
+  if (!_achImgPickerSelectedUrl) { alert('이미지를 선택하세요'); return; }
+  if (_achImgPickerTarget === 'big') {
+    var bigInput = document.getElementById('ach-fi-big-image-url');
+    if (bigInput) bigInput.value = _achImgPickerSelectedUrl;
+    _updateAchBigImgPreview(_achImgPickerSelectedUrl, _achImgPickerSelectedName);
+  } else {
+    var imgUrlInput = document.getElementById('ach-fi-image-url');
+    if (imgUrlInput) imgUrlInput.value = _achImgPickerSelectedUrl;
+    _updateAchIconPreview('image', null, _achImgPickerSelectedUrl);
+  }
+  closeAchImagePicker();
+}
+window.confirmAchImagePicker = confirmAchImagePicker;
+
+function closeAchImagePicker() {
+  var ov = document.getElementById('ach-img-picker-overlay');
+  if (ov) ov.classList.remove('open');
+}
+window.closeAchImagePicker = closeAchImagePicker;
+
+function _updateAchBigImgPreview(url, name) {
+  var previewDiv = document.getElementById('ach-bigimg-preview');
+  var previewImg = document.getElementById('ach-bigimg-preview-img');
+  var previewName = document.getElementById('ach-bigimg-preview-name');
+  var clearBtn    = document.getElementById('ach-bigimg-clear-btn');
+  if (url) {
+    if (previewImg)  previewImg.src = url;
+    if (previewName) previewName.textContent = name || '';
+    if (previewDiv)  previewDiv.style.display = '';
+    if (clearBtn)    clearBtn.style.display = '';
+  } else {
+    if (previewDiv)  previewDiv.style.display = 'none';
+    if (clearBtn)    clearBtn.style.display = 'none';
+  }
+}
+
+function clearAchBigImg() {
+  var bigInput = document.getElementById('ach-fi-big-image-url');
+  if (bigInput) bigInput.value = '';
+  _updateAchBigImgPreview(null, null);
+}
+window.clearAchBigImg = clearAchBigImg;
+
 function openAchievementForm(achId) {
   _achEditingId = achId;
   var fs = document.getElementById('ach-form-section');
@@ -3911,7 +4175,26 @@ function openAchievementForm(achId) {
   if (lbl) lbl.textContent = achId ? '✏️ 업적 편집' : '+ 새 업적';
   // 기존 값 채우기
   var ach = achId ? _achievementList.find(function(a){ return a.id===achId; }) : null;
-  document.getElementById('ach-fi-icon').value  = ach ? (ach.icon||'') : '';
+  var iconInput    = document.getElementById('ach-fi-icon');
+  var imgUrlInput  = document.getElementById('ach-fi-image-url');
+  var bigImgInput  = document.getElementById('ach-fi-big-image-url');
+  if (ach && ach.imageUrl) {
+    // 이미지 모드
+    if (iconInput)   iconInput.value   = '';
+    if (imgUrlInput) imgUrlInput.value = ach.imageUrl;
+    switchAchIconTab('image');
+    _updateAchIconPreview('image', null, ach.imageUrl);
+  } else {
+    // 이모지 모드
+    if (iconInput)   iconInput.value   = ach ? (ach.icon||'') : '';
+    if (imgUrlInput) imgUrlInput.value = '';
+    switchAchIconTab('emoji');
+    _updateAchIconPreview(ach && ach.icon ? 'emoji' : null, ach ? ach.icon : null, null);
+  }
+  // 큰 이미지 복원
+  var bigUrl = ach ? (ach.bigImageUrl||'') : '';
+  if (bigImgInput) bigImgInput.value = bigUrl;
+  _updateAchBigImgPreview(bigUrl || null, bigUrl ? bigUrl.split('/').pop() : null);
   document.getElementById('ach-fi-title').value = ach ? (ach.title||'') : '';
   document.getElementById('ach-fi-desc').value  = ach ? (ach.desc||'') : '';
   var stars = ach ? (ach.stars||1) : 1;
@@ -3928,29 +4211,38 @@ function cancelAchievementForm() {
   var fs = document.getElementById('ach-form-section');
   if (fs) fs.style.display = 'none';
   _achEditingId = null;
+  clearAchIcon();
+  clearAchBigImg();
 }
 window.cancelAchievementForm = cancelAchievementForm;
 
 async function saveAchievement() {
-  var icon  = (document.getElementById('ach-fi-icon').value || '').trim();
-  var title = (document.getElementById('ach-fi-title').value || '').trim();
-  var desc  = (document.getElementById('ach-fi-desc').value || '').trim();
-  var starsSel = document.querySelector('.ach-star-btn.selected');
-  var stars = starsSel ? parseInt(starsSel.dataset.val) : 1;
-  var errEl = document.getElementById('ach-form-err');
+  var icon         = (document.getElementById('ach-fi-icon').value || '').trim();
+  var imageUrl     = ((document.getElementById('ach-fi-image-url') || {}).value || '').trim();
+  var bigImageUrl  = ((document.getElementById('ach-fi-big-image-url') || {}).value || '').trim();
+  var title        = (document.getElementById('ach-fi-title').value || '').trim();
+  var desc         = (document.getElementById('ach-fi-desc').value || '').trim();
+  var starsSel     = document.querySelector('.ach-star-btn.selected');
+  var stars        = starsSel ? parseInt(starsSel.dataset.val) : 1;
+  var errEl        = document.getElementById('ach-form-err');
   if (!title) { if (errEl) errEl.textContent = '타이틀을 입력하세요'; return; }
-  if (!icon)  { if (errEl) errEl.textContent = '아이콘을 입력하세요'; return; }
+  if (!icon && !imageUrl) { if (errEl) errEl.textContent = '아이콘 또는 이미지를 선택하세요'; return; }
   if (errEl) errEl.textContent = '';
 
   var achId = _achEditingId || ('ach_' + Date.now());
-  var data = { icon: icon, title: title, desc: desc, stars: stars };
+  var data = { title: title, desc: desc, stars: stars };
+  if (imageUrl) { data.imageUrl = imageUrl; data.icon = ''; }
+  else          { data.icon = icon; delete data.imageUrl; }
+  if (bigImageUrl) data.bigImageUrl = bigImageUrl;
+  else             data.bigImageUrl = null;
   if (!_achEditingId) data.createdAt = Date.now();
 
   try {
-    var r = await fetch(WORKER_URL + '/db-admin-write', {
-      method: 'POST', headers: {'Content-Type':'application/json'},
+    var r = await fetch(WORKER_URL + '/db-write', {
+      method: 'POST', headers: {'Content-Type':'application/json','X-Session-Token':_statsAdminToken},
       body: JSON.stringify({
         communityId: COMMUNITY_ID, token: _statsAdminToken,
+        masterToken: _statsMasterToken || undefined,
         adminId: _statsAdminId, adminPw: _statsAdminPw,
         path: _achPath('achievements/' + achId),
         data: data
@@ -3980,10 +4272,11 @@ async function deleteAchievement(achId) {
   if (!confirm('업적 "' + ach.title + '"을 삭제할까요?\n부여된 기록도 모두 삭제됩니다.')) return;
   try {
     // 업적 정의 삭제
-    await fetch(WORKER_URL + '/db-admin-write', {
-      method: 'POST', headers: {'Content-Type':'application/json'},
+    await fetch(WORKER_URL + '/db-write', {
+      method: 'POST', headers: {'Content-Type':'application/json','X-Session-Token':_statsAdminToken},
       body: JSON.stringify({
         communityId: COMMUNITY_ID, token: _statsAdminToken,
+        masterToken: _statsMasterToken || undefined,
         adminId: _statsAdminId, adminPw: _statsAdminPw,
         path: _achPath('achievements/' + achId), data: null
       })
@@ -4011,7 +4304,7 @@ function openGrantPopup(achId) {
   ov.classList.add('open');
   var ach = _achievementList.find(function(a){ return a.id===achId; });
   var infoEl = document.getElementById('ach-grant-ach-info');
-  if (infoEl && ach) infoEl.textContent = (ach.icon||'🏆') + ' ' + (ach.title||'');
+  if (infoEl && ach) infoEl.innerHTML = renderAchIconHtml(ach, 'card') + ' ' + esc(ach.title||'');
   var srch = document.getElementById('ach-grant-search');
   if (srch) srch.value = '';
   var errEl = document.getElementById('ach-grant-err');
@@ -4100,10 +4393,11 @@ async function doGrantAchievement() {
       };
     });
     // 배치 write (multi-path)
-    var r = await fetch(WORKER_URL + '/db-admin-write', {
-      method: 'POST', headers: {'Content-Type':'application/json'},
+    var r = await fetch(WORKER_URL + '/db-write', {
+      method: 'POST', headers: {'Content-Type':'application/json','X-Session-Token':_statsAdminToken},
       body: JSON.stringify({
         communityId: COMMUNITY_ID, token: _statsAdminToken,
+        masterToken: _statsMasterToken || undefined,
         adminId: _statsAdminId, adminPw: _statsAdminPw,
         multiPath: updates
       })
@@ -4169,7 +4463,8 @@ async function loadMemberAchievements(member) {
         var dateStr = item.grantedAt ? new Date(item.grantedAt).toLocaleDateString('ko-KR') : '';
         return '<div class="ach-trophy-card' + (isHigh?' stars-high':'') + '">' +
           (isAdmin ? '<button onclick="revokeAchievement(\'' + esc(member.puu_id) + '\',\'' + esc(ach.id) + '\')" style="position:absolute;top:5px;right:5px;background:transparent;border:none;color:rgba(232,64,87,.4);font-size:10px;cursor:pointer;" title="업적 취소">✕</button>' : '') +
-          '<div class="ach-trophy-icon">' + esc(ach.icon||'🏆') + '</div>' +
+          (ach.bigImageUrl ? '<img src="' + esc(ach.bigImageUrl) + '" alt="" class="ach-trophy-big-img" loading="lazy">' : '') +
+          (!ach.bigImageUrl ? '<div class="ach-trophy-icon">' + renderAchIconHtml(ach, 'trophy') + '</div>' : '') +
           '<div class="ach-trophy-title">' + esc(ach.title||'') + '</div>' +
           (ach.desc ? '<div class="ach-trophy-desc">' + esc(ach.desc) + '</div>' : '') +
           '<div class="ach-trophy-stars">' + _renderStarsShort(starsVal) + '</div>' +
@@ -4188,10 +4483,11 @@ async function revokeAchievement(puuId, achId) {
   var ach = _achievementList.find(function(a){ return a.id===achId; });
   if (!confirm('업적 "' + (ach ? ach.title : achId) + '" 부여를 취소할까요?')) return;
   try {
-    await fetch(WORKER_URL + '/db-admin-write', {
-      method: 'POST', headers: {'Content-Type':'application/json'},
+    await fetch(WORKER_URL + '/db-write', {
+      method: 'POST', headers: {'Content-Type':'application/json','X-Session-Token':_statsAdminToken},
       body: JSON.stringify({
         communityId: COMMUNITY_ID, token: _statsAdminToken,
+        masterToken: _statsMasterToken || undefined,
         adminId: _statsAdminId, adminPw: _statsAdminPw,
         path: _achPath('member_achievements/' + puuId + '/' + achId),
         data: null

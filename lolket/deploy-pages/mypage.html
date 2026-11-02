@@ -342,12 +342,24 @@
     .dc-notice{background:rgba(114,137,218,.05);border:1px solid rgba(114,137,218,.1);border-radius:8px;padding:.75rem;text-align:center;font-size:11px;color:var(--muted);line-height:1.6;font-family:'Rajdhani',sans-serif;font-weight:600}
 
     /* ── 업적 탭 ── */
-    #tab-achievements{display:none;flex-direction:column;align-items:center;justify-content:center;min-height:calc(100vh - 90px);padding:2rem;text-align:center}
-    #tab-achievements.active{display:flex !important}
-    .ach-box{border:1px dashed rgba(255,255,255,.06);border-radius:12px;padding:2.5rem 2rem;max-width:240px;width:100%}
-    .ach-icon{font-size:40px;margin-bottom:.65rem}
-    .ach-title{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:3px;color:var(--muted);margin-bottom:.4rem}
-    .ach-sub{font-size:11px;color:#2D3748;line-height:1.7}
+    #tab-achievements{display:none;padding:.875rem;max-width:700px;margin:0 auto}
+    #tab-achievements.active{display:block !important}
+    .ach-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:3rem 1rem;text-align:center;gap:.5rem}
+    .ach-empty-icon{font-size:36px}
+    .ach-empty-txt{font-family:'Rajdhani',sans-serif;font-size:13px;color:var(--muted)}
+    .ach-trophy-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+    .ach-trophy-card{position:relative;background:var(--bg3);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:.875rem .75rem;text-align:center;display:flex;flex-direction:column;align-items:center;gap:5px}
+    .ach-trophy-card.stars-high{border-color:rgba(200,170,110,.3);background:linear-gradient(160deg,rgba(200,170,110,.07),var(--bg3))}
+    .ach-trophy-big-img{width:100%;max-width:90px;height:90px;object-fit:contain;border-radius:6px;margin-bottom:2px}
+    .ach-trophy-icon{font-size:36px;line-height:1}
+    .ach-trophy-icon img{width:56px;height:56px;object-fit:contain;border-radius:6px;filter:drop-shadow(0 2px 6px rgba(200,170,110,.3))}
+    .ach-trophy-title{font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;color:var(--white);line-height:1.2}
+    .ach-trophy-desc{font-size:10px;color:var(--muted);line-height:1.5}
+    .ach-trophy-stars{color:#F59E0B;font-size:11px;letter-spacing:1px}
+    .ach-trophy-date{font-size:9px;color:var(--muted);font-family:'Rajdhani',sans-serif}
+    .nc-ach-row{display:flex;flex-wrap:wrap;gap:5px;margin-top:.5rem}
+    .nc-ach-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:10px;background:rgba(200,170,110,.1);border:1px solid rgba(200,170,110,.25);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;color:var(--gold)}
+    .nc-ach-badge img{width:14px;height:14px;object-fit:contain;border-radius:2px;vertical-align:middle}
 
     /* 반응형 */
     @media(max-width:660px){
@@ -517,6 +529,11 @@
       </div>
       <div id="nc-lane-list" class="nc-lane-list"><!-- JS로 렌더 --></div>
     </div>
+    <!-- 업적 뱃지 -->
+    <div id="nc-ach-section" style="display:none;margin-top:.6rem">
+      <div style="font-family:'Rajdhani',sans-serif;font-size:9px;font-weight:700;color:rgba(200,170,110,.6);letter-spacing:1px;margin-bottom:4px;">🏆 ACHIEVEMENTS</div>
+      <div class="nc-ach-row" id="nc-ach-badges"></div>
+    </div>
   </div>
   <div style="margin-top:1.25rem"></div>
   <div class="sum-hd">
@@ -584,6 +601,10 @@
       <div class="rs-sec-lbl">🎖 랭크 현황</div>
       <div class="rs-text" id="rs-rank-text"></div>
     </div>
+    <div class="rs-sec" id="rs-ach-sec" style="display:none">
+      <div class="rs-sec-lbl">🏆 업적</div>
+      <div class="nc-ach-row" id="rs-ach-badges"></div>
+    </div>
   </div>
 </div>
 
@@ -610,10 +631,9 @@
 
 <!-- 업적 탭 -->
 <div class="tab-panel" id="tab-achievements">
-  <div class="ach-box">
-    <div class="ach-icon">🏅</div>
-    <div class="ach-title">Coming Soon</div>
-    <div class="ach-sub">업적 및 트로피 시스템이<br>준비 중입니다.</div>
+  <div class="section-title">🏆 획득한 업적</div>
+  <div id="ach-trophy-wrap">
+    <div class="ach-empty"><div class="ach-empty-icon">⏳</div><div class="ach-empty-txt">로딩 중...</div></div>
   </div>
 </div>
 
@@ -1323,6 +1343,8 @@ function render(){
   renderSide();
   renderSummary();
   renderDiscord();
+  // 업적 비동기 로드
+  loadAchievements();
   // 프로필(소개글/태그) 비동기 로드
   loadProfile();
 }
@@ -2168,6 +2190,109 @@ async function copyCard(elId, msgId){
   }catch(e){
     editEls.forEach(function(el){ el.style.display=''; });
     msg.textContent='❌ '+e.message; msg.style.color='var(--red)'; setTimeout(function(){msg.textContent='';},4000);
+  }
+}
+
+// ── 업적 ──
+var _achList = [];       // communities/{CID}/achievements 전체
+var _memberAch = {};     // { achId: { grantedAt } }
+
+async function loadAchievements(){
+  if(!CID || !_link) return;
+  var puuId = _link.puuId;
+  if(!puuId) return;
+  try{
+    var [achRes, memRes] = await Promise.all([
+      fetch(WORKER+'/db-public-read',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({path:'communities/'+CID+'/achievements'})}),
+      fetch(WORKER+'/db-public-read',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({path:'communities/'+CID+'/member_achievements/'+puuId})})
+    ]);
+    var achJson = await achRes.json();
+    var memJson = await memRes.json();
+    if(achJson.ok && achJson.data){
+      var raw = achJson.data;
+      _achList = Array.isArray(raw) ? raw.filter(Boolean) : Object.entries(raw).map(function(e){
+        return Object.assign({id:e[0]},e[1]);
+      });
+    }
+    if(memJson.ok && memJson.data && typeof memJson.data==='object'){
+      _memberAch = memJson.data;
+    }
+  }catch(e){}
+  renderAchievements();
+  renderAchBadgesInSummary();
+}
+
+function _renderStars(n){
+  var s=parseInt(n)||0;
+  return s>0 ? '★'.repeat(Math.min(s,10)) : '';
+}
+
+function _achIconHtml(ach){
+  if(ach.imageUrl){
+    return '<img src="'+esc(ach.imageUrl)+'" alt="" loading="lazy" style="width:56px;height:56px;object-fit:contain;border-radius:6px;filter:drop-shadow(0 2px 6px rgba(200,170,110,.3));">';
+  }
+  return esc(ach.icon||'🏆');
+}
+
+function renderAchievements(){
+  var wrap = document.getElementById('ach-trophy-wrap');
+  if(!wrap) return;
+  // 내가 획득한 업적만
+  var grantedIds = Object.keys(_memberAch);
+  if(!grantedIds.length){
+    wrap.innerHTML='<div class="ach-empty"><div class="ach-empty-icon">🏅</div><div class="ach-empty-txt">아직 획득한 업적이 없습니다.</div></div>';
+    return;
+  }
+  var cards = grantedIds.map(function(id){
+    var ach = _achList.find(function(a){ return a.id===id; });
+    if(!ach) return '';
+    var grant = _memberAch[id]||{};
+    var starsVal = parseInt(ach.stars)||0;
+    var isHigh = starsVal>=7;
+    var dateStr = grant.grantedAt ? new Date(grant.grantedAt).toLocaleDateString('ko-KR') : '';
+    return '<div class="ach-trophy-card'+(isHigh?' stars-high':'')+'">' +
+      (ach.bigImageUrl ? '<img src="'+esc(ach.bigImageUrl)+'" alt="" class="ach-trophy-big-img" loading="lazy">' : '') +
+      (!ach.bigImageUrl ? '<div class="ach-trophy-icon">'+_achIconHtml(ach)+'</div>' : '') +
+      '<div class="ach-trophy-title">'+esc(ach.title||'')+'</div>' +
+      (ach.desc ? '<div class="ach-trophy-desc">'+esc(ach.desc)+'</div>' : '') +
+      (starsVal ? '<div class="ach-trophy-stars">'+_renderStars(starsVal)+'</div>' : '') +
+      (dateStr ? '<div class="ach-trophy-date">'+dateStr+'</div>' : '') +
+    '</div>';
+  }).join('');
+  wrap.innerHTML = '<div class="ach-trophy-grid">'+cards+'</div>';
+}
+
+function renderAchBadgesInSummary(){
+  var grantedIds = Object.keys(_memberAch);
+  if(!grantedIds.length) return;
+
+  function badgeHtml(ach){
+    var icon = ach.imageUrl
+      ? '<img src="'+esc(ach.imageUrl)+'" alt="" loading="lazy">'
+      : esc(ach.icon||'🏆');
+    return '<span class="nc-ach-badge">'+icon+' '+esc(ach.title||'')+'</span>';
+  }
+
+  var badges = grantedIds.map(function(id){
+    var ach = _achList.find(function(a){ return a.id===id; });
+    return ach ? badgeHtml(ach) : '';
+  }).join('');
+
+  // 명함
+  var ncSec = document.getElementById('nc-ach-section');
+  var ncBadges = document.getElementById('nc-ach-badges');
+  if(ncSec && ncBadges && badges){
+    ncBadges.innerHTML = badges;
+    ncSec.style.display = '';
+  }
+  // 자기소개서
+  var rsSec = document.getElementById('rs-ach-sec');
+  var rsBadges = document.getElementById('rs-ach-badges');
+  if(rsSec && rsBadges && badges){
+    rsBadges.innerHTML = badges;
+    rsSec.style.display = '';
   }
 }
 

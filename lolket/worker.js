@@ -1072,6 +1072,8 @@ async function handleDbPublicRead(request, env) {
     /^communities\/[^/]+\/calendar/,
     /^communities\/[^/]+\/ranking_ai_analysis($|\/)/,
     /^player_profiles\/[^/]+\/[^/]+\/profile$/, // 플레이어 자기소개/태그 (본인만 읽기)
+    /^communities\/[^/]+\/achievements($|\/)/,         // 업적 목록
+    /^communities\/[^/]+\/member_achievements($|\/)/, // 멤버 업적
   ];
   if (!publicRead.some(r => r.test(dbPath))) {
     return json({ ok: false, error: '허용되지 않는 경로입니다' }, 403);
@@ -1360,8 +1362,8 @@ async function handleDbWrite(request, env) {
   let body;
   try { body = await request.json(); } catch { return json({ ok: false, error: '잘못된 요청' }, 400); }
 
-  const { path: dbPath, data, requireRole, masterToken } = body;
-  // masterToken으로 세션 재검증
+  const { path: dbPath, data, requireRole, masterToken, multiPath, adminId: bodyAdminId, adminPw: bodyAdminPw } = body;
+  // masterToken으로 세션 재검증 (마스터 계정)
   if (!session && masterToken && masterToken.startsWith('master:')) {
     try {
       const parts = masterToken.split(':');
@@ -1381,6 +1383,63 @@ async function handleDbWrite(request, env) {
       }
     } catch(e) {}
   }
+  // adminId + adminPw로 세션 재검증 (일반 관리자 — Worker 재시작 시 세션 소멸 대응)
+  if (!session && bodyAdminId && bodyAdminPw) {
+    try {
+      const dbUrl2 = env.FB_DATABASE_URL, secret2 = env.FB_DB_SECRET;
+      const authQ2 = secret2 ? '?auth='+secret2 : '';
+      const salt = env.PW_SALT || 'lolket_v1';
+      const pwHash = await sha256(bodyAdminPw + salt);
+      // 마스터 확인
+      const saRes = await fetch(`${dbUrl2}/superadmin.json${authQ2}`);
+      if (saRes.ok) {
+        const sa = await saRes.json();
+        if (sa && sa.id === bodyAdminId) {
+          if (sa.password === bodyAdminPw || sa.password === pwHash) {
+            session = { id: bodyAdminId, role: 'master' };
+          }
+        }
+      }
+      // admin 확인
+      if (!session) {
+        const adRes = await fetch(`${dbUrl2}/admin/${encodeURIComponent(bodyAdminId)}.json${authQ2}`);
+        if (adRes.ok) {
+          const ad = await adRes.json();
+          if (ad && (ad.password === bodyAdminPw || ad.password === pwHash)) {
+            session = { id: bodyAdminId, role: 'admin', communityId: ad.communityId };
+          }
+        }
+      }
+    } catch(e) {}
+  }
+
+  // multiPath 배치 쓰기 처리 (경로 → 데이터 맵)
+  if (multiPath && typeof multiPath === 'object') {
+    const paths = Object.keys(multiPath);
+    if (!paths.length) return json({ ok: false, error: 'multiPath가 비어 있습니다' }, 400);
+    // 모든 경로 권한 체크
+    for (const p of paths) {
+      if (!checkPermission(session, p, requireRole)) {
+        return json({ ok: false, error: '권한이 없습니다: ' + p }, 403);
+      }
+    }
+    const dbUrl2  = env.FB_DATABASE_URL;
+    const secret2 = env.FB_DB_SECRET;
+    const authQ2  = secret2 ? `?auth=${secret2}` : '';
+    if (!dbUrl2) return json({ ok: false, error: 'FB_DATABASE_URL 환경변수 없음' }, 500);
+    try {
+      await Promise.all(paths.map(async p => {
+        const val = multiPath[p];
+        const method = (val === null) ? 'DELETE' : 'PUT';
+        const opts = { method, headers: { 'Content-Type': 'application/json' } };
+        if (val !== null) opts.body = JSON.stringify(val);
+        const res = await fetch(`${dbUrl2}/${p}.json${authQ2}`, opts);
+        if (!res.ok) throw new Error('DB 쓰기 실패: ' + p + ' (' + res.status + ')');
+      }));
+      return json({ ok: true });
+    } catch(e) { return json({ ok: false, error: e.message }, 500); }
+  }
+
   if (!dbPath) return json({ ok: false, error: 'path 누락' }, 400);
 
   // 권한 체크
@@ -1399,16 +1458,14 @@ async function handleDbWrite(request, env) {
 
     // matches/{id} PUT 시 auctionLog/captainCodes 보존: PATCH 방식 사용
     const isMatchRoot = /^communities\/[^/]+\/matches\/[^/]+$/.test(dbPath);
-    const httpMethod = isMatchRoot ? 'PATCH' : 'PUT';
+    const httpMethod = (data === null) ? 'DELETE' : (isMatchRoot ? 'PATCH' : 'PUT');
 
-    const res = await fetch(fullUrl, {
-      method: httpMethod,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
+    const opts = { method: httpMethod, headers: { 'Content-Type': 'application/json' } };
+    if (data !== null) opts.body = JSON.stringify(data);
+    const res = await fetch(fullUrl, opts);
     const resText = await res.text();
     if (!res.ok) return json({ ok: false, error: 'DB 쓰기 실패: ' + res.status + ' ' + resText.slice(0,200) }, 500);
-    if (resText === 'null') return json({ ok: false, error: 'Firebase Rules에 의해 거부됨' }, 403);
+    if (resText === 'null' && httpMethod !== 'DELETE') return json({ ok: false, error: 'Firebase Rules에 의해 거부됨' }, 403);
 
     // 커뮤니티 신청 저장 시 이메일 발송
     if (/^applies\/[^/]+$/.test(dbPath) && data) {
@@ -1642,6 +1699,14 @@ function checkPermission(session, dbPath, requireRole) {
   }
   // 관리자 이상 카테고리/내전종류 쓰기 허용 (자신의 커뮤니티)
   if (/^communities\/[^/]+\/(match_categories|match_types|hosts)($|\/)/.test(dbPath)) {
+    if (session.role === 'master') return true;
+    if (session.role === 'admin') {
+      const cidFromPath = dbPath.split('/')[1];
+      return !session.communityId || session.communityId === cidFromPath;
+    }
+  }
+  // 관리자 이상 업적/멤버업적 쓰기 허용 (자신의 커뮤니티)
+  if (/^communities\/[^/]+\/(achievements|member_achievements)($|\/)/.test(dbPath)) {
     if (session.role === 'master') return true;
     if (session.role === 'admin') {
       const cidFromPath = dbPath.split('/')[1];
