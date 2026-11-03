@@ -4228,7 +4228,84 @@ async function handleDiscordInteraction(request, env, ctx) {
   // 버튼 클릭 (Message Component)
   if (interaction.type === 3) {
     const customId = interaction.data.custom_id || '';
-    // 나가기 버튼
+
+    // ── 업적 수락 버튼 ──
+    if (customId.startsWith('ach_approve__') || customId.startsWith('ach_reject__')) {
+      const isApprove = customId.startsWith('ach_approve__');
+      const parts = customId.replace(/^ach_(approve|reject)__/, '').split('__');
+      const cid = parts[0];
+      const reqId = parts[1];
+      const appId = env.DISCORD_APP_ID || '1500717088984010883';
+      const itoken = interaction.token;
+      const clickerId = interaction.member?.user?.id || interaction.user?.id || '';
+      const clickerName = interaction.member?.user?.username || interaction.user?.username || '관리자';
+      const resp = discordDefer(true);
+      ctx.waitUntil((async () => {
+        try {
+          const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+          const authQ = secret ? '?auth='+secret : '';
+
+          // 요청 조회
+          const reqRes = await fetch(`${dbUrl}/communities/${cid}/ach_requests/${reqId}.json${authQ}`);
+          const reqData = reqRes.ok ? await reqRes.json() : null;
+          if (!reqData) { await discordFollowup(appId, itoken, '❌ 신청 내역을 찾을 수 없습니다.', env); return; }
+          if (reqData.status !== 'pending') {
+            await discordFollowup(appId, itoken, `이미 처리된 신청입니다 (${reqData.status === 'approved' ? '승인됨' : '거절됨'}).`, env);
+            return;
+          }
+
+          const displayName = (reqData.riotName || '') + '#' + (reqData.riotTag || '');
+
+          if (isApprove) {
+            // 업적 부여 + 상태 업데이트
+            const now = Date.now();
+            await fetch(`${dbUrl}/communities/${cid}/member_achievements/${reqData.puuId}/${reqData.achId}.json${authQ}`, {
+              method: 'PUT', headers: {'Content-Type':'application/json'},
+              body: JSON.stringify({ grantedAt: now, grantedBy: clickerName })
+            });
+            await fetch(`${dbUrl}/communities/${cid}/ach_requests/${reqId}/status.json${authQ}`, {
+              method: 'PUT', headers: {'Content-Type':'application/json'},
+              body: JSON.stringify('approved')
+            });
+            // 원본 메시지 버튼 비활성화
+            try {
+              const msgId = interaction.message?.id;
+              const chanId = interaction.channel_id || interaction.channel?.id;
+              if (msgId && chanId) {
+                await fetch(`https://discord.com/api/v10/channels/${chanId}/messages/${msgId}`, {
+                  method: 'PATCH',
+                  headers: { 'Authorization': `Bot ${env.DISCORD_BOT_TOKEN}`, 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ components: [] })
+                });
+              }
+            } catch(e2) {}
+            await discordFollowup(appId, itoken, `✅ **${displayName}** 님의 **${reqData.achTitle || reqData.achId}** 업적을 승인했습니다.`, env);
+          } else {
+            // 거절
+            await fetch(`${dbUrl}/communities/${cid}/ach_requests/${reqId}/status.json${authQ}`, {
+              method: 'PUT', headers: {'Content-Type':'application/json'},
+              body: JSON.stringify('rejected')
+            });
+            try {
+              const msgId = interaction.message?.id;
+              const chanId = interaction.channel_id || interaction.channel?.id;
+              if (msgId && chanId) {
+                await fetch(`https://discord.com/api/v10/channels/${chanId}/messages/${msgId}`, {
+                  method: 'PATCH',
+                  headers: { 'Authorization': `Bot ${env.DISCORD_BOT_TOKEN}`, 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ components: [] })
+                });
+              }
+            } catch(e2) {}
+            await discordFollowup(appId, itoken, `❌ **${displayName}** 님의 **${reqData.achTitle || reqData.achId}** 업적 신청을 거절했습니다.`, env);
+          }
+        } catch(e) {
+          await discordFollowup(appId, itoken, '❌ 처리 중 오류: ' + e.message, env);
+        }
+      })());
+      return resp;
+    }
+
     // ── 생일 날짜 버튼 ──
     if (customId.startsWith('cal_bd__')) {
       const parts = customId.slice('cal_bd__'.length).split('__');
@@ -6395,13 +6472,14 @@ async function handleAchRequest(request, env) {
   }
 
   // ach_requests에 기록
+  const requestedAt = Date.now();
   const reqData = {
     achId, achTitle: achTitle || achId,
     puuId,
     discordId,
     riotName: linkData.riotName || '',
     riotTag: linkData.riotTag || '',
-    requestedAt: Date.now(),
+    requestedAt,
     status: 'pending'
   };
   const writeRes = await fetch(`${dbUrl}/communities/${cid}/ach_requests/${reqId}.json${authQ}`, {
@@ -6409,6 +6487,40 @@ async function handleAchRequest(request, env) {
     body: JSON.stringify(reqData)
   });
   if (!writeRes.ok) return json({ok:false,error:'신청 기록 실패'},500);
+
+  // 디스코드 알림 — 수락/거절 버튼 포함
+  try {
+    const notifyChannelRes = await fetch(`${dbUrl}/communities_info/${cid}.json${authQ}`);
+    const commInfo = notifyChannelRes.ok ? await notifyChannelRes.json() : null;
+    const channelId = (commInfo && commInfo.achNotifyChannelId) || (commInfo && commInfo.alarmChannelId);
+    if (channelId && env.DISCORD_BOT_TOKEN) {
+      const displayName = linkData.riotName + '#' + linkData.riotTag;
+      const dtStr = new Date(requestedAt).toLocaleString('ko-KR', {timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+      await fetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bot ${env.DISCORD_BOT_TOKEN}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          embeds: [{
+            color: 0xF59E0B,
+            title: '🏆 업적 수령 신청',
+            fields: [
+              { name: '업적', value: '**' + (achTitle || achId) + '**', inline: true },
+              { name: '신청자', value: displayName, inline: true },
+              { name: '신청 시각', value: dtStr, inline: false },
+            ],
+            footer: { text: 'reqId: ' + reqId }
+          }],
+          components: [{
+            type: 1,
+            components: [
+              { type: 2, style: 3, label: '✅ 수락', custom_id: 'ach_approve__' + cid + '__' + reqId },
+              { type: 2, style: 4, label: '❌ 거절', custom_id: 'ach_reject__' + cid + '__' + reqId }
+            ]
+          }]
+        })
+      });
+    }
+  } catch(e) { console.error('[ach-request] discord notify error:', e.message); }
 
   return json({ok:true, puuId, reqId});
 }
