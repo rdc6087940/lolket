@@ -4152,6 +4152,7 @@ function renderAchMgrList() {
     if (gt === 'auto_condition' && ach.conditions && ach.conditions.length) {
       condDesc = ach.conditions.map(function(c){
         if (c.type === 'min_games') return '내전 ' + c.value + '판 이상';
+        if (c.type === 'period_games') return (c.dateFrom||'?') + ' ~ ' + (c.dateTo||'?') + ' 기간 내 ' + c.value + '판 이상';
         return c.type + ':' + c.value;
       }).join(', ');
     }
@@ -4245,7 +4246,8 @@ var _achConditionsEditing = []; // 현재 폼에서 편집 중인 조건 목록
 
 // 조건 타입 정의 (나중에 추가할 조건들을 여기에 넣으면 됨)
 var ACH_CONDITION_TYPES = [
-  { key: 'min_games', label: '내전 판수 이상', unit: '판', desc: '내전 판수가 N판 이상이어야 합니다.' },
+  { key: 'min_games', label: '내전 총 판수 이상', unit: '판', desc: '내전 총 판수가 N판 이상이어야 합니다.' },
+  { key: 'period_games', label: '기간 내 내전 판수', unit: '판', desc: '특정 기간 동안 N판 이상 내전에 참여해야 합니다.' },
 ];
 
 var ACH_DISCORD_NOTIFY_CHANNEL = '1499422238338711732';
@@ -4296,10 +4298,22 @@ function _renderConditionsList() {
       return '<option value="' + ct.key + '"' + (cond.type === ct.key ? ' selected' : '') + '>' + ct.label + '</option>';
     }).join('');
     var ct = ACH_CONDITION_TYPES.find(function(c){ return c.key === cond.type; }) || ACH_CONDITION_TYPES[0];
-    return '<div style="display:flex;align-items:center;gap:5px;">' +
-      '<select onchange="_updateAchCondType(' + idx + ',this.value)" style="flex:1.2;padding:4px 6px;border-radius:2px;border:1px solid rgba(255,255,255,.1);background:#0d1620;color:#e5e7eb;font-family:\'Noto Sans KR\',sans-serif;font-size:10px;outline:none;">' + typeOpts + '</select>' +
-      '<input type="number" min="0" value="' + (cond.value||'') + '" placeholder="값" onchange="_updateAchCondValue(' + idx + ',this.value)" style="width:70px;padding:4px 6px;border-radius:2px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05);color:#e5e7eb;font-family:\'Rajdhani\',sans-serif;font-size:11px;outline:none;text-align:right;">' +
-      '<span style="font-size:10px;color:var(--muted);white-space:nowrap;">' + esc(ct.unit||'') + '</span>' +
+    var inputFields = '';
+    if (cond.type === 'period_games') {
+      inputFields =
+        '<input type="date" value="' + (cond.dateFrom||'') + '" placeholder="시작일" onchange="_updateAchCondField(' + idx + ',\'dateFrom\',this.value)" style="width:115px;padding:4px 6px;border-radius:2px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05);color:#e5e7eb;font-family:\'Rajdhani\',sans-serif;font-size:11px;outline:none;">' +
+        '<span style="font-size:10px;color:var(--muted);">~</span>' +
+        '<input type="date" value="' + (cond.dateTo||'') + '" placeholder="종료일" onchange="_updateAchCondField(' + idx + ',\'dateTo\',this.value)" style="width:115px;padding:4px 6px;border-radius:2px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05);color:#e5e7eb;font-family:\'Rajdhani\',sans-serif;font-size:11px;outline:none;">' +
+        '<input type="number" min="0" value="' + (cond.value||'') + '" placeholder="판수" onchange="_updateAchCondValue(' + idx + ',this.value)" style="width:60px;padding:4px 6px;border-radius:2px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05);color:#e5e7eb;font-family:\'Rajdhani\',sans-serif;font-size:11px;outline:none;text-align:right;">' +
+        '<span style="font-size:10px;color:var(--muted);white-space:nowrap;">판 이상</span>';
+    } else {
+      inputFields =
+        '<input type="number" min="0" value="' + (cond.value||'') + '" placeholder="값" onchange="_updateAchCondValue(' + idx + ',this.value)" style="width:70px;padding:4px 6px;border-radius:2px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05);color:#e5e7eb;font-family:\'Rajdhani\',sans-serif;font-size:11px;outline:none;text-align:right;">' +
+        '<span style="font-size:10px;color:var(--muted);white-space:nowrap;">' + esc(ct.unit||'') + '</span>';
+    }
+    return '<div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">' +
+      '<select onchange="_updateAchCondType(' + idx + ',this.value)" style="flex:1.2;min-width:140px;padding:4px 6px;border-radius:2px;border:1px solid rgba(255,255,255,.1);background:#0d1620;color:#e5e7eb;font-family:\'Noto Sans KR\',sans-serif;font-size:10px;outline:none;">' + typeOpts + '</select>' +
+      inputFields +
       '<button type="button" onclick="_removeAchCondition(' + idx + ')" style="padding:2px 6px;border-radius:2px;border:1px solid rgba(255,80,80,.2);background:transparent;color:rgba(255,100,100,.6);font-family:\'Rajdhani\',sans-serif;font-size:10px;cursor:pointer;">✕</button>' +
     '</div>';
   }).join('');
@@ -4316,6 +4330,11 @@ function _updateAchCondValue(idx, val) {
   if (_achConditionsEditing[idx]) _achConditionsEditing[idx].value = val;
 }
 window._updateAchCondValue = _updateAchCondValue;
+
+function _updateAchCondField(idx, field, val) {
+  if (_achConditionsEditing[idx]) _achConditionsEditing[idx][field] = val;
+}
+window._updateAchCondField = _updateAchCondField;
 
 async function openAchImagePicker(target) {
   _achImgPickerTarget = target || 'icon';
@@ -5203,6 +5222,46 @@ async function _claimAchievement(achId) {
           fail = '내전 판수가 부족합니다. (현재: ' + myCnt + '판 / 필요: ' + needed + '판)';
           break;
         }
+      } else if (c.type === 'period_games') {
+        var neededPeriod = parseInt(c.value) || 0;
+        var dateFrom = c.dateFrom || '';
+        var dateTo   = c.dateTo   || '';
+        if (!dateFrom || !dateTo) { fail = '기간 조건에 날짜가 설정되지 않았습니다.'; break; }
+        var tsFrom = new Date(dateFrom).getTime();                  // 시작일 00:00 UTC
+        var tsTo   = new Date(dateTo).getTime() + 86400000 - 1;    // 종료일 23:59:59 UTC
+        // 매치 리스트 API (only_list=1 → match_id_list에 creation_timestamp 포함)
+        var platform = 'KR';
+        var periodCnt = 0;
+        var fetchOffset = 0;
+        var keepFetching = true;
+        while (keepFetching) {
+          try {
+            var pr = await fetch(
+              API_BASE + '/match/matches?puu_id=' + encodeURIComponent(myPuuId) +
+              '&platform_id=' + platform + '&offset=' + fetchOffset + '&count=20' +
+              '&queue_type=CUSTOM&champion_id=0&only_list=1&last_updated_at=1'
+            );
+            if (!pr.ok) break;
+            var pj = await pr.json();
+            var plist = pj.match_id_list || [];
+            if (!plist.length) break;
+            var allBefore = true;
+            for (var pi = 0; pi < plist.length; pi++) {
+              var item = plist[pi];
+              var itemTs = (typeof item === 'object' ? (item.creation_timestamp || 0) : 0) * 1000;
+              if (itemTs === 0) { allBefore = false; continue; } // timestamp 없으면 계속
+              if (itemTs < tsFrom) { keepFetching = false; break; } // 기간 이전 → 더 볼 필요 없음
+              if (itemTs <= tsTo) periodCnt++;
+              allBefore = false;
+            }
+            if (allBefore || plist.length < 20) break;
+            fetchOffset += 20;
+          } catch(pe) { break; }
+        }
+        if (periodCnt < neededPeriod) {
+          fail = '기간 내 내전 판수가 부족합니다.\n기간: ' + dateFrom + ' ~ ' + dateTo + '\n현재: ' + periodCnt + '판 / 필요: ' + neededPeriod + '판';
+          break;
+        }
       }
     }
     if (fail) { alert('조건 미충족\n' + fail); return; }
@@ -5729,6 +5788,16 @@ function _renderAchievementsPopup() {
       }
     }
 
+    // 조건 텍스트 (auto_condition 타입일 때)
+    var condText = '';
+    if ((ach.grantType || 'instant') === 'auto_condition' && ach.conditions && ach.conditions.length) {
+      condText = '<div style="font-family:\'Noto Sans KR\',sans-serif;font-size:9px;color:rgba(96,165,250,.7);margin-top:3px;">📋 ' + ach.conditions.map(function(c){
+        if (c.type === 'min_games') return '총 ' + c.value + '판 이상';
+        if (c.type === 'period_games') return (c.dateFrom||'?') + ' ~ ' + (c.dateTo||'?') + ' 기간 내 ' + c.value + '판 이상';
+        return c.type;
+      }).join(' · ') + '</div>';
+    }
+
     return '<div class="ach-steam-row' + (isLocked ? ' locked' : '') + '">' +
       '<div class="ach-steam-icon-wrap">' + iconHtml + '</div>' +
       '<div class="ach-steam-body">' +
@@ -5736,6 +5805,7 @@ function _renderAchievementsPopup() {
         (ach.desc ? '<div class="ach-steam-desc">' + esc(ach.desc) + '</div>' : '') +
         '<div class="ach-steam-stars">' + starsHtml + '</div>' +
         '<div style="font-family:\'Noto Sans KR\',sans-serif;font-size:9px;color:rgba(255,255,255,.28);margin-top:3px;">' + esc(ownersText) + '</div>' +
+        condText +
         myBadge +
         actionBtn +
       '</div>' +
