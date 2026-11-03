@@ -462,8 +462,8 @@ tbody td{padding:.55rem 1rem;font-size:12px;vertical-align:middle;}
 .ach-steam-row{display:flex;align-items:center;gap:0;background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.06);border-radius:3px;overflow:hidden;transition:background .15s;}
 .ach-steam-row:hover{background:rgba(255,255,255,.05);}
 .ach-steam-row.locked{opacity:.45;filter:grayscale(.7);}
-.ach-steam-icon-wrap{width:64px;height:64px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.2);font-size:32px;}
-.ach-steam-icon-wrap img{width:48px;height:48px;object-fit:contain;border-radius:4px;}
+.ach-steam-icon-wrap{width:64px;height:64px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:32px;}
+.ach-steam-icon-wrap img{width:48px;height:48px;object-fit:contain;}
 .ach-steam-body{flex:1;padding:.6rem .9rem;min-width:0;}
 .ach-steam-name{font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:1.5px;color:var(--white);margin-bottom:.15rem;}
 .ach-steam-desc{font-family:'Noto Sans KR',sans-serif;font-size:10px;color:var(--muted);line-height:1.4;margin-bottom:.3rem;}
@@ -2022,7 +2022,7 @@ async function _cachedFetch(key, ttlSec, fetchFn) {
     <div style="padding:.75rem 1.25rem .5rem;">
       <div id="ach-list-progress-wrap" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:4px;padding:.6rem .9rem;margin-bottom:.75rem;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.35rem;">
-          <span style="font-family:'Rajdhani',sans-serif;font-size:10px;color:var(--muted);letter-spacing:.5px;">멤버 업적 참여율</span>
+          <span style="font-family:'Rajdhani',sans-serif;font-size:10px;color:var(--muted);letter-spacing:.5px;">디스코드 연동 멤버 현황</span>
           <span id="ach-list-progress-label" style="font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;color:#F59E0B;"></span>
         </div>
         <div style="height:6px;background:rgba(255,255,255,.07);border-radius:3px;overflow:hidden;">
@@ -2105,11 +2105,40 @@ async function _cachedFetch(key, ttlSec, fetchFn) {
             <div style="font-size:9px;color:var(--muted);margin-top:4px;">명예 수치: 별 1개(낮음) ~ 별 10개(최고)</div>
           </div>
         </div>
+        <!-- 수령 방식 -->
+        <div class="ach-form-row" style="align-items:flex-start;">
+          <span class="ach-form-label" style="margin-top:6px;">수령 방식</span>
+          <div style="flex:1;">
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:.5rem;">
+              <button type="button" class="ach-grant-type-btn active" data-gtype="instant" onclick="_setAchGrantType('instant')" style="padding:4px 10px;border-radius:2px;border:1px solid rgba(10,200,185,.4);background:rgba(10,200,185,.1);color:#0AC8B9;font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;">⚡ 즉시 수령</button>
+              <button type="button" class="ach-grant-type-btn" data-gtype="auto_condition" onclick="_setAchGrantType('auto_condition')" style="padding:4px 10px;border-radius:2px;border:1px solid rgba(255,255,255,.15);background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;">🔍 조건 확인 후 자동 수령</button>
+              <button type="button" class="ach-grant-type-btn" data-gtype="approval" onclick="_setAchGrantType('approval')" style="padding:4px 10px;border-radius:2px;border:1px solid rgba(255,255,255,.15);background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;">✋ 관리자 승인 필요</button>
+            </div>
+            <div style="font-size:9px;color:rgba(255,255,255,.35);margin-bottom:.4rem;" id="ach-grant-type-desc">멤버가 버튼을 누르면 즉시 업적을 수령합니다.</div>
+            <!-- 조건 목록 (auto_condition일 때 표시) -->
+            <div id="ach-conditions-wrap" style="display:none;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:4px;padding:.6rem .8rem;">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem;">
+                <span style="font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.5px;">조건 목록</span>
+                <button type="button" onclick="_addAchCondition()" style="padding:2px 8px;border-radius:2px;border:1px solid rgba(200,170,110,.35);background:rgba(200,170,110,.06);color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:9px;font-weight:700;cursor:pointer;">+ 조건 추가</button>
+              </div>
+              <div id="ach-conditions-list" style="display:flex;flex-direction:column;gap:5px;"></div>
+              <div style="font-size:9px;color:rgba(255,255,255,.25);margin-top:.4rem;">모든 조건을 충족해야 업적을 수령할 수 있습니다.</div>
+            </div>
+          </div>
+        </div>
         <div style="display:flex;gap:.5rem;justify-content:flex-end;margin-top:.75rem;">
           <button onclick="cancelAchievementForm()" style="padding:4px 12px;border-radius:2px;border:1px solid rgba(255,255,255,.1);background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;">취소</button>
           <button onclick="saveAchievement()" style="padding:4px 14px;border-radius:2px;border:1px solid var(--bacc);background:rgba(10,200,185,.08);color:var(--blue);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;">저장</button>
         </div>
         <div id="ach-form-err" style="color:var(--red);font-family:'Rajdhani',sans-serif;font-size:10px;margin-top:.3rem;"></div>
+      </div>
+      <!-- 승인 대기 신청 목록 -->
+      <div id="ach-pending-section" style="display:none;margin-bottom:1rem;">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:.5rem;">
+          <span style="font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;color:#F59E0B;letter-spacing:.5px;">✋ 승인 대기</span>
+          <span id="ach-pending-count-badge" style="background:rgba(245,158,11,.2);border:1px solid rgba(245,158,11,.4);color:#F59E0B;border-radius:10px;padding:1px 7px;font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;">0</span>
+        </div>
+        <div id="ach-pending-list" style="display:flex;flex-direction:column;gap:4px;max-height:260px;overflow-y:auto;"></div>
       </div>
       <!-- 업적 목록 -->
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem;">
@@ -3985,7 +4014,7 @@ function renderAchIconHtml(ach, size) {
   // size: 'badge'(16px), 'card'(28px), 'tooltip'(36px), 'trophy'(56px)
   if (ach.imageUrl) {
     var px = size === 'badge' ? 16 : size === 'card' ? 28 : size === 'tooltip' ? 36 : size === 'trophy' ? 56 : 20;
-    return '<img src="' + esc(ach.imageUrl) + '" alt="" loading="lazy" style="width:' + px + 'px;height:' + px + 'px;object-fit:contain;border-radius:3px;vertical-align:middle;">';
+    return '<img src="' + esc(ach.imageUrl) + '" alt="" loading="lazy" style="width:' + px + 'px;height:' + px + 'px;object-fit:contain;vertical-align:middle;">';
   }
   return esc(ach.icon || '🏆');
 }
@@ -4024,6 +4053,8 @@ async function openAchievementManager() {
   // 목록 로드
   await loadAchievementList();
   renderAchMgrList();
+  // 승인 대기 신청 로드
+  loadAchPendingRequests();
 }
 window.openAchievementManager = openAchievementManager;
 
@@ -4061,12 +4092,23 @@ function renderAchMgrList() {
     return;
   }
   listEl.innerHTML = _achievementList.map(function(ach) {
+    var gt = ach.grantType || 'instant';
+    var gtLabel = gt === 'auto_condition' ? '🔍 조건 자동' : gt === 'approval' ? '✋ 관리자 승인' : '⚡ 즉시';
+    var gtColor = gt === 'auto_condition' ? 'rgba(96,165,250,.7)' : gt === 'approval' ? 'rgba(245,158,11,.7)' : 'rgba(10,200,185,.7)';
+    var condDesc = '';
+    if (gt === 'auto_condition' && ach.conditions && ach.conditions.length) {
+      condDesc = ach.conditions.map(function(c){
+        if (c.type === 'min_games') return '내전 ' + c.value + '판 이상';
+        return c.type + ':' + c.value;
+      }).join(', ');
+    }
     return '<div class="ach-card">' +
       '<div class="ach-card-icon">' + renderAchIconHtml(ach, 'card') + '</div>' +
       '<div class="ach-card-info">' +
         '<div class="ach-card-title">' + esc(ach.title || '') + '</div>' +
         '<div class="ach-card-desc">' + esc(ach.desc || '') + '</div>' +
         '<div class="ach-card-stars">' + _renderStarsShort(ach.stars) + ' <span style="color:var(--muted);font-size:9px;">명예 ' + (ach.stars||0) + '성</span></div>' +
+        '<div style="margin-top:3px;"><span style="font-family:\'Rajdhani\',sans-serif;font-size:9px;color:' + gtColor + ';">' + gtLabel + '</span>' + (condDesc ? '<span style="font-family:\'Noto Sans KR\',sans-serif;font-size:9px;color:rgba(255,255,255,.3);margin-left:5px;">(' + esc(condDesc) + ')</span>' : '') + '</div>' +
       '</div>' +
       '<div class="ach-card-actions">' +
         '<button class="ach-act-btn ach-act-grant" onclick="openGrantPopup(\'' + esc(ach.id) + '\')">부여</button>' +
@@ -4143,6 +4185,84 @@ var _achImgPickerTarget = 'icon'; // 'icon' or 'big'
 var _achImgCache = null; // GitHub API 결과 캐시
 var GITHUB_ACH_IMAGES_API = 'https://api.github.com/repos/rdc6087940/lolket/contents/lolket/image%20asset/achievements';
 var GITHUB_RAW_BASE = 'https://raw.githubusercontent.com/rdc6087940/lolket/main/lolket/image%20asset/achievements/';
+
+// ── 업적 수령 방식 ──
+var _achGrantTypeEditing = 'instant'; // 현재 폼에서 선택된 grantType
+var _achConditionsEditing = []; // 현재 폼에서 편집 중인 조건 목록
+
+// 조건 타입 정의 (나중에 추가할 조건들을 여기에 넣으면 됨)
+var ACH_CONDITION_TYPES = [
+  { key: 'min_games', label: '내전 판수 이상', unit: '판', desc: '내전 판수가 N판 이상이어야 합니다.' },
+];
+
+var ACH_DISCORD_NOTIFY_CHANNEL = '1499422238338711732';
+
+function _setAchGrantType(gtype) {
+  _achGrantTypeEditing = gtype;
+  // 버튼 스타일 갱신
+  document.querySelectorAll('.ach-grant-type-btn').forEach(function(btn) {
+    var active = btn.dataset.gtype === gtype;
+    btn.style.borderColor = active ? 'rgba(10,200,185,.4)' : 'rgba(255,255,255,.15)';
+    btn.style.background  = active ? 'rgba(10,200,185,.1)' : 'transparent';
+    btn.style.color       = active ? '#0AC8B9' : 'var(--muted)';
+  });
+  // 설명 + 조건 패널
+  var descEl = document.getElementById('ach-grant-type-desc');
+  var condWrap = document.getElementById('ach-conditions-wrap');
+  var descs = {
+    instant: '멤버가 버튼을 누르면 즉시 업적을 수령합니다.',
+    auto_condition: '멤버가 신청하면 조건을 자동으로 확인 후 충족 시 즉시 수령됩니다.',
+    approval: '멤버가 신청하면 관리자가 디스코드로 알림을 받고 승인/거절을 결정합니다.'
+  };
+  if (descEl) descEl.textContent = descs[gtype] || '';
+  if (condWrap) condWrap.style.display = gtype === 'auto_condition' ? '' : 'none';
+}
+window._setAchGrantType = _setAchGrantType;
+
+function _addAchCondition() {
+  _achConditionsEditing.push({ type: 'min_games', value: '' });
+  _renderConditionsList();
+}
+window._addAchCondition = _addAchCondition;
+
+function _removeAchCondition(idx) {
+  _achConditionsEditing.splice(idx, 1);
+  _renderConditionsList();
+}
+window._removeAchCondition = _removeAchCondition;
+
+function _renderConditionsList() {
+  var listEl = document.getElementById('ach-conditions-list');
+  if (!listEl) return;
+  if (!_achConditionsEditing.length) {
+    listEl.innerHTML = '<div style="font-size:9px;color:rgba(255,255,255,.3);text-align:center;padding:.5rem;">조건이 없습니다. 추가 버튼을 누르세요.</div>';
+    return;
+  }
+  listEl.innerHTML = _achConditionsEditing.map(function(cond, idx) {
+    var typeOpts = ACH_CONDITION_TYPES.map(function(ct) {
+      return '<option value="' + ct.key + '"' + (cond.type === ct.key ? ' selected' : '') + '>' + ct.label + '</option>';
+    }).join('');
+    var ct = ACH_CONDITION_TYPES.find(function(c){ return c.key === cond.type; }) || ACH_CONDITION_TYPES[0];
+    return '<div style="display:flex;align-items:center;gap:5px;">' +
+      '<select onchange="_updateAchCondType(' + idx + ',this.value)" style="flex:1.2;padding:4px 6px;border-radius:2px;border:1px solid rgba(255,255,255,.1);background:#0d1620;color:#e5e7eb;font-family:\'Noto Sans KR\',sans-serif;font-size:10px;outline:none;">' + typeOpts + '</select>' +
+      '<input type="number" min="0" value="' + (cond.value||'') + '" placeholder="값" onchange="_updateAchCondValue(' + idx + ',this.value)" style="width:70px;padding:4px 6px;border-radius:2px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05);color:#e5e7eb;font-family:\'Rajdhani\',sans-serif;font-size:11px;outline:none;text-align:right;">' +
+      '<span style="font-size:10px;color:var(--muted);white-space:nowrap;">' + esc(ct.unit||'') + '</span>' +
+      '<button type="button" onclick="_removeAchCondition(' + idx + ')" style="padding:2px 6px;border-radius:2px;border:1px solid rgba(255,80,80,.2);background:transparent;color:rgba(255,100,100,.6);font-family:\'Rajdhani\',sans-serif;font-size:10px;cursor:pointer;">✕</button>' +
+    '</div>';
+  }).join('');
+}
+window._renderConditionsList = _renderConditionsList;
+
+function _updateAchCondType(idx, val) {
+  if (_achConditionsEditing[idx]) _achConditionsEditing[idx].type = val;
+  _renderConditionsList();
+}
+window._updateAchCondType = _updateAchCondType;
+
+function _updateAchCondValue(idx, val) {
+  if (_achConditionsEditing[idx]) _achConditionsEditing[idx].value = val;
+}
+window._updateAchCondValue = _updateAchCondValue;
 
 async function openAchImagePicker(target) {
   _achImgPickerTarget = target || 'icon';
@@ -4286,6 +4406,12 @@ function openAchievementForm(achId) {
   document.querySelectorAll('.ach-star-btn').forEach(function(b) {
     b.classList.toggle('selected', parseInt(b.dataset.val) === stars);
   });
+  // 수령 방식 복원
+  var gtype = ach ? (ach.grantType || 'instant') : 'instant';
+  _achGrantTypeEditing = gtype;
+  _achConditionsEditing = ach && ach.conditions ? JSON.parse(JSON.stringify(ach.conditions)) : [];
+  _setAchGrantType(gtype);
+  _renderConditionsList();
   var errEl = document.getElementById('ach-form-err');
   if (errEl) errEl.textContent = '';
   fs.scrollIntoView({ behavior:'smooth', block:'nearest' });
@@ -4298,6 +4424,10 @@ function cancelAchievementForm() {
   _achEditingId = null;
   clearAchIcon();
   clearAchBigImg();
+  // 수령 방식 초기화
+  _achGrantTypeEditing = 'instant';
+  _achConditionsEditing = [];
+  _setAchGrantType('instant');
 }
 window.cancelAchievementForm = cancelAchievementForm;
 
@@ -4321,6 +4451,14 @@ async function saveAchievement() {
   if (bigImageUrl) data.bigImageUrl = bigImageUrl;
   else             data.bigImageUrl = null;
   if (!_achEditingId) data.createdAt = Date.now();
+  // 수령 방식
+  data.grantType = _achGrantTypeEditing || 'instant';
+  if (data.grantType === 'auto_condition') {
+    var validConds = _achConditionsEditing.filter(function(c){ return c.type && c.value !== ''; });
+    data.conditions = validConds.length ? validConds : null;
+  } else {
+    data.conditions = null;
+  }
 
   try {
     var r = await fetch(WORKER_URL + '/db-write', {
@@ -4983,6 +5121,266 @@ function switchMainTab(tab) {
 }
 
 // ── 업적 목록 팝업 ──
+// ── 업적 수령/신청 ──
+
+async function _claimAchievement(achId) {
+  var myPuuId = _getMyPuuId();
+  if (!myPuuId) { alert('멤버 계정이 연결되지 않았습니다.'); return; }
+  var ach = (_achievementList||[]).find(function(a){ return a.id === achId; });
+  if (!ach) return;
+
+  // 이미 보유 확인
+  if (_memberAchievements && _memberAchievements[myPuuId] && _memberAchievements[myPuuId][achId]) {
+    alert('이미 보유한 업적입니다.'); return;
+  }
+
+  var grantType = ach.grantType || 'instant';
+
+  // 조건 확인
+  if (grantType === 'auto_condition') {
+    var conds = ach.conditions || [];
+    var myMember = allData && allData.find(function(m){ return m.puu_id === myPuuId; });
+    var fail = null;
+    for (var i = 0; i < conds.length; i++) {
+      var c = conds[i];
+      if (c.type === 'min_games') {
+        var needed = parseInt(c.value) || 0;
+        var myCnt  = myMember ? (myMember.cnt || 0) : 0;
+        if (myCnt < needed) {
+          fail = '내전 판수가 부족합니다. (현재: ' + myCnt + '판 / 필요: ' + needed + '판)';
+          break;
+        }
+      }
+    }
+    if (fail) { alert('조건 미충족\n' + fail); return; }
+  }
+
+  if (!confirm('업적 "' + (ach.title||achId) + '"을 수령하시겠습니까?')) return;
+
+  try {
+    var now = Date.now();
+    var j;
+    if (_discordUser && _discordUser.id) {
+      // 디스코드 유저: /ach-claim 전용 엔드포인트 사용
+      var myMemberForClaim = allData && allData.find(function(m){ return m.puu_id === myPuuId; });
+      var memberCntForClaim = myMemberForClaim ? (myMemberForClaim.cnt || 0) : 0;
+      var r = await fetch(WORKER_URL + '/ach-claim', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          discordId: _discordUser.id,
+          cid: COMMUNITY_ID,
+          achId: achId,
+          puuId: myPuuId,
+          grantType: grantType,
+          conditions: ach.conditions || [],
+          memberCnt: memberCntForClaim
+        })
+      });
+      j = await r.json();
+    } else {
+      // 관리자 로그인: 기존 /db-write 방식
+      var r2 = await fetch(WORKER_URL + '/db-write', {
+        method:'POST', headers:{'Content-Type':'application/json','X-Session-Token':_statsAdminToken},
+        body: JSON.stringify({
+          communityId: COMMUNITY_ID, token: _statsAdminToken,
+          path: _achPath('member_achievements/' + myPuuId + '/' + achId),
+          data: { grantedAt: now, grantedBy: _statsAdminId || 'admin' }
+        })
+      });
+      j = await r2.json();
+    }
+    if (!j.ok) throw new Error(j.error || '수령 실패');
+    if (!_memberAchievements[myPuuId]) _memberAchievements[myPuuId] = {};
+    _memberAchievements[myPuuId][achId] = { grantedAt: now, grantedBy: 'self' };
+    alert('🏆 업적을 수령했습니다!');
+    _renderAchievementsPopup();
+  } catch(e) { alert('오류: ' + e.message); }
+}
+window._claimAchievement = _claimAchievement;
+
+async function _applyAchievement(achId) {
+  var myPuuId = _getMyPuuId();
+  if (!myPuuId) { alert('멤버 계정이 연결되지 않았습니다.'); return; }
+  var ach = (_achievementList||[]).find(function(a){ return a.id === achId; });
+  if (!ach) return;
+  if (_memberAchievements && _memberAchievements[myPuuId] && _memberAchievements[myPuuId][achId]) {
+    alert('이미 보유한 업적입니다.'); return;
+  }
+  var pendingKey = COMMUNITY_ID + '_ach_pending_' + achId + '_' + myPuuId;
+  try { if (localStorage.getItem(pendingKey)) { alert('이미 신청한 업적입니다. 관리자 승인을 기다려주세요.'); return; } } catch(e){}
+
+  if (!confirm('업적 "' + (ach.title||achId) + '" 수령을 신청하시겠습니까?\n관리자 승인 후 업적이 부여됩니다.')) return;
+
+  var myMember = allData && allData.find(function(m){ return m.puu_id === myPuuId; });
+  var myName = myMember ? (myMember.riot_name || myMember.name || myMember.nickname || myPuuId) : myPuuId;
+
+  try {
+    var reqId = 'req_' + Date.now() + '_' + myPuuId.slice(-6);
+    var j2;
+    if (_discordUser && _discordUser.id) {
+      // 디스코드 유저: /ach-request 전용 엔드포인트 사용
+      var rReq = await fetch(WORKER_URL + '/ach-request', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          discordId: _discordUser.id,
+          cid: COMMUNITY_ID,
+          achId: achId,
+          achTitle: ach.title || achId,
+          puuId: myPuuId,
+          reqId: reqId
+        })
+      });
+      j2 = await rReq.json();
+    } else {
+      // 관리자 로그인: 기존 /db-write 방식
+      var reqData = {
+        achId: achId, achTitle: ach.title || achId,
+        puuId: myPuuId, memberName: myName,
+        appliedAt: Date.now(), status: 'pending'
+      };
+      var rReq2 = await fetch(WORKER_URL + '/db-write', {
+        method:'POST', headers:{'Content-Type':'application/json','X-Session-Token':_statsAdminToken},
+        body: JSON.stringify({
+          communityId: COMMUNITY_ID, token: _statsAdminToken,
+          path: _achPath('ach_requests/' + reqId),
+          data: reqData
+        })
+      });
+      j2 = await rReq2.json();
+    }
+    if (!j2.ok) throw new Error(j2.error || '신청 실패');
+
+    // localStorage에 대기 표시
+    try { localStorage.setItem(pendingKey, reqId); } catch(e){}
+
+    // 룽봇으로 디스코드 알림
+    var discordMsg = '**🏆 업적 수령 신청**\n' +
+      '> 커뮤니티: ' + (COMMUNITY_ID||'') + '\n' +
+      '> 업적: **' + (ach.title||achId) + '**' + (ach.desc ? ' — ' + ach.desc : '') + '\n' +
+      '> 신청자: **' + myName + '**\n' +
+      '> 신청 ID: `' + reqId + '`\n\n' +
+      '승인: `/ach-approve ' + reqId + '`  |  거절: `/ach-reject ' + reqId + '`';
+
+    await fetch(WORKER_URL + '/discord-send', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ channelId: ACH_DISCORD_NOTIFY_CHANNEL, message: discordMsg })
+    }).catch(function(){});
+
+    alert('✋ 수령 신청이 완료됐습니다.\n관리자 승인 후 업적이 부여됩니다.');
+    _renderAchievementsPopup();
+  } catch(e) { alert('오류: ' + e.message); }
+}
+window._applyAchievement = _applyAchievement;
+
+// ── 승인 대기 목록 로드/렌더 (관리자) ──
+var _achPendingRequests = {};
+
+async function loadAchPendingRequests() {
+  if (!COMMUNITY_ID || !isStatsAdmin()) return;
+  try {
+    var r = await fetch(WORKER_URL + '/db-public-read', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ path: _achPath('ach_requests') })
+    });
+    var j = await r.json();
+    _achPendingRequests = (j.ok && j.data) ? j.data : {};
+    renderAchPendingList();
+  } catch(e) { _achPendingRequests = {}; }
+}
+
+function renderAchPendingList() {
+  var section = document.getElementById('ach-pending-section');
+  var listEl  = document.getElementById('ach-pending-list');
+  var badge   = document.getElementById('ach-pending-count-badge');
+  if (!section || !listEl) return;
+  var pendings = Object.entries(_achPendingRequests)
+    .filter(function(e){ return e[1] && e[1].status === 'pending'; })
+    .sort(function(a,b){ return (a[1].appliedAt||0) - (b[1].appliedAt||0); });
+  if (badge) badge.textContent = pendings.length;
+  section.style.display = pendings.length ? '' : 'none';
+  if (!pendings.length) return;
+  listEl.innerHTML = pendings.map(function(e) {
+    var reqId = e[0], req = e[1];
+    var dt = req.appliedAt ? new Date(req.appliedAt).toLocaleString('ko-KR', {month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
+    return '<div style="display:flex;align-items:center;gap:8px;padding:.45rem .6rem;background:rgba(245,158,11,.04);border:1px solid rgba(245,158,11,.15);border-radius:3px;">' +
+      '<div style="flex:1;min-width:0;">' +
+        '<div style="font-family:\'Noto Sans KR\',sans-serif;font-size:11px;color:#e5e7eb;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><b>' + esc(req.memberName||req.puuId||'?') + '</b> → ' + esc(req.achTitle||req.achId||'?') + '</div>' +
+        '<div style="font-family:\'Rajdhani\',sans-serif;font-size:9px;color:var(--muted);">' + esc(dt) + '</div>' +
+      '</div>' +
+      '<button onclick="_approveAchRequest(\'' + esc(reqId) + '\')" style="padding:3px 9px;border-radius:2px;border:1px solid rgba(74,222,128,.4);background:rgba(74,222,128,.1);color:#4ADE80;font-family:\'Rajdhani\',sans-serif;font-size:10px;font-weight:700;cursor:pointer;flex-shrink:0;">✓ 승인</button>' +
+      '<button onclick="_rejectAchRequest(\'' + esc(reqId) + '\')" style="padding:3px 9px;border-radius:2px;border:1px solid rgba(248,113,113,.4);background:rgba(248,113,113,.1);color:#F87171;font-family:\'Rajdhani\',sans-serif;font-size:10px;font-weight:700;cursor:pointer;flex-shrink:0;">✕ 거절</button>' +
+    '</div>';
+  }).join('');
+}
+
+async function _approveAchRequest(reqId) {
+  var req = _achPendingRequests[reqId];
+  if (!req) return;
+  if (!confirm('"' + (req.memberName||req.puuId) + '"의 "' + (req.achTitle||req.achId) + '" 업적 신청을 승인하시겠습니까?')) return;
+  try {
+    // 업적 부여
+    var now = Date.now();
+    var multiPath = {};
+    multiPath[_achPath('member_achievements/' + req.puuId + '/' + req.achId)] = {
+      grantedAt: now, grantedBy: _statsAdminId || 'admin'
+    };
+    multiPath[_achPath('ach_requests/' + reqId + '/status')] = 'approved';
+    var r = await fetch(WORKER_URL + '/db-write', {
+      method:'POST', headers:{'Content-Type':'application/json','X-Session-Token':_statsAdminToken},
+      body: JSON.stringify({
+        communityId: COMMUNITY_ID, token: _statsAdminToken,
+        masterToken: _statsMasterToken || undefined,
+        adminId: _statsAdminId, adminPw: _statsAdminPw,
+        multiPath: multiPath
+      })
+    });
+    var j = await r.json();
+    if (!j.ok) throw new Error(j.error || '승인 실패');
+    // 로컬 반영
+    if (!_memberAchievements[req.puuId]) _memberAchievements[req.puuId] = {};
+    _memberAchievements[req.puuId][req.achId] = { grantedAt: now, grantedBy: _statsAdminId || 'admin' };
+    _achPendingRequests[reqId].status = 'approved';
+    // 디스코드 알림
+    var msg = '✅ **업적 승인됨**\n> **' + (req.memberName||req.puuId) + '** 님의 **' + (req.achTitle||req.achId) + '** 업적이 승인됐습니다.';
+    await fetch(WORKER_URL + '/discord-send', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ channelId: ACH_DISCORD_NOTIFY_CHANNEL, message: msg })
+    }).catch(function(){});
+    renderAchPendingList();
+    alert('✅ 승인 완료');
+  } catch(e) { alert('오류: ' + e.message); }
+}
+window._approveAchRequest = _approveAchRequest;
+
+async function _rejectAchRequest(reqId) {
+  var req = _achPendingRequests[reqId];
+  if (!req) return;
+  if (!confirm('"' + (req.memberName||req.puuId) + '"의 "' + (req.achTitle||req.achId) + '" 업적 신청을 거절하시겠습니까?')) return;
+  try {
+    var r = await fetch(WORKER_URL + '/db-write', {
+      method:'POST', headers:{'Content-Type':'application/json','X-Session-Token':_statsAdminToken},
+      body: JSON.stringify({
+        communityId: COMMUNITY_ID, token: _statsAdminToken,
+        masterToken: _statsMasterToken || undefined,
+        adminId: _statsAdminId, adminPw: _statsAdminPw,
+        path: _achPath('ach_requests/' + reqId + '/status'), data: 'rejected'
+      })
+    });
+    var j = await r.json();
+    if (!j.ok) throw new Error(j.error || '거절 실패');
+    _achPendingRequests[reqId].status = 'rejected';
+    // 디스코드 알림
+    var msg = '❌ **업적 거절됨**\n> **' + (req.memberName||req.puuId) + '** 님의 **' + (req.achTitle||req.achId) + '** 업적 신청이 거절됐습니다.';
+    await fetch(WORKER_URL + '/discord-send', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ channelId: ACH_DISCORD_NOTIFY_CHANNEL, message: msg })
+    }).catch(function(){});
+    renderAchPendingList();
+    alert('거절 처리됐습니다.');
+  } catch(e) { alert('오류: ' + e.message); }
+}
+window._rejectAchRequest = _rejectAchRequest;
+
 var _achViewFilter = 'all';
 var _achMyFilter = 'all'; // 'all' | 'mine' | 'not_mine' (로그인+멤버연결 시 활성화)
 
@@ -5018,15 +5416,34 @@ function _setAchMyFilter(f) {
 }
 
 function _getMyPuuId() {
-  // 로그인된 경우 allData에서 매칭 시도
-  if (!_statsAdminToken || !_statsAdminId) return null;
   if (!allData || !allData.length) return null;
-  var m = allData.find(function(mm) {
-    return (mm.riot_name && mm.riot_name === _statsAdminId) ||
-           (mm.name && mm.name === _statsAdminId) ||
-           (mm.nickname && mm.nickname === _statsAdminId);
-  });
-  return m ? m.puu_id : null;
+  // 1) 일반 유저: 디스코드 계정 연동(_discordLinkData) 기반으로 allData 멤버 매칭
+  if (_discordLinkData && _discordLinkData.riotName) {
+    var rn = (_discordLinkData.riotName || '').toLowerCase();
+    var rt = (_discordLinkData.riotTag || '').toLowerCase();
+    // _puuIdMap에서 바로 조회 (goToMyPage와 동일 방식)
+    if (window._puuIdMap) {
+      var key = rn + '#' + rt;
+      var pid = window._puuIdMap[key];
+      if (pid) return pid;
+    }
+    // fallback: allData에서 riot_name/riot_tag로 매칭
+    var m = allData.find(function(mm) {
+      return (mm.riot_name || '').toLowerCase() === rn &&
+             (mm.riot_tag || '').toLowerCase() === rt;
+    });
+    if (m) return m.puu_id;
+  }
+  // 2) 관리자 로그인: _statsAdminId로 allData 멤버 매칭
+  if (_statsAdminToken && _statsAdminId) {
+    var m2 = allData.find(function(mm) {
+      return (mm.riot_name && mm.riot_name === _statsAdminId) ||
+             (mm.name && mm.name === _statsAdminId) ||
+             (mm.nickname && mm.nickname === _statsAdminId);
+    });
+    if (m2) return m2.puu_id;
+  }
+  return null;
 }
 
 function _renderAchievementsPopup() {
@@ -5153,7 +5570,7 @@ function _renderAchievementsPopup() {
     var pctDisp = (pct < 1 && pct > 0) ? pct.toFixed(1) : Math.round(pct);
     var starsHtml = '★'.repeat(ach.stars || 0) + '☆'.repeat(Math.max(0, 10 - (ach.stars || 0)));
     var iconHtml = ach.imageUrl
-      ? '<img src="' + esc(ach.imageUrl) + '" alt="" loading="lazy" style="width:44px;height:44px;object-fit:contain;border-radius:4px;">'
+      ? '<img src="' + esc(ach.imageUrl) + '" alt="" loading="lazy" style="width:44px;height:44px;object-fit:contain;">'
       : '<span style="font-size:30px;line-height:1;">' + esc(ach.icon || '🏆') + '</span>';
 
     // 보유자 이름 최대 3명
@@ -5186,6 +5603,27 @@ function _renderAchievementsPopup() {
       }
     }
 
+    // 수령/신청 버튼 (로그인+멤버연결 시, 미보유 시)
+    var actionBtn = '';
+    if (myPuuId && !(myGrants && myGrants[ach.id])) {
+      var grantType = ach.grantType || 'instant';
+      if (grantType === 'instant') {
+        actionBtn = '<button onclick="_claimAchievement(\'' + esc(ach.id) + '\')" style="margin-top:5px;padding:3px 10px;border-radius:2px;border:1px solid rgba(10,200,185,.4);background:rgba(10,200,185,.08);color:#0AC8B9;font-family:\'Noto Sans KR\',sans-serif;font-size:10px;cursor:pointer;">⚡ 수령하기</button>';
+      } else if (grantType === 'auto_condition') {
+        actionBtn = '<button onclick="_claimAchievement(\'' + esc(ach.id) + '\')" style="margin-top:5px;padding:3px 10px;border-radius:2px;border:1px solid rgba(10,200,185,.4);background:rgba(10,200,185,.08);color:#0AC8B9;font-family:\'Noto Sans KR\',sans-serif;font-size:10px;cursor:pointer;">🔍 조건 확인 후 수령</button>';
+      } else if (grantType === 'approval') {
+        // 이미 신청 중인지 확인
+        var pendingKey = COMMUNITY_ID + '_ach_pending_' + ach.id + '_' + myPuuId;
+        var alreadyApplied = false;
+        try { alreadyApplied = !!localStorage.getItem(pendingKey); } catch(e){}
+        if (alreadyApplied) {
+          actionBtn = '<span style="margin-top:5px;display:inline-block;padding:3px 10px;border-radius:2px;border:1px solid rgba(245,158,11,.3);background:rgba(245,158,11,.06);color:#F59E0B;font-family:\'Noto Sans KR\',sans-serif;font-size:10px;">⏳ 승인 대기 중</span>';
+        } else {
+          actionBtn = '<button onclick="_applyAchievement(\'' + esc(ach.id) + '\')" style="margin-top:5px;padding:3px 10px;border-radius:2px;border:1px solid rgba(245,158,11,.4);background:rgba(245,158,11,.08);color:#F59E0B;font-family:\'Noto Sans KR\',sans-serif;font-size:10px;cursor:pointer;">✋ 수령 신청</button>';
+        }
+      }
+    }
+
     return '<div class="ach-steam-row' + (isLocked ? ' locked' : '') + '">' +
       '<div class="ach-steam-icon-wrap">' + iconHtml + '</div>' +
       '<div class="ach-steam-body">' +
@@ -5194,6 +5632,7 @@ function _renderAchievementsPopup() {
         '<div class="ach-steam-stars">' + starsHtml + '</div>' +
         '<div style="font-family:\'Noto Sans KR\',sans-serif;font-size:9px;color:rgba(255,255,255,.28);margin-top:3px;">' + esc(ownersText) + '</div>' +
         myBadge +
+        actionBtn +
       '</div>' +
       '<div class="ach-steam-right">' +
         '<div class="ach-steam-pct" style="color:' + pctColor + ';">' + pctDisp + '%</div>' +
