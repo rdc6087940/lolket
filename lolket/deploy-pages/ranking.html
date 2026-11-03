@@ -362,6 +362,23 @@ async function loadRatingHistory() {
   return (j.ok && j.data) ? j.data : null;
 }
 
+// ── 임시티어 맵 (puuId → { tier, lp, assignedAt }) ──
+let _tempTierMap = {};
+async function loadTempTierMap() {
+  if (!COMMUNITY_ID) return;
+  try {
+    const res = await fetch(WORKER_URL + '/temp-tiers-read', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ communityId: COMMUNITY_ID })
+    });
+    const j = await res.json();
+    if (j.ok && j.data && typeof j.data === 'object') {
+      _tempTierMap = j.data;
+    }
+  } catch(e) {}
+}
+
 // ── 커뮤니티 멤버 + 레이팅 조회 ──
 let allMembers = [];
 async function loadMembersAndRatings() {
@@ -684,7 +701,7 @@ const AI_ANALYSIS_CACHE = {}; // 세션 내 메모리 캐시 (캐시 저장 시 
 
 const POS_KO = { Top:'탑', Jungle:'정글', Middle:'미드', Bottom:'원딜', Utility:'서폿' };
 
-function buildAnalysisPrompt(userName, isRise, rank, totalDelta, analysis) {
+function buildAnalysisPrompt(userName, isRise, rank, totalDelta, analysis, tempTierData) {
   const { totalGames, wins, losses, avgKda, avgKills, avgDeaths, avgAssists, avgCs, avgAiScore, mainPosition, posCnt, myChamps, myChampsAsc, allies, alliesAsc, enemyChamps, enemyChampsAsc, soloData, soloChamps } = analysis;
   const wr = totalGames > 0 ? ((wins/totalGames)*100).toFixed(1) : '—';
   const posKo = POS_KO[mainPosition] || mainPosition || '알 수 없음';
@@ -744,6 +761,41 @@ function buildAnalysisPrompt(userName, isRise, rank, totalDelta, analysis) {
 ${soloChamps.slice(0,8).map(c=>`${c.name}(${c.total}판 ${(c.wr).toFixed(0)}%${soloChampKda(c)})`).join('\n  ')}`;
   }
 
+  // 임시티어 섹션 (부여일로부터 4주 이내인 경우에만)
+  let tempTierSection = '';
+  if (tempTierData) {
+    const { tier: ttTier, lp: ttLp, assignedAt, originalTier } = tempTierData;
+    const assignedDate = assignedAt ? new Date(assignedAt).toLocaleDateString('ko-KR') : '날짜 미상';
+    const currentTier = (soloData && soloData.tier) ? soloData.tier : '알 수 없음';
+    const wr = totalGames > 0 ? ((wins/totalGames)*100) : null;
+
+    // 임시티어가 현재 솔랭 티어보다 높은지 판단 (상향 여부)
+    const TIER_ORDER = ['IRON','BRONZE','SILVER','GOLD','PLATINUM','EMERALD','DIAMOND','MASTER','GRANDMASTER','CHALLENGER'];
+    const ttIdx = TIER_ORDER.indexOf((ttTier||'').toUpperCase().split(' ')[0]);
+    const curIdx = TIER_ORDER.indexOf((currentTier||'').toUpperCase().split(' ')[0]);
+    const isUpgraded = ttIdx > curIdx;
+    const isSameTier = ttIdx === curIdx;
+
+    let tempTierAnalysisGuide = '';
+    if (isUpgraded) {
+      if (isRise) {
+        tempTierAnalysisGuide = `임시티어로 티어를 상향받았음에도 불구하고 이번 주 성적이 좋은 상황이야. 임시티어 패치를 받고도 건재하다는 점을 인상적으로 언급해줘. 상향된 환경에서도 잘 적응했다는 긍정적 해석을 해줘.`;
+      } else {
+        const wrVal = wr !== null ? wr.toFixed(1) : '—';
+        tempTierAnalysisGuide = `임시티어로 티어를 상향받은 후 이번 주 성적이 떨어진 상황이야. 승률 ${wrVal}%를 보고, 임시티어 상향 패치의 영향으로 더 강한 상대들을 만나면서 성적이 하락했을 수 있다는 분석을 해줘. 하락폭이 크다면 적응이 필요하다는 점을, 작다면 선방하고 있다는 점을 자연스럽게 언급해줘.`;
+      }
+    } else if (isSameTier) {
+      tempTierAnalysisGuide = `현재 솔랭 티어와 동일한 임시티어가 부여된 상태야. 티어 유지 관점에서 자연스럽게 언급해줘.`;
+    }
+
+    tempTierSection = `
+[임시티어 정보]
+임시티어: ${ttTier}${ttLp !== undefined ? ` ${ttLp}LP` : ''} (부여일: ${assignedDate})
+현재 솔랭 티어: ${currentTier}
+${isUpgraded ? `→ 임시티어로 솔랭 티어 대비 상향 적용 중` : isSameTier ? `→ 현재 솔랭 티어와 동일한 임시티어` : `→ 임시티어가 현재 솔랭 티어 이하`}
+${tempTierAnalysisGuide ? `\n[임시티어 분석 지침]\n${tempTierAnalysisGuide}` : ''}`;
+  }
+
   const rankType = isRise ? '떡상' : '떡락';
   const toneGuide = isRise
     ? (rank <= 3
@@ -766,6 +818,7 @@ ${soloChamps.slice(0,8).map(c=>`${c.name}(${c.total}판 ${(c.wr).toFixed(0)}%${s
 평균 KDA: ${avgKda||'—'} (${avgKills||'?'}킬 / ${avgDeaths||'?'}데스 / ${avgAssists||'?'}어시)${avgCs ? ` | 평균 CS: ${avgCs}` : ''}${avgAiScore ? ` | 내전 AI점수 평균: ${avgAiScore}점` : ''}
 주 포지션: ${posKo}${posLines ? ` (포지션별: ${posLines})` : ''}
 ${soloSection}
+${tempTierSection}
 
 [내전 픽 데이터 — 이번 주 전체 챔피언]
   ${myPickAll}
@@ -787,7 +840,7 @@ ${toneGuide}
 2. 🗡️ 픽 성향 분석 (챔피언 풀 성향, 플레이스타일, 잘 쓰는 챔피언과 아쉬운 픽, 솔랭 챔피언과의 연관성도 언급)
 3. ⚔️ 매치업 분석 (강한 상대/약한 상대 챔피언, 매치업 패턴)
 4. 👥 팀 케미 (잘 맞는 팀원, 안 맞는 팀원)
-5. 💡 한줄 총평 또는 다음 주를 위한 한마디
+${tempTierSection ? `5. 🎭 임시티어 영향 분석 (임시티어 부여 후 성적 변화, 상향 패치 영향 여부)\n6. 💡 한줄 총평 또는 다음 주를 위한 한마디` : `5. 💡 한줄 총평 또는 다음 주를 위한 한마디`}
 
 데이터가 없는 항목은 "데이터 부족"이라고 쓰지 말고 자연스럽게 생략해줘. 각 항목은 2~4문장으로 작성해줘.
 
@@ -919,7 +972,8 @@ async function triggerAiAnalysis(puuId, isRise, rank, totalDelta) {
     // 유저 이름 찾기
     const member = allMembers.find(m=>m.puu_id===puuId);
     const userName = member ? (member.riot_name || member.name || '유저') : '유저';
-    const prompt = buildAnalysisPrompt(userName, isRise, rank, totalDelta, analysis);
+    const tempTierData = getActiveTempTier(puuId);
+    const prompt = buildAnalysisPrompt(userName, isRise, rank, totalDelta, analysis, tempTierData);
     const text = await fetchAiAnalysis(prompt);
 
     AI_ANALYSIS_CACHE[puuId] = text;
@@ -952,6 +1006,26 @@ function formatAiText(text) {
 // onclick에서 접근 가능하도록 전역 노출
 window.triggerAiAnalysis = triggerAiAnalysis;
 
+// 임시티어 4주 이내 여부 판단 및 데이터 반환
+function getActiveTempTier(puuId) {
+  const tt = _tempTierMap[puuId];
+  if (!tt) return null;
+  const tierVal = typeof tt === 'object' ? tt.tier : tt;
+  if (!tierVal) return null;
+  const assignedAt = typeof tt === 'object' && tt.assignedAt ? tt.assignedAt : null;
+  if (!assignedAt) return null; // assignedAt 없으면 4주 이내 판단 불가
+  const assignedDate = new Date(assignedAt);
+  const now = new Date();
+  const diffMs = now - assignedDate;
+  const diffWeeks = diffMs / (1000 * 60 * 60 * 24 * 7);
+  if (diffWeeks > 4) return null; // 4주 초과
+  return {
+    tier: tierVal,
+    lp: typeof tt === 'object' ? tt.lp : undefined,
+    assignedAt: assignedAt,
+  };
+}
+
 async function copyAiPrompt(puuId, isRise, rank, totalDelta) {
   const analysis = detailDataCache[puuId];
   if (!analysis) {
@@ -960,7 +1034,8 @@ async function copyAiPrompt(puuId, isRise, rank, totalDelta) {
   }
   const member = allMembers.find(m=>m.puu_id===puuId);
   const userName = member ? (member.riot_name || member.name || '유저') : '유저';
-  const prompt = buildAnalysisPrompt(userName, isRise, rank, totalDelta, analysis);
+  const tempTierData = getActiveTempTier(puuId);
+  const prompt = buildAnalysisPrompt(userName, isRise, rank, totalDelta, analysis, tempTierData);
   try {
     await navigator.clipboard.writeText(prompt);
     // 버튼 일시 피드백
@@ -1302,8 +1377,24 @@ function buildRankCard(entry, rank, isRise, ratingHistMap) {
   const kda = entry.weekKda !== undefined ? entry.weekKda : '—';
   const id = 'card_' + (isRise?'r':'d') + rank;
 
+  // 임시티어 정보
+  const puuId = (m && m.puu_id) || entry.puuId || '';
+  const ttRaw = puuId && _tempTierMap[puuId];
+  const ttTier = ttRaw && (typeof ttRaw === 'object' ? ttRaw.tier : ttRaw);
+  const ttLp = ttRaw && typeof ttRaw === 'object' ? ttRaw.lp : undefined;
+  const ttAssignedAt = ttRaw && typeof ttRaw === 'object' ? ttRaw.assignedAt : null;
+  let tempTierHtml = '';
+  if (ttTier) {
+    const ttColor = tierColor(ttTier);
+    const ttBg = `rgba(${hexToRgb(ttColor)},.1)`;
+    const ttBorder = `rgba(${hexToRgb(ttColor)},.3)`;
+    const ttLabel = tierLabel(ttTier) + (ttLp !== undefined && ttLp !== null ? ` ${ttLp}LP` : '');
+    const ttDate = ttAssignedAt ? new Date(ttAssignedAt).toLocaleDateString('ko-KR', {month:'numeric',day:'numeric'}) : '';
+    tempTierHtml = `<span class="rank-tier" style="color:${ttColor};background:${ttBg};border:1px solid ${ttBorder};opacity:.9;" title="임시티어${ttDate?' ('+ttDate+' 부여)':''}">⚡ ${esc(ttLabel)}</span>`;
+  }
+
   return `
-  <div class="rank-card ${style}" id="${id}" style="animation-delay:${animDelay}" data-puu="${(m&&m.puu_id)||entry.puuId||''}" data-rise="${isRise?1:0}" data-rank="${rank}" onclick="toggleCard('${id}',event)">
+  <div class="rank-card ${style}" id="${id}" style="animation-delay:${animDelay}" data-puu="${puuId}" data-rise="${isRise?1:0}" data-rank="${rank}" onclick="toggleCard('${id}',event)">
     <div class="rank-card-inner">
       <div class="rank-num ${rankNumCls}">${rank}</div>
       <img class="rank-avatar" src="${avatarSrc}" onerror="this.src=DD_PROFILE_ICON(1)">
@@ -1311,6 +1402,7 @@ function buildRankCard(entry, rank, isRise, ratingHistMap) {
         <div class="rank-name">${esc(name)}</div>
         <div class="rank-meta">
           ${m&&m.tier?`<span class="rank-tier" style="color:${tColor};background:${tBg};border:1px solid ${tBorder};">${esc(tLabel)}</span>`:''}
+          ${tempTierHtml}
           <span class="rank-stat">주간 <span>${games}판</span></span>
           <span class="rank-stat">승률 <span>${wr}</span></span>
           <span class="rank-stat">KDA <span>${kda}</span></span>
@@ -1474,7 +1566,12 @@ async function main() {
     if (cached.serverName) {
       document.querySelector('.page-title').textContent = cached.serverName + ' 주간 랭킹';
     }
-    renderPage(riseTop, dropTop);
+    // 임시티어 로드 후 렌더 (캐시 히트 경로)
+    loadTempTierMap().then(() => {
+      renderPage(riseTop, dropTop);
+    }).catch(() => {
+      renderPage(riseTop, dropTop);
+    });
     // 백그라운드에서 champMap 로드 (상세 패널 클릭 대비)
     initDragon().catch(()=>{});
     return;
@@ -1486,7 +1583,8 @@ async function main() {
     const [_, membersAndRatings, history] = await Promise.all([
       initDragon(),
       loadMembersAndRatings(),
-      loadRatingHistory()
+      loadRatingHistory(),
+      loadTempTierMap()
     ]);
     allMembers = membersAndRatings.memberList;
     const ratingMap = membersAndRatings.ratingMap;

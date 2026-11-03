@@ -44,12 +44,19 @@ html,body{height:100%;background:var(--bg);color:var(--white);font-family:'Noto 
 
 .page-header{
   background:var(--panel);border-bottom:1px solid var(--border);
-  padding:.6rem 1.5rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;
+  padding:.5rem 1.5rem .4rem;display:flex;flex-direction:column;gap:.4rem;
 }
 .server-name{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;color:var(--gold);white-space:nowrap;}
 .member-count{font-family:'Rajdhani',sans-serif;font-size:12px;color:var(--muted);}
 .member-count span{color:var(--blue);font-weight:700;}
-.header-right{margin-left:auto;display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;}
+/* 1행: 서버명/카운트 + 우측 계정영역 */
+.header-top-row{display:flex;align-items:center;justify-content:space-between;width:100%;}
+/* 우측 계정 영역 (디스코드 + 관리자) */
+.header-account{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;}
+/* 구분선 */
+.header-sep{width:1px;height:18px;background:rgba(255,255,255,.1);flex-shrink:0;}
+/* 2행: 기능 버튼 영역 */
+.header-right{display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;}
 
 .search-wrap{position:relative;}
 .search-input{
@@ -350,21 +357,21 @@ tbody td{padding:.55rem 1rem;font-size:12px;vertical-align:middle;}
   vertical-align:middle;margin-left:3px;flex-shrink:0;
   transition:transform .15s,box-shadow .15s;
 }
-.ach-badge:hover{transform:scale(1.25);box-shadow:0 0 8px rgba(200,170,110,.6);}
+.ach-badge:hover{transform:scale(1.25);box-shadow:0 0 8px rgba(200,170,110,.6);z-index:10000;}
 
 /* 업적 툴팁 */
 .ach-tooltip{
-  display:none;position:absolute;z-index:3000;
-  bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);
+  display:none;position:fixed;z-index:10000;
   background:#0D1620;border:1px solid rgba(200,170,110,.35);border-radius:6px;
   padding:.6rem .75rem;min-width:160px;max-width:220px;
   pointer-events:none;text-align:left;
+  white-space:normal;
 }
 .ach-tooltip::after{
   content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);
   border:5px solid transparent;border-top-color:rgba(200,170,110,.35);
 }
-.ach-badge:hover .ach-tooltip{display:block;}
+/* 툴팁 표시는 JS로 제어 */
 .ach-tt-icon{font-size:20px;text-align:center;margin-bottom:.3rem;}
 .ach-tt-title{font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:1.5px;color:var(--gold);margin-bottom:.2rem;}
 .ach-tt-desc{font-family:'Noto Sans KR',sans-serif;font-size:10px;color:var(--sub);margin-bottom:.3rem;line-height:1.4;}
@@ -439,6 +446,42 @@ tbody td{padding:.55rem 1rem;font-size:12px;vertical-align:middle;}
 .ach-tt-icon img{width:36px;height:36px;object-fit:contain;border-radius:4px;}
 .ach-card-icon img{width:28px;height:28px;object-fit:contain;border-radius:3px;}
 .ach-trophy-icon img{width:56px;height:56px;object-fit:contain;border-radius:6px;filter:drop-shadow(0 2px 6px rgba(200,170,110,.3));}
+
+/* ── Steam 스타일 업적 전시 뷰 ── */
+.ach-view-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:.75rem;}
+.ach-view-title{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2.5px;color:var(--gold);}
+.ach-view-meta{font-family:'Rajdhani',sans-serif;font-size:11px;color:var(--muted);letter-spacing:.5px;}
+.ach-view-progress{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:1rem 1.25rem;margin-bottom:1.5rem;}
+.ach-view-progress-bar-wrap{height:8px;background:rgba(255,255,255,.07);border-radius:4px;overflow:hidden;margin-top:.5rem;}
+.ach-view-progress-bar{height:100%;background:linear-gradient(90deg,#F59E0B,#FBBF24);border-radius:4px;transition:width .6s ease;}
+.ach-view-filter{display:flex;gap:6px;margin-bottom:1rem;flex-wrap:wrap;}
+.ach-view-filter-btn{padding:4px 12px;border-radius:2px;border:1px solid rgba(255,255,255,.1);background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:.5px;transition:all .15s;}
+.ach-view-filter-btn.active{border-color:rgba(245,158,11,.5);background:rgba(245,158,11,.1);color:#F59E0B;}
+/* Steam 스타일 업적 행 */
+.ach-steam-list{display:flex;flex-direction:column;gap:1px;}
+.ach-steam-row{display:flex;align-items:center;gap:0;background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.06);border-radius:3px;overflow:hidden;transition:background .15s;}
+.ach-steam-row:hover{background:rgba(255,255,255,.05);}
+.ach-steam-row.locked{opacity:.45;filter:grayscale(.7);}
+.ach-steam-icon-wrap{width:64px;height:64px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.2);font-size:32px;}
+.ach-steam-icon-wrap img{width:48px;height:48px;object-fit:contain;border-radius:4px;}
+.ach-steam-body{flex:1;padding:.6rem .9rem;min-width:0;}
+.ach-steam-name{font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:1.5px;color:var(--white);margin-bottom:.15rem;}
+.ach-steam-desc{font-family:'Noto Sans KR',sans-serif;font-size:10px;color:var(--muted);line-height:1.4;margin-bottom:.3rem;}
+.ach-steam-stars{color:#F59E0B;font-size:10px;letter-spacing:1.5px;}
+.ach-steam-right{padding:.6rem 1rem;flex-shrink:0;text-align:right;min-width:130px;}
+.ach-steam-pct{font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;color:var(--white);line-height:1;}
+.ach-steam-pct-label{font-family:'Rajdhani',sans-serif;font-size:9px;color:var(--muted);letter-spacing:.5px;margin-top:2px;}
+.ach-steam-pct-bar-wrap{height:4px;background:rgba(255,255,255,.07);border-radius:2px;margin-top:6px;width:110px;}
+.ach-steam-pct-bar{height:100%;border-radius:2px;background:linear-gradient(90deg,#F59E0B,#FBBF24);}
+.ach-steam-owners{font-family:'Rajdhani',sans-serif;font-size:9px;color:rgba(255,255,255,.3);margin-top:3px;}
+.ach-steam-no-data{text-align:center;padding:3rem 1rem;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:13px;letter-spacing:.5px;}
+@media(max-width:520px){
+  .ach-steam-right{min-width:90px;}
+  .ach-steam-pct{font-size:16px;}
+  .ach-steam-pct-bar-wrap{width:70px;}
+  .ach-steam-icon-wrap{width:52px;height:52px;}
+  .ach-steam-icon-wrap img{width:36px;height:36px;}
+}
 
 /* 업적 이미지 피커 */
 .ach-img-picker-overlay{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:4000;display:none;align-items:center;justify-content:center;}
@@ -792,70 +835,77 @@ tr.has-bg-effect td {
 
   <!-- ── 고정 상단 ── -->
   <div class="sticky-top" id="sticky-top">
-    <div class="page-header" style="position:relative;">
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;width:100%;">
+    <div class="page-header">
+      <!-- 1행: 서버명 + 계정 영역 -->
+      <div class="header-top-row">
         <div>
           <div class="server-name" id="server-name">— 전적</div>
           <div class="member-count">전체 <span id="member-count">—</span>명 / 표시 <span id="filtered-count">—</span>명</div>
         </div>
-        <button id="mobile-admin-btn" onclick="openAdminLogin()"
-          style="display:none;padding:5px 12px;border-radius:3px;border:1px solid rgba(200,170,110,.3);background:rgba(200,170,110,.06);color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;flex-shrink:0;">
-          🔑 관리자
-        </button>
+        <!-- 우측: 디스코드 + 구분선 + 관리자 -->
+        <div class="header-account">
+          <!-- 디스코드 -->
+          <button id="discord-login-btn" onclick="discordHeaderLogin()"
+            style="padding:4px 10px;border-radius:3px;border:1px solid rgba(114,137,218,.4);background:rgba(114,137,218,.08);color:#7289da;font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;">
+            <img src="https://cdn.prod.website-files.com/6257adef93867e50d84d30e2/636e0a69f118df70ad7828d4_icon_clyde_blurple_RGB.png" style="width:11px;height:11px;">Discord
+          </button>
+          <div id="discord-status" style="display:none;align-items:center;gap:5px;">
+            <img id="discord-avatar" src="" style="width:20px;height:20px;border-radius:50%;border:1px solid rgba(114,137,218,.3);">
+            <span id="discord-name" style="font-family:'Rajdhani',sans-serif;font-size:11px;color:#7289da;font-weight:700;"></span>
+            <button id="btn-summoner-link" onclick="openSummonerLinkPopup()" style="display:none;padding:2px 8px;border-radius:2px;border:1px solid rgba(114,137,218,.35);background:rgba(114,137,218,.1);color:#7289da;font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;">🔗 소환사 연동</button>
+            <button id="btn-my-page" onclick="goToMyPage()" style="display:none;padding:2px 8px;border-radius:2px;border:1px solid rgba(10,200,185,.35);background:rgba(10,200,185,.08);color:var(--blue-bright);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;">⭐ 내 페이지</button>
+            <button onclick="discordLogout()" style="padding:2px 7px;border-radius:2px;border:1px solid rgba(114,137,218,.2);background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;">로그아웃</button>
+          </div>
+          <div class="header-sep"></div>
+          <!-- 관리자 -->
+          <div id="admin-status" style="display:none;align-items:center;gap:5px;">
+            <span id="admin-status-text" style="font-family:'Rajdhani',sans-serif;font-size:11px;color:var(--blue);"></span>
+            <button id="btn-userpage-manage" onclick="openUserPageManage()" style="display:none;padding:2px 8px;border-radius:2px;border:1px solid rgba(200,170,110,.35);background:rgba(200,170,110,.08);color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;">🛡️ 유저페이지 관리</button>
+            <button id="btn-achievement-manage" onclick="openAchievementManager()" style="display:none;padding:2px 8px;border-radius:2px;border:1px solid rgba(200,170,110,.35);background:rgba(200,170,110,.08);color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;">🏆 업적 관리</button>
+            <button onclick="statsAdminLogout()" style="padding:2px 7px;border-radius:2px;border:1px solid rgba(255,255,255,.1);background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;">로그아웃</button>
+          </div>
+          <button id="btn-admin-login" onclick="openAdminLogin()"
+            style="padding:4px 10px;border-radius:3px;border:1px solid rgba(200,170,110,.3);background:rgba(200,170,110,.06);color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:.5px;cursor:pointer;display:none;">
+            🔑 관리자 로그인
+          </button>
+          <!-- 모바일 관리자 버튼 -->
+          <button id="mobile-admin-btn" onclick="openAdminLogin()"
+            style="display:none;padding:4px 10px;border-radius:3px;border:1px solid rgba(200,170,110,.3);background:rgba(200,170,110,.06);color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;">
+            🔑 관리자
+          </button>
+        </div>
       </div>
+      <!-- 2행: 검색 + 기능 버튼들 -->
       <div class="header-right">
         <div class="search-wrap">
           <input class="search-input" id="search-input" type="text" placeholder="소환사 검색">
           <span class="s-icon">🔍</span>
         </div>
         <button id="btn-init-rating" onclick="openInitRatingModal()"
-          style="padding:5px 12px;border-radius:3px;border:1px solid rgba(200,170,110,.3);background:rgba(200,170,110,.06);color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:.5px;cursor:pointer;display:none;">
+          style="padding:4px 10px;border-radius:3px;border:1px solid rgba(200,170,110,.3);background:rgba(200,170,110,.06);color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:.5px;cursor:pointer;display:none;">
           👑 초기 레이팅 계산
         </button>
         <button id="btn-weekly-mission" onclick="openWeeklyMissionModal()"
-          style="padding:5px 12px;border-radius:3px;border:1px solid rgba(34,197,94,.3);background:rgba(34,197,94,.06);color:#22C55E;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:.5px;cursor:pointer;display:none;">
+          style="padding:4px 10px;border-radius:3px;border:1px solid rgba(34,197,94,.3);background:rgba(34,197,94,.06);color:#22C55E;font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:.5px;cursor:pointer;display:none;">
           🎯 주간 미션 설정
         </button>
         <button id="btn-cron-test" onclick="runCronTest()"
-          style="padding:5px 12px;border-radius:3px;border:1px solid rgba(200,100,100,.3);background:rgba(200,100,100,.06);color:#e88;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:.5px;cursor:pointer;display:none;">
+          style="padding:4px 10px;border-radius:3px;border:1px solid rgba(200,100,100,.3);background:rgba(200,100,100,.06);color:#e88;font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:.5px;cursor:pointer;display:none;">
           🔄 Cron 수동실행
         </button>
         <button id="btn-nickname-run" onclick="runNicknameCheck()"
-          style="padding:5px 12px;border-radius:3px;border:1px solid rgba(167,139,250,.3);background:rgba(167,139,250,.06);color:#A78BFA;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:.5px;cursor:pointer;display:none;">
+          style="padding:4px 10px;border-radius:3px;border:1px solid rgba(167,139,250,.3);background:rgba(167,139,250,.06);color:#A78BFA;font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:.5px;cursor:pointer;display:none;">
           🏷️ 닉변경 체크
         </button>
         <button id="btn-update-all-peak" onclick="updateAllPeakTiers()"
-          style="padding:5px 12px;border-radius:3px;border:1px solid rgba(10,200,185,.3);background:rgba(10,200,185,.06);color:var(--blue-bright);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:.5px;cursor:pointer;display:none;">
+          style="padding:4px 10px;border-radius:3px;border:1px solid rgba(10,200,185,.3);background:rgba(10,200,185,.06);color:var(--blue-bright);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:.5px;cursor:pointer;display:none;">
           🔄 최고티어 전체 업데이트
         </button>
-        <button id="discord-login-btn" onclick="discordHeaderLogin()"
-          style="padding:5px 10px;border-radius:3px;border:1px solid rgba(114,137,218,.4);background:rgba(114,137,218,.08);color:#7289da;font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;">
-          <img src="https://cdn.prod.website-files.com/6257adef93867e50d84d30e2/636e0a69f118df70ad7828d4_icon_clyde_blurple_RGB.png" style="width:12px;height:12px;">Discord 로그인
-        </button>
-        <div id="discord-status" style="display:none;align-items:center;gap:6px;">
-          <img id="discord-avatar" src="" style="width:22px;height:22px;border-radius:50%;border:1px solid rgba(114,137,218,.3);">
-          <span id="discord-name" style="font-family:'Rajdhani',sans-serif;font-size:11px;color:#7289da;font-weight:700;"></span>
-          <button id="btn-summoner-link" onclick="openSummonerLinkPopup()" style="display:none;padding:3px 10px;border-radius:2px;border:1px solid rgba(114,137,218,.35);background:rgba(114,137,218,.1);color:#7289da;font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;">🔗 소환사 연동</button>
-          <button id="btn-my-page" onclick="goToMyPage()" style="display:none;padding:3px 10px;border-radius:2px;border:1px solid rgba(10,200,185,.35);background:rgba(10,200,185,.08);color:var(--blue-bright);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;">⭐ 내 페이지</button>
-          <button onclick="discordLogout()" style="padding:3px 8px;border-radius:2px;border:1px solid rgba(114,137,218,.2);background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;">로그아웃</button>
-        </div>
-        <button id="discord-login-btn" onclick="discordHeaderLogin()" style="display:none;padding:4px 10px;border-radius:3px;border:1px solid rgba(114,137,218,.4);background:rgba(114,137,218,.08);color:#7289da;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;align-items:center;gap:5px;">
-          <span style="font-size:13px;">🎮</span> Discord 로그인
-        </button>
-        <div id="admin-status" style="display:none;align-items:center;gap:6px;">
-          <span id="admin-status-text" style="font-family:'Rajdhani',sans-serif;font-size:11px;color:var(--blue);"></span>
-          <button id="btn-userpage-manage" onclick="openUserPageManage()" style="display:none;padding:3px 10px;border-radius:2px;border:1px solid rgba(200,170,110,.35);background:rgba(200,170,110,.08);color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;">🛡️ 유저페이지 관리</button>
-          <button id="btn-achievement-manage" onclick="openAchievementManager()" style="display:none;padding:3px 10px;border-radius:2px;border:1px solid rgba(200,170,110,.35);background:rgba(200,170,110,.08);color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;">🏆 업적 관리</button>
-          <button onclick="statsAdminLogout()" style="padding:3px 8px;border-radius:2px;border:1px solid rgba(255,255,255,.1);background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;">로그아웃</button>
-        </div>
-        <button id="btn-admin-login" onclick="openAdminLogin()"
-          style="padding:5px 12px;border-radius:3px;border:1px solid rgba(200,170,110,.3);background:rgba(200,170,110,.06);color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:.5px;cursor:pointer;display:none;">
-          🔑 관리자 로그인
-        </button>
-        <button onclick="window.open('/guide','_blank')" style="padding:5px 12px;border-radius:3px;border:1px solid rgba(10,200,185,.35);background:rgba(10,200,185,.08);color:#0AC8B9;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1.5px;cursor:pointer;white-space:nowrap;transition:all .15s;" onmouseover="this.style.background='rgba(10,200,185,.18)';this.style.borderColor='rgba(10,200,185,.6)'" onmouseout="this.style.background='rgba(10,200,185,.08)';this.style.borderColor='rgba(10,200,185,.35)'">📖 가이드</button>
+        <button onclick="openAchievementsPopup()" style="padding:4px 10px;border-radius:3px;border:1px solid rgba(245,158,11,.35);background:rgba(245,158,11,.08);color:#F59E0B;font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:.5px;cursor:pointer;white-space:nowrap;transition:all .15s;" onmouseover="this.style.background='rgba(245,158,11,.18)';this.style.borderColor='rgba(245,158,11,.6)'" onmouseout="this.style.background='rgba(245,158,11,.08)';this.style.borderColor='rgba(245,158,11,.35)'">🏆 업적 목록</button>
+        <button onclick="window.open('/guide','_blank')" style="padding:4px 10px;border-radius:3px;border:1px solid rgba(10,200,185,.35);background:rgba(10,200,185,.08);color:#0AC8B9;font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:.5px;cursor:pointer;white-space:nowrap;transition:all .15s;" onmouseover="this.style.background='rgba(10,200,185,.18)';this.style.borderColor='rgba(10,200,185,.6)'" onmouseout="this.style.background='rgba(10,200,185,.08)';this.style.borderColor='rgba(10,200,185,.35)'">📖 가이드</button>
         <button class="btn-ranking" id="btn-ranking" onclick="goRanking()">🏆 주간 랭킹</button>
         <button class="btn-refresh" id="btn-refresh"><span class="ri">↻</span> 새로고침</button>
-    <span id="next-update-time" style="font-family:'Rajdhani',sans-serif;font-size:10px;color:var(--muted);margin-left:8px;white-space:nowrap;"></span>
+        <span id="next-update-time" style="font-family:'Rajdhani',sans-serif;font-size:10px;color:var(--muted);white-space:nowrap;"></span>
       </div>
     </div>
 
@@ -1868,7 +1918,6 @@ async function loadAllPeakTiers() {
     try { localStorage.setItem(CACHE_KEY, JSON.stringify({ data: json.data, ts: Date.now() })); } catch(e3) {}
     renderPage();
   } catch(e) {
-    console.error('[peakTier]', e.message);
   }
 }
 
@@ -1952,6 +2001,39 @@ async function _cachedFetch(key, ttlSec, fetchFn) {
 </div>
 
 <!-- ── 업적 관리 팝업 ── -->
+<!-- ── 업적 목록 팝업 ── -->
+<div id="ach-list-popup" onclick="if(event.target===this)closeAchievementsPopup()" style="position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:2600;display:none;align-items:flex-start;justify-content:center;padding:1.5rem 1rem;overflow-y:auto;">
+  <div style="background:#0D1620;border:1px solid rgba(255,255,255,.1);border-radius:8px;width:100%;max-width:780px;overflow:hidden;flex-shrink:0;">
+    <div style="display:flex;align-items:center;gap:.75rem;padding:.9rem 1.25rem;background:rgba(245,158,11,.06);border-bottom:1px solid rgba(255,255,255,.07);">
+      <span style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;color:#F59E0B;flex-shrink:0;">🏆 업적 목록</span>
+      <button onclick="closeAchievementsPopup()" style="margin-left:auto;flex-shrink:0;background:transparent;border:1px solid rgba(255,255,255,.1);border-radius:50%;width:26px;height:26px;color:var(--muted);cursor:pointer;font-size:13px;">✕</button>
+    </div>
+    <div style="padding:.65rem 1.25rem .5rem;border-bottom:1px solid rgba(255,255,255,.06);display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;">
+      <input id="ach-search" type="text" placeholder="업적 검색..." oninput="_renderAchievementsPopup()" style="flex:1;min-width:130px;padding:5px 9px;border-radius:3px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:#e5e7eb;font-family:'Noto Sans KR',sans-serif;font-size:12px;outline:none;">
+      <select id="ach-sort" onchange="_renderAchievementsPopup()" style="padding:5px 8px;border-radius:3px;border:1px solid rgba(255,255,255,.12);background:#0d1620;color:#e5e7eb;font-family:'Noto Sans KR',sans-serif;font-size:11px;cursor:pointer;outline:none;">
+        <option value="stars">★ 별점순</option>
+        <option value="pct_desc">보유율 높은순</option>
+        <option value="pct_asc">보유율 낮은순</option>
+        <option value="name_asc">이름 오름차순</option>
+        <option value="name_desc">이름 내림차순</option>
+      </select>
+      <div id="ach-list-filter" style="display:flex;gap:5px;flex-wrap:wrap;"></div>
+    </div>
+    <div style="padding:.75rem 1.25rem .5rem;">
+      <div id="ach-list-progress-wrap" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:4px;padding:.6rem .9rem;margin-bottom:.75rem;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.35rem;">
+          <span style="font-family:'Rajdhani',sans-serif;font-size:10px;color:var(--muted);letter-spacing:.5px;">멤버 업적 참여율</span>
+          <span id="ach-list-progress-label" style="font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;color:#F59E0B;"></span>
+        </div>
+        <div style="height:6px;background:rgba(255,255,255,.07);border-radius:3px;overflow:hidden;">
+          <div id="ach-list-progress-bar" style="height:100%;background:linear-gradient(90deg,#F59E0B,#FBBF24);border-radius:3px;width:0%;transition:width .5s ease;"></div>
+        </div>
+      </div>
+    </div>
+    <div id="ach-list-body" style="padding:0 1.25rem 1.25rem;display:flex;flex-direction:column;gap:1px;max-height:70vh;overflow-y:auto;"></div>
+  </div>
+</div>
+
 <div class="ach-mgr-overlay" id="ach-mgr-overlay" onclick="if(event.target===this)closeAchievementManager()">
   <div class="ach-mgr-box">
     <div class="ach-mgr-head">
@@ -2405,8 +2487,7 @@ async function saveToFirebase(puuId, mode, analysis, matchIds, memberData) {
       body: JSON.stringify(saveBody)
     });
     const json = await res.json();
-    console.log('[saveToFirebase] peakTier:', payload.peakTier, 'result:', json.ok);
-  } catch(e) { console.error('[saveToFirebase] 오류:', e.message); }
+  } catch(e) { }
 }
 
 function setQueueMode(mode) {
@@ -2923,7 +3004,6 @@ function analyzeMatches(matches, myPuuId) {
   // 커뮤니티 멤버 puuId Set (필터링용)
   const communityPuuIds = new Set(allData.map(function(m){ return m.puu_id; }));
 
-  console.log('[analyze] 전체 matches:', matches.length, 'communityPuuIds:', communityPuuIds.size);
   const matchList=[], allies={}, enemies={}, laneEnemies={}, enemyChamps={};
   for (const matchData of matches) {
     if (!matchData||!matchData.participants_list) continue;
@@ -3850,7 +3930,7 @@ async function loadAchievementList() {
       _achievementList = [];
     }
     _achListLoaded = true;
-  } catch(e) { console.error('[ach] load list error', e); }
+  } catch(e) { }
 }
 
 // ── 멤버별 업적 목록 로드 ──
@@ -3867,7 +3947,7 @@ async function loadMemberAchievementsAll() {
     } else {
       _memberAchievements = {};
     }
-  } catch(e) { console.error('[ach] load member ach error', e); }
+  } catch(e) { }
 }
 
 // ── 티어 아이콘 배지: puuId의 최고 중요도 최신 업적 ──
@@ -3911,18 +3991,23 @@ function renderAchIconHtml(ach, size) {
 }
 
 // ── 테이블 소환사명 옆 업적 뱃지 렌더 ──
+// 툴팁 내용을 data-* 속성에 저장하고, 싱글 공유 툴팁 엘리먼트로 표시
 function renderAchBadge(puuId) {
   var ach = getTopAchievement(puuId);
   if (!ach) return '';
   var starsHtml = _renderStarsShort(ach.stars);
-  return '<span class="ach-badge" title="">' +
+  var iconHtml = renderAchIconHtml(ach, 'tooltip');
+  var title = esc(ach.title || '');
+  var desc = ach.desc ? esc(ach.desc) : '';
+  // data 속성에 base64로 인코딩해서 저장 (특수문자 안전)
+  var tipData = btoa(unescape(encodeURIComponent(JSON.stringify({
+    icon: iconHtml,
+    title: ach.title || '',
+    desc: ach.desc || '',
+    stars: starsHtml
+  }))));
+  return '<span class="ach-badge" data-tip="' + tipData + '">' +
     renderAchIconHtml(ach, 'badge') +
-    '<div class="ach-tooltip">' +
-      '<div class="ach-tt-icon">' + renderAchIconHtml(ach, 'tooltip') + '</div>' +
-      '<div class="ach-tt-title">' + esc(ach.title || '') + '</div>' +
-      (ach.desc ? '<div class="ach-tt-desc">' + esc(ach.desc) + '</div>' : '') +
-      '<div class="ach-tt-stars">' + starsHtml + '</div>' +
-    '</div>' +
   '</span>';
 }
 
@@ -4739,7 +4824,6 @@ async function autoCalcInitialRatings() {
   // masterAuth 없으면 실행 불가
   if (!_masterAuthed || !_masterAuthId || !_masterAuthPw) return;
 
-  console.log('[autoRating] 자동 초기 레이팅 계산 시작');
   var ratingsMap = {};
   allData.forEach(function(member) {
     try {
@@ -4766,10 +4850,9 @@ async function autoCalcInitialRatings() {
     var j = await res.json();
     if (j.ok) {
       localStorage.setItem(_RATING_LS_KEY, Date.now().toString());
-      console.log('[autoRating] 저장 완료', Object.keys(ratingsMap).length, '명');
       renderPage();
     }
-  } catch(e) { console.warn('[autoRating] 실패:', e.message); }
+  } catch(e) { }
 }
 
 function scheduleAutoRating() {
@@ -4897,6 +4980,229 @@ function switchMainTab(tab) {
       memberCompareViewEl.style.display = '';
     }
   }
+}
+
+// ── 업적 목록 팝업 ──
+var _achViewFilter = 'all';
+var _achMyFilter = 'all'; // 'all' | 'mine' | 'not_mine' (로그인+멤버연결 시 활성화)
+
+function openAchievementsPopup() {
+  var popup = document.getElementById('ach-list-popup');
+  if (!popup) return;
+  // 열 때 검색어/필터 초기화
+  var searchInput = document.getElementById('ach-search');
+  if (searchInput) searchInput.value = '';
+  var sortEl = document.getElementById('ach-sort');
+  if (sortEl) sortEl.value = 'stars';
+  _achViewFilter = 'all';
+  _achMyFilter = 'all';
+  popup.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+  _renderAchievementsPopup();
+}
+
+function closeAchievementsPopup() {
+  var popup = document.getElementById('ach-list-popup');
+  if (popup) popup.style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+function _setAchFilter(f) {
+  _achViewFilter = f;
+  _renderAchievementsPopup();
+}
+
+function _setAchMyFilter(f) {
+  _achMyFilter = f;
+  _renderAchievementsPopup();
+}
+
+function _getMyPuuId() {
+  // 로그인된 경우 allData에서 매칭 시도
+  if (!_statsAdminToken || !_statsAdminId) return null;
+  if (!allData || !allData.length) return null;
+  var m = allData.find(function(mm) {
+    return (mm.riot_name && mm.riot_name === _statsAdminId) ||
+           (mm.name && mm.name === _statsAdminId) ||
+           (mm.nickname && mm.nickname === _statsAdminId);
+  });
+  return m ? m.puu_id : null;
+}
+
+function _renderAchievementsPopup() {
+  var body = document.getElementById('ach-list-body');
+  var filterEl = document.getElementById('ach-list-filter');
+  var progressLabel = document.getElementById('ach-list-progress-label');
+  var progressBar = document.getElementById('ach-list-progress-bar');
+  if (!body) return;
+
+  var achList = _achievementList || [];
+  if (!achList.length) {
+    body.innerHTML = '<div class="ach-steam-no-data">업적 데이터를 불러오는 중이거나<br>등록된 업적이 없습니다.</div>';
+    return;
+  }
+
+  var totalMembers = (allData && allData.length) || 0;
+
+  // 업적별 보유자 수
+  var achOwnerCount = {};
+  if (_memberAchievements) {
+    Object.values(_memberAchievements).forEach(function(grants) {
+      if (!grants || typeof grants !== 'object') return;
+      Object.keys(grants).forEach(function(achId) {
+        achOwnerCount[achId] = (achOwnerCount[achId] || 0) + 1;
+      });
+    });
+  }
+
+  // 전체 참여율
+  var membersWithAny = Object.keys(_memberAchievements || {}).filter(function(p) {
+    return _memberAchievements[p] && Object.keys(_memberAchievements[p]).length > 0;
+  }).length;
+  var overallPct = totalMembers > 0 ? Math.round((membersWithAny / totalMembers) * 100) : 0;
+  if (progressLabel) progressLabel.textContent = membersWithAny + ' / ' + (totalMembers || '?') + '명 (' + overallPct + '%)';
+  if (progressBar) progressBar.style.width = overallPct + '%';
+
+  // 검색어
+  var searchInput = document.getElementById('ach-search');
+  var searchQ = searchInput ? searchInput.value.trim().toLowerCase() : '';
+
+  // 정렬 모드
+  var sortEl = document.getElementById('ach-sort');
+  var sortMode = sortEl ? sortEl.value : 'stars';
+
+  // 정렬
+  var sorted = achList.slice().sort(function(a, b) {
+    if (sortMode === 'pct_desc') {
+      var pA = totalMembers > 0 ? (achOwnerCount[a.id] || 0) / totalMembers : 0;
+      var pB = totalMembers > 0 ? (achOwnerCount[b.id] || 0) / totalMembers : 0;
+      return pB - pA;
+    } else if (sortMode === 'pct_asc') {
+      var pA = totalMembers > 0 ? (achOwnerCount[a.id] || 0) / totalMembers : 0;
+      var pB = totalMembers > 0 ? (achOwnerCount[b.id] || 0) / totalMembers : 0;
+      return pA - pB;
+    } else if (sortMode === 'name_asc') {
+      return (a.title || a.id || '').localeCompare(b.title || b.id || '', 'ko');
+    } else if (sortMode === 'name_desc') {
+      return (b.title || b.id || '').localeCompare(a.title || a.id || '', 'ko');
+    } else {
+      // stars (기본): 별점 내림차순 → 보유율 내림차순
+      if ((b.stars || 0) !== (a.stars || 0)) return (b.stars || 0) - (a.stars || 0);
+      var pA = totalMembers > 0 ? (achOwnerCount[a.id] || 0) / totalMembers : 0;
+      var pB = totalMembers > 0 ? (achOwnerCount[b.id] || 0) / totalMembers : 0;
+      return pB - pA;
+    }
+  });
+
+  // 내 puuId (로그인+멤버연결 시)
+  var myPuuId = _getMyPuuId();
+  var myGrants = myPuuId && _memberAchievements && _memberAchievements[myPuuId] ? _memberAchievements[myPuuId] : null;
+
+  // 필터 버튼 렌더링
+  if (filterEl) {
+    var cntAll = sorted.length;
+    var cntUnlocked = sorted.filter(function(a){return(achOwnerCount[a.id]||0)>0;}).length;
+    var cntLocked = cntAll - cntUnlocked;
+    var communityBtns =
+      '<button class="ach-view-filter-btn' + (_achViewFilter==='all'?' active':'') + '" onclick="_setAchFilter(\'all\')">전체 (' + cntAll + ')</button>' +
+      '<button class="ach-view-filter-btn' + (_achViewFilter==='unlocked'?' active':'') + '" onclick="_setAchFilter(\'unlocked\')">보유자 있음 (' + cntUnlocked + ')</button>' +
+      '<button class="ach-view-filter-btn' + (_achViewFilter==='locked'?' active':'') + '" onclick="_setAchFilter(\'locked\')">미보유 (' + cntLocked + ')</button>';
+
+    var myBtns = '';
+    if (myPuuId) {
+      var cntMine = sorted.filter(function(a){return myGrants && myGrants[a.id];}).length;
+      var cntNotMine = cntAll - cntMine;
+      myBtns =
+        '<span style="color:rgba(255,255,255,.18);font-size:11px;align-self:center;margin:0 2px;">|</span>' +
+        '<button class="ach-view-filter-btn' + (_achMyFilter==='mine'?' active':'') + '" onclick="_setAchMyFilter(\'mine\')" style="border-color:rgba(74,222,128,.3);' + (_achMyFilter==='mine'?'background:rgba(74,222,128,.15);color:#4ADE80;':'') + '">내 보유 (' + cntMine + ')</button>' +
+        '<button class="ach-view-filter-btn' + (_achMyFilter==='not_mine'?' active':'') + '" onclick="_setAchMyFilter(\'not_mine\')" style="border-color:rgba(248,113,113,.3);' + (_achMyFilter==='not_mine'?'background:rgba(248,113,113,.15);color:#F87171;':'') + '">미보유 (' + cntNotMine + ')</button>' +
+        (_achMyFilter !== 'all' ? '<button class="ach-view-filter-btn" onclick="_setAchMyFilter(\'all\')" style="opacity:.6;">✕ 초기화</button>' : '');
+    }
+    filterEl.innerHTML = communityBtns + myBtns;
+  }
+
+  // 커뮤니티 필터 적용
+  var filtered = sorted;
+  if (_achViewFilter === 'unlocked') filtered = filtered.filter(function(a){return(achOwnerCount[a.id]||0)>0;});
+  else if (_achViewFilter === 'locked') filtered = filtered.filter(function(a){return!(achOwnerCount[a.id]||0);});
+
+  // 개인 필터 적용
+  if (myPuuId && _achMyFilter === 'mine') {
+    filtered = filtered.filter(function(a){return myGrants && !!myGrants[a.id];});
+  } else if (myPuuId && _achMyFilter === 'not_mine') {
+    filtered = filtered.filter(function(a){return !myGrants || !myGrants[a.id];});
+  }
+
+  // 검색 필터 적용
+  if (searchQ) {
+    filtered = filtered.filter(function(a) {
+      var title = (a.title || a.id || '').toLowerCase();
+      var desc = (a.desc || '').toLowerCase();
+      return title.indexOf(searchQ) !== -1 || desc.indexOf(searchQ) !== -1;
+    });
+  }
+
+  if (!filtered.length) {
+    body.innerHTML = '<div class="ach-steam-no-data">해당 조건에 업적이 없습니다.</div>';
+    return;
+  }
+
+  body.innerHTML = filtered.map(function(ach) {
+    var cnt = achOwnerCount[ach.id] || 0;
+    var pct = totalMembers > 0 ? (cnt / totalMembers * 100) : 0;
+    var pctDisp = (pct < 1 && pct > 0) ? pct.toFixed(1) : Math.round(pct);
+    var starsHtml = '★'.repeat(ach.stars || 0) + '☆'.repeat(Math.max(0, 10 - (ach.stars || 0)));
+    var iconHtml = ach.imageUrl
+      ? '<img src="' + esc(ach.imageUrl) + '" alt="" loading="lazy" style="width:44px;height:44px;object-fit:contain;border-radius:4px;">'
+      : '<span style="font-size:30px;line-height:1;">' + esc(ach.icon || '🏆') + '</span>';
+
+    // 보유자 이름 최대 3명
+    var ownerNames = [];
+    if (_memberAchievements && cnt > 0) {
+      Object.entries(_memberAchievements).forEach(function(e) {
+        if (ownerNames.length >= 3) return;
+        if (e[1] && e[1][ach.id]) {
+          var m = allData && allData.find(function(mm){ return mm.puu_id === e[0]; });
+          if (m) ownerNames.push(m.riot_name || m.game_name || m.nickname || m.name || '?');
+        }
+      });
+    }
+    var ownersText = cnt > 0
+      ? ownerNames.join(', ') + (cnt > 3 ? ' 외 ' + (cnt - 3) + '명' : '')
+      : '아직 아무도 없음';
+
+    // 희귀도 색상
+    var pctColor = pct >= 50 ? '#9CA3AF' : pct >= 20 ? '#60A5FA' : pct >= 5 ? '#A78BFA' : '#F59E0B';
+    var isLocked = cnt === 0;
+
+    // 내 보유 여부 배지
+    var myBadge = '';
+    if (myPuuId) {
+      if (myGrants && myGrants[ach.id]) {
+        var grantedAt = myGrants[ach.id].grantedAt ? new Date(myGrants[ach.id].grantedAt).toLocaleDateString('ko-KR', {month:'numeric',day:'numeric'}) : '';
+        myBadge = '<span style="display:inline-block;margin-top:3px;padding:1px 6px;border-radius:2px;background:rgba(74,222,128,.12);border:1px solid rgba(74,222,128,.3);color:#4ADE80;font-family:\'Noto Sans KR\',sans-serif;font-size:9px;">✓ 보유' + (grantedAt ? ' · ' + grantedAt : '') + '</span>';
+      } else {
+        myBadge = '<span style="display:inline-block;margin-top:3px;padding:1px 6px;border-radius:2px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.3);font-family:\'Noto Sans KR\',sans-serif;font-size:9px;">미보유</span>';
+      }
+    }
+
+    return '<div class="ach-steam-row' + (isLocked ? ' locked' : '') + '">' +
+      '<div class="ach-steam-icon-wrap">' + iconHtml + '</div>' +
+      '<div class="ach-steam-body">' +
+        '<div class="ach-steam-name">' + esc(ach.title || ach.id) + '</div>' +
+        (ach.desc ? '<div class="ach-steam-desc">' + esc(ach.desc) + '</div>' : '') +
+        '<div class="ach-steam-stars">' + starsHtml + '</div>' +
+        '<div style="font-family:\'Noto Sans KR\',sans-serif;font-size:9px;color:rgba(255,255,255,.28);margin-top:3px;">' + esc(ownersText) + '</div>' +
+        myBadge +
+      '</div>' +
+      '<div class="ach-steam-right">' +
+        '<div class="ach-steam-pct" style="color:' + pctColor + ';">' + pctDisp + '%</div>' +
+        '<div class="ach-steam-pct-label">보유율</div>' +
+        '<div class="ach-steam-pct-bar-wrap"><div class="ach-steam-pct-bar" style="width:' + Math.min(pct,100) + '%;background:' + pctColor + ';opacity:.85;"></div></div>' +
+        '<div class="ach-steam-owners">' + cnt + ' / ' + (totalMembers || '?') + '명</div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
 }
 
 // ── 레이팅 변화 랭킹 조회 ──
@@ -5369,6 +5675,61 @@ document.addEventListener('DOMContentLoaded', function() {
     if (e.target === overlay) closeSummonerLinkPopup();
   });
 });
+
+// ── 업적 뱃지 싱글 툴팁 ──
+(function() {
+  var tip = document.createElement('div');
+  tip.className = 'ach-tooltip';
+  tip.style.display = 'none';
+  document.body.appendChild(tip);
+
+  document.addEventListener('mouseover', function(e) {
+    var badge = e.target.closest('.ach-badge[data-tip]');
+    if (!badge) return;
+    var data;
+    try { data = JSON.parse(decodeURIComponent(escape(atob(badge.dataset.tip)))); } catch(err) { return; }
+    tip.innerHTML =
+      '<div class="ach-tt-icon">' + data.icon + '</div>' +
+      '<div class="ach-tt-title">' + esc(data.title) + '</div>' +
+      (data.desc ? '<div class="ach-tt-desc">' + esc(data.desc) + '</div>' : '') +
+      '<div class="ach-tt-stars">' + data.stars + '</div>';
+
+    // 먼저 숨긴 상태로 body에 붙여 크기 측정
+    tip.style.visibility = 'hidden';
+    tip.style.display = 'block';
+    tip.style.top = '0px';
+    tip.style.left = '0px';
+
+    var tw = tip.offsetWidth;
+    var th = tip.offsetHeight;
+    var rect = badge.getBoundingClientRect();
+    var gap = 6;
+    var cx = rect.left + rect.width / 2;
+
+    // 좌우 위치
+    var left = cx - tw / 2;
+    if (left < 8) left = 8;
+    if (left + tw > window.innerWidth - 8) left = window.innerWidth - tw - 8;
+
+    // 위/아래 결정
+    var top;
+    if (rect.top - th - gap >= 8) {
+      top = rect.top - th - gap;  // 위로
+    } else {
+      top = rect.bottom + gap;    // 아래로
+    }
+
+    tip.style.left = left + 'px';
+    tip.style.top = top + 'px';
+    tip.style.visibility = 'visible';
+  });
+
+  document.addEventListener('mouseout', function(e) {
+    var badge = e.target.closest('.ach-badge[data-tip]');
+    if (!badge) return;
+    tip.style.display = 'none';
+  });
+})();
 
 function slSearch() {
   var q = (document.getElementById('sl-search').value || '').toLowerCase().trim();
@@ -7012,7 +7373,6 @@ async function loadScoutAnalysis(idx, forceUpdate) {
       return CUSTOM_IDS.indexOf(qid) >= 0;
     });
 
-    console.log('[scout] total:', allMatches.length, 'ranked:', rankedMatches.length, 'custom:', customMatches.length);
 
     _scoutData[puuId] = {
       internalData, rankedMatches, customMatches, soloTier,
@@ -7652,7 +8012,7 @@ async function loadStatsPublic() {
         applyAll();
       }
     }
-  } catch(e) { console.error('[statsPublic] error:', e); }
+  } catch(e) { }
 }
 
 // ── 페이지 초기화 ──
@@ -8308,11 +8668,9 @@ async function saveBgEffect(puuId, effect) {
 
 function applyBgEffects() {
   var rows = document.querySelectorAll('tr[data-puu]');
-  console.log('[bgEffect] rows:', rows.length, 'effects:', JSON.stringify(_bgEffects));
   rows.forEach(function(tr) {
     var puu = tr.getAttribute('data-puu');
     var effect = puu && _bgEffects[puu];
-    if (effect) console.log('[bgEffect] applying', effect, 'to', puu.slice(0,10), 'offsetWidth:', tr.offsetWidth);
     // 기존 캔버스 제거
     var old = tr.querySelector('.bg-effect-canvas');
     if (old) { old.remove(); }
@@ -9449,7 +9807,7 @@ async function loadSeasonStats(seasonId) {
     _seasonData[seasonId] = computed;
     try { localStorage.setItem(CACHE_KEY, JSON.stringify({ data: computed, ts: Date.now() })); } catch(e2) {}
     renderSeasonPage(seasonId);
-  } catch(e) { console.error('[season]', e); }
+  } catch(e) { }
 }
 
 // 시즌 통계 계산 (현재값 - 스냅샷 or final 그대로)
