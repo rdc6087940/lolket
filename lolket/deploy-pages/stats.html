@@ -488,7 +488,7 @@ tbody td{padding:.55rem 1rem;font-size:12px;vertical-align:middle;}
 .ach-img-picker-overlay.open{display:flex;}
 .ach-img-picker-box{background:#0D1620;border:1px solid rgba(255,255,255,.1);border-radius:8px;width:600px;max-width:95vw;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;}
 .ach-img-picker-head{display:flex;align-items:center;justify-content:space-between;padding:.75rem 1rem;background:rgba(200,170,110,.06);border-bottom:1px solid rgba(255,255,255,.07);flex-shrink:0;}
-.ach-img-picker-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;padding:1rem;overflow-y:auto;}
+.ach-img-picker-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;padding:1rem;overflow-y:auto;flex:1;min-height:0;}
 .ach-img-item{display:flex;flex-direction:column;align-items:center;gap:6px;padding:8px 6px;border-radius:6px;border:1px solid rgba(255,255,255,.07);cursor:pointer;transition:all .12s;}
 .ach-img-item:hover{border-color:rgba(200,170,110,.4);background:rgba(200,170,110,.06);}
 .ach-img-item.selected{border-color:var(--gold);background:rgba(200,170,110,.12);}
@@ -563,7 +563,7 @@ tbody td{padding:.55rem 1rem;font-size:12px;vertical-align:middle;}
 }
 
 @media(max-width:768px){
-  #btn-init-rating, #btn-cron-test, #discord-login-btn, #btn-master-login, #btn-refresh { display:none!important; }
+  #btn-init-rating, #btn-cron-test, #btn-deeplol-api-test, #discord-login-btn, #btn-master-login, #btn-refresh { display:none!important; }
   #mobile-admin-btn { display:flex!important; }
   .header-right { flex-wrap:wrap; gap:4px; }
   .page-header { flex-direction:column; gap:.25rem; }
@@ -892,6 +892,10 @@ tr.has-bg-effect td {
         <button id="btn-cron-test" onclick="runCronTest()"
           style="padding:4px 10px;border-radius:3px;border:1px solid rgba(200,100,100,.3);background:rgba(200,100,100,.06);color:#e88;font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:.5px;cursor:pointer;display:none;">
           🔄 Cron 수동실행
+        </button>
+        <button id="btn-deeplol-api-test" onclick="runDeeplolApiTest()"
+          style="padding:4px 10px;border-radius:3px;border:1px solid rgba(100,200,100,.3);background:rgba(100,200,100,.06);color:#8e8;font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:.5px;cursor:pointer;display:none;">
+          🔍 딥롤 API 테스트
         </button>
         <button id="btn-nickname-run" onclick="runNicknameCheck()"
           style="padding:4px 10px;border-radius:3px;border:1px solid rgba(167,139,250,.3);background:rgba(167,139,250,.06);color:#A78BFA;font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:.5px;cursor:pointer;display:none;">
@@ -1577,7 +1581,7 @@ async function loadData(){
       if (adminLoginBtn) adminLoginBtn.style.display = 'none';
       // 마스터 전용 버튼 복원
       if (_statsAdminRole === 'master') {
-        ['btn-weekly-mission','btn-nickname-run','btn-init-rating','btn-cron-test','btn-update-all-peak'].forEach(function(bid) {
+        ['btn-weekly-mission','btn-nickname-run','btn-init-rating','btn-cron-test','btn-deeplol-api-test','btn-update-all-peak'].forEach(function(bid) {
           var el = document.getElementById(bid);
           if (el) el.style.display = '';
         });
@@ -1601,7 +1605,7 @@ async function loadData(){
       var saText = document.getElementById('admin-status-text');
       if (saText) saText.textContent = (_statsAdminRole==='master'?'👑 마스터':'🔑 관리자')+' '+_statsAdminId;
       if (_statsAdminRole === 'master') {
-        ['btn-weekly-mission','btn-nickname-run','btn-init-rating','btn-cron-test','btn-update-all-peak'].forEach(function(bid) {
+        ['btn-weekly-mission','btn-nickname-run','btn-init-rating','btn-cron-test','btn-deeplol-api-test','btn-update-all-peak'].forEach(function(bid) {
           var el = document.getElementById(bid); if (el) el.style.display = '';
         });
       }
@@ -2064,7 +2068,7 @@ async function _cachedFetch(key, ttlSec, fetchFn) {
       <input id="ach-search" type="text" placeholder="업적 검색..." oninput="_renderAchievementsPopup()" style="flex:1;min-width:130px;padding:5px 9px;border-radius:3px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:#e5e7eb;font-family:'Noto Sans KR',sans-serif;font-size:12px;outline:none;">
       <select id="ach-sort" onchange="_renderAchievementsPopup()" style="padding:5px 8px;border-radius:3px;border:1px solid rgba(255,255,255,.12);background:#0d1620;color:#e5e7eb;font-family:'Noto Sans KR',sans-serif;font-size:11px;cursor:pointer;outline:none;">
         <option value="stars">★ 별점 높은순</option>
-        <option value="stars_asc">★ 별점 낮은순</option>
+        <option value="stars_asc" selected>★ 별점 낮은순</option>
         <option value="pct_desc">보유율 높은순</option>
         <option value="pct_asc">보유율 낮은순</option>
         <option value="name_asc">이름 오름차순</option>
@@ -3468,7 +3472,7 @@ async function doMasterAuth() {
     sessionStorage.setItem('master_token', _masterSessionToken);
     sessionStorage.setItem('master_id', id);
     sessionStorage.setItem('master_pw', pw);
-    ['btn-weekly-mission','btn-nickname-run','btn-init-rating','btn-cron-test','btn-update-all-peak'].forEach(function(bid) {
+    ['btn-weekly-mission','btn-nickname-run','btn-init-rating','btn-cron-test','btn-deeplol-api-test','btn-update-all-peak'].forEach(function(bid) {
       var el = document.getElementById(bid);
       if (el) el.style.display = '';
     });
@@ -3795,7 +3799,7 @@ function statsAdminLogout() {
   document.getElementById('btn-admin-login').style.display = '';
   document.getElementById('admin-status').style.display = 'none';
   // 마스터/관리자 전용 버튼 숨기기
-  ['btn-weekly-mission','btn-nickname-run','btn-init-rating','btn-cron-test','btn-update-all-peak','btn-userpage-manage','btn-achievement-manage'].forEach(function(id) {
+  ['btn-weekly-mission','btn-nickname-run','btn-init-rating','btn-cron-test','btn-deeplol-api-test','btn-update-all-peak','btn-userpage-manage','btn-achievement-manage'].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
@@ -5546,7 +5550,7 @@ function openAchievementsPopup() {
   var searchInput = document.getElementById('ach-search');
   if (searchInput) searchInput.value = '';
   var sortEl = document.getElementById('ach-sort');
-  if (sortEl) sortEl.value = 'stars';
+  if (sortEl) sortEl.value = 'stars_asc';
   _achViewFilter = 'all';
   _achMyFilter = 'all';
   // rejected/approved된 pending 상태 클리어 후 렌더 갱신
@@ -5957,7 +5961,7 @@ async function runCronTest() {
     const res = await fetch(WORKER_URL + '/cron-rating-test', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token: _statsAdminToken || _masterSessionToken, communityId: COMMUNITY_ID, serverId: SERVER_ID })
+      body: JSON.stringify({ token: _statsAdminToken || _masterSessionToken, adminId: _masterAuthId, adminPw: _masterAuthPw, communityId: COMMUNITY_ID, serverId: SERVER_ID })
     });
     const j = await res.json();
     if (j.ok) {
@@ -5967,6 +5971,29 @@ async function runCronTest() {
     }
   } catch(e) {
     alert('오류: ' + e.message);
+  }
+}
+
+async function runDeeplolApiTest() {
+  if (!_masterAuthed) { openInitRatingModal(); return; }
+  if (!SERVER_ID) { alert('SERVER_ID가 없습니다.'); return; }
+  const btn = document.getElementById('btn-deeplol-api-test');
+  if (btn) { btn.textContent = '⏳ 테스트 중...'; btn.disabled = true; }
+  try {
+    const res = await fetch(`https://b2c-api-cdn.deeplol.gg/tournament/server_info?server_id=${SERVER_ID}`);
+    const status = res.status;
+    if (res.ok) {
+      const j = await res.json();
+      const cnt = (j.tournament_stats && j.tournament_stats.tournament_stats_all_list) ? j.tournament_stats.tournament_stats_all_list.length : 0;
+      alert('✅ 성공! 상태: ' + status + '\n멤버 수: ' + cnt + '명');
+    } else {
+      const text = await res.text().catch(() => '');
+      alert('❌ 실패! 상태: ' + status + '\n응답: ' + text.slice(0, 200));
+    }
+  } catch(e) {
+    alert('❌ 오류: ' + e.message);
+  } finally {
+    if (btn) { btn.textContent = '🔍 딥롤 API 테스트'; btn.disabled = false; }
   }
 }
 

@@ -4638,6 +4638,7 @@ async function _verifyPw(input, stored) {
 let match=null;
 let members=[];
 let searchResult=null;
+let _discordLinkMap = {}; // riotName#riotTag(소문자) → discordId 매핑 캐시
 let selectedMainLane=null;
 let selectedSubLanes=new Set();
 const TIER_COLORS={
@@ -4748,6 +4749,7 @@ enterMatchMode('screen-1');
 updateMatchBar();
 renderMembers(); updateProgress(); updateConditions();
 toast('내전이 생성되었습니다', 'ok');
+loadDiscordLinkMap();
 startStatusTimer();
 }
 function updateAramBtn() {
@@ -5250,6 +5252,30 @@ function updateTierDetailPreview() {
   preview.style.display = 'block';
 }
 
+// 디스코드 연동 리스트 로드 (내전 진입 시 1회 호출)
+async function loadDiscordLinkMap() {
+  _discordLinkMap = {};
+  const cid = window._currentCommunityId;
+  if (!cid || !_sessionToken) return;
+  try {
+    const res = await fetch(RIOT_PROXY_URL + '/discord-link-list', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: _sessionToken, cid })
+    });
+    const j = await res.json();
+    if (j.ok && j.list) {
+      j.list.forEach(function(item) {
+        if (item.discordId && item.riotName && item.riotTag) {
+          var key = item.riotName.toLowerCase() + '#' + item.riotTag.toLowerCase();
+          _discordLinkMap[key] = item.discordId;
+        }
+      });
+    }
+  } catch(e) {
+    console.warn('[discordLinkMap] 로드 실패:', e.message);
+  }
+}
+
 async function addMember(){
 if (!searchResult) return;
 if (searchResult.puuid && members.find(m => m.puuid && m.puuid === searchResult.puuid)){
@@ -5303,6 +5329,10 @@ _tempTier: tempTierStr || null,
 isManual: !!overrideTier,
 manualDetail: overrideTier ? (detailVal || '') : '',
 topChampions: searchResult.topChampions || [],
+discordId: (function() {
+  var key = (searchResult.name || '').toLowerCase() + '#' + (searchResult.tag || '').toLowerCase();
+  return _discordLinkMap[key] || null;
+})(),
 };
 members.push(member);
 renderMembers();
@@ -8095,6 +8125,33 @@ document.getElementById('bar-status').textContent='내전 종료';
 await saveCurrentMatch();
 s5SwitchTab('result');
 toast('5단계 결과 입력을 시작합니다', 'ok');
+// 후기 DM 자동 발송 (이미 발송한 내전은 스킵)
+if (!match.reviewDmSent) {
+  const dcMembers = members.filter(function(m){ return m.discordId; });
+  if (dcMembers.length) {
+    try {
+      var res = await fetch(RIOT_PROXY_URL + '/review-dm', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cid: window._currentCommunityId,
+          matchId: match && match.id,
+          matchName: match && match.name ? match.name : '',
+          members: dcMembers.map(function(m){ return { puuid: m.puuid, discordId: m.discordId, name: m.name }; }),
+          token: _sessionToken
+        })
+      });
+      var j = await res.json();
+      if (j.ok) {
+        var sent = j.results ? j.results.filter(function(r){ return r.ok; }).length : 0;
+        match.reviewDmSent = true;
+        await saveCurrentMatch();
+        toast('📝 ' + sent + '명에게 후기 DM 전송 완료', 'ok');
+      }
+    } catch(e) {
+      console.warn('[reviewDM auto]', e.message);
+    }
+  }
+}
 }
 let resultMatches=[];
 let _0xB1=1;
@@ -8852,13 +8909,23 @@ lp: { lanes: new Set(), search: '', sort: '', tiers: new Set(), laneMode: 'both'
 const TIER_ORDER = ['UNRANKED','IRON','BRONZE','SILVER','GOLD','PLATINUM','EMERALD','DIAMOND','MASTER','GRANDMASTER','CHALLENGER'];
 function tierRank(tier) { return TIER_ORDER.indexOf(tier) ?? 0; }
 function tierDetailRank(m) {
-  const tf = m.tierFull || '';
-  const isHighTier = ['MASTER','GRANDMASTER','CHALLENGER'].includes(m.tier);
+  const tier = m.tier || (m.soloTier || '').split(' ')[0];
+  const isHighTier = ['MASTER','GRANDMASTER','CHALLENGER'].includes(tier);
   if (isHighTier) {
+    // 카드에 표시되는 LP와 동일하게 tierFull에서 파싱 ("MASTER 300LP")
+    const tf = m.tierFull || '';
     const lp = tf.match(/(\d+)LP/);
-    return lp ? parseInt(lp[1]) : 0;
+    if (lp) return parseInt(lp[1]);
+    return 0;
   } else {
-    const div = tf.replace(m.tier, '').trim();
+    // soloDivision 우선
+    if (m.soloDivision !== undefined && m.soloDivision !== '') {
+      const n = parseInt(m.soloDivision);
+      if (!isNaN(n) && n >= 1 && n <= 4) return 5 - n;
+    }
+    // tierFull에서 division 파싱 ("DIAMOND 2")
+    const tf = m.tierFull || '';
+    const div = tf.replace(tier, '').trim();
     const n = parseInt(div);
     if (!isNaN(n) && n >= 1 && n <= 4) return 5 - n;
     return 0;
@@ -13807,9 +13874,12 @@ async function saveCaptainCodes() {
 }
 
 async function sendReviewDM() {
+  if (match && match.reviewDmSent) {
+    if (!confirm('이 내전은 이미 후기 DM이 발송됐습니다. 다시 보내시겠습니까?')) return;
+  }
   const discordMembers = members.filter(function(m){ return m.discordId; });
   if (!discordMembers.length) return toast('디스코드로 참여한 멤버가 없습니다.', 'err');
-  if (!confirm('디스코드로 참여한 멤버 ' + discordMembers.length + '명에게 내전 후기 링크를 DM으로 보냅니다.')) return;
+  if (!match.reviewDmSent && !confirm('디스코드로 참여한 멤버 ' + discordMembers.length + '명에게 내전 후기 링크를 DM으로 보냅니다.')) return;
   var btn = document.getElementById('btn-review-dm');
   if (btn) { btn.disabled = true; btn.textContent = '전송 중...'; }
   try {
@@ -13820,12 +13890,14 @@ async function sendReviewDM() {
         matchId: match && match.id,
         matchName: match && match.name ? match.name : '',
         members: discordMembers.map(function(m){ return { puuid: m.puuid, discordId: m.discordId, name: m.name }; }),
-        token: localStorage.getItem('sa_token') || localStorage.getItem('sa_master_token')
+        token: _sessionToken
       })
     });
     var j = await res.json();
     if (j.ok) {
       var sent = j.results.filter(function(r){ return r.ok; }).length;
+      match.reviewDmSent = true;
+      await saveCurrentMatch();
       toast('✅ ' + sent + '명에게 후기 DM을 전송했습니다!', 'ok');
     } else {
       toast('❌ ' + (j.error || '전송 실패'), 'err');
@@ -14230,6 +14302,7 @@ if (snapshot.status === '내전 종료' || savedScreen === 'screen-5') {
   targetScreen = 'screen-1';
 }
 restoreMatch({ ...snapshot, _currentScreen: targetScreen });
+loadDiscordLinkMap();
 
 // 새 내전 진입 시 호가 상태 초기화
 _bidLeaderPrice  = 0;
@@ -22085,10 +22158,11 @@ function renderLaneBuilder() {
   // 정렬
   poolMembers = poolMembers.slice().sort(function(a, b) {
     if (sortVal === 'tier' || sortVal === 'tier-asc') {
-      var tv = {'CHALLENGER':9,'GRANDMASTER':8,'MASTER':7,'DIAMOND':6,'EMERALD':5,'PLATINUM':4,'GOLD':3,'SILVER':2,'BRONZE':1,'IRON':0,'UNRANKED':-1};
-      var ta = tv[(a.soloTier||'UNRANKED').split(' ')[0]] || -1;
-      var tb = tv[(b.soloTier||'UNRANKED').split(' ')[0]] || -1;
-      return sortVal === 'tier-asc' ? ta - tb : tb - ta;
+      var ta = tierRank(a.tier || (a.soloTier||'UNRANKED').split(' ')[0]);
+      var tb = tierRank(b.tier || (b.soloTier||'UNRANKED').split(' ')[0]);
+      var td = sortVal === 'tier-asc' ? ta - tb : tb - ta;
+      if (td !== 0) return td;
+      return sortVal === 'tier-asc' ? tierDetailRank(a) - tierDetailRank(b) : tierDetailRank(b) - tierDetailRank(a);
     }
     if (sortVal === 'name') return a.name.localeCompare(b.name);
     if (sortVal === 'doom-desc' || sortVal === 'doom-asc') {
@@ -22121,6 +22195,22 @@ function renderLaneBuilder() {
   if (!panel) return;
   panel.className = 'teams-area';
   panel.innerHTML = '';
+
+  // 전체 초기화 버튼
+  var resetAllBtn = document.createElement('button');
+  resetAllBtn.textContent = '↺ 전체 대기열로 초기화';
+  resetAllBtn.style.cssText = 'display:block;margin:0 0 8px auto;padding:4px 12px;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:3px;color:var(--text-muted);font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;letter-spacing:.5px;cursor:pointer;transition:background .15s,color .15s;';
+  resetAllBtn.addEventListener('mouseenter', function() { this.style.background='rgba(255,255,255,.07)'; this.style.color='var(--text-bright)'; });
+  resetAllBtn.addEventListener('mouseleave', function() { this.style.background='transparent'; this.style.color='var(--text-muted)'; });
+  resetAllBtn.addEventListener('click', function() {
+    laneTeams.forEach(function(t) {
+      Object.keys(t.slots).forEach(function(s) { t.slots[s] = null; });
+    });
+    renderLaneBuilder();
+    saveCurrentMatch();
+  });
+  panel.appendChild(resetAllBtn);
+
   var grid = document.createElement('div');
   grid.className = 'teams-grid';
 
@@ -22191,7 +22281,7 @@ function renderLaneBuilder() {
         })(m));
         var rmBtn = document.createElement('button');
         rmBtn.textContent = '✕';
-        rmBtn.style.cssText = 'position:absolute;top:3px;right:3px;background:transparent;border:none;color:var(--text-muted);cursor:pointer;font-size:10px;padding:0;z-index:2;line-height:1;';
+        rmBtn.style.cssText = 'position:absolute;top:4px;right:4px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:3px;color:var(--text-muted);cursor:pointer;font-size:13px;padding:0;width:22px;height:22px;display:flex;align-items:center;justify-content:center;z-index:2;line-height:1;transition:background .15s,color .15s;';
         rmBtn.addEventListener('click', (function(capturedSlot2, capturedTeamId2) {
           return function(e) { e.stopPropagation(); removeLaneSlot(capturedTeamId2, capturedSlot2); };
         })(slot, t.id));
