@@ -4984,8 +4984,12 @@ async function loadRatingLog(member) {
       return;
     }
 
-    // 날짜 키 목록만 가져와서 각 날짜의 해당 유저 데이터만 병렬 조회
-    var dateKeys = Object.keys(shallowJson.data);
+    // 날짜 키 목록만 가져와서 최근 한달 것만 필터링
+    var allDateKeys = Object.keys(shallowJson.data);
+    var oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+    var oneMonthAgoStr = oneMonthAgo.toISOString().slice(0, 10); // YYYY-MM-DD
+    var dateKeys = allDateKeys.filter(function(k) { return k.slice(0, 10) >= oneMonthAgoStr; });
     var puuId = member.puu_id;
     var results = await Promise.all(
       dateKeys.map(function(key) {

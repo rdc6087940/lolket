@@ -6767,8 +6767,10 @@ async function renderAuctionSpotlight() {
             : (rhShallowJson && typeof rhShallowJson === 'object' ? rhShallowJson : null);
           var dateKeys = rhDatesRaw ? Object.keys(rhDatesRaw).sort() : [];
           console.log('[auction] rh dateKeys:', dateKeys);
-          // 전체 날짜 다 가져오기
-          var recentDates = dateKeys;
+          // 최근 1달 이내 날짜만 필터링
+          var _oneMonthAgo1 = new Date(); _oneMonthAgo1.setMonth(_oneMonthAgo1.getMonth() - 1);
+          var _omaStr1 = _oneMonthAgo1.toISOString().slice(0, 10);
+          var recentDates = dateKeys.filter(function(k){ return k.slice(0,10) >= _omaStr1; });
           // 각 날짜의 puuId 데이터 병렬 fetch → 응답: { ok: true, data: { rating, delta, timestamp } }
           var rhResults = await Promise.all(recentDates.map(function(dt) {
             return fetch(_rpu + '/db-public-read', {
@@ -18749,6 +18751,10 @@ async function _capBidRenderDetail(snapshot) {
           var rhSJ = await rhSR.json();
           var rhDR = (rhSJ&&rhSJ.ok&&rhSJ.data)?rhSJ.data:(rhSJ&&typeof rhSJ==='object'?rhSJ:null);
           var dateKeys = rhDR?Object.keys(rhDR).sort():[];
+          // 최근 1달 이내 날짜만 필터링
+          var _oneMonthAgo2 = new Date(); _oneMonthAgo2.setMonth(_oneMonthAgo2.getMonth() - 1);
+          var _omaStr2 = _oneMonthAgo2.toISOString().slice(0, 10);
+          dateKeys = dateKeys.filter(function(k){ return k.slice(0,10) >= _omaStr2; });
           var rhResults = await Promise.all(dateKeys.map(function(dt){ return fetch(_rpu+'/db-public-read',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({path:'communities/'+cidForHist+'/rating_history/'+dt+'/'+puuId})}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;}); }));
           var histEntries=[];
           dateKeys.forEach(function(dt,idx){ var j=rhResults[idx]; var entry=(j&&j.ok&&j.data)?j.data:(j&&j.rating!==undefined?j:null); if(entry&&entry.rating!==undefined&&entry.rating!==null)histEntries.push({d:dt,v:Number(entry.rating),ts:entry.timestamp||0}); });

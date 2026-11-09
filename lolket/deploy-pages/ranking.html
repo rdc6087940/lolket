@@ -251,6 +251,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--white);font-family:'N
   <button id="btn-master-login" onclick="openMasterModal()" style="padding:4px 10px;border-radius:3px;border:1px solid rgba(200,170,110,.3);background:rgba(200,170,110,.07);color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:1px;flex-shrink:0;">🔑 마스터</button>
   <div id="master-status" style="display:none;align-items:center;gap:6px;flex-shrink:0;">
     <span id="master-status-text" style="font-family:'Rajdhani',sans-serif;font-size:10px;color:var(--gold);letter-spacing:.5px;"></span>
+    <button onclick="openBulkPromptModal()" style="padding:3px 10px;border-radius:3px;border:1px solid rgba(10,200,185,.3);background:rgba(10,200,185,.07);color:var(--blue);font-family:'Rajdhani',sans-serif;font-size:9px;font-weight:700;cursor:pointer;letter-spacing:.5px;">📋 일괄 프롬프트</button>
     <button onclick="masterLogout()" style="padding:3px 7px;border-radius:2px;border:1px solid rgba(255,255,255,.1);background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:9px;font-weight:700;cursor:pointer;">로그아웃</button>
   </div>
   <button onclick="runDiag()" style="padding:4px 10px;border-radius:3px;border:1px solid rgba(255,100,100,.4);background:rgba(255,100,100,.08);color:#ff6666;font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:1px;flex-shrink:0;">🔍 진단</button>
@@ -266,6 +267,48 @@ html,body{min-height:100%;background:var(--bg);color:var(--white);font-family:'N
     <input class="master-modal-input" id="master-modal-pw" type="password" placeholder="비밀번호">
     <button class="master-modal-btn" onclick="doRankingMasterAuth()">로그인</button>
     <div class="master-modal-err" id="master-modal-err"></div>
+  </div>
+</div>
+
+<!-- ── 일괄 프롬프트 모달 ── -->
+<div class="master-overlay" id="bulk-prompt-overlay" onclick="if(event.target===this)closeBulkPromptModal()">
+  <div class="master-box" style="width:min(680px,96vw);max-height:90vh;overflow-y:auto;padding:1.5rem;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+      <div class="master-modal-title" style="margin-bottom:0;">📋 일괄 AI 프롬프트</div>
+      <button onclick="closeBulkPromptModal()" style="background:transparent;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:0 4px;">✕</button>
+    </div>
+    <div id="bulk-prompt-status" style="font-family:'Rajdhani',sans-serif;font-size:11px;color:var(--muted);margin-bottom:.75rem;letter-spacing:.5px;min-height:16px;"></div>
+
+    <!-- 탭 -->
+    <div style="display:flex;gap:6px;margin-bottom:1rem;">
+      <button id="bulk-tab-generate" onclick="switchBulkTab('generate')" style="flex:1;padding:5px;border-radius:3px;border:1px solid var(--blue);background:rgba(10,200,185,.12);color:var(--blue);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">1️⃣ 프롬프트 생성</button>
+      <button id="bulk-tab-input" onclick="switchBulkTab('input')" style="flex:1;padding:5px;border-radius:3px;border:1px solid rgba(255,255,255,.1);background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">2️⃣ 결과 입력 &amp; 저장</button>
+    </div>
+
+    <!-- 탭1: 프롬프트 생성 -->
+    <div id="bulk-panel-generate">
+      <div style="font-family:'Rajdhani',sans-serif;font-size:11px;color:var(--muted);margin-bottom:.5rem;letter-spacing:.3px;">
+        떡상/떡락 전체 유저 프롬프트를 생성합니다. 상세 데이터가 없는 유저는 자동으로 로드합니다.
+      </div>
+      <div style="display:flex;gap:6px;margin-bottom:.75rem;">
+        <button onclick="generateBulkPrompts()" style="flex:1;padding:7px;border-radius:3px;border:1px solid var(--blue);background:rgba(10,200,185,.1);color:var(--blue);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">🔄 프롬프트 생성 &amp; 복사</button>
+      </div>
+      <textarea id="bulk-prompt-output" readonly style="width:100%;height:260px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:3px;padding:.75rem;color:var(--white);font-family:'Noto Sans KR',monospace;font-size:11px;line-height:1.6;resize:vertical;outline:none;box-sizing:border-box;" placeholder="여기에 생성된 프롬프트가 표시됩니다..."></textarea>
+    </div>
+
+    <!-- 탭2: 결과 입력 -->
+    <div id="bulk-panel-input" style="display:none;">
+      <div style="font-family:'Rajdhani',sans-serif;font-size:11px;color:var(--muted);margin-bottom:.5rem;letter-spacing:.3px;">
+        Claude 응답을 그대로 붙여넣으면 번호를 파싱해서 각 유저에 저장합니다.<br>
+        구분자 형식: <code style="color:var(--gold);font-size:10px;">=== 1번 ===</code> 또는 <code style="color:var(--gold);font-size:10px;">=== 1번 (닉네임) ===</code>
+      </div>
+      <textarea id="bulk-result-input" style="width:100%;height:260px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:3px;padding:.75rem;color:var(--white);font-family:'Noto Sans KR',monospace;font-size:11px;line-height:1.6;resize:vertical;outline:none;box-sizing:border-box;" placeholder="Claude 응답을 여기에 붙여넣으세요..."></textarea>
+      <div id="bulk-parse-preview" style="margin-top:.6rem;font-family:'Rajdhani',sans-serif;font-size:10px;color:var(--muted);letter-spacing:.3px;"></div>
+      <div style="display:flex;gap:6px;margin-top:.75rem;">
+        <button onclick="previewBulkResults()" style="flex:1;padding:7px;border-radius:3px;border:1px solid rgba(200,170,110,.3);background:rgba(200,170,110,.07);color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">🔍 미리보기</button>
+        <button onclick="saveBulkResults()" style="flex:1;padding:7px;border-radius:3px;border:1px solid var(--blue);background:rgba(10,200,185,.1);color:var(--blue);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">💾 일괄 저장</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1134,6 +1177,204 @@ function masterLogout() {
   document.querySelectorAll('.ai-save-btn').forEach(el => el.style.display = 'none');
 }
 window.masterLogout = masterLogout;
+
+// ── 일괄 프롬프트 ──
+// 프롬프트 생성 시 사용할 순서 맵: { puuId -> { isRise, rank, totalDelta } }
+let _bulkOrderMap = [];
+
+function openBulkPromptModal() {
+  document.getElementById('bulk-prompt-overlay').classList.add('open');
+  document.getElementById('bulk-prompt-status').textContent = '';
+  document.getElementById('bulk-prompt-output').value = '';
+  document.getElementById('bulk-result-input').value = '';
+  document.getElementById('bulk-parse-preview').textContent = '';
+  switchBulkTab('generate');
+}
+window.openBulkPromptModal = openBulkPromptModal;
+
+function closeBulkPromptModal() {
+  document.getElementById('bulk-prompt-overlay').classList.remove('open');
+}
+window.closeBulkPromptModal = closeBulkPromptModal;
+
+function switchBulkTab(tab) {
+  const isGenerate = tab === 'generate';
+  document.getElementById('bulk-panel-generate').style.display = isGenerate ? '' : 'none';
+  document.getElementById('bulk-panel-input').style.display = isGenerate ? 'none' : '';
+  const tg = document.getElementById('bulk-tab-generate');
+  const ti = document.getElementById('bulk-tab-input');
+  if (isGenerate) {
+    tg.style.borderColor = 'var(--blue)'; tg.style.background = 'rgba(10,200,185,.12)'; tg.style.color = 'var(--blue)';
+    ti.style.borderColor = 'rgba(255,255,255,.1)'; ti.style.background = 'transparent'; ti.style.color = 'var(--muted)';
+  } else {
+    ti.style.borderColor = 'var(--blue)'; ti.style.background = 'rgba(10,200,185,.12)'; ti.style.color = 'var(--blue)';
+    tg.style.borderColor = 'rgba(255,255,255,.1)'; tg.style.background = 'transparent'; tg.style.color = 'var(--muted)';
+  }
+}
+window.switchBulkTab = switchBulkTab;
+
+// 한 유저의 상세 분석 데이터를 가져옴 (캐시 우선, 없으면 fetch)
+async function fetchAnalysisDataForBulk(entry) {
+  const puuId = entry.puuId;
+  if (detailDataCache[puuId]) return detailDataCache[puuId];
+  const member = allMembers.find(m => m.puu_id === puuId) || { puu_id: puuId, platform_id: 'KR' };
+  const platform = member.platform_id || 'KR';
+  const { from, to } = getLastWeekRange();
+  const [matchIds, soloData, rankedMatchIds] = await Promise.all([
+    fetchWeekMatchIds(puuId, platform, from.getTime(), to.getTime()),
+    fetchSummonerSoloData(puuId, platform),
+    fetchRankedMatchIds(puuId, platform, 20),
+  ]);
+  if (!matchIds.length) return null;
+  const [matches, rankedMatches] = await Promise.all([
+    fetchMatchesBatch(matchIds, platform),
+    rankedMatchIds.length ? fetchMatchesBatch(rankedMatchIds, platform) : Promise.resolve([]),
+  ]);
+  const communityPuuIds = new Set(allMembers.map(m => m.puu_id));
+  const analysis = analyzeMatches(matches, puuId, communityPuuIds);
+  analysis.soloData = soloData;
+  analysis.soloChamps = analyzeRankedChamps(rankedMatches, puuId);
+  detailDataCache[puuId] = analysis;
+  return analysis;
+}
+
+async function generateBulkPrompts() {
+  const statusEl = document.getElementById('bulk-prompt-status');
+  const outputEl = document.getElementById('bulk-prompt-output');
+  statusEl.textContent = '데이터 로드 중...';
+  outputEl.value = '';
+
+  if (!riseTop.length && !dropTop.length) {
+    statusEl.textContent = '❌ 랭킹 데이터가 없습니다. 페이지 로드 후 다시 시도해주세요.';
+    return;
+  }
+
+  // 순서: 떡상 1~N위, 떡락 1~N위
+  _bulkOrderMap = [];
+  const allEntries = [
+    ...riseTop.map((e, i) => ({ entry: e, isRise: true, rank: i + 1, totalDelta: Math.round(e.totalDelta) })),
+    ...dropTop.map((e, i) => ({ entry: e, isRise: false, rank: i + 1, totalDelta: Math.round(e.totalDelta) })),
+  ];
+
+  const prompts = [];
+  let loaded = 0;
+  for (const item of allEntries) {
+    const { entry, isRise, rank, totalDelta } = item;
+    const puuId = entry.puuId;
+    const member = allMembers.find(m => m.puu_id === puuId);
+    const userName = member ? (member.riot_name || member.name || '유저') : (entry.name || '유저');
+    const idx = _bulkOrderMap.length + 1;
+    _bulkOrderMap.push({ puuId, isRise, rank, totalDelta, userName });
+
+    statusEl.textContent = `데이터 로드 중... (${loaded}/${allEntries.length}) - ${userName}`;
+    let analysis = null;
+    try {
+      analysis = await fetchAnalysisDataForBulk(entry);
+    } catch(e) {
+      analysis = null;
+    }
+    loaded++;
+
+    if (!analysis) {
+      prompts.push(`=== ${idx}번 (${isRise?'떡상':'떡락'} ${rank}위 / ${userName}) ===\n[데이터 없음 — 건너뜁니다]\n`);
+      continue;
+    }
+
+    const tempTierData = getActiveTempTier(puuId);
+    const prompt = buildAnalysisPrompt(userName, isRise, rank, totalDelta, analysis, tempTierData);
+    // 각 프롬프트 끝에 구분자 지시 추가
+    const promptWithInstruction = prompt + `\n\n---\n답변 시작 전에 반드시 "=== ${idx}번 ===" 을 첫 줄에 써줘.`;
+    prompts.push(`=== ${idx}번 (${isRise?'떡상':'떡락'} ${rank}위 / ${userName}) ===\n${promptWithInstruction}`);
+  }
+
+  const fullText = prompts.join('\n\n' + '='.repeat(60) + '\n\n');
+  outputEl.value = fullText;
+  statusEl.textContent = `✅ 총 ${_bulkOrderMap.length}명 프롬프트 생성 완료`;
+
+  // 클립보드 복사
+  try {
+    await navigator.clipboard.writeText(fullText);
+    statusEl.textContent += ' — 클립보드에 복사됨!';
+  } catch(e) {
+    statusEl.textContent += ' (클립보드 복사 실패 — 직접 선택하여 복사하세요)';
+  }
+}
+window.generateBulkPrompts = generateBulkPrompts;
+
+// 결과 텍스트 파싱
+// 지원 형식:
+//   === 1번 ===          (지시한 형식)
+//   === 1번 (닉네임) === (지시한 형식 변형)
+//   1번 · 닉네임         (Claude가 자체적으로 쓰는 형식)
+function parseBulkResultText(text) {
+  // 두 패턴 모두 구분자로 인식
+  // 패턴1: "=== N번" (앞에 ===)
+  // 패턴2: 줄 시작 "N번 ·" 또는 "N번." 형태
+  const splitRegex = /(?=\n(?:===\s*\d+번[\s(=]|\d+번\s*[·.]|\d+번$))/;
+  const parts = ('\n' + text).split(splitRegex);
+  const results = {};
+  for (const part of parts) {
+    if (!part.trim()) continue;
+    // 번호 추출: === N번 ... 또는 N번 · ... 또는 N번. ...
+    const m = part.match(/(?:===\s*)?(\d+)번[\s·.(=]/);
+    if (!m) continue;
+    const idx = parseInt(m[1]);
+    // 구분자 헤더 줄 제거 후 본문 추출 (=== N번 ... 또는 N번 · ... 형태 모두 처리)
+    const content = part.replace(/^\s*(?:===\s*)?\d+번[^\n]*\n?/, '').trim();
+    if (content) results[idx] = content;
+  }
+  return results;
+}
+
+function previewBulkResults() {
+  const text = document.getElementById('bulk-result-input').value;
+  const previewEl = document.getElementById('bulk-parse-preview');
+  if (!text.trim()) { previewEl.textContent = '텍스트를 붙여넣어 주세요.'; return; }
+  if (!_bulkOrderMap.length) { previewEl.textContent = '먼저 프롬프트 생성 탭에서 프롬프트를 생성해주세요.'; return; }
+  const parsed = parseBulkResultText(text);
+  const keys = Object.keys(parsed).map(Number).sort((a,b)=>a-b);
+  if (!keys.length) { previewEl.textContent = '❌ 파싱 실패 — 구분자 형식을 확인해주세요 (=== 1번 ===)'; return; }
+  const lines = keys.map(idx => {
+    const item = _bulkOrderMap[idx - 1];
+    if (!item) return `${idx}번: ⚠️ 순서 맵에 없음`;
+    const preview = parsed[idx].slice(0, 40).replace(/\n/g, ' ');
+    return `${idx}번 (${item.isRise?'떡상':'떡락'} ${item.rank}위 ${item.userName}): "${preview}..."`;
+  });
+  previewEl.innerHTML = `✅ ${keys.length}개 파싱됨<br>` + lines.map(l=>`<div style="color:var(--white);margin-top:2px;">${l}</div>`).join('');
+}
+window.previewBulkResults = previewBulkResults;
+
+async function saveBulkResults() {
+  const text = document.getElementById('bulk-result-input').value;
+  const statusEl = document.getElementById('bulk-prompt-status');
+  const previewEl = document.getElementById('bulk-parse-preview');
+  if (!text.trim()) { previewEl.textContent = '텍스트를 붙여넣어 주세요.'; return; }
+  if (!_bulkOrderMap.length) { previewEl.textContent = '먼저 프롬프트 생성 탭에서 프롬프트를 생성해주세요.'; return; }
+  const parsed = parseBulkResultText(text);
+  const keys = Object.keys(parsed).map(Number).sort((a,b)=>a-b);
+  if (!keys.length) { previewEl.textContent = '❌ 파싱 실패 — 구분자 형식을 확인해주세요 (=== 1번 ===)'; return; }
+
+  statusEl.textContent = `저장 중... (0/${keys.length})`;
+  let saved = 0, failed = 0;
+  for (const idx of keys) {
+    const item = _bulkOrderMap[idx - 1];
+    if (!item) { failed++; continue; }
+    const analysisText = parsed[idx];
+    try {
+      await saveAiAnalysisToDb(item.puuId, analysisText);
+      AI_ANALYSIS_CACHE[item.puuId] = analysisText;
+      saved++;
+      statusEl.textContent = `저장 중... (${saved}/${keys.length})`;
+    } catch(e) {
+      console.error('[bulk-save] 저장 실패:', item.userName, e.message);
+      failed++;
+    }
+  }
+  const msg = `✅ ${saved}명 저장 완료${failed > 0 ? ` / ❌ ${failed}명 실패` : ''}`;
+  statusEl.textContent = msg;
+  previewEl.innerHTML = `<span style="color:var(--blue);">${msg}</span>`;
+}
+window.saveBulkResults = saveBulkResults;
 
 // ── AI 분석 Firebase 저장/로드 ──
 function getRankingWeekKey() {
