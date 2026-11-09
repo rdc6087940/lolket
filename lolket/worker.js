@@ -110,6 +110,94 @@ export default {
       return fetch(request);
     }
 
+    // ── 내전 생성 시 디스코드 포럼 포스트 자동 생성 ──
+    if (path === '/match-forum-post' && request.method === 'POST') {
+      let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
+      const { cid, matchId, matchName, matchTime, matchAdmin } = body;
+      if (!cid || !matchId || !matchName) return json({ok:false,error:'필수 파라미터 없음'},400);
+      // 내전이 실제로 존재하는지 확인 (간단한 위조 방지)
+      const dbUrlV = env.FB_DATABASE_URL, secretV = env.FB_DB_SECRET;
+      const authQV = secretV ? '?auth='+secretV : '';
+      const matchCheckRes = await fetch(`${dbUrlV}/communities/${cid}/matches/${matchId}.json${authQV}`);
+      const matchCheck = matchCheckRes.ok ? await matchCheckRes.json() : null;
+      if (!matchCheck) return json({ok:false,error:'존재하지 않는 내전'},403);
+      const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+      const authQ = secret ? '?auth='+secret : '';
+      // 커뮤니티 설정에서 포럼 채널 ID 조회
+      const ciRes = await fetch(`${dbUrl}/communities_info/${cid}.json${authQ}`);
+      const ci = ciRes.ok ? (await ciRes.json()) : null;
+      const forumChannelId = ci && ci.discordForumChannelId;
+      if (!forumChannelId) return json({ok:false,error:'포럼 채널 ID가 설정되지 않았습니다'},400);
+      const botToken = env.DISCORD_BOT_TOKEN;
+      if (!botToken) return json({ok:false,error:'BOT_TOKEN 없음'},500);
+      // 시간 포맷
+      let timeStr = '—';
+      if (matchTime) {
+        try {
+          const d = new Date(matchTime);
+          const days = ['일','월','화','수','목','금','토'];
+          timeStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} (${days[d.getDay()]}) ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+        } catch(e) { timeStr = matchTime; }
+      }
+      // 비회원 관전 링크
+      const spectateUrl = `https://roonging.com/?match=${cid}__${matchId}`;
+      // 포스트 제목 (최대 100자)
+      const postTitle = ('⚔️ ' + matchName).slice(0, 100);
+      // 포스트 본문
+      const lines = [
+        `**📋 ${matchName}**`,
+        '',
+        `📅 **시작 시간:** ${timeStr}`,
+        `👤 **진행자:** ${matchAdmin || '—'}`,
+        '',
+        `🔗 **관전/참가 링크:** ${spectateUrl}`,
+      ];
+      const msgContent = lines.join('\n').slice(0, 2000);
+      // 버튼 컴포넌트
+      const components = [
+        {
+          type: 1,
+          components: [
+            {
+              type: 2,
+              style: 1,
+              label: '⚔️ 참가 신청',
+              custom_id: `join_match__${cid}__${matchId}`,
+            },
+            {
+              type: 2,
+              style: 2,
+              label: '🎮 소환사 계정 등록',
+              custom_id: `register_account__${cid}`,
+            },
+          ],
+        },
+      ];
+      // Discord 포럼 포스트 생성
+      const discordRes = await fetch(`https://discord.com/api/v10/channels/${forumChannelId}/threads`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bot ' + botToken },
+        body: JSON.stringify({
+          name: postTitle,
+          auto_archive_duration: 10080,
+          message: { content: msgContent, components },
+        }),
+      });
+      if (!discordRes.ok) {
+        const err = await discordRes.text();
+        return json({ok:false,error:'Discord API '+discordRes.status+': '+err},500);
+      }
+      const threadData = await discordRes.json();
+      const threadId = threadData.id;
+      if (threadId) {
+        fetch(`${dbUrl}/communities/${cid}/matches/${matchId}/discordForumThread.json${authQ}`, {
+          method: 'PUT', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ threadId, forumChannelId }),
+        }).catch(() => {});
+      }
+      return json({ ok: true, threadId });
+    }
+
     // 디스코드 Interactions
     // 디스코드 슬래시 명령어 등록
     // 길드 커맨드 삭제 (등록된 모든 커뮤니티의 discordServerId 기반)
@@ -621,6 +709,12 @@ export default {
     }
     if (path === '/admin-verify' && request.method === 'POST') {
       return handleAdminVerify(request, env);
+    }
+    if (path === '/solo-rank-stats-write' && request.method === 'POST') {
+      return handleSoloRankStatsWrite(request, env);
+    }
+    if (path === '/solo-rank-stats-read' && request.method === 'POST') {
+      return handleSoloRankStatsRead(request, env);
     }
     if (path === '/cron-rating-test' && request.method === 'POST') {
       let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
@@ -4197,16 +4291,18 @@ function discordDefer(ephemeral = false) {
   }), { headers: { 'Content-Type': 'application/json' } });
 }
 
-async function discordFollowup(appId, token, content, env) {
+async function discordFollowup(appId, token, content, env, components) {
   const aid = appId || env.DISCORD_APP_ID || '1500717088984010883';
   console.log('[followup] appId:', aid, 'token:', token?.slice(0,20));
+  const body = { content, flags: 64 };
+  if (components && components.length) body.components = components;
   const res = await fetch(`https://discord.com/api/v10/webhooks/${aid}/${token}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bot ${env.DISCORD_BOT_TOKEN}`
     },
-    body: JSON.stringify({ content, flags: 64 })
+    body: JSON.stringify(body)
   });
   const txt = await res.text();
   console.log('[followup] status:', res.status, txt.slice(0,200));
@@ -4584,6 +4680,34 @@ async function handleDiscordInteraction(request, env, ctx) {
         })()
       ).join('\n');
       return discordReply(`**👥 ${matchData.name||'내전'} 멤버 목록** (${members.length}명)\n${list}`, true);
+    }
+
+    // ── 소환사 계정 등록 버튼 ──
+    if (customId.startsWith('register_account__')) {
+      const discordUserId = interaction.member?.user?.id || interaction.user?.id;
+      // 기존 저장된 프로필 로드
+      let ep2 = {};
+      try {
+        const cid2 = customId.slice('register_account__'.length);
+        const dbUrl2 = env.FB_DATABASE_URL, secret2 = env.FB_DB_SECRET;
+        const authQ2 = secret2 ? '?auth='+secret2 : '';
+        const pRes2 = await fetch(`${dbUrl2}/communities/${cid2}/discord_profiles/${discordUserId}.json${authQ2}`);
+        if (pRes2.ok) ep2 = await pRes2.json() || {};
+      } catch(e) {}
+      return new Response(JSON.stringify({
+        type: 9,
+        data: {
+          title: '🎮 소환사 계정 등록',
+          custom_id: `save_profile__${discordUserId}`,
+          components: [
+            { type: 1, components: [{ type: 4, label: '소환사명', custom_id: 'riot_name', style: 1, placeholder: '예) Roonging', required: true, min_length: 1, max_length: 50, value: ep2.riotName || '' }] },
+            { type: 1, components: [{ type: 4, label: '태그', custom_id: 'riot_tag', style: 1, placeholder: '예) KR1', required: true, min_length: 1, max_length: 10, value: ep2.riotTag || '' }] },
+            { type: 1, components: [{ type: 4, label: '주 포지션', custom_id: 'main_lane', style: 1, placeholder: '탑 / 정글 / 미드 / 원딜 / 서폿', required: false, max_length: 10, value: ep2.mainLane || '' }] },
+            { type: 1, components: [{ type: 4, label: '보조 포지션 (쉼표로 구분)', custom_id: 'sub_lanes', style: 1, placeholder: '예) 정글,서폿', required: false, max_length: 50, value: (ep2.subLanes||[]).join(',') }] },
+            { type: 1, components: [{ type: 4, label: '최고/임시 티어 (선택)', custom_id: 'high_tier', style: 1, placeholder: '예) e1 / d3 / m300 / gm500 / c', required: false, max_length: 20, value: ep2.highTier || '' }] },
+          ],
+        },
+      }), { headers: { 'Content-Type': 'application/json' } });
     }
 
     if (customId.startsWith('join_match__') || customId.startsWith('join_match_')) {
@@ -5392,18 +5516,23 @@ async function handleJoinMatch(riotName, riotTag, laneInput, subLanesInput, matc
 
   if (!patchRes.ok) return discordFollowup(appId, token, '❌ 참가 처리 중 오류가 발생했습니다.', env);
 
+  // 포럼 포스트 멤버 목록 업데이트 (비동기, 실패해도 무시)
+  updateForumPostMembers(targetCid, targetMatchId, env).catch(() => {});
+
   const TIER_EMOJI = {
     CHALLENGER:'🏆', GRANDMASTER:'💎', MASTER:'💜', DIAMOND:'💠',
     EMERALD:'💚', PLATINUM:'🩵', GOLD:'🥇', SILVER:'⚪', BRONZE:'🟤', IRON:'⬛', UNRANKED:'❓'
   };
   const LANE_EMOJI = { Top:'🛡️', Jungle:'🌲', Middle:'⚡', Bottom:'🏹', Support:'🌟' };
 
+  const leaveBtn = [{ type: 1, components: [{ type: 2, style: 4, label: '❌ 참가 취소', custom_id: `leave_match__${targetCid}__${targetMatchId}` }] }];
+
   return discordFollowup(appId, token,
     `✅ **${riotName}#${riotTag}** 참가 완료!\n` +
     `${TIER_EMOJI[tierStr]||'❓'} 티어: **${tierFull}**\n` +
     `${LANE_EMOJI[mainLane]||'🎮'} 주 포지션: **${mainLane}**\n` +
     `📋 내전: **${matchData.name || targetMatchId}**\n` +
-    `👥 현재 대기 멤버: ${updatedMembers.length}명`, env);
+    `👥 현재 대기 멤버: ${updatedMembers.length}명`, env, leaveBtn);
 }
 async function handleJoinMatchDirect(riotName, riotTag, laneInput, subLanesInput, matchId, cid, discordUserId, discordName, appId, token, env, highTierInput) {
   console.log('[joinDirect] start', {riotName, riotTag, laneInput, matchId, cid});
@@ -5662,8 +5791,12 @@ async function handleJoinMatchDirect(riotName, riotTag, laneInput, subLanesInput
     ? `\n${subLanesMapped.map(l=>({top:'🛡️',jg:'🌲',mid:'⚡',bot:'🏹',sup:'🌟'}[l]||'🎮')).join('')} 보조: **${subLanesMapped.join(', ')}**`
     : '';
 
+  // 포럼 포스트 멤버 목록 업데이트 (비동기, 실패해도 무시)
+  updateForumPostMembers(cid, matchId, env).catch(() => {});
+
   // 완료 메시지
   const origSoloTier = `${soloTier}${soloDivision&&!isManual?' '+soloDivision:''} ${soloLP&&!isManual?soloLP+'LP':''}`.trim();
+  const leaveBtnDirect = [{ type: 1, components: [{ type: 2, style: 4, label: '❌ 참가 취소', custom_id: `leave_match__${cid}__${matchId}` }] }];
 
   return discordFollowup(appId, token,
     `✅ **${name}#${tag}** 참가 완료!\n` +
@@ -5671,7 +5804,7 @@ async function handleJoinMatchDirect(riotName, riotTag, laneInput, subLanesInput
     `${manualHighTier ? `🏅 최고/임시 티어 (수동): **${manualHighFull}**\n` : `📊 현재 솔랭: **${origSoloTier||'언랭크'}**\n`}` +
     `${{top:'🛡️',jg:'🌲',mid:'⚡',bot:'🏹',sup:'🌟'}[mainLane]||'🎮'} 주 포지션: **${mainLane}**${subText}\n` +
     `📋 내전: **${matchData.name || matchId}**\n` +
-    `👥 현재 대기 멤버: ${updatedMembers.length}명`, env);
+    `👥 현재 대기 멤버: ${updatedMembers.length}명`, env, leaveBtnDirect);
 }
 
 
@@ -5792,10 +5925,104 @@ async function handleLeaveMatch(cid, matchId, discordUserId, appId, token, env) 
     body: JSON.stringify(waitlist.length ? waitlist : null)
   });
 
+  // 포럼 포스트 멤버 목록 업데이트 (비동기, 실패해도 무시)
+  updateForumPostMembers(cid, matchId, env).catch(() => {});
+
   return discordFollowup(appId, token,
     `✅ **${memberToLeave.name}#${memberToLeave.tag}** 내전 참가가 취소되었습니다.\n` +
     `📋 내전: **${matchData.name || matchId}**\n` +
     `👥 남은 멤버: ${updatedMembers.length}명`, env);
+}
+
+// ── 포럼 포스트 멤버 목록 업데이트 헬퍼 ──
+async function updateForumPostMembers(cid, matchId, env) {
+  try {
+    const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+    const authQ = secret ? '?auth='+secret : '';
+    const botToken = env.DISCORD_BOT_TOKEN;
+    if (!botToken) return;
+
+    // 내전 데이터 조회
+    const matchRes = await fetch(`${dbUrl}/communities/${cid}/matches/${matchId}.json${authQ}`);
+    if (!matchRes.ok) return;
+    const matchData = await matchRes.json();
+    if (!matchData) return;
+
+    // 포럼 스레드 정보 조회
+    const forumThread = matchData.discordForumThread;
+    if (!forumThread || !forumThread.threadId) return;
+
+    const members = Array.isArray(matchData._members) ? matchData._members : Object.values(matchData._members || {});
+    const maxMembers = matchData.maxMembers || null;
+
+    const TIER_EMOJI = { CHALLENGER:'🏆', GRANDMASTER:'💎', MASTER:'💜', DIAMOND:'💠', EMERALD:'💚', PLATINUM:'🩵', GOLD:'🥇', SILVER:'⚪', BRONZE:'🟤', IRON:'⬛', UNRANKED:'❓' };
+    const LANE_EMOJI = { top:'🛡️', jg:'🌲', mid:'⚡', bot:'🏹', sup:'🌟', Top:'🛡️', Jungle:'🌲', Middle:'⚡', Bottom:'🏹', Support:'🌟' };
+
+    const memberLines = members.length === 0
+      ? ['아직 참가자가 없습니다.']
+      : members.map((m, i) => {
+          const tierE = TIER_EMOJI[m.tier] || '❓';
+          const laneE = LANE_EMOJI[m.mainLane] || '🎮';
+          return `${i+1}. ${laneE} **${m.name}#${m.tag}** ${tierE} ${m.tierFull || m.tier || ''}`;
+        });
+
+    const lines = [
+      `👥 **참가 인원: ${members.length}${maxMembers ? '/'+maxMembers : ''}명**`,
+      ...memberLines,
+    ];
+    const content = lines.join('\n').slice(0, 2000);
+
+    // 스레드 메시지 목록에서 봇이 쓴 인원 현황 댓글 탐색 (동시 요청 대비)
+    let membersMsgId = forumThread.membersMsgId || null;
+    if (!membersMsgId) {
+      try {
+        const msgsRes = await fetch(`https://discord.com/api/v10/channels/${forumThread.threadId}/messages?limit=20`, {
+          headers: { 'Authorization': 'Bot ' + botToken },
+        });
+        if (msgsRes.ok) {
+          const msgs = await msgsRes.json();
+          // 봇이 쓴 메시지 중 👥로 시작하는 인원 현황 댓글 찾기
+          const botId = env.DISCORD_APP_ID || '1500717088984010883';
+          const existing = Array.isArray(msgs) && msgs.find(m => m.author?.id === botId && m.content?.startsWith('👥'));
+          if (existing) {
+            membersMsgId = existing.id;
+            // Firebase에도 저장
+            fetch(`${dbUrl}/communities/${cid}/matches/${matchId}/discordForumThread/membersMsgId.json${authQ}`, {
+              method: 'PUT', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(membersMsgId),
+            }).catch(() => {});
+          }
+        }
+      } catch(e2) {}
+    }
+
+    if (membersMsgId) {
+      // 기존 인원 현황 댓글 수정
+      await fetch(`https://discord.com/api/v10/channels/${forumThread.threadId}/messages/${membersMsgId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bot ' + botToken },
+        body: JSON.stringify({ content }),
+      });
+    } else {
+      // 없으면 새로 생성 후 ID 저장
+      const postRes = await fetch(`https://discord.com/api/v10/channels/${forumThread.threadId}/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bot ' + botToken },
+        body: JSON.stringify({ content }),
+      });
+      if (postRes.ok) {
+        const postData = await postRes.json();
+        if (postData.id) {
+          fetch(`${dbUrl}/communities/${cid}/matches/${matchId}/discordForumThread/membersMsgId.json${authQ}`, {
+            method: 'PUT', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(postData.id),
+          }).catch(() => {});
+        }
+      }
+    }
+  } catch(e) {
+    console.error('[updateForumPostMembers] 오류:', e.message);
+  }
 }
 
 // ── 행 이펙트 저장 ──
@@ -6532,4 +6759,48 @@ async function handleAchRequest(request, env) {
   } catch(e) { console.error('[ach-request] discord notify error:', e.message); }
 
   return json({ok:true, puuId, reqId});
+}
+
+// ── 솔로랭크 판수 통계 저장 ──
+// Firebase 경로: communities/{communityId}/solo_rank_stats/{puuId} = { games, wins, losses, tier, division, lp, updatedAt }
+async function handleSoloRankStatsWrite(request, env) {
+  let body; try { body = await request.json(); } catch(e) { return json({ok:false,error:'bad request: '+e.message},400); }
+  const { communityId, data } = body;
+  if (!communityId || !data) return json({ok:false,error:'필수값 없음'},400);
+  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+  if (!dbUrl) return json({ok:false,error:'FB_DATABASE_URL 환경변수 없음'},500);
+  const authQ = secret ? '?auth='+secret : '';
+  try {
+    const entries = Object.entries(data);
+    // 한 번에 PATCH로 저장 (subrequest 수 줄이기)
+    const res = await fetch(`${dbUrl}/communities/${communityId}/solo_rank_stats.json${authQ}`, {
+      method: 'PATCH',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(data)
+    });
+    if (!res.ok) {
+      const errText = await res.text();
+      return json({ok:false,error:'Firebase 저장 실패: '+errText},500);
+    }
+    return json({ ok: true, count: entries.length });
+  } catch(e) {
+    return json({ok:false,error:'저장 오류: '+e.message},500);
+  }
+}
+
+// ── 솔로랭크 판수 통계 읽기 ──
+async function handleSoloRankStatsRead(request, env) {
+  let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
+  const { communityId } = body;
+  if (!communityId) return json({ok:false,error:'communityId 없음'},400);
+  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth='+secret : '';
+  try {
+    const res = await fetch(`${dbUrl}/communities/${communityId}/solo_rank_stats.json${authQ}`);
+    if (!res.ok) return json({ok:false,error:'읽기 실패'},500);
+    const data = await res.json();
+    return json({ ok: true, data: data || {} });
+  } catch(e) {
+    return json({ok:false,error:e.message},500);
+  }
 }

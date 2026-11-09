@@ -563,11 +563,69 @@ tbody td{padding:.55rem 1rem;font-size:12px;vertical-align:middle;}
 }
 
 @media(max-width:768px){
-  #btn-init-rating, #btn-cron-test, #btn-deeplol-api-test, #discord-login-btn, #btn-master-login, #btn-refresh { display:none!important; }
-  #mobile-admin-btn { display:flex!important; }
-  .header-right { flex-wrap:wrap; gap:4px; }
+  /* 모바일에서 header-account 버튼 전부 숨기고 햄버거만 표시 */
+  .header-account { display:none!important; }
+  #mobile-menu-btn { display:flex!important; }
   .page-header { flex-direction:column; gap:.25rem; }
+  /* header-right: 검색창과 새로고침/랭킹만 남기고 나머지 숨김 */
+  #btn-init-rating, #btn-cron-test, #btn-deeplol-api-test,
+  #btn-weekly-mission, #btn-nickname-run, #btn-update-all-peak,
+  #btn-deeplol-api-test, #next-update-time { display:none!important; }
+  /* 업적/가이드/랭킹/새로고침은 메뉴에 있으니 header-right에서 숨김 */
+  .header-right > button:not(#btn-refresh):not(.btn-ranking) { display:none!important; }
+  .header-right { gap:4px; }
 }
+
+/* 모바일 햄버거 메뉴 */
+#mobile-menu-btn {
+  display:none;
+  align-items:center;justify-content:center;
+  width:34px;height:34px;border-radius:6px;
+  border:1px solid rgba(255,255,255,.12);
+  background:rgba(255,255,255,.05);
+  color:var(--white);font-size:18px;cursor:pointer;
+  flex-shrink:0;
+}
+#mobile-menu-panel {
+  display:none;
+  position:fixed;top:0;right:0;bottom:0;left:0;z-index:9000;
+}
+#mobile-menu-panel.open { display:block; }
+#mobile-menu-overlay {
+  position:absolute;top:0;right:0;bottom:0;left:0;
+  background:rgba(0,0,0,.55);
+}
+#mobile-menu-drawer {
+  position:absolute;top:0;right:0;bottom:0;
+  width:260px;
+  background:var(--bg-panel,#111827);
+  border-left:1px solid var(--border-subtle,rgba(255,255,255,.08));
+  display:flex;flex-direction:column;
+  overflow-y:auto;
+}
+.mobile-menu-section {
+  padding:.6rem .75rem .3rem;
+  font-size:9px;font-weight:700;letter-spacing:1.5px;
+  color:var(--muted);text-transform:uppercase;
+}
+.mobile-menu-item {
+  display:flex;align-items:center;gap:.6rem;
+  padding:.65rem 1rem;
+  font-size:13px;font-weight:600;color:var(--white);
+  cursor:pointer;border:none;background:transparent;
+  width:100%;text-align:left;
+  transition:background .15s;
+}
+.mobile-menu-item:hover, .mobile-menu-item:active { background:rgba(255,255,255,.06); }
+.mobile-menu-item .mmi-icon { font-size:16px;width:22px;text-align:center;flex-shrink:0; }
+.mobile-menu-sep { height:1px;background:rgba(255,255,255,.07);margin:.3rem .75rem; }
+/* 디스코드 로그인 상태 표시 (메뉴 내) */
+#mobile-discord-status {
+  display:flex;align-items:center;gap:.5rem;
+  padding:.65rem 1rem;
+}
+#mobile-discord-status img { width:24px;height:24px;border-radius:50%; }
+#mobile-discord-status span { font-size:12px;color:#7289da;font-weight:700; }
 
 /* ── 승률/레이팅 모자이크 (비관리자 블러) ── */
 .sensitive-blur {
@@ -828,7 +886,15 @@ tr.has-bg-effect td {
     letter-spacing: 0 !important;
   }
 }
+/* PWA 설치 버튼 */
+#btn-pwa-install{display:none;align-items:center;gap:5px;padding:4px 10px;border-radius:3px;border:1px solid rgba(200,170,110,.4);background:rgba(200,170,110,.08);color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:.5px;cursor:pointer;white-space:nowrap;transition:all .15s}
+#btn-pwa-install:hover{background:rgba(200,170,110,.18)}
 </style>
+<link rel="manifest" href="/stats-manifest.json">
+<meta name="theme-color" content="#0c1117">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 </head>
 <body>
 <div class="layout">
@@ -842,8 +908,12 @@ tr.has-bg-effect td {
           <div class="server-name" id="server-name">— 전적</div>
           <div class="member-count">전체 <span id="member-count">—</span>명 / 표시 <span id="filtered-count">—</span>명</div>
         </div>
+        <!-- 모바일 햄버거 버튼 -->
+        <button id="mobile-menu-btn" onclick="openMobileMenu()" aria-label="메뉴">☰</button>
         <!-- 우측: 디스코드 + 구분선 + 관리자 -->
         <div class="header-account">
+          <!-- PWA 설치 버튼 -->
+          <button id="btn-pwa-install" onclick="_pwaInstall()">⬇ 앱 설치</button>
           <!-- 디스코드 -->
           <button id="discord-login-btn" onclick="discordHeaderLogin()"
             style="padding:4px 10px;border-radius:3px;border:1px solid rgba(114,137,218,.4);background:rgba(114,137,218,.08);color:#7289da;font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;">
@@ -862,16 +932,12 @@ tr.has-bg-effect td {
             <span id="admin-status-text" style="font-family:'Rajdhani',sans-serif;font-size:11px;color:var(--blue);"></span>
             <button id="btn-userpage-manage" onclick="openUserPageManage()" style="display:none;padding:2px 8px;border-radius:2px;border:1px solid rgba(200,170,110,.35);background:rgba(200,170,110,.08);color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;">🛡️ 유저페이지 관리</button>
             <button id="btn-achievement-manage" onclick="openAchievementManager()" style="display:none;padding:2px 8px;border-radius:2px;border:1px solid rgba(200,170,110,.35);background:rgba(200,170,110,.08);color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;">🏆 업적 관리</button>
+
             <button onclick="statsAdminLogout()" style="padding:2px 7px;border-radius:2px;border:1px solid rgba(255,255,255,.1);background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;">로그아웃</button>
           </div>
           <button id="btn-admin-login" onclick="openAdminLogin()"
             style="padding:4px 10px;border-radius:3px;border:1px solid rgba(200,170,110,.3);background:rgba(200,170,110,.06);color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:.5px;cursor:pointer;display:none;">
             🔑 관리자 로그인
-          </button>
-          <!-- 모바일 관리자 버튼 -->
-          <button id="mobile-admin-btn" onclick="openAdminLogin()"
-            style="display:none;padding:4px 10px;border-radius:3px;border:1px solid rgba(200,170,110,.3);background:rgba(200,170,110,.06);color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;">
-            🔑 관리자
           </button>
         </div>
       </div>
@@ -1277,6 +1343,7 @@ var _statsAdminRole  = (function(){ try{ return localStorage.getItem('sa_role')|
 })();
 var _statsAdminId    = (function(){ try{ return localStorage.getItem('sa_id')||''; }catch(e){ return ''; } })();
 var _statsAdminPw    = (function(){ try{ return localStorage.getItem('sa_pw')||''; }catch(e){ return ''; } })();
+
 // 두 번째 script에서 선언되는 전역 변수 미리 선언 (참조 오류 방지)
 var _weeklyEmojis = {};
 var _weeklyMissionConfig = null;
@@ -1561,8 +1628,11 @@ async function loadData(){
       try { sessionStorage.setItem(_siCacheKey, JSON.stringify({ data: json, ts: _nowTs })); } catch(e) {}
       _updateNextUpdateTime(_nowTs);
     }
-    document.getElementById('server-name').textContent=(json.server_name||'커뮤니티')+' 전적';
-    document.title=(json.server_name||'커뮤니티')+' 전적';
+    var _serverName=(json.server_name||'커뮤니티');
+    document.getElementById('server-name').textContent=_serverName+' 전적';
+    document.title=_serverName+' 전적';
+    // PWA manifest 동적 생성 (커뮤니티명 + cid 파라미터 포함)
+    _injectPwaManifest(_serverName);
     // cid 있으면 마스터 버튼 표시
     if (COMMUNITY_ID) {
       // 마스터 전용 버튼은 로그인 후에만 표시
@@ -3384,8 +3454,10 @@ function renderDetail(analysis, member, totalLoaded, updatedAt, ratingResult) {
           '</div>'+
         '</div>'+
         '<div class="dm-section"><div class="dm-section-title">최근 전적</div>'+
-          '<div style="display:flex;gap:.5rem;align-items:center;margin-bottom:.6rem;">'+miniWinBar(wins,totalGames-wins)+'</div>'+
-          '<div class="match-list">'+matchRows()+'</div>'+
+          '<div class="sensitive-blur">'+
+            '<div style="display:flex;gap:.5rem;align-items:center;margin-bottom:.6rem;">'+miniWinBar(wins,totalGames-wins)+'</div>'+
+            '<div class="match-list">'+matchRows()+'</div>'+
+          '</div>'+
         '</div>'+
       '</div>'+
       '<div class="two-col">'+
@@ -3788,6 +3860,7 @@ async function doStatsAdminLogin() {
   }
 }
 window.doStatsAdminLogin = doStatsAdminLogin;
+
 
 function statsAdminLogout() {
   _statsAdminToken = '';
@@ -5142,7 +5215,7 @@ function switchMainTab(tab) {
     communityTab.style.borderBottom = '2px solid #A78BFA';
     communityTab.style.background   = 'rgba(167,139,250,.08)';
     communityTab.style.color        = '#A78BFA';
-    if (communityView) { communityView.style.display = ''; renderCommunityStats(); loadDonations(); }
+    if (communityView) { communityView.style.display = ''; loadAllSoloRankStats().then(function(){ renderCommunityStats(); }); loadDonations(); }
   } else if (tab === 'scout') {
     var scoutTab = document.getElementById('tab-scout');
     var scoutView = document.getElementById('scout-view');
@@ -7390,6 +7463,99 @@ async function runNicknameCheck() {
 var _communityStatsCache = null;
 var _communityStatsCacheTs = 0;
 
+// 솔로랭크 판수 통계 { puuId: { games, wins, losses, tier, division, lp, updatedAt, lastGameTs } }
+var _soloRankStats = null;
+var _soloRankStatsCacheTs = 0;
+var _soloRankStatsLoading = false;
+
+async function loadAllSoloRankStats() {
+  if (!COMMUNITY_ID) return;
+  if (_soloRankStats && Date.now() - _soloRankStatsCacheTs < 30 * 60 * 1000) return; // 30분 캐시
+  try {
+    var res = await fetch(WORKER_URL + '/solo-rank-stats-read', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ communityId: COMMUNITY_ID })
+    });
+    var j = await res.json();
+    if (j.ok) {
+      _soloRankStats = j.data || {};
+      _soloRankStatsCacheTs = Date.now();
+    }
+  } catch(e) {
+    console.warn('[soloRankStats] 로드 실패:', e.message);
+  }
+}
+
+async function fetchAndSaveSoloRankStats() {
+  if (!COMMUNITY_ID || !allData || !allData.length) return;
+  if (_soloRankStatsLoading) return;
+  _soloRankStatsLoading = true;
+
+  var btn = document.getElementById('btn-fetch-solo-rank');
+  var prog = document.getElementById('solo-rank-progress');
+  if (btn) { btn.disabled = true; btn.textContent = '조회 중...'; }
+
+  var members = allData.filter(function(m){ return m.puu_id; });
+  var total = members.length;
+  var done = 0;
+  var newData = {};
+  var API_BASE = 'https://b2c-api-cdn.deeplol.gg';
+
+  for (var i = 0; i < members.length; i++) {
+    var m = members[i];
+    var puuId = m.puu_id;
+    var platform = m.platform || 'KR';
+    try {
+      var url = API_BASE + '/summoner/summoner-realtime?platform_id=' + platform + '&summoner_id=&puu_id=' + encodeURIComponent(puuId);
+      var r = await fetch(url);
+      if (r.ok) {
+        var jj = await r.json();
+        var solo = jj.season_tier_info_dict && jj.season_tier_info_dict.ranked_solo_5x5;
+        if (solo) {
+          newData[puuId] = {
+            games: (solo.wins || 0) + (solo.losses || 0),
+            wins: solo.wins || 0,
+            losses: solo.losses || 0,
+            tier: solo.tier || '',
+            division: solo.division || '',
+            lp: solo.league_points || 0,
+            updatedAt: Date.now(),
+            lastGameTs: m.creation_timestamp || 0
+          };
+        } else {
+          newData[puuId] = { games: 0, wins: 0, losses: 0, tier: '', division: '', lp: 0, updatedAt: Date.now(), lastGameTs: m.creation_timestamp || 0 };
+        }
+      }
+    } catch(e2) {}
+    done++;
+    if (prog) prog.textContent = done + ' / ' + total;
+    // API 부하 줄이기 위해 50ms 딜레이
+    if (i % 10 === 9) await new Promise(function(res){ setTimeout(res, 200); });
+  }
+
+  // Firebase 저장
+  if (Object.keys(newData).length > 0) {
+    try {
+      await fetch(WORKER_URL + '/solo-rank-stats-write', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ communityId: COMMUNITY_ID, data: newData })
+      });
+      _soloRankStats = newData;
+      _soloRankStatsCacheTs = Date.now();
+      _communityStatsCache = null; // 통계 캐시 초기화
+      renderCommunityStats();
+      if (prog) prog.textContent = '완료! ' + Object.keys(newData).length + '명 저장';
+    } catch(e3) {
+      if (prog) prog.textContent = '저장 실패: ' + e3.message;
+    }
+  }
+
+  _soloRankStatsLoading = false;
+  if (btn) { btn.disabled = false; btn.textContent = '🔄 솔로랭크 판수 전체 조회'; }
+}
+
 function renderCommunityStats() {
   if (!allData || !allData.length) return;
   var el = document.getElementById('community-stats-content');
@@ -7550,6 +7716,124 @@ function renderCommunityStats() {
 
   // 막대차트
   html += chartCard('📅 최근 게임 시간 분포', barHtml);
+
+  // ── 솔로랭크 판수 통계 카드 ──
+  (function() {
+    var stats = _soloRankStats;
+    // 조회 버튼 (항상 표시)
+    var fetchBtnHtml = '<div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;margin-bottom:1rem;">' +
+      '<button id="btn-fetch-solo-rank" onclick="fetchAndSaveSoloRankStats()" ' +
+        'style="padding:.4rem .9rem;font-size:12px;font-weight:700;border:1px solid var(--border-subtle);' +
+        'background:var(--bg-dark);color:var(--white);border-radius:6px;cursor:pointer;">' +
+        '🔄 솔로랭크 판수 전체 조회</button>' +
+      '<span id="solo-rank-progress" style="font-size:12px;color:var(--muted);"></span>' +
+    '</div>';
+
+    if (!stats || Object.keys(stats).length === 0) {
+      html += chartCard('🎯 솔로랭크 판수 통계',
+        fetchBtnHtml +
+        '<div style="text-align:center;color:var(--muted);padding:1.5rem 0;font-size:13px;">솔로랭크 판수 데이터가 없습니다.<br>조회 버튼을 눌러 데이터를 불러오세요.</div>'
+      );
+      return;
+    }
+
+    // 최근 게임 기간 필터용 lastGameTs 활용
+    var nowSec2 = Date.now() / 1000;
+    var PERIOD_FILTERS = [
+      { label: '전체',       key: 'all',  sec: null },
+      { label: '1주일 이내', key: '1w',   sec: 86400*7 },
+      { label: '1달 이내',   key: '1m',   sec: 86400*30 },
+      { label: '3개월 이내', key: '3m',   sec: 86400*90 },
+      { label: '6개월 이내', key: '6m',   sec: 86400*180 },
+      { label: '6개월 이상', key: '6m+',  sec: -1 } // -1: 6개월 초과
+    ];
+
+    // 멤버 데이터와 솔로랭크 판수를 합산
+    var enriched = members.map(function(m) {
+      var s = stats[m.puu_id] || null;
+      return {
+        puu_id: m.puu_id,
+        tier: (m.tier || '').toUpperCase().split(' ')[0].trim(),
+        games: s ? s.games : null,
+        lastGameTs: (s && s.lastGameTs) ? s.lastGameTs : (m.creation_timestamp || 0)
+      };
+    }).filter(function(x){ return x.games !== null; });
+
+    // 현재 선택된 필터를 읽어서 계산 (HTML에서 선택 상태 반영은 이벤트로 처리)
+    var selPeriod = (el._soloRankPeriod || 'all');
+    var selTier   = (el._soloRankTier || 'ALL');
+
+    function calcAvg(periodKey, tierKey) {
+      var pFilter = PERIOD_FILTERS.find(function(f){ return f.key === periodKey; }) || PERIOD_FILTERS[0];
+      var subset = enriched.filter(function(x) {
+        // 최근 게임 기간 필터
+        if (pFilter.key !== 'all') {
+          var diff = nowSec2 - x.lastGameTs;
+          if (pFilter.sec === -1) { // 6개월 이상
+            if (diff <= 86400*180) return false;
+          } else {
+            if (diff > pFilter.sec) return false;
+          }
+        }
+        // 티어 필터
+        if (tierKey !== 'ALL' && x.tier !== tierKey) return false;
+        return true;
+      });
+      if (!subset.length) return null;
+      var sum = subset.reduce(function(s, x){ return s + x.games; }, 0);
+      return { avg: (sum / subset.length).toFixed(1), cnt: subset.length };
+    }
+
+    var result = calcAvg(selPeriod, selTier);
+    var avgGamesStr = result ? result.avg + '판 (' + result.cnt + '명)' : '—';
+
+    // 티어 필터 UI
+    var TIER_FILTER_LIST = ['ALL','CHALLENGER','GRANDMASTER','MASTER','DIAMOND','EMERALD','PLATINUM','GOLD','SILVER','BRONZE','IRON'];
+    var TIER_KO2 = {ALL:'전체',CHALLENGER:'챌',GRANDMASTER:'그마',MASTER:'마스터',DIAMOND:'다이아',EMERALD:'에메',PLATINUM:'플래',GOLD:'골드',SILVER:'실버',BRONZE:'브론즈',IRON:'아이언'};
+
+    function chipStyle(active) {
+      return 'style="display:inline-block;padding:.25rem .6rem;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:1px solid;' +
+        (active ? 'background:var(--blue);border-color:var(--blue);color:#fff;' : 'background:transparent;border-color:var(--border-subtle);color:var(--muted);') + '"';
+    }
+
+    var periodChips = PERIOD_FILTERS.map(function(f) {
+      return '<span '+chipStyle(selPeriod===f.key)+' onclick="(function(){var el=document.getElementById(\'community-stats-content\');el._soloRankPeriod=\''+f.key+'\';_communityStatsCache=null;renderCommunityStats();})()">'+f.label+'</span>';
+    }).join('');
+
+    var tierChips = TIER_FILTER_LIST.map(function(t) {
+      return '<span '+chipStyle(selTier===t)+' onclick="(function(){var el=document.getElementById(\'community-stats-content\');el._soloRankTier=\''+t+'\';_communityStatsCache=null;renderCommunityStats();})()">'+TIER_KO2[t]+'</span>';
+    }).join('');
+
+    var updatedAt = '';
+    var samplePuu = Object.keys(stats)[0];
+    if (samplePuu && stats[samplePuu] && stats[samplePuu].updatedAt) {
+      var d = new Date(stats[samplePuu].updatedAt);
+      updatedAt = d.getFullYear() + '.' + String(d.getMonth()+1).padStart(2,'0') + '.' + String(d.getDate()).padStart(2,'0') + ' ' +
+                  String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+    }
+
+    var cardBody = fetchBtnHtml +
+      '<div style="display:flex;flex-direction:column;gap:.75rem;">' +
+        '<div>' +
+          '<div style="font-size:11px;color:var(--muted);margin-bottom:.4rem;">최근 게임 기간</div>' +
+          '<div style="display:flex;flex-wrap:wrap;gap:.35rem;">'+periodChips+'</div>' +
+        '</div>' +
+        '<div>' +
+          '<div style="font-size:11px;color:var(--muted);margin-bottom:.4rem;">티어별</div>' +
+          '<div style="display:flex;flex-wrap:wrap;gap:.35rem;">'+tierChips+'</div>' +
+        '</div>' +
+        '<div style="background:var(--bg-dark);border-radius:8px;padding:1rem;display:flex;align-items:center;justify-content:space-between;">' +
+          '<div>' +
+            '<div style="font-size:11px;color:var(--muted);">평균 솔로랭크 판수</div>' +
+            '<div style="font-size:28px;font-weight:800;color:#34D399;margin-top:4px;">'+avgGamesStr+'</div>' +
+          '</div>' +
+          (updatedAt ? '<div style="font-size:10px;color:var(--muted);">갱신: '+updatedAt+'</div>' : '') +
+        '</div>' +
+      '</div>';
+
+    html += chartCard('🎯 솔로랭크 판수 통계', cardBody);
+  })();
+
   html += '</div>';
 
   _communityStatsCache = html;
@@ -11814,6 +12098,242 @@ function _getDiscordUserId() { return _discordUser && _discordUser.id ? _discord
     </div>
   </div>
 </div>
+
+<!-- ── 모바일 햄버거 메뉴 패널 ── -->
+<div id="mobile-menu-panel">
+  <div id="mobile-menu-overlay" onclick="closeMobileMenu()"></div>
+  <div id="mobile-menu-drawer">
+    <!-- 헤더 -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:.75rem 1rem;border-bottom:1px solid rgba(255,255,255,.07);">
+      <span style="font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:2px;color:var(--gold);">메뉴</span>
+      <button onclick="closeMobileMenu()" style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;padding:0 4px;">✕</button>
+    </div>
+
+    <!-- 디스코드 영역 -->
+    <div class="mobile-menu-section">계정</div>
+    <!-- 로그인 전 -->
+    <div id="mobile-dc-login-row">
+      <button class="mobile-menu-item" onclick="closeMobileMenu();discordHeaderLogin();">
+        <span class="mmi-icon"><img src="https://cdn.prod.website-files.com/6257adef93867e50d84d30e2/636e0a69f118df70ad7828d4_icon_clyde_blurple_RGB.png" style="width:16px;height:16px;"></span>
+        <span style="color:#7289da;">Discord 로그인</span>
+      </button>
+    </div>
+    <!-- 로그인 후 -->
+    <div id="mobile-dc-logged-row" style="display:none;">
+      <div id="mobile-discord-status">
+        <img id="mobile-discord-avatar" src="" style="width:24px;height:24px;border-radius:50%;border:1px solid rgba(114,137,218,.3);">
+        <span id="mobile-discord-name" style="font-size:12px;color:#7289da;font-weight:700;"></span>
+      </div>
+      <button id="mobile-btn-summoner-link" class="mobile-menu-item" style="display:none;" onclick="closeMobileMenu();openSummonerLinkPopup();">
+        <span class="mmi-icon">🔗</span>소환사 연동
+      </button>
+      <button id="mobile-btn-my-page" class="mobile-menu-item" style="display:none;" onclick="closeMobileMenu();goToMyPage();">
+        <span class="mmi-icon">⭐</span>내 페이지
+      </button>
+      <button class="mobile-menu-item" onclick="closeMobileMenu();discordLogout();">
+        <span class="mmi-icon" style="color:var(--muted);">↩</span><span style="color:var(--muted);">Discord 로그아웃</span>
+      </button>
+    </div>
+
+    <div class="mobile-menu-sep"></div>
+
+    <!-- 관리자 영역 -->
+    <div class="mobile-menu-section">관리자</div>
+    <div id="mobile-admin-row">
+      <button id="mobile-btn-admin-login" class="mobile-menu-item" onclick="closeMobileMenu();openAdminLogin();">
+        <span class="mmi-icon">🔑</span><span style="color:var(--gold);">관리자 로그인</span>
+      </button>
+    </div>
+    <div id="mobile-admin-logged-row" style="display:none;">
+      <div style="padding:.5rem 1rem .25rem;font-size:11px;color:var(--blue);font-weight:700;" id="mobile-admin-status-text"></div>
+      <button id="mobile-btn-userpage-manage" class="mobile-menu-item" style="display:none;" onclick="closeMobileMenu();openUserPageManage();">
+        <span class="mmi-icon">🛡️</span><span style="color:var(--gold);">유저페이지 관리</span>
+      </button>
+      <button id="mobile-btn-achievement-manage" class="mobile-menu-item" style="display:none;" onclick="closeMobileMenu();openAchievementManager();">
+        <span class="mmi-icon">🏆</span><span style="color:var(--gold);">업적 관리</span>
+      </button>
+      <button id="mobile-btn-weekly-mission" class="mobile-menu-item" style="display:none;" onclick="closeMobileMenu();openWeeklyMissionModal();">
+        <span class="mmi-icon">🎯</span><span style="color:#22C55E;">주간 미션 설정</span>
+      </button>
+      <button id="mobile-btn-nickname-run" class="mobile-menu-item" style="display:none;" onclick="closeMobileMenu();runNicknameCheck();">
+        <span class="mmi-icon">🏷️</span><span style="color:#A78BFA;">닉변경 체크</span>
+      </button>
+      <button id="mobile-btn-update-peak" class="mobile-menu-item" style="display:none;" onclick="closeMobileMenu();updateAllPeakTiers();">
+        <span class="mmi-icon">🔄</span><span style="color:var(--blue-bright);">최고티어 전체 업데이트</span>
+      </button>
+      <button id="mobile-btn-cron" class="mobile-menu-item" style="display:none;" onclick="closeMobileMenu();runCronTest();">
+        <span class="mmi-icon">🔄</span><span style="color:#e88;">Cron 수동실행</span>
+      </button>
+      <button id="mobile-btn-init-rating" class="mobile-menu-item" style="display:none;" onclick="closeMobileMenu();openInitRatingModal();">
+        <span class="mmi-icon">👑</span><span style="color:var(--gold);">초기 레이팅 계산</span>
+      </button>
+
+      <button class="mobile-menu-item" onclick="closeMobileMenu();statsAdminLogout();">
+        <span class="mmi-icon" style="color:var(--muted);">↩</span><span style="color:var(--muted);">관리자 로그아웃</span>
+      </button>
+    </div>
+
+    <div class="mobile-menu-sep"></div>
+
+    <!-- 일반 기능 -->
+    <div class="mobile-menu-section">기능</div>
+    <button class="mobile-menu-item" onclick="closeMobileMenu();openAchievementsPopup();">
+      <span class="mmi-icon">🏆</span>업적 목록
+    </button>
+    <button class="mobile-menu-item" onclick="closeMobileMenu();goRanking();">
+      <span class="mmi-icon">🏆</span>주간 랭킹
+    </button>
+    <button class="mobile-menu-item" onclick="closeMobileMenu();window.open('/guide','_blank');">
+      <span class="mmi-icon">📖</span>가이드
+    </button>
+    <button class="mobile-menu-item" onclick="closeMobileMenu();document.getElementById('btn-refresh').click();">
+      <span class="mmi-icon">↻</span>새로고침
+    </button>
+    <button id="mobile-btn-pwa-install" class="mobile-menu-item" style="display:none;" onclick="closeMobileMenu();_pwaInstall();">
+      <span class="mmi-icon">⬇</span><span style="color:var(--gold);">앱 설치</span>
+    </button>
+  </div>
+</div>
+
+<script>
+function openMobileMenu() {
+  _syncMobileMenu();
+  document.getElementById('mobile-menu-panel').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeMobileMenu() {
+  document.getElementById('mobile-menu-panel').classList.remove('open');
+  document.body.style.overflow = '';
+}
+// 디스코드/관리자 상태를 모바일 메뉴에 동기화
+function _syncMobileMenu() {
+  // 디스코드
+  var dcStatus = document.getElementById('discord-status');
+  var isDcLoggedIn = dcStatus && dcStatus.style.display !== 'none';
+  document.getElementById('mobile-dc-login-row').style.display = isDcLoggedIn ? 'none' : '';
+  document.getElementById('mobile-dc-logged-row').style.display = isDcLoggedIn ? '' : 'none';
+  if (isDcLoggedIn) {
+    var avatar = document.getElementById('discord-avatar');
+    var name = document.getElementById('discord-name');
+    var mAvatar = document.getElementById('mobile-discord-avatar');
+    var mName = document.getElementById('mobile-discord-name');
+    if (avatar && mAvatar) mAvatar.src = avatar.src;
+    if (name && mName) mName.textContent = name.textContent;
+    // 소환사 연동 / 내 페이지 버튼
+    var sumLink = document.getElementById('btn-summoner-link');
+    var myPage = document.getElementById('btn-my-page');
+    var mSumLink = document.getElementById('mobile-btn-summoner-link');
+    var mMyPage = document.getElementById('mobile-btn-my-page');
+    if (mSumLink) mSumLink.style.display = (sumLink && sumLink.style.display !== 'none') ? '' : 'none';
+    if (mMyPage) mMyPage.style.display = (myPage && myPage.style.display !== 'none') ? '' : 'none';
+  }
+  // 관리자
+  var adminStatus = document.getElementById('admin-status');
+  var isAdminLoggedIn = adminStatus && adminStatus.style.display !== 'none';
+  document.getElementById('mobile-btn-admin-login').parentElement.style.display = isAdminLoggedIn ? 'none' : '';
+  document.getElementById('mobile-admin-logged-row').style.display = isAdminLoggedIn ? '' : 'none';
+  if (isAdminLoggedIn) {
+    var aText = document.getElementById('admin-status-text');
+    var mAText = document.getElementById('mobile-admin-status-text');
+    if (aText && mAText) mAText.textContent = aText.textContent;
+    // 관리자 전용 버튼들 미러링
+    var mirrors = [
+      ['btn-userpage-manage',   'mobile-btn-userpage-manage'],
+      ['btn-achievement-manage','mobile-btn-achievement-manage'],
+      ['btn-weekly-mission',    'mobile-btn-weekly-mission'],
+      ['btn-nickname-run',      'mobile-btn-nickname-run'],
+      ['btn-update-all-peak',   'mobile-btn-update-peak'],
+      ['btn-cron-test',         'mobile-btn-cron'],
+      ['btn-init-rating',       'mobile-btn-init-rating'],
+    ];
+    mirrors.forEach(function(pair) {
+      var orig = document.getElementById(pair[0]);
+      var mob = document.getElementById(pair[1]);
+      if (orig && mob) mob.style.display = (orig.style.display !== 'none') ? '' : 'none';
+    });
+  }
+  // PWA 설치 버튼 동기화 (PC 버튼 visible 여부 그대로 미러)
+  var pwaBtn = document.getElementById('btn-pwa-install');
+  var mobilePwaBtn = document.getElementById('mobile-btn-pwa-install');
+  if (mobilePwaBtn) mobilePwaBtn.style.display = (pwaBtn && pwaBtn.style.display === 'flex') ? '' : 'none';
+}
+</script>
+
+<!-- ── PWA 설치 ── -->
+<script>
+(function(){
+  var _pwaPrompt = null;
+
+  // Service Worker 등록
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.register('/sw.js').catch(function(){});
+  }
+
+  // 커뮤니티 이름 로드 후 manifest start_url + 앱 이름 업데이트
+  window._injectPwaManifest = function(serverName){
+    var cid = (new URLSearchParams(location.search)).get('cid') || '';
+    var startUrl = '/stats.html' + (cid ? '?cid=' + encodeURIComponent(cid) : '');
+    // 기존 manifest 링크 교체 (cid + 이름 반영)
+    var manifest = {
+      name: serverName + ' 전적 페이지',
+      short_name: serverName + ' 전적',
+      description: serverName + ' 커뮤니티 전적 페이지',
+      start_url: startUrl,
+      scope: '/',
+      display: 'standalone',
+      background_color: '#0c1117',
+      theme_color: '#0c1117',
+      orientation: 'portrait-primary',
+      icons: [{ src: '/pwa-icon.png', sizes: 'any', type: 'image/png', purpose: 'any maskable' }]
+    };
+    var blob = new Blob([JSON.stringify(manifest)], {type:'application/json'});
+    var blobUrl = URL.createObjectURL(blob);
+    // 기존 <link rel="manifest"> 교체
+    var existing = document.querySelector('link[rel="manifest"]');
+    if(existing){ existing.href = blobUrl; }
+    else { var l=document.createElement('link'); l.rel='manifest'; l.href=blobUrl; document.head.appendChild(l); }
+    // apple 앱 이름
+    var am = document.querySelector('meta[name="apple-mobile-web-app-title"]');
+    if(!am){ am=document.createElement('meta'); am.name='apple-mobile-web-app-title'; document.head.appendChild(am); }
+    am.content = serverName + ' 전적';
+  };
+
+  // beforeinstallprompt 가로채기 — 버튼 표시
+  window.addEventListener('beforeinstallprompt', function(e){
+    e.preventDefault();
+    _pwaPrompt = e;
+    _showPwaBtn(true);
+  });
+
+  // 설치 완료 — 버튼 숨기기
+  window.addEventListener('appinstalled', function(){
+    _showPwaBtn(false);
+    _pwaPrompt = null;
+  });
+
+  function _showPwaBtn(show){
+    var btn = document.getElementById('btn-pwa-install');
+    var mBtn = document.getElementById('mobile-btn-pwa-install');
+    var d = show ? 'flex' : 'none';
+    if(btn) btn.style.display = d;
+    if(mBtn) mBtn.style.display = show ? '' : 'none';
+  }
+
+  // 버튼 클릭
+  window._pwaInstall = function(){
+    if(_pwaPrompt){
+      _pwaPrompt.prompt();
+      _pwaPrompt.userChoice.then(function(r){
+        if(r.outcome==='accepted') _showPwaBtn(false);
+        _pwaPrompt = null;
+      });
+    } else {
+      // prompt가 아직 없거나 이미 설치된 경우 — 크롬 주소창 설치 아이콘 안내
+      alert('주소창 오른쪽의 설치(⊕) 아이콘을 눌러 설치하거나,\n이미 설치되어 있을 수 있습니다.');
+    }
+  };
+})();
+</script>
 
 </body>
 </html>

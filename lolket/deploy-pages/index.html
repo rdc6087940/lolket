@@ -2364,7 +2364,7 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
         <span style="font-size:10px;background:rgba(10,200,185,.08);border:1px solid rgba(10,200,185,.2);border-radius:3px;padding:1px 6px;color:var(--blue-bright);font-family:monospace;">{출석인원}</span>
         <span style="font-size:10px;background:rgba(10,200,185,.08);border:1px solid rgba(10,200,185,.2);border-radius:3px;padding:1px 6px;color:var(--blue-bright);font-family:monospace;">{커뮤니티명}</span>
       </div>
-    </div> <div style="display:flex;flex-direction:column;gap:6px;margin-top:.5rem;"> <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;text-transform:uppercase;">딥롤 커넥트 Server ID <span style="color:var(--text-muted);font-size:9px;font-weight:400;">(전적 페이지용)</span></label> <input class="form-input" type="text" id="cm-deeplol-id" placeholder="예) 156" style="border-color:rgba(200,170,110,.2);"> <span style="font-size:10px;color:var(--text-muted);font-family:'Noto Sans KR',sans-serif;">딥롤 커넥트에서 생성한 서버의 ID를 입력하면 전적 페이지가 활성화됩니다.</span> </div> <div style="display:flex;flex-direction:column;gap:6px;margin-top:.5rem;"> <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;text-transform:uppercase;">디스코드 서버 ID <span style="color:var(--text-muted);font-size:9px;font-weight:400;">(봇 연동용)</span></label> <input class="form-input" type="text" id="cm-discord-server-id" placeholder="예) 1499401481097449636" style="border-color:rgba(88,101,242,.3);"> <span style="font-size:10px;color:var(--text-muted);font-family:'Noto Sans KR',sans-serif;">디스코드 봇 /내전참가 커맨드 연동에 사용됩니다. 서버 우클릭 → ID 복사</span> </div> <div style="display:flex;flex-direction:column;gap:6px;margin-top:.5rem;"> <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;text-transform:uppercase;">내전 모임 메세지 채널 ID <span style="color:var(--text-muted);font-size:9px;font-weight:400;">(디스코드 호출용)</span></label> <input class="form-input" type="text" id="cm-discord-notify-channel" placeholder="예) 1500816161456263339" style="border-color:rgba(88,101,242,.3);"> <span style="font-size:10px;color:var(--text-muted);font-family:'Noto Sans KR',sans-serif;">📢 디스코드 호출 버튼으로 신청자들에게 멘션을 보낼 채널입니다.</span> </div> <div style="display:flex;align-items:center;justify-content:space-between;padding:.75rem 0;border-top:1px solid rgba(255,255,255,.05);margin-top:.5rem;"> <div> <div style="font-size:11px;font-family:'Rajdhani',sans-serif;font-weight:700;letter-spacing:1px;color:var(--white);">기본 출석</div> <div style="font-size:10px;color:var(--text-muted);font-family:'Noto Sans KR',sans-serif;margin-top:2px;">ON 시 멤버 추가 시 자동으로 출석 처리</div> </div> <button id="cm-default-attend-btn" onclick="toggleCmDefaultAttend()" style="width:48px;height:26px;border-radius:13px;border:none;cursor:pointer;transition:all .2s;background:#2D3748;position:relative;"> <span id="cm-default-attend-dot" style="position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#718096;transition:all .2s;"></span> </button> <input type="hidden" id="cm-default-attend" value="false"> </div>
+    </div> <div style="display:flex;flex-direction:column;gap:6px;margin-top:.5rem;"> <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;text-transform:uppercase;">딥롤 커넥트 Server ID <span style="color:var(--text-muted);font-size:9px;font-weight:400;">(전적 페이지용)</span></label> <input class="form-input" type="text" id="cm-deeplol-id" placeholder="예) 156" style="border-color:rgba(200,170,110,.2);"> <span style="font-size:10px;color:var(--text-muted);font-family:'Noto Sans KR',sans-serif;">딥롤 커넥트에서 생성한 서버의 ID를 입력하면 전적 페이지가 활성화됩니다.</span> </div> <div style="display:flex;flex-direction:column;gap:6px;margin-top:.5rem;"> <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;text-transform:uppercase;">디스코드 서버 ID <span style="color:var(--text-muted);font-size:9px;font-weight:400;">(봇 연동용)</span></label> <input class="form-input" type="text" id="cm-discord-server-id" placeholder="예) 1499401481097449636" style="border-color:rgba(88,101,242,.3);"> <span style="font-size:10px;color:var(--text-muted);font-family:'Noto Sans KR',sans-serif;">디스코드 봇 /내전참가 커맨드 연동에 사용됩니다. 서버 우클릭 → ID 복사</span> </div> <div style="display:flex;flex-direction:column;gap:6px;margin-top:.5rem;"> <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'Rajdhani',sans-serif;text-transform:uppercase;">내전 모임 메세지 채널 ID <span style="color:var(--text-muted);font-size:9px;font-weight:400;">(디스코드 호출용)</span></label> <input class="form-input" type="text" id="cm-discord-notify-channel" placeholder="예) 1500816161456263339" style="border-color:rgba(88,101,242,.3);"> <span style="font-size:10px;color:var(--text-muted);font-family:'Noto Sans KR',sans-serif;">📢 디스코드 호출 버튼으로 신청자들에게 멘션을 보낼 채널입니다.</span> </div> <div style="display:flex;flex-direction:column;gap:6px;margin-top:.5rem;"> <label style="font-size:10px;letter-spacing:1.5px;color:#7289DA;font-family:'Rajdhani',sans-serif;text-transform:uppercase;">⚔️ 내전 포럼 채널 ID <span style="color:var(--text-muted);font-size:9px;">(내전 생성 시 포럼 포스트 자동 등록)</span></label> <input class="form-input" type="text" id="cm-discord-forum-channel" placeholder="예) 1234567890123456789" style="border-color:rgba(88,101,242,.3);"> <span style="font-size:10px;color:var(--text-muted);font-family:'Noto Sans KR',sans-serif;">📋 내전이 생성될 때마다 해당 포럼 채널에 포스트가 자동으로 올라갑니다. 포럼 채널 우클릭 → ID 복사</span> </div> <div style="display:flex;align-items:center;justify-content:space-between;padding:.75rem 0;border-top:1px solid rgba(255,255,255,.05);margin-top:.5rem;"> <div> <div style="font-size:11px;font-family:'Rajdhani',sans-serif;font-weight:700;letter-spacing:1px;color:var(--white);">기본 출석</div> <div style="font-size:10px;color:var(--text-muted);font-family:'Noto Sans KR',sans-serif;margin-top:2px;">ON 시 멤버 추가 시 자동으로 출석 처리</div> </div> <button id="cm-default-attend-btn" onclick="toggleCmDefaultAttend()" style="width:48px;height:26px;border-radius:13px;border:none;cursor:pointer;transition:all .2s;background:#2D3748;position:relative;"> <span id="cm-default-attend-dot" style="position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#718096;transition:all .2s;"></span> </button> <input type="hidden" id="cm-default-attend" value="false"> </div>
   </div>
 </div>
 <div style="display:flex;flex-direction:column;gap:6px;">
@@ -4363,7 +4363,7 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
         <div style="font-size:12px;color:var(--text-muted);line-height:1.7;margin-bottom:.75rem;">
           아래 링크를 클릭해 룽잉닷컴 봇을 내전 기록을 남길 <b style="color:var(--text-white);">서버</b>에 초대하세요.
         </div>
-        <a href="https://discord.com/oauth2/authorize?client_id=1500717088984010883&permissions=34816&scope=bot" target="_blank"
+        <a href="https://discord.com/oauth2/authorize?client_id=1500717088984010883&permissions=309237681152&scope=bot" target="_blank"
            style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:#7289DA;border-radius:4px;color:#fff;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-decoration:none;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>
           봇 초대하기
@@ -4751,6 +4751,49 @@ renderMembers(); updateProgress(); updateConditions();
 toast('내전이 생성되었습니다', 'ok');
 loadDiscordLinkMap();
 startStatusTimer();
+// 디스코드 포럼 포스트 자동 생성 (커뮤니티에 forumChannelId 설정된 경우)
+(async function() {
+  try {
+    const cid = match.communityId || window._currentCommunityId;
+    console.log('[forum-post] 시작 cid:', cid);
+    if (!cid) { console.warn('[forum-post] cid 없음'); return; }
+    const _wb = 'https://api.roonging.com';
+    // 캐시 우회: communities_info에서 직접 최신 데이터 조회
+    let forumChannelId = null;
+    try {
+      const ciRes = await fetch(_wb + '/db-public-read', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: 'communities_info/' + cid }),
+      });
+      const ciData = ciRes.ok ? await ciRes.json() : null;
+      console.log('[forum-post] ciData:', JSON.stringify(ciData));
+      forumChannelId = ciData && ciData.data && ciData.data.discordForumChannelId;
+      console.log('[forum-post] forumChannelId:', forumChannelId);
+    } catch(e2) { console.warn('[forum-post] ciData 조회 오류:', e2.message); }
+    if (!forumChannelId) { console.warn('[forum-post] forumChannelId 없음 — 스킵'); return; }
+    const res = await fetch(_wb + '/match-forum-post', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        cid,
+        matchId: match.id,
+        matchName: match.name,
+        matchTime: match.time,
+        matchAdmin: match.admin,
+      }),
+    });
+    const data = await res.json();
+    console.log('[forum-post] 응답:', JSON.stringify(data));
+    if (data.ok) {
+      console.log('[forum-post] 포럼 포스트 생성됨:', data.threadId);
+    } else {
+      console.warn('[forum-post] 실패:', data.error);
+    }
+  } catch(e) {
+    console.warn('[forum-post] 오류:', e.message);
+  }
+})();
 }
 function updateAramBtn() {
   const btn = document.getElementById('btn-aram');
@@ -10447,6 +10490,8 @@ const dsInput = document.getElementById('cm-discord-server-id');
 if (dsInput) dsInput.value = c.discordServerId || '';
 const dnInput = document.getElementById('cm-discord-notify-channel');
 if (dnInput) dnInput.value = c.discordNotifyChannelId || '';
+const forumInput = document.getElementById('cm-discord-forum-channel');
+if (forumInput) forumInput.value = c.discordForumChannelId || '';
 const alarmInput = document.getElementById('cm-discord-alarm-channel');
 if (alarmInput) alarmInput.value = c.alarmChannelId || '';
 const auctionAssistInput = document.getElementById('cm-auction-assist-channel');
@@ -10480,6 +10525,7 @@ const desc = document.getElementById('cm-desc').value.trim();
 const discordChannelId = (document.getElementById('cm-discord-channel')?.value || '').trim();
 const discordServerId  = (document.getElementById('cm-discord-server-id')?.value || '').trim();
 const discordNotifyChannelId = (document.getElementById('cm-discord-notify-channel')?.value || '').trim();
+const discordForumChannelId = (document.getElementById('cm-discord-forum-channel')?.value || '').trim();
 const deeplolServerId  = (document.getElementById('cm-deeplol-id')?.value || '').trim();
     const defaultAttend = document.getElementById('cm-default-attend')?.value === 'true';
 const alarmChannelId = (document.getElementById('cm-discord-alarm-channel')?.value || '').trim();
@@ -10529,6 +10575,7 @@ try {
     discordChannelId: discordChannelId || null,
       discordServerId: discordServerId || null,
       discordNotifyChannelId: discordNotifyChannelId || null,
+      discordForumChannelId: discordForumChannelId || null,
   auctionAssistChannelId: (document.getElementById('cm-auction-assist-channel')?.value || '').trim() || null,
   deeplolServerId: deeplolServerId || null,
     alarmChannelId: alarmChannelId || null,
@@ -15323,7 +15370,7 @@ function toggleFabMenu() {
 
 function openFabBotInvite() {
   toggleFabMenu();
-  window.open('https://discord.com/oauth2/authorize?client_id=1500717088984010883&permissions=34816&scope=bot', '_blank');
+  window.open('https://discord.com/oauth2/authorize?client_id=1500717088984010883&permissions=309237681152&scope=bot', '_blank');
 }
 
 function openFabDiscord() {

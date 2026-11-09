@@ -306,7 +306,7 @@
     .rs-tag-chip-del:hover{color:#E05050}
     .rs-tag-save{margin-top:8px;padding:5px 14px;border-radius:4px;border:1px solid rgba(10,200,185,.4);background:rgba(10,200,185,.08);color:var(--teal);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all .15s}
     .rs-tag-save:hover{background:rgba(10,200,185,.18)}
-    /* 라인별 모스트 챔피언 */
+    /* 라인별 모스트 챔피언 — PC */
     .rs-lane-grid{display:flex;gap:0;align-items:flex-start}
     .rs-lane-col{flex:1;min-width:0;padding:0 8px;border-left:1px solid var(--border)}
     .rs-lane-col:first-child{padding-left:0;border-left:none}
@@ -314,6 +314,8 @@
     .rs-lane-hd{display:flex;align-items:center;gap:4px;margin-bottom:6px;justify-content:center}
     .rs-lane-hd img{width:13px;height:13px;opacity:.8}
     .rs-lane-hd-lbl{font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;color:var(--gold)}
+    /* PC: 챔피언 목록 세로 */
+    .rs-champ-list-mobile{display:flex;flex-direction:column;gap:0}
     .rs-champ-row{display:flex;align-items:center;gap:6px;padding:3px 0}
     .rs-champ-icon{width:32px;height:32px;border-radius:4px;border:1px solid rgba(200,170,110,.2);object-fit:cover;flex-shrink:0}
     .rs-champ-info{display:flex;flex-direction:column;gap:2px;min-width:0}
@@ -321,6 +323,24 @@
     .rs-champ-stat{font-family:'Rajdhani',sans-serif;font-size:10px;color:var(--muted)}
     .rs-champ-wr{font-weight:700}
     .rs-champ-wr.good{color:#3CB371}.rs-champ-wr.ok{color:#5B9CF6}.rs-champ-wr.bad{color:#E05050}
+    .rs-no-data{font-size:10px;color:var(--muted);padding:4px 0}
+    /* 모바일: 라인별 행 쌓기 + 챔피언 가로 나열 */
+    @media(max-width:540px){
+      .rs-lane-grid{flex-direction:column;gap:0}
+      .rs-lane-col{flex:none;width:100%;padding:8px 0;border-left:none;border-bottom:1px solid var(--border)}
+      .rs-lane-col:last-child{border-bottom:none}
+      .rs-lane-hd{justify-content:flex-start;margin-bottom:6px}
+      /* 모바일: 챔피언 목록 가로 스크롤 */
+      .rs-champ-list-mobile{flex-direction:row;gap:8px;overflow-x:auto;padding-bottom:4px}
+      .rs-champ-list-mobile::-webkit-scrollbar{height:3px}
+      .rs-champ-list-mobile::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+      /* 모바일: 각 챔피언 셀 — 아이콘 위, 이름/게임수/승률 아래 */
+      .rs-champ-row{flex-direction:column;align-items:center;gap:2px;padding:0;flex-shrink:0;width:52px}
+      .rs-champ-icon{width:40px;height:40px}
+      .rs-champ-info{align-items:center;gap:1px}
+      .rs-champ-name{font-size:10px;text-align:center;max-width:52px}
+      .rs-champ-stat{text-align:center;line-height:1.3}
+    }
     .chip-row{display:flex;flex-wrap:wrap;gap:5px}
     .chip{padding:2px 8px;border-radius:10px;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700}
     .chip-teal{background:rgba(10,200,185,.08);border:1px solid rgba(10,200,185,.22);color:var(--teal)}
@@ -496,7 +516,7 @@
 <div class="tab-panel" id="tab-summary">
   <div class="sum-hd">
     <div class="sum-label">🪪 명함</div>
-    <button class="copy-btn" onclick="copyCard('namecard','nc-msg')">📋 이미지 복사</button>
+    <button class="copy-btn" id="btn-copy-namecard" onclick="copyCard('namecard','nc-msg')">📋 이미지 복사</button>
   </div>
   <div class="copy-msg" id="nc-msg"></div>
   <div id="namecard">
@@ -538,7 +558,7 @@
   <div style="margin-top:1.25rem"></div>
   <div class="sum-hd">
     <div class="sum-label">📄 자기소개서</div>
-    <button class="copy-btn" onclick="copyCard('resume-card','rs-msg')">📋 이미지 복사</button>
+    <button class="copy-btn" id="btn-copy-resume" onclick="copyCard('resume-card','rs-msg')">📋 이미지 복사</button>
   </div>
   <div class="copy-msg" id="rs-msg"></div>
   <div id="resume-card">
@@ -672,6 +692,7 @@ var _memberPuuSet = null; // null = 아직 미로드
 // 내전 분석 (Firebase)
 var _customAnalysis = null;
 var _champMap = {};  // champion_id(숫자 문자열) → { image_name, version }
+var _champKoName = {};  // image_name(영문) → 한글 이름
 var _champVersion = '16.21.1';
 var _champMapLoaded = false;
 
@@ -695,6 +716,17 @@ async function loadChampionInfo(){
       _champVersion=list[0].version+'.1';
     }
     _champMapLoaded=true;
+    // DDragon ko_KR에서 한글명 로드
+    try{
+      var ver2=_champVersion.replace(/\.\d+$/,''); // "16.21.1" → "16.21"
+      var r2=await fetch('https://ak-deeplol-ddragon-cdn.deeplol.gg/cdn/'+_champVersion+'/data/ko_KR/champion.json',{cache:'force-cache'});
+      if(r2.ok){
+        var j2=await r2.json();
+        Object.values(j2.data||{}).forEach(function(c){
+          _champKoName[c.id]=c.name; // "TahmKench" → "탐 켄치"
+        });
+      }
+    }catch(e2){}
   }catch(e){ _champMapLoaded=true; }
 }
 
@@ -727,10 +759,14 @@ async function loadRiotData(){
   }catch(e){ _riotDataLoaded=true; }
 }
 
-// 챔피언 표시 이름 (image_name에서 확장자 제거)
+// 챔피언 표시 이름 (한글명 우선, 없으면 image_name)
 function champName(cid){
   var c=_champMap[String(cid)];
-  if(c&&c.image_name) return c.image_name.replace(/\.png$/i,'');
+  if(!c) return String(cid);
+  var engId=c.image_name?c.image_name.replace(/\.png$/i,''):null;
+  if(engId&&_champKoName[engId]) return _champKoName[engId]; // 한글명
+  if(c.name) return c.name; // API 응답에 한글명 있을 경우
+  if(engId) return engId;
   return String(cid);
 }
 
@@ -1822,24 +1858,29 @@ function _renderLaneChampSec(){
   secEl.style.display='';
   gridEl.innerHTML=LANE_ORDER.map(function(lk){
     var arr=(_ncChampStatByLane[lk]||[]).slice(0,5);
-    if(!arr.length) return '<div class="rs-lane-col"><div class="rs-lane-hd"><img src="'+ICON_BASE+LANE_ICON_KEY[lk]+'.png" alt=""><span class="rs-lane-hd-lbl">'+LANE_LBL[lk]+'</span></div><div style="font-size:10px;color:var(--muted);text-align:center;padding:4px 0;">데이터 없음</div></div>';
-    var rows=arr.map(function(c){
+    var hd='<div class="rs-lane-hd"><img src="'+ICON_BASE+LANE_ICON_KEY[lk]+'.png" onerror="this.style.opacity=.2" alt=""><span class="rs-lane-hd-lbl">'+LANE_LBL[lk]+'</span></div>';
+    if(!arr.length){
+      return '<div class="rs-lane-col">'+hd+'<div class="rs-champ-list-mobile"></div><div class="rs-no-data">데이터 없음</div></div>';
+    }
+    // PC/모바일 구분 없이 동일한 HTML — CSS로 레이아웃 전환
+    var champItems=arr.map(function(c){
       var cid=String(c.champion_id);
-      var cname=_champMap[cid]&&_champMap[cid].image_name?_champMap[cid].image_name.replace(/\.png$/i,''):cid;
-      var iconUrl='https://ak-deeplol-ddragon-cdn.deeplol.gg/cdn/'+_champVersion+'/img/champion/'+cname+'__64.webp';
+      var imgName=_champMap[cid]&&_champMap[cid].image_name?_champMap[cid].image_name.replace(/\.png$/i,''):cid;
+      var displayName=champName(cid);
+      var iconUrl='https://ak-deeplol-ddragon-cdn.deeplol.gg/cdn/'+_champVersion+'/img/champion/'+imgName+'__64.webp';
       var wr=c.games?Math.round(c.wins/c.games*100):null;
       var wrCls=wr===null?'':wr>=60?'good':wr>=50?'ok':'bad';
-      return '<div class="rs-champ-row">'+
-        '<img class="rs-champ-icon" src="'+iconUrl+'" onerror="this.style.opacity=.2" alt="">'+
+      // rs-champ-row: PC에서 사용 (가로: 아이콘 | 이름+게임수+승률)
+      // rs-champ-cell: 모바일에서 사용 (세로: 아이콘 / 이름 / 게임수 / 승률)
+      return '<div class="rs-champ-row rs-champ-cell">'+
+        '<img class="rs-champ-icon" src="'+iconUrl+'" onerror="this.style.opacity=.2" alt="'+esc(displayName)+'">'+
         '<div class="rs-champ-info">'+
-          '<span class="rs-champ-name">'+esc(cname)+'</span>'+
+          '<span class="rs-champ-name rs-champ-cell-name">'+esc(displayName)+'</span>'+
           '<span class="rs-champ-stat">'+c.games+'게임 '+(wr!==null?'<span class="rs-champ-wr '+wrCls+'">'+wr+'%</span>':'')+'</span>'+
         '</div>'+
       '</div>';
     }).join('');
-    return '<div class="rs-lane-col">'+
-      '<div class="rs-lane-hd"><img src="'+ICON_BASE+LANE_ICON_KEY[lk]+'.png" onerror="this.style.opacity=.2" alt=""><span class="rs-lane-hd-lbl">'+LANE_LBL[lk]+'</span></div>'+
-      rows+'</div>';
+    return '<div class="rs-lane-col">'+hd+'<div class="rs-champ-list-mobile">'+champItems+'</div></div>';
   }).join('');
 }
 
@@ -2170,7 +2211,20 @@ function renderDiscord(){
   }
 }
 
-// ── 이미지 복사 ──
+// ── 이미지 복사/다운로드 ──
+function _isMobile(){ return /Mobi|Android/i.test(navigator.userAgent); }
+function _updateCopyBtnLabels(){
+  if(!_isMobile()) return;
+  ['btn-copy-namecard','btn-copy-resume'].forEach(function(id){
+    var btn=document.getElementById(id);
+    if(btn) btn.textContent='⬇️ 이미지 다운로드';
+  });
+}
+if(document.readyState==='loading'){
+  document.addEventListener('DOMContentLoaded',_updateCopyBtnLabels);
+} else {
+  _updateCopyBtnLabels();
+}
 async function copyCard(elId, msgId){
   var msg=document.getElementById(msgId);
   msg.textContent='이미지 생성 중...'; msg.style.color='var(--text)';
@@ -2183,8 +2237,17 @@ async function copyCard(elId, msgId){
     // 편집 요소 복원
     editEls.forEach(function(el){ el.style.display=''; });
     canvas.toBlob(async function(blob){
-      try{ await navigator.clipboard.write([new ClipboardItem({'image/png':blob})]); msg.textContent='✅ 클립보드에 복사됐습니다!'; msg.style.color='var(--green)'; }
-      catch(e){ var url=URL.createObjectURL(blob),a=document.createElement('a'); a.href=url; a.download=elId+'_'+Date.now()+'.png'; a.click(); URL.revokeObjectURL(url); msg.textContent='✅ 다운로드됐습니다.'; msg.style.color='var(--green)'; }
+      if(_isMobile()){
+        // 모바일: 바로 다운로드
+        var url=URL.createObjectURL(blob),a=document.createElement('a');
+        a.href=url; a.download=elId+'_'+Date.now()+'.png'; a.click();
+        URL.revokeObjectURL(url);
+        msg.textContent='✅ 다운로드됐습니다.'; msg.style.color='var(--green)';
+      } else {
+        // PC: 클립보드 복사 시도 → 실패 시 다운로드
+        try{ await navigator.clipboard.write([new ClipboardItem({'image/png':blob})]); msg.textContent='✅ 클립보드에 복사됐습니다!'; msg.style.color='var(--green)'; }
+        catch(e){ var url=URL.createObjectURL(blob),a=document.createElement('a'); a.href=url; a.download=elId+'_'+Date.now()+'.png'; a.click(); URL.revokeObjectURL(url); msg.textContent='✅ 다운로드됐습니다.'; msg.style.color='var(--green)'; }
+      }
       setTimeout(function(){msg.textContent='';},3000);
     },'image/png');
   }catch(e){

@@ -110,6 +110,68 @@ export default {
       return fetch(request);
     }
 
+    // ── 내전 생성 시 디스코드 포럼 포스트 자동 생성 ──
+    if (path === '/match-forum-post' && request.method === 'POST') {
+      let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
+      const { cid, matchId, matchName, matchTime, matchAdmin, token: adminToken } = body;
+      if (!cid || !matchId || !matchName) return json({ok:false,error:'필수 파라미터 없음'},400);
+      // 세션 토큰 검증 (관리자/마스터)
+      const session = await getSession(adminToken, env);
+      if (!session || (session.role !== 'admin' && session.role !== 'master')) {
+        return json({ok:false,error:'권한 없음'},403);
+      }
+      const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+      const authQ = secret ? '?auth='+secret : '';
+      // 커뮤니티 설정에서 포럼 채널 ID 조회
+      const ciRes = await fetch(`${dbUrl}/communities_info/${cid}.json${authQ}`);
+      const ci = ciRes.ok ? (await ciRes.json()) : null;
+      const forumChannelId = ci && ci.discordForumChannelId;
+      if (!forumChannelId) return json({ok:false,error:'포럼 채널 ID가 설정되지 않았습니다'},400);
+      const botToken = env.DISCORD_BOT_TOKEN;
+      if (!botToken) return json({ok:false,error:'BOT_TOKEN 없음'},500);
+      // 시간 포맷
+      let timeStr = '—';
+      if (matchTime) {
+        try {
+          const d = new Date(matchTime);
+          const days = ['일','월','화','수','목','금','토'];
+          timeStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} (${days[d.getDay()]}) ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+        } catch(e) { timeStr = matchTime; }
+      }
+      // 비회원 관전 링크
+      const spectateUrl = `https://roonging.com/?match=${cid}__${matchId}`;
+      // 포스트 제목 (최대 100자)
+      const postTitle = ('⚔️ ' + matchName).slice(0, 100);
+      // 포스트 본문
+      const lines = [
+        `**📋 ${matchName}**`,
+        '',
+        `📅 **시작 시간:** ${timeStr}`,
+        `👤 **진행자:** ${matchAdmin || '—'}`,
+        '',
+        `🔗 **관전/참가 링크:** ${spectateUrl}`,
+        '',
+        `*내전 목록에서 신청 후 참가해주세요!*`,
+      ];
+      const msgContent = lines.join('\n').slice(0, 2000);
+      // Discord 포럼 포스트 생성
+      const discordRes = await fetch(`https://discord.com/api/v10/channels/${forumChannelId}/threads`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bot ' + botToken },
+        body: JSON.stringify({
+          name: postTitle,
+          auto_archive_duration: 10080,
+          message: { content: msgContent },
+        }),
+      });
+      if (!discordRes.ok) {
+        const err = await discordRes.text();
+        return json({ok:false,error:'Discord API '+discordRes.status+': '+err},500);
+      }
+      const threadData = await discordRes.json();
+      return json({ ok: true, threadId: threadData.id });
+    }
+
     // 디스코드 Interactions
     // 디스코드 슬래시 명령어 등록
     // 길드 커맨드 삭제 (등록된 모든 커뮤니티의 discordServerId 기반)
@@ -603,6 +665,13 @@ export default {
     if (path === '/discord-link-get' && request.method === 'POST') {
       return handleDiscordLinkGet(request, env);
     }
+    // ── 업적 수령 (디스코드 유저 전용) ──
+    if (path === '/ach-claim' && request.method === 'POST') {
+      return handleAchClaim(request, env);
+    }
+    if (path === '/ach-request' && request.method === 'POST') {
+      return handleAchRequest(request, env);
+    }
     if (path === '/discord-link-delete' && request.method === 'POST') {
       return handleDiscordLinkDelete(request, env);
     }
@@ -611,6 +680,15 @@ export default {
     }
     if (path === '/discord-link-list' && request.method === 'POST') {
       return handleDiscordLinkList(request, env);
+    }
+    if (path === '/admin-verify' && request.method === 'POST') {
+      return handleAdminVerify(request, env);
+    }
+    if (path === '/solo-rank-stats-write' && request.method === 'POST') {
+      return handleSoloRankStatsWrite(request, env);
+    }
+    if (path === '/solo-rank-stats-read' && request.method === 'POST') {
+      return handleSoloRankStatsRead(request, env);
     }
     if (path === '/cron-rating-test' && request.method === 'POST') {
       let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
@@ -1068,6 +1146,10 @@ async function handleDbPublicRead(request, env) {
     /^system\/connect_cache\/[^/]+$/,
     /^communities\/[^/]+\/calendar/,
     /^communities\/[^/]+\/ranking_ai_analysis($|\/)/,
+    /^player_profiles\/[^/]+\/[^/]+\/profile$/, // 플레이어 자기소개/태그 (본인만 읽기)
+    /^communities\/[^/]+\/achievements($|\/)/,        // 업적 목록
+    /^communities\/[^/]+\/member_achievements($|\/)/,  // 업적 수령 현황
+    /^communities\/[^/]+\/ach_requests($|\/)/,         // 업적 수령 신청 목록 (관리자용)
   ];
   if (!publicRead.some(r => r.test(dbPath))) {
     return json({ ok: false, error: '허용되지 않는 경로입니다' }, 403);
@@ -1356,7 +1438,7 @@ async function handleDbWrite(request, env) {
   let body;
   try { body = await request.json(); } catch { return json({ ok: false, error: '잘못된 요청' }, 400); }
 
-  const { path: dbPath, data, requireRole, masterToken } = body;
+  const { path: dbPath, data, requireRole, masterToken, multiPath } = body;
   // masterToken으로 세션 재검증
   if (!session && masterToken && masterToken.startsWith('master:')) {
     try {
@@ -1377,6 +1459,38 @@ async function handleDbWrite(request, env) {
       }
     } catch(e) {}
   }
+
+  const dbUrl  = env.FB_DATABASE_URL;
+  const secret = env.FB_DB_SECRET;
+  const authQ  = secret ? `?auth=${secret}` : '';
+
+  // multiPath 처리: { "full/db/path": data, ... } 형태로 여러 경로 동시 쓰기
+  if (multiPath && typeof multiPath === 'object') {
+    const paths = Object.keys(multiPath);
+    if (!paths.length) return json({ ok: false, error: 'multiPath가 비어있습니다' }, 400);
+    // 모든 경로 권한 체크
+    for (const p of paths) {
+      if (!checkPermission(session, p, requireRole)) {
+        return json({ ok: false, error: '권한이 없습니다: ' + p }, 403);
+      }
+    }
+    if (!dbUrl) return json({ ok: false, error: 'FB_DATABASE_URL 환경변수 없음' }, 500);
+    try {
+      // 각 경로 순차 PUT
+      for (const [p, d] of Object.entries(multiPath)) {
+        const res = await fetch(`${dbUrl}/${p}.json${authQ}`, {
+          method: 'PUT', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(d)
+        });
+        if (!res.ok) {
+          const txt = await res.text();
+          return json({ ok: false, error: `multiPath 쓰기 실패 [${p}]: ${res.status} ${txt.slice(0,100)}` }, 500);
+        }
+      }
+      return json({ ok: true });
+    } catch(e) { return json({ ok: false, error: e.message }, 500); }
+  }
+
   if (!dbPath) return json({ ok: false, error: 'path 누락' }, 400);
 
   // 권한 체크
@@ -1384,10 +1498,6 @@ async function handleDbWrite(request, env) {
   if (!permitted) {
     return json({ ok: false, error: '권한이 없습니다' }, 403);
   }
-
-  const dbUrl  = env.FB_DATABASE_URL;
-  const secret = env.FB_DB_SECRET;
-  const authQ  = secret ? `?auth=${secret}` : '';
 
   try {
     if (!dbUrl) return json({ ok: false, error: 'FB_DATABASE_URL 환경변수 없음' }, 500);
@@ -1606,6 +1716,19 @@ function checkPermission(session, dbPath, requireRole) {
   if (/^blacklist\//.test(dbPath)) return true;
   // 관리자 이상 커뮤니티 메시지 쓰기 허용
   if (/^community_messages\//.test(dbPath)) return true;
+  // 관리자 이상 업적 관리 허용 (achievements, member_achievements, ach_requests)
+  if (/^communities\/[^/]+\/achievements($|\/)/.test(dbPath)) {
+    if (session.role === 'master') return true;
+    if (session.role === 'admin') return true;
+  }
+  if (/^communities\/[^/]+\/member_achievements($|\/)/.test(dbPath)) {
+    if (session.role === 'master') return true;
+    if (session.role === 'admin') return true;
+  }
+  if (/^communities\/[^/]+\/ach_requests($|\/)/.test(dbPath)) {
+    if (session.role === 'master') return true;
+    if (session.role === 'admin') return true;
+  }
   // 관리자 이상 경매 로그 쓰기 허용
   if (/^communities\/[^/]+\/matches\/[^/]+\/auctionLog($|\/)/.test(dbPath)) {
     if (session.role === 'master') return true;
@@ -2665,9 +2788,18 @@ async function runScheduledRatingCalc(env) {
 
         const statsRes = await fetch(`https://b2c-api-cdn.deeplol.gg/tournament/server_info?server_id=${serverId}`, {
           headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+            'Accept': 'application/json, text/plain, */*',
+            'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
+            'Accept-Encoding': 'gzip, deflate, br',
             'Referer': 'https://www.deeplol.gg/',
-            'Origin': 'https://www.deeplol.gg'
+            'Origin': 'https://www.deeplol.gg',
+            'sec-ch-ua': '"Google Chrome";v="131", "Chromium";v="131", "Not_A Brand";v="24"',
+            'sec-ch-ua-mobile': '?0',
+            'sec-ch-ua-platform': '"Windows"',
+            'sec-fetch-dest': 'empty',
+            'sec-fetch-mode': 'cors',
+            'sec-fetch-site': 'same-site',
           }
         });
         if (!statsRes.ok) { console.error(`[cron] ${cid} 딥롤 API 실패:`, statsRes.status); continue; }
@@ -4173,7 +4305,84 @@ async function handleDiscordInteraction(request, env, ctx) {
   // 버튼 클릭 (Message Component)
   if (interaction.type === 3) {
     const customId = interaction.data.custom_id || '';
-    // 나가기 버튼
+
+    // ── 업적 수락 버튼 ──
+    if (customId.startsWith('ach_approve__') || customId.startsWith('ach_reject__')) {
+      const isApprove = customId.startsWith('ach_approve__');
+      const parts = customId.replace(/^ach_(approve|reject)__/, '').split('__');
+      const cid = parts[0];
+      const reqId = parts[1];
+      const appId = env.DISCORD_APP_ID || '1500717088984010883';
+      const itoken = interaction.token;
+      const clickerId = interaction.member?.user?.id || interaction.user?.id || '';
+      const clickerName = interaction.member?.user?.username || interaction.user?.username || '관리자';
+      const resp = discordDefer(true);
+      ctx.waitUntil((async () => {
+        try {
+          const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+          const authQ = secret ? '?auth='+secret : '';
+
+          // 요청 조회
+          const reqRes = await fetch(`${dbUrl}/communities/${cid}/ach_requests/${reqId}.json${authQ}`);
+          const reqData = reqRes.ok ? await reqRes.json() : null;
+          if (!reqData) { await discordFollowup(appId, itoken, '❌ 신청 내역을 찾을 수 없습니다.', env); return; }
+          if (reqData.status !== 'pending') {
+            await discordFollowup(appId, itoken, `이미 처리된 신청입니다 (${reqData.status === 'approved' ? '승인됨' : '거절됨'}).`, env);
+            return;
+          }
+
+          const displayName = (reqData.riotName || '') + '#' + (reqData.riotTag || '');
+
+          if (isApprove) {
+            // 업적 부여 + 상태 업데이트
+            const now = Date.now();
+            await fetch(`${dbUrl}/communities/${cid}/member_achievements/${reqData.puuId}/${reqData.achId}.json${authQ}`, {
+              method: 'PUT', headers: {'Content-Type':'application/json'},
+              body: JSON.stringify({ grantedAt: now, grantedBy: clickerName })
+            });
+            await fetch(`${dbUrl}/communities/${cid}/ach_requests/${reqId}/status.json${authQ}`, {
+              method: 'PUT', headers: {'Content-Type':'application/json'},
+              body: JSON.stringify('approved')
+            });
+            // 원본 메시지 버튼 비활성화
+            try {
+              const msgId = interaction.message?.id;
+              const chanId = interaction.channel_id || interaction.channel?.id;
+              if (msgId && chanId) {
+                await fetch(`https://discord.com/api/v10/channels/${chanId}/messages/${msgId}`, {
+                  method: 'PATCH',
+                  headers: { 'Authorization': `Bot ${env.DISCORD_BOT_TOKEN}`, 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ components: [] })
+                });
+              }
+            } catch(e2) {}
+            await discordFollowup(appId, itoken, `✅ **${displayName}** 님의 **${reqData.achTitle || reqData.achId}** 업적을 승인했습니다.`, env);
+          } else {
+            // 거절
+            await fetch(`${dbUrl}/communities/${cid}/ach_requests/${reqId}/status.json${authQ}`, {
+              method: 'PUT', headers: {'Content-Type':'application/json'},
+              body: JSON.stringify('rejected')
+            });
+            try {
+              const msgId = interaction.message?.id;
+              const chanId = interaction.channel_id || interaction.channel?.id;
+              if (msgId && chanId) {
+                await fetch(`https://discord.com/api/v10/channels/${chanId}/messages/${msgId}`, {
+                  method: 'PATCH',
+                  headers: { 'Authorization': `Bot ${env.DISCORD_BOT_TOKEN}`, 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ components: [] })
+                });
+              }
+            } catch(e2) {}
+            await discordFollowup(appId, itoken, `❌ **${displayName}** 님의 **${reqData.achTitle || reqData.achId}** 업적 신청을 거절했습니다.`, env);
+          }
+        } catch(e) {
+          await discordFollowup(appId, itoken, '❌ 처리 중 오류: ' + e.message, env);
+        }
+      })());
+      return resp;
+    }
+
     // ── 생일 날짜 버튼 ──
     if (customId.startsWith('cal_bd__')) {
       const parts = customId.slice('cal_bd__'.length).split('__');
@@ -6169,6 +6378,18 @@ async function handleDiscordLinkSet(request, env) {
 }
 
 // 연동 조회 (discordId + cid로 조회)
+// 관리자 토큰 검증 (mypage.html에서 admin_token URL 파라미터로 접근 시 사용)
+async function handleAdminVerify(request, env) {
+  let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
+  const { token } = body;
+  if (!token) return json({ok:false,error:'token 누락'},400);
+  const session = getSession(token);
+  if (!session || (session.role !== 'master' && session.role !== 'admin')) {
+    return json({ok:false,error:'권한 없음'},403);
+  }
+  return json({ok:true, role: session.role});
+}
+
 async function handleDiscordLinkGet(request, env) {
   let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
   const { discordId, cid } = body;
@@ -6255,4 +6476,172 @@ async function handleDiscordLinkList(request, env) {
     }
   }
   return json({ok:true, list});
+}
+
+// ── 업적 즉시/조건 수령 (디스코드 유저 전용) ──
+// discordId + cid + puuId: discord_link 연동 확인 후 member_achievements에 기록
+async function handleAchClaim(request, env) {
+  let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
+  const { discordId, cid, achId, puuId, grantType, conditions, memberCnt } = body;
+  if (!discordId || !cid || !achId || !puuId) return json({ok:false,error:'필수값 누락'},400);
+
+  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth='+secret : '';
+
+  // 1) 연동 확인 — discordId가 실제로 이 cid에 연동되어 있는지 검증
+  const linkRes = await fetch(`${dbUrl}/discord_link/${discordId}/${cid}.json${authQ}`);
+  if (!linkRes.ok) return json({ok:false,error:'연동 정보 조회 실패'},500);
+  const linkData = await linkRes.json();
+  if (!linkData || !linkData.riotName) return json({ok:false,error:'연동된 멤버 계정이 없습니다'},403);
+
+  // 2) 조건 확인 (auto_condition) — 클라이언트가 보낸 memberCnt를 사용
+  if (grantType === 'auto_condition' && conditions && conditions.length > 0) {
+    for (const c of conditions) {
+      if (c.type === 'min_games') {
+        const needed = parseInt(c.value) || 0;
+        const myCnt = memberCnt || 0;
+        if (myCnt < needed) {
+          return json({ok:false,error:`조건 미충족: 내전 판수가 부족합니다. (현재: ${myCnt}판 / 필요: ${needed}판)`},400);
+        }
+      }
+    }
+  }
+
+  // 3) 이미 보유 확인
+  const existRes = await fetch(`${dbUrl}/communities/${cid}/member_achievements/${puuId}/${achId}.json${authQ}`);
+  if (existRes.ok) {
+    const existing = await existRes.json();
+    if (existing) return json({ok:false,error:'이미 보유한 업적입니다'},400);
+  }
+
+  // 4) member_achievements에 기록
+  const grantData = { grantedAt: Date.now(), grantedBy: 'self' };
+  const writeRes = await fetch(`${dbUrl}/communities/${cid}/member_achievements/${puuId}/${achId}.json${authQ}`, {
+    method: 'PUT', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(grantData)
+  });
+  if (!writeRes.ok) return json({ok:false,error:'수령 기록 실패'},500);
+
+  return json({ok:true, puuId, grantedAt: grantData.grantedAt});
+}
+
+// ── 업적 수령 신청 (관리자 승인 필요) ──
+// discordId + cid + puuId: discord_link 연동 확인 후 ach_requests에 기록
+async function handleAchRequest(request, env) {
+  let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
+  const { discordId, cid, achId, achTitle, puuId, reqId } = body;
+  if (!discordId || !cid || !achId || !puuId || !reqId) return json({ok:false,error:'필수값 누락'},400);
+
+  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth='+secret : '';
+
+  // 연동 확인
+  const linkRes = await fetch(`${dbUrl}/discord_link/${discordId}/${cid}.json${authQ}`);
+  if (!linkRes.ok) return json({ok:false,error:'연동 정보 조회 실패'},500);
+  const linkData = await linkRes.json();
+  if (!linkData || !linkData.riotName) return json({ok:false,error:'연동된 멤버 계정이 없습니다'},403);
+
+  // 이미 보유 확인
+  const existRes = await fetch(`${dbUrl}/communities/${cid}/member_achievements/${puuId}/${achId}.json${authQ}`);
+  if (existRes.ok) {
+    const existing = await existRes.json();
+    if (existing) return json({ok:false,error:'이미 보유한 업적입니다'},400);
+  }
+
+  // ach_requests에 기록
+  const requestedAt = Date.now();
+  const reqData = {
+    achId, achTitle: achTitle || achId,
+    puuId,
+    discordId,
+    riotName: linkData.riotName || '',
+    riotTag: linkData.riotTag || '',
+    requestedAt,
+    status: 'pending'
+  };
+  const writeRes = await fetch(`${dbUrl}/communities/${cid}/ach_requests/${reqId}.json${authQ}`, {
+    method: 'PUT', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(reqData)
+  });
+  if (!writeRes.ok) return json({ok:false,error:'신청 기록 실패'},500);
+
+  // 디스코드 알림 — 수락/거절 버튼 포함
+  try {
+    const notifyChannelRes = await fetch(`${dbUrl}/communities_info/${cid}.json${authQ}`);
+    const commInfo = notifyChannelRes.ok ? await notifyChannelRes.json() : null;
+    const channelId = (commInfo && commInfo.achNotifyChannelId) || (commInfo && commInfo.alarmChannelId);
+    if (channelId && env.DISCORD_BOT_TOKEN) {
+      const displayName = linkData.riotName + '#' + linkData.riotTag;
+      const dtStr = new Date(requestedAt).toLocaleString('ko-KR', {timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+      await fetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bot ${env.DISCORD_BOT_TOKEN}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          embeds: [{
+            color: 0xF59E0B,
+            title: '🏆 업적 수령 신청',
+            fields: [
+              { name: '업적', value: '**' + (achTitle || achId) + '**', inline: true },
+              { name: '신청자', value: displayName, inline: true },
+              { name: '신청 시각', value: dtStr, inline: false },
+            ],
+            footer: { text: 'reqId: ' + reqId }
+          }],
+          components: [{
+            type: 1,
+            components: [
+              { type: 2, style: 3, label: '✅ 수락', custom_id: 'ach_approve__' + cid + '__' + reqId },
+              { type: 2, style: 4, label: '❌ 거절', custom_id: 'ach_reject__' + cid + '__' + reqId }
+            ]
+          }]
+        })
+      });
+    }
+  } catch(e) { console.error('[ach-request] discord notify error:', e.message); }
+
+  return json({ok:true, puuId, reqId});
+}
+
+// ── 솔로랭크 판수 통계 저장 ──
+// Firebase 경로: communities/{communityId}/solo_rank_stats/{puuId} = { games, wins, losses, tier, division, lp, updatedAt }
+async function handleSoloRankStatsWrite(request, env) {
+  let body; try { body = await request.json(); } catch(e) { return json({ok:false,error:'bad request: '+e.message},400); }
+  const { communityId, data } = body;
+  if (!communityId || !data) return json({ok:false,error:'필수값 없음'},400);
+  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+  if (!dbUrl) return json({ok:false,error:'FB_DATABASE_URL 환경변수 없음'},500);
+  const authQ = secret ? '?auth='+secret : '';
+  try {
+    const entries = Object.entries(data);
+    // 한 번에 PATCH로 저장 (subrequest 수 줄이기)
+    const res = await fetch(`${dbUrl}/communities/${communityId}/solo_rank_stats.json${authQ}`, {
+      method: 'PATCH',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(data)
+    });
+    if (!res.ok) {
+      const errText = await res.text();
+      return json({ok:false,error:'Firebase 저장 실패: '+errText},500);
+    }
+    return json({ ok: true, count: entries.length });
+  } catch(e) {
+    return json({ok:false,error:'저장 오류: '+e.message},500);
+  }
+}
+
+// ── 솔로랭크 판수 통계 읽기 ──
+async function handleSoloRankStatsRead(request, env) {
+  let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
+  const { communityId } = body;
+  if (!communityId) return json({ok:false,error:'communityId 없음'},400);
+  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth='+secret : '';
+  try {
+    const res = await fetch(`${dbUrl}/communities/${communityId}/solo_rank_stats.json${authQ}`);
+    if (!res.ok) return json({ok:false,error:'읽기 실패'},500);
+    const data = await res.json();
+    return json({ ok: true, data: data || {} });
+  } catch(e) {
+    return json({ok:false,error:e.message},500);
+  }
 }
