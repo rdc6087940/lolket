@@ -1,0 +1,1548 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>이용 가이드 - 룽잉닷컴</title>
+<meta name="description" content="룽잉닷컴 내전 관리 플랫폼 이용 가이드. 관리자·비회원 기능을 단계별로 안내합니다.">
+<meta property="og:title" content="이용 가이드 - 룽잉닷컴">
+<meta property="og:description" content="룽잉닷컴 내전 관리 플랫폼 이용 가이드.">
+<meta property="og:type" content="website">
+<link rel="icon" type="image/png" href="/favicon.png">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Bebas+Neue&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold: #C8AA6E;
+  --gold-light: #F0E6D3;
+  --gold-dark: #785A28;
+  --blue: #0AC8B9;
+  --blue-dim: #0397AB;
+  --bg-darkest: #010A13;
+  --bg-dark: #0A1628;
+  --bg-panel: #0D1B2E;
+  --bg-card: #112035;
+  --bg-card-hover: #162840;
+  --border-gold: #463714;
+  --border-subtle: #1E2D40;
+  --text-primary: #C8AA6E;
+  --text-muted: #5B6474;
+  --text-white: #E8E0D0;
+  --danger: #C03030;
+  --success: #0AC8B9;
+  --sidebar-w: 260px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Noto Sans KR', sans-serif;
+  background: var(--bg-darkest);
+  color: var(--text-white);
+  min-height: 100vh;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(10,200,185,0.06) 0%, transparent 60%),
+    url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0 L60 30 L30 60 L0 30 Z' fill='none' stroke='%231E2D40' stroke-width='0.3' opacity='0.3'/%3E%3C/svg%3E");
+}
+
+/* ── 헤더 ── */
+.header {
+  background: linear-gradient(180deg, #0A1628 0%, rgba(10,22,40,0.97) 100%);
+  border-bottom: 1px solid var(--border-gold);
+  padding: 0 2rem;
+  position: sticky; top: 0; z-index: 200;
+}
+.header-inner {
+  max-width: 1200px; margin: 0 auto;
+  display: flex; align-items: center; justify-content: space-between; height: 56px;
+}
+.logo { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 3px; color: var(--gold); display: flex; align-items: center; gap: 10px; text-decoration: none; }
+.logo-diamond { width: 10px; height: 10px; background: var(--blue); transform: rotate(45deg); flex-shrink: 0; }
+.header-sub { font-size: 12px; color: var(--text-muted); font-family: 'Rajdhani', sans-serif; letter-spacing: 2px; }
+
+/* ── 레이아웃 ── */
+.layout { display: flex; max-width: 1200px; margin: 0 auto; padding: 2rem; gap: 2rem; }
+
+/* ── 사이드바 ── */
+.sidebar {
+  width: var(--sidebar-w); flex-shrink: 0;
+  position: sticky; top: 72px; height: calc(100vh - 88px);
+  overflow-y: auto;
+}
+.sidebar::-webkit-scrollbar { width: 3px; }
+.sidebar::-webkit-scrollbar-thumb { background: var(--border-subtle); border-radius: 2px; }
+.sidebar-section { margin-bottom: 1.5rem; }
+.sidebar-heading {
+  font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 700;
+  letter-spacing: 2px; color: var(--text-muted); text-transform: uppercase;
+  padding: .3rem .5rem; margin-bottom: .3rem;
+}
+.nav-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 10px; border-radius: 3px; cursor: pointer;
+  font-size: 13px; color: var(--text-muted); text-decoration: none;
+  transition: all .15s; border-left: 2px solid transparent;
+}
+.nav-item:hover { color: var(--text-white); background: rgba(255,255,255,.04); }
+.nav-item.active { color: var(--blue); border-left-color: var(--blue); background: rgba(10,200,185,.06); }
+.nav-item .nav-icon { font-size: 12px; flex-shrink: 0; }
+.nav-sub {
+  padding: 4px 10px 4px 28px; border-radius: 3px; cursor: pointer;
+  font-size: 12px; color: var(--text-muted); text-decoration: none;
+  display: block; transition: all .15s;
+}
+.nav-sub:hover { color: var(--text-white); }
+.nav-sub.active { color: var(--blue); }
+
+/* ── 메인 컨텐츠 ── */
+.content { flex: 1; min-width: 0; padding-bottom: 4rem; }
+
+/* ── 히어로 배너 ── */
+.hero {
+  background: linear-gradient(135deg, rgba(10,200,185,.08) 0%, rgba(200,170,110,.06) 100%);
+  border: 1px solid var(--border-gold);
+  border-radius: 6px; padding: 2rem 2.5rem; margin-bottom: 2.5rem;
+  position: relative; overflow: hidden;
+}
+.hero::before {
+  content: ''; position: absolute; right: -20px; top: -20px;
+  width: 200px; height: 200px;
+  background: radial-gradient(circle, rgba(10,200,185,.08) 0%, transparent 70%);
+}
+.hero-badge {
+  display: inline-block; font-family: 'Rajdhani', sans-serif; font-size: 11px;
+  font-weight: 700; letter-spacing: 2px; color: var(--blue);
+  background: rgba(10,200,185,.12); border: 1px solid rgba(10,200,185,.3);
+  border-radius: 2px; padding: 3px 10px; margin-bottom: .75rem;
+}
+.hero h1 {
+  font-family: 'Bebas Neue', sans-serif; font-size: 36px; letter-spacing: 4px;
+  color: var(--gold); margin-bottom: .5rem;
+}
+.hero p { font-size: 14px; color: var(--text-muted); line-height: 1.8; max-width: 560px; }
+
+/* ── 섹션 ── */
+.doc-section { margin-bottom: 3rem; scroll-margin-top: 72px; }
+.section-header { display: flex; align-items: center; gap: 12px; margin-bottom: 1.5rem; padding-bottom: .75rem; border-bottom: 1px solid var(--border-subtle); }
+.section-icon {
+  width: 36px; height: 36px; border-radius: 4px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 18px;
+  background: rgba(10,200,185,.08); border: 1px solid rgba(10,200,185,.2);
+}
+.section-title { font-family: 'Bebas Neue', sans-serif; font-size: 24px; letter-spacing: 3px; color: var(--gold); }
+.section-desc { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+
+/* ── 카드 ── */
+.card {
+  background: var(--bg-panel); border: 1px solid var(--border-subtle);
+  border-radius: 4px; margin-bottom: 1rem; overflow: hidden;
+}
+.card-header {
+  padding: .75rem 1.25rem; background: rgba(200,170,110,.04);
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex; align-items: center; gap: 8px;
+}
+.card-title {
+  font-family: 'Rajdhani', sans-serif; font-size: 14px; font-weight: 700;
+  letter-spacing: 1.5px; color: var(--gold);
+}
+.card-body { padding: 1.25rem; }
+
+/* ── 스텝 ── */
+.steps { display: flex; flex-direction: column; gap: 0; }
+.step {
+  display: flex; gap: 1rem; position: relative;
+  padding-bottom: 1.5rem;
+}
+.step:last-child { padding-bottom: 0; }
+.step:last-child .step-line { display: none; }
+.step-left { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; }
+.step-num {
+  width: 32px; height: 32px; border-radius: 50%; border: 1.5px solid var(--blue);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 700; color: var(--blue);
+  background: rgba(10,200,185,.08); flex-shrink: 0; z-index: 1;
+}
+.step-line { flex: 1; width: 1px; background: var(--border-subtle); margin: 4px 0; min-height: 20px; }
+.step-body { flex: 1; padding-top: 4px; }
+.step-title { font-size: 14px; font-weight: 500; color: var(--text-white); margin-bottom: .4rem; }
+.step-desc { font-size: 13px; color: var(--text-muted); line-height: 1.7; }
+.step-tip {
+  margin-top: .6rem; padding: .5rem .75rem;
+  background: rgba(10,200,185,.05); border-left: 2px solid var(--blue);
+  border-radius: 0 3px 3px 0; font-size: 12px; color: var(--text-muted); line-height: 1.6;
+}
+.step-tip b { color: var(--blue); }
+
+/* ── 뱃지 ── */
+.badge {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 700;
+  letter-spacing: 1px; padding: 2px 8px; border-radius: 2px;
+}
+.badge-admin { background: rgba(200,170,110,.12); color: var(--gold); border: 1px solid var(--border-gold); }
+.badge-user { background: rgba(10,200,185,.1); color: var(--blue); border: 1px solid rgba(10,200,185,.3); }
+.badge-master { background: rgba(157,72,224,.15); color: #C084FC; border: 1px solid rgba(157,72,224,.35); }
+
+/* ── 비교 테이블 ── */
+.cmp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.cmp-table th {
+  background: rgba(200,170,110,.06); color: var(--gold);
+  font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 700;
+  letter-spacing: 1.5px; padding: .6rem 1rem; text-align: left;
+  border-bottom: 1px solid var(--border-gold);
+}
+.cmp-table td { padding: .65rem 1rem; border-bottom: 1px solid var(--border-subtle); color: var(--text-muted); vertical-align: top; line-height: 1.6; }
+.cmp-table tr:last-child td { border-bottom: none; }
+.cmp-table td:first-child { color: var(--text-white); font-weight: 500; white-space: nowrap; }
+.cmp-table .check { color: var(--success); font-size: 14px; }
+.cmp-table .cross { color: var(--text-muted); opacity: .4; font-size: 14px; }
+
+/* ── 피처 그리드 ── */
+.feature-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: .75rem; }
+.feature-item {
+  background: var(--bg-card); border: 1px solid var(--border-subtle);
+  border-radius: 4px; padding: 1rem;
+  transition: border-color .15s;
+}
+.feature-item:hover { border-color: var(--border-gold); }
+.feature-item-icon { font-size: 20px; margin-bottom: .5rem; }
+.feature-item-title { font-size: 13px; font-weight: 500; color: var(--text-white); margin-bottom: .3rem; }
+.feature-item-desc { font-size: 12px; color: var(--text-muted); line-height: 1.6; }
+
+/* ── 콜아웃 ── */
+.callout {
+  display: flex; gap: .75rem; padding: .85rem 1rem;
+  border-radius: 4px; margin-bottom: 1rem; font-size: 13px; line-height: 1.6;
+}
+.callout-info { background: rgba(10,200,185,.06); border: 1px solid rgba(10,200,185,.2); color: var(--text-muted); }
+.callout-info .callout-icon { color: var(--blue); font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+.callout-warn { background: rgba(200,170,110,.06); border: 1px solid var(--border-gold); color: var(--text-muted); }
+.callout-warn .callout-icon { color: var(--gold); font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+
+/* ── 코드 인라인 ── */
+code {
+  font-family: 'Rajdhani', monospace; font-size: 12px; font-weight: 700;
+  background: rgba(10,200,185,.1); color: var(--blue);
+  padding: 1px 6px; border-radius: 3px;
+}
+
+/* ── 스크롤 하이라이트 ── */
+.doc-section:target .section-title { color: var(--blue); }
+
+/* ── TOC 진행 바 ── */
+.progress-line {
+  position: fixed; top: 56px; left: 0; right: 0; height: 2px;
+  background: var(--border-subtle); z-index: 199;
+}
+.progress-fill {
+  height: 100%; background: linear-gradient(90deg, var(--blue), var(--gold));
+  transition: width .1s;
+}
+
+/* ── 반응형 ── */
+@media (max-width: 900px) {
+  .layout { flex-direction: column; padding: 1rem; }
+  .sidebar { width: 100%; position: static; height: auto; display: none; }
+  .sidebar.open { display: block; }
+  .mobile-nav-toggle { display: flex; }
+}
+@media (min-width: 901px) {
+  .mobile-nav-toggle { display: none; }
+}
+.mobile-nav-toggle {
+  background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 3px;
+  padding: 6px 14px; font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 700;
+  letter-spacing: 1px; color: var(--text-muted); cursor: pointer; margin-bottom: 1rem;
+  align-items: center; gap: 6px;
+}
+.mobile-nav-toggle:hover { color: var(--text-white); }
+
+/* ── 역할 전환 탭 ── */
+.role-tabs { display: flex; gap: 4px; margin-bottom: 1.25rem; }
+.role-tab {
+  padding: 6px 18px; border-radius: 3px; cursor: pointer; font-size: 13px;
+  font-family: 'Rajdhani', sans-serif; font-weight: 700; letter-spacing: 1px;
+  border: 1px solid var(--border-subtle); background: transparent; color: var(--text-muted);
+  transition: all .15s;
+}
+.role-tab.active-admin { background: rgba(200,170,110,.12); border-color: var(--border-gold); color: var(--gold); }
+.role-tab.active-user { background: rgba(10,200,185,.1); border-color: rgba(10,200,185,.3); color: var(--blue); }
+.role-panel { display: none; }
+.role-panel.active { display: block; }
+
+/* ── 인라인 리스트 ── */
+ul.guide-list { padding-left: 1.25rem; list-style: none; display: flex; flex-direction: column; gap: .4rem; }
+ul.guide-list li { font-size: 13px; color: var(--text-muted); line-height: 1.7; position: relative; padding-left: .5rem; }
+ul.guide-list li::before { content: '·'; position: absolute; left: -0.75rem; color: var(--blue); font-size: 16px; line-height: 1.2; }
+ul.guide-list li b { color: var(--text-white); }
+</style>
+</head>
+<body>
+
+<div class="progress-line"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+
+<header class="header">
+  <div class="header-inner">
+    <a class="logo" href="/">
+      <div class="logo-diamond"></div>
+      룽잉닷컴
+    </a>
+    <span class="header-sub">GUIDE DOCS</span>
+    <div style="display:flex;gap:8px;align-items:center;margin-left:auto;">
+      <a href="/" style="font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1.5px;color:var(--text-muted);text-decoration:none;padding:5px 12px;border:1px solid var(--border-subtle);border-radius:2px;transition:all .15s;" onmouseover="this.style.color='var(--text-white)';this.style.borderColor='rgba(255,255,255,.25)'" onmouseout="this.style.color='var(--text-muted)';this.style.borderColor='var(--border-subtle)'">← 홈으로</a>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+
+  <!-- 사이드바 네비게이션 -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-heading">시작하기</div>
+      <a class="nav-item active" href="#intro" onclick="setActive(this)">
+        <span class="nav-icon">🏠</span> 룽잉닷컴이란?
+      </a>
+      <a class="nav-item" href="#roles" onclick="setActive(this)">
+        <span class="nav-icon">👥</span> 역할 구분
+      </a>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-heading">비회원 가이드</div>
+      <a class="nav-item" href="#guest-overview" onclick="setActive(this)">
+        <span class="nav-icon">👁</span> 관전 모드
+      </a>
+      <a class="nav-item" href="#guest-bid" onclick="setActive(this)">
+        <span class="nav-icon">🔨</span> 경매 호가 참여
+      </a>
+      <a class="nav-item" href="#guest-recruit" onclick="setActive(this)">
+        <span class="nav-icon">📋</span> 외전 모집
+      </a>
+      <a class="nav-item" href="#patch" onclick="setActive(this)">
+        <span class="nav-icon">📄</span> 패치노트
+      </a>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-heading">관리자 가이드</div>
+      <a class="nav-item" href="#admin-login" onclick="setActive(this)">
+        <span class="nav-icon">🔑</span> 로그인
+      </a>
+      <a class="nav-item" href="#stage1" onclick="setActive(this)">
+        <span class="nav-icon">1️⃣</span> 1단계: 멤버 등록
+      </a>
+      <a class="nav-item" href="#stage2" onclick="setActive(this)">
+        <span class="nav-icon">2️⃣</span> 2단계: 내전 종류 선택
+      </a>
+      <a class="nav-item" href="#stage3-normal" onclick="setActive(this)">
+        <span class="nav-icon">3️⃣</span> 3단계: 팀 짜기
+      </a>
+      <a class="nav-item" href="#stage3-auction" onclick="setActive(this)">
+        <span class="nav-icon">🔨</span> 3단계: 경매 내전
+      </a>
+      <a class="nav-item" href="#stage4" onclick="setActive(this)">
+        <span class="nav-icon">4️⃣</span> 4단계: 대진표
+      </a>
+      <a class="nav-item" href="#stage5" onclick="setActive(this)">
+        <span class="nav-icon">5️⃣</span> 5단계: 결과 입력
+      </a>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-heading">추가 기능</div>
+      <a class="nav-item" href="#discord" onclick="setActive(this)">
+        <span class="nav-icon">💬</span> 디스코드 연동
+      </a>
+      <a class="nav-item" href="#rating" onclick="setActive(this)">
+        <span class="nav-icon">⭐</span> 레이팅 시스템
+      </a>
+      <a class="nav-item" href="#blacklist" onclick="setActive(this)">
+        <span class="nav-icon">🚫</span> 블랙리스트
+      </a>
+      <a class="nav-item" href="#community" onclick="setActive(this)">
+        <span class="nav-icon">🏛</span> 커뮤니티 신청
+      </a>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-heading">전적 페이지</div>
+      <a class="nav-item" href="#stats-overview" onclick="setActive(this)">
+        <span class="nav-icon">📊</span> 전적 페이지 소개
+      </a>
+      <a class="nav-item" href="#stats-tab" onclick="setActive(this)">
+        <span class="nav-icon">📋</span> 전적 탭
+      </a>
+      <a class="nav-item" href="#stats-detail" onclick="setActive(this)">
+        <span class="nav-icon">🔍</span> 개인 상세 전적
+      </a>
+      <a class="nav-item" href="#stats-rating-rank" onclick="setActive(this)">
+        <span class="nav-icon">📈</span> 레이팅 변화 랭킹
+      </a>
+      <a class="nav-item" href="#stats-community" onclick="setActive(this)">
+        <span class="nav-icon">🏆</span> 커뮤니티 통계
+      </a>
+      <a class="nav-item" href="#stats-scout" onclick="setActive(this)">
+        <span class="nav-icon">🎯</span> 스카우트 보고서
+      </a>
+      <a class="nav-item" href="#stats-etc" onclick="setActive(this)">
+        <span class="nav-icon">🔧</span> 기타 관리 기능
+      </a>
+    </div>
+  </aside>
+
+  <!-- 메인 컨텐츠 -->
+  <main class="content" id="main-content">
+
+    <button class="mobile-nav-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">
+      ☰ 목차 보기
+    </button>
+
+    <!-- 히어로 -->
+    <section class="doc-section" id="intro">
+      <div class="hero">
+        <div class="hero-badge">GUIDE DOCS v1.0</div>
+        <h1>룽잉닷컴 이용 가이드</h1>
+        <p>룽잉닷컴은 리그오브레전드 커뮤니티 내전을 손쉽게 진행할 수 있는 플랫폼입니다.<br>
+        멤버 등록부터 팀 구성, 대진표, 결과 기록까지 내전의 모든 과정을 지원합니다.</p>
+      </div>
+
+      <div class="feature-grid">
+        <div class="feature-item">
+          <div class="feature-item-icon">⚔️</div>
+          <div class="feature-item-title">내전 관리</div>
+          <div class="feature-item-desc">일반·라인 고정·경매 방식으로 팀을 구성하고 대진표를 생성합니다.</div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-item-icon">📡</div>
+          <div class="feature-item-title">실시간 관전</div>
+          <div class="feature-item-desc">비회원도 링크 하나로 내전 진행 상황을 실시간으로 확인할 수 있습니다.</div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-item-icon">⭐</div>
+          <div class="feature-item-title">레이팅 시스템</div>
+          <div class="feature-item-desc">내전 결과에 따라 멤버별 레이팅이 자동으로 가감됩니다.</div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-item-icon">💬</div>
+          <div class="feature-item-title">디스코드 연동</div>
+          <div class="feature-item-desc">내전 알림, 결과 공유, 후기 DM 발송을 디스코드로 자동화합니다.</div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-item-icon">📄</div>
+          <div class="feature-item-title">패치노트</div>
+          <div class="feature-item-desc">최신 LOL 패치노트를 챔피언·아이템별로 한눈에 확인할 수 있습니다.</div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-item-icon">📋</div>
+          <div class="feature-item-title">외전 모집</div>
+          <div class="feature-item-desc">커뮤니티 간 5v5 외부 경기 모집글을 올리고 신청할 수 있습니다.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 역할 구분 -->
+    <section class="doc-section" id="roles">
+      <div class="section-header">
+        <div class="section-icon">👥</div>
+        <div>
+          <div class="section-title">역할 구분</div>
+          <div class="section-desc">접근 가능한 기능이 역할마다 다릅니다</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-body">
+          <table class="cmp-table">
+            <thead>
+              <tr>
+                <th>역할</th>
+                <th>설명</th>
+                <th>주요 권한</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="badge badge-user">비회원</span></td>
+                <td>로그인 없이 이용</td>
+                <td>관전, 패치노트, 외전 신청, 경매 호가(팀장 코드 인증 후)</td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-admin">일반 관리자</span></td>
+                <td>커뮤니티별 관리자 계정</td>
+                <td>자신의 커뮤니티 내전 전체 관리, 멤버 등록/삭제, 팀 구성, 결과 입력</td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-master">마스터 관리자</span></td>
+                <td>플랫폼 최고 관리자</td>
+                <td>모든 커뮤니티 접근, 커뮤니티 생성/삭제, 관리자 계정 발급, 공지사항 관리</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="callout callout-info">
+        <span class="callout-icon">ℹ️</span>
+        <div>관리자 계정은 직접 가입할 수 없습니다. 마스터가 발급한 <b>초대 링크</b>를 통해서만 계정을 만들 수 있습니다. 커뮤니티를 새로 만들고 싶다면 <a href="#community" style="color:var(--blue);">커뮤니티 신청</a> 섹션을 참고하세요.</div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════
+         비회원 가이드
+    ══════════════════════════════════════ -->
+
+    <section class="doc-section" id="guest-overview">
+      <div class="section-header">
+        <div class="section-icon">👁</div>
+        <div>
+          <div class="section-title">관전 모드</div>
+          <div class="section-desc">로그인 없이 내전을 실시간으로 확인하는 방법</div>
+        </div>
+      </div>
+
+      <div class="callout callout-info">
+        <span class="callout-icon">ℹ️</span>
+        <div>관리자가 공유한 <b>내전 링크</b>로 접속하면 자동으로 관전 모드로 진입합니다. 별도의 로그인이 필요하지 않습니다.</div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-title">📡 관전 화면에서 볼 수 있는 정보</span></div>
+        <div class="card-body">
+          <ul class="guide-list">
+            <li><b>현재 단계 표시:</b> 멤버 등록 → 팀 짜기 → 대진표 → 결과 입력 단계를 상단 진행 바로 확인</li>
+            <li><b>멤버 목록:</b> 참여 멤버의 티어, 주/보조 포지션, 레이팅 점수, 디스코드 연동 여부</li>
+            <li><b>팀 구성:</b> 확정된 팀과 팀원 구성을 카드 형태로 확인</li>
+            <li><b>대진표:</b> 토너먼트 대진표와 진행 현황</li>
+            <li><b>결과:</b> 매치 결과, 스코어보드, 최종 순위</li>
+            <li><b>경매 진행 상황:</b> 경매 내전의 경우 현재 경매 중인 선수와 현재가 실시간 표시</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-title">🔄 실시간 업데이트</span></div>
+        <div class="card-body">
+          <div class="step-desc">관전 화면은 Firebase 실시간 데이터베이스와 연동되어 있어, 관리자가 변경사항을 저장하면 <b>즉시 자동으로 반영</b>됩니다. 새로고침 없이도 최신 상태를 확인할 수 있습니다.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="doc-section" id="guest-bid">
+      <div class="section-header">
+        <div class="section-icon">🔨</div>
+        <div>
+          <div class="section-title">경매 내전 — 팀장 호가 참여</div>
+          <div class="section-desc">경매 내전에서 팀장으로 지정된 경우 비회원도 호가 입력 가능</div>
+        </div>
+      </div>
+
+      <div class="callout callout-warn">
+        <span class="callout-icon">⚠️</span>
+        <div>호가 참여는 <b>경매 내전(Auction)에서 팀장으로 지정된 경우에만</b> 가능합니다. 일반 내전에서는 관전 기능만 이용할 수 있습니다.</div>
+      </div>
+
+      <div class="steps">
+        <div class="step">
+          <div class="step-left"><div class="step-num">1</div><div class="step-line"></div></div>
+          <div class="step-body">
+            <div class="step-title">관전 링크로 접속</div>
+            <div class="step-desc">관리자가 공유한 내전 링크로 접속합니다.</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-left"><div class="step-num">2</div><div class="step-line"></div></div>
+          <div class="step-body">
+            <div class="step-title">입찰 탭 선택</div>
+            <div class="step-desc">관전 화면 하단의 <code>입찰</code> 탭을 선택합니다.</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-left"><div class="step-num">3</div><div class="step-line"></div></div>
+          <div class="step-body">
+            <div class="step-title">팀장 코드 입력</div>
+            <div class="step-desc">관리자에게 받은 팀장 인증 코드를 입력합니다.</div>
+            <div class="step-tip"><b>팀장 코드란?</b> 관리자가 대진표/팀 구성 화면에서 팀장에게 별도로 전달하는 숫자 코드입니다.</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-left"><div class="step-num">4</div><div class="step-line"></div></div>
+          <div class="step-body">
+            <div class="step-title">호가 입력</div>
+            <div class="step-desc">현재 경매 중인 선수가 표시되면 포인트를 입력하고 <code>호가</code> 버튼을 누릅니다. 최고가를 제시한 팀장이 해당 선수를 낙찰받습니다.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="doc-section" id="guest-recruit">
+      <div class="section-header">
+        <div class="section-icon">📋</div>
+        <div>
+          <div class="section-title">외전 모집</div>
+          <div class="section-desc">다른 커뮤니티와 5v5 경기를 신청하거나 모집글을 확인하는 기능</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-title">비회원이 할 수 있는 것</span></div>
+        <div class="card-body">
+          <ul class="guide-list">
+            <li><b>모집글 열람:</b> 다른 커뮤니티가 올린 외전 모집글과 조건(티어, 일시, 포지션)을 확인</li>
+            <li><b>북마크:</b> 관심 있는 모집글을 북마크하여 나중에 다시 볼 수 있음</li>
+            <li><b>댓글:</b> 모집글에 댓글로 문의 또는 소통</li>
+            <li><b>신청:</b> 신청 폼을 통해 팀 정보를 입력하고 경기를 신청</li>
+            <li><b>마감 확인:</b> 모집 마감까지 남은 시간 카운트다운 표시</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="doc-section" id="patch">
+      <div class="section-header">
+        <div class="section-icon">📄</div>
+        <div>
+          <div class="section-title">패치노트 페이지</div>
+          <div class="section-desc">최신 LOL 패치 정보를 확인하는 방법</div>
+        </div>
+      </div>
+
+      <div class="callout callout-info">
+        <span class="callout-icon">ℹ️</span>
+        <div>패치노트 페이지(<a href="/patch" style="color:var(--blue);">roonging.com/patch</a>)는 로그인 없이 누구나 이용할 수 있습니다.</div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-title">주요 기능</span></div>
+        <div class="card-body">
+          <ul class="guide-list">
+            <li><b>버전 탭:</b> 상단 탭을 클릭해 패치 버전을 전환합니다. 탭 전환 시 슬라이드 애니메이션이 적용됩니다.</li>
+            <li><b>챔피언 / 아이템 탭:</b> 하단 탭에서 챔피언 변경사항과 아이템 변경사항을 구분해서 볼 수 있습니다.</li>
+            <li><b>필터:</b> <code>전체</code> <code>🟢 버프</code> <code>🔴 너프</code> <code>🟡 조정</code> 중 선택해 원하는 유형만 볼 수 있습니다.</li>
+            <li><b>검색:</b> 챔피언 또는 아이템 이름으로 검색이 가능합니다.</li>
+            <li><b>상세 팝업:</b> 챔피언·아이템을 클릭하면 변경된 수치와 스킬 이미지를 팝업으로 확인할 수 있습니다.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════
+         관리자 가이드
+    ══════════════════════════════════════ -->
+
+    <section class="doc-section" id="admin-login">
+      <div class="section-header">
+        <div class="section-icon">🔑</div>
+        <div>
+          <div class="section-title">관리자 로그인</div>
+          <div class="section-desc">관리자 계정으로 로그인하는 방법</div>
+        </div>
+      </div>
+
+      <div class="steps">
+        <div class="step">
+          <div class="step-left"><div class="step-num">1</div><div class="step-line"></div></div>
+          <div class="step-body">
+            <div class="step-title">초대 링크로 계정 생성</div>
+            <div class="step-desc">마스터 관리자에게 초대 링크를 받아 아이디/비밀번호를 설정합니다. 초대 링크 없이는 계정을 만들 수 없습니다.</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-left"><div class="step-num">2</div><div class="step-line"></div></div>
+          <div class="step-body">
+            <div class="step-title">헤더 우측 로그인 버튼 클릭</div>
+            <div class="step-desc">메인 페이지 우측 상단의 로그인 버튼을 클릭하고 아이디·비밀번호를 입력합니다.</div>
+            <div class="step-tip">로그인 세션은 <b>8시간</b> 동안 유지됩니다. 세션이 만료되면 자동으로 로그아웃됩니다.</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-left"><div class="step-num">3</div><div class="step-line"></div></div>
+          <div class="step-body">
+            <div class="step-title">커뮤니티 선택</div>
+            <div class="step-desc">로그인 후 내 커뮤니티가 자동 선택됩니다. 마스터는 드롭다운에서 다른 커뮤니티로 전환할 수 있습니다.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="doc-section" id="stage1">
+      <div class="section-header">
+        <div class="section-icon">1️⃣</div>
+        <div>
+          <div class="section-title">1단계 — 멤버 등록</div>
+          <div class="section-desc">소환사를 검색해 내전 참가 멤버를 등록하는 단계</div>
+        </div>
+      </div>
+
+      <div class="callout callout-info">
+        <span class="callout-icon">ℹ️</span>
+        <div>이 단계를 시작하려면 먼저 내전을 생성해야 합니다. 홈 화면(내전 목록)에서 <b>+ 내전 생성</b> 버튼을 눌러 이름, 일시, 진행자를 입력하세요.</div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-title">소환사 검색 및 추가</span></div>
+        <div class="card-body">
+          <div class="steps">
+            <div class="step">
+              <div class="step-left"><div class="step-num">1</div><div class="step-line"></div></div>
+              <div class="step-body">
+                <div class="step-title">닉네임#태그 입력</div>
+                <div class="step-desc">오른쪽 검색란에 소환사명을 <code>닉네임#태그</code> 형식으로 입력합니다. 태그 없이 입력하면 <code>#KR1</code>이 자동 적용됩니다.</div>
+                <div class="step-tip">예시: <code>페이커#KR1</code> 또는 <code>Hide on bush#KR1</code></div>
+              </div>
+            </div>
+            <div class="step">
+              <div class="step-left"><div class="step-num">2</div><div class="step-line"></div></div>
+              <div class="step-body">
+                <div class="step-title">검색 결과 확인</div>
+                <div class="step-desc">검색 결과 카드에 소환사의 레벨, 솔랭 티어, 전 시즌 최고 티어가 표시됩니다.</div>
+              </div>
+            </div>
+            <div class="step">
+              <div class="step-left"><div class="step-num">3</div><div class="step-line"></div></div>
+              <div class="step-body">
+                <div class="step-title">주 포지션 선택</div>
+                <div class="step-desc"><code>탑 / 정글 / 미드 / 원딜 / 서폿</code> 중 주 포지션 1개를 선택합니다.</div>
+              </div>
+            </div>
+            <div class="step">
+              <div class="step-left"><div class="step-num">4</div><div class="step-line"></div></div>
+              <div class="step-body">
+                <div class="step-title">보조 포지션 선택 (선택)</div>
+                <div class="step-desc">보조 포지션을 하나 이상 선택할 수 있습니다. 라인 고정 내전에서 팀 배정에 활용됩니다.</div>
+              </div>
+            </div>
+            <div class="step">
+              <div class="step-left"><div class="step-num">5</div><div class="step-line"></div></div>
+              <div class="step-body">
+                <div class="step-title">멤버 추가 클릭</div>
+                <div class="step-desc"><code>멤버 추가</code> 버튼을 눌러 명단에 등록합니다. 이미 등록된 소환사는 중복 추가되지 않습니다.</div>
+                <div class="step-tip"><b>티어 수동 오버라이드:</b> 솔랭 티어와 내전 실력이 다를 경우, 검색 결과 아래의 티어 조정 버튼으로 수동 설정할 수 있습니다.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-title">출석 체크</span></div>
+        <div class="card-body">
+          <ul class="guide-list">
+            <li>등록된 멤버 카드 우측의 <b>출석/미출석</b> 버튼으로 당일 참가 여부를 표시합니다.</li>
+            <li><code>전체 출석</code> 버튼으로 모든 멤버를 한 번에 출석 처리할 수 있습니다.</li>
+            <li>다음 단계로 넘어가려면 <b>인원이 10의 배수</b>이고 <b>전원 출석</b> 상태여야 합니다.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-title">디스코드 연동 멤버 불러오기</span></div>
+        <div class="card-body">
+          <ul class="guide-list">
+            <li>디스코드 봇에서 <code>/내전참가</code> 커맨드로 참가 신청한 멤버를 <b>새로고침</b> 버튼으로 불러올 수 있습니다.</li>
+            <li>불러온 멤버의 정보를 확인한 후 명단에 추가하거나 별도 관리할 수 있습니다.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="doc-section" id="stage2">
+      <div class="section-header">
+        <div class="section-icon">2️⃣</div>
+        <div>
+          <div class="section-title">2단계 — 내전 종류 선택</div>
+          <div class="section-desc">어떤 방식으로 팀을 구성할지 선택하는 단계</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-body">
+          <table class="cmp-table">
+            <thead>
+              <tr>
+                <th>종류</th>
+                <th>설명</th>
+                <th>특징</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>⚔️ 일반 내전</td>
+                <td>관리자가 직접 드래그앤드롭으로 팀을 편성</td>
+                <td>자유로운 팀 구성, 자동 밸런싱 지원</td>
+              </tr>
+              <tr>
+                <td>🎯 라인 고정 내전</td>
+                <td>포지션(탑/정글/미드/원딜/서폿)별로 고정 배정</td>
+                <td>각 라인에 한 명씩 자동/수동 배정, 포지션 보장</td>
+              </tr>
+              <tr>
+                <td>🔨 경매 내전</td>
+                <td>팀장들이 포인트를 소비해 선수를 낙찰받는 방식</td>
+                <td>팀장 선발, 포인트 배정, 실시간 경매 진행</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="doc-section" id="stage3-normal">
+      <div class="section-header">
+        <div class="section-icon">3️⃣</div>
+        <div>
+          <div class="section-title">3단계 — 팀 짜기 (일반/라인 고정)</div>
+          <div class="section-desc">드래그앤드롭으로 팀을 구성하는 단계</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-title">팀 구성 방법</span></div>
+        <div class="card-body">
+          <div class="steps">
+            <div class="step">
+              <div class="step-left"><div class="step-num">1</div><div class="step-line"></div></div>
+              <div class="step-body">
+                <div class="step-title">대기 풀 확인</div>
+                <div class="step-desc">왼쪽 대기 풀에 전체 멤버가 표시됩니다. 각 카드에는 티어와 포지션이 표시됩니다.</div>
+              </div>
+            </div>
+            <div class="step">
+              <div class="step-left"><div class="step-num">2</div><div class="step-line"></div></div>
+              <div class="step-body">
+                <div class="step-title">팀에 드래그앤드롭</div>
+                <div class="step-desc">멤버 카드를 오른쪽 팀 패널로 드래그해서 팀에 배정합니다. 팀 간 이동도 드래그로 가능합니다.</div>
+              </div>
+            </div>
+            <div class="step">
+              <div class="step-left"><div class="step-num">3</div><div class="step-line"></div></div>
+              <div class="step-body">
+                <div class="step-title">자동 밸런싱 (선택)</div>
+                <div class="step-desc"><code>자동 밸런싱</code> 버튼을 누르면 티어 점수 기반으로 팀이 균등하게 자동 배분됩니다.</div>
+                <div class="step-tip"><b>언랭크 주의:</b> 언랭크 멤버가 있으면 티어 계산에서 제외할지 묻는 확인창이 나타납니다.</div>
+              </div>
+            </div>
+            <div class="step">
+              <div class="step-left"><div class="step-num">4</div><div class="step-line"></div></div>
+              <div class="step-body">
+                <div class="step-title">팀장 지정</div>
+                <div class="step-desc">각 팀 패널에서 팀장 지정 버튼으로 팀장을 설정합니다. 팀장은 경매 내전에서 호가 권한을 가집니다.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-title">라인 고정 내전 추가 방법</span></div>
+        <div class="card-body">
+          <ul class="guide-list">
+            <li>각 라인(탑/정글/미드/원딜/서폿)에 한 명씩 배정하는 방식으로 진행됩니다.</li>
+            <li>멤버의 주 포지션을 기준으로 자동 분류되며, 필요시 수동 조정도 가능합니다.</li>
+            <li>포지션 충돌 시 보조 포지션을 기준으로 대체 배정됩니다.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="doc-section" id="stage3-auction">
+      <div class="section-header">
+        <div class="section-icon">🔨</div>
+        <div>
+          <div class="section-title">3단계 — 경매 내전</div>
+          <div class="section-desc">팀장이 포인트를 사용해 선수를 낙찰받는 방식</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-title">경매 진행 순서</span></div>
+        <div class="card-body">
+          <div class="steps">
+            <div class="step">
+              <div class="step-left"><div class="step-num">1</div><div class="step-line"></div></div>
+              <div class="step-body">
+                <div class="step-title">팀장 선발 및 포인트 설정</div>
+                <div class="step-desc">팀장을 지정하고 각 팀장에게 초기 포인트를 부여합니다. 포인트는 선수 입찰에 사용됩니다.</div>
+              </div>
+            </div>
+            <div class="step">
+              <div class="step-left"><div class="step-num">2</div><div class="step-line"></div></div>
+              <div class="step-body">
+                <div class="step-title">경매 시작 — 선수 공개</div>
+                <div class="step-desc">관리자가 경매 중인 선수를 한 명씩 공개합니다. 화면에 해당 선수의 티어와 포지션이 표시됩니다.</div>
+              </div>
+            </div>
+            <div class="step">
+              <div class="step-left"><div class="step-num">3</div><div class="step-line"></div></div>
+              <div class="step-body">
+                <div class="step-title">호가 입력</div>
+                <div class="step-desc">각 팀장이 원하는 포인트를 입력해 호가합니다. 현재 최고가가 실시간으로 업데이트됩니다.</div>
+                <div class="step-tip"><b>비회원 팀장:</b> 관전 링크로 접속해 팀장 코드 인증 후 직접 호가 입력이 가능합니다.</div>
+              </div>
+            </div>
+            <div class="step">
+              <div class="step-left"><div class="step-num">4</div><div class="step-line"></div></div>
+              <div class="step-body">
+                <div class="step-title">낙찰 확정</div>
+                <div class="step-desc">관리자가 <code>낙찰</code> 버튼을 누르면 최고가 팀장의 팀에 해당 선수가 배정되고 포인트가 차감됩니다.</div>
+              </div>
+            </div>
+            <div class="step">
+              <div class="step-left"><div class="step-num">5</div><div class="step-line"></div></div>
+              <div class="step-body">
+                <div class="step-title">전원 낙찰까지 반복</div>
+                <div class="step-desc">모든 선수의 낙찰이 완료될 때까지 반복합니다. 낙찰 이력은 경매 로그에 기록됩니다.</div>
+                <div class="step-tip"><b>미낙찰 처리:</b> 유찰된 선수는 별도 공간에 모아 관리자가 수동 배정할 수 있습니다.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-title">경매 진행 도중 유용한 기능</span></div>
+        <div class="card-body">
+          <ul class="guide-list">
+            <li><b>호가 잠금:</b> 특정 구간에서 호가를 일시 중단할 수 있습니다.</li>
+            <li><b>경매 로그:</b> 입찰·낙찰·유찰 이력이 실시간으로 기록됩니다.</li>
+            <li><b>포인트 현황:</b> 각 팀장의 잔여 포인트가 항상 표시됩니다.</li>
+            <li><b>디스코드 연동:</b> 경매 결과를 디스코드 채널로 자동 공유할 수 있습니다.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="doc-section" id="stage4">
+      <div class="section-header">
+        <div class="section-icon">4️⃣</div>
+        <div>
+          <div class="section-title">4단계 — 대진표</div>
+          <div class="section-desc">토너먼트 대진표를 생성하고 관리하는 단계</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-title">대진표 생성 및 관리</span></div>
+        <div class="card-body">
+          <ul class="guide-list">
+            <li><b>자동 생성:</b> <code>대진표 생성</code> 버튼을 누르면 팀이 무작위로 배치된 토너먼트 대진표가 생성됩니다.</li>
+            <li><b>재추첨:</b> 마음에 들지 않으면 <code>재추첨</code> 버튼으로 다시 뽑을 수 있습니다.</li>
+            <li><b>수동 교체:</b> 특정 대진의 팀을 수동으로 교체할 수 있습니다.</li>
+            <li><b>추가 대진:</b> 기본 대진 외에 추가 경기를 등록할 수 있습니다.</li>
+            <li><b>대진표 복사:</b> <code>이미지 복사</code> 버튼으로 대진표를 이미지로 복사해 공유할 수 있습니다.</li>
+            <li><b>링크 복사:</b> 관전 링크를 복사해 멤버들에게 공유할 수 있습니다.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="callout callout-info">
+        <span class="callout-icon">ℹ️</span>
+        <div>이 단계에서 관전 링크를 멤버들에게 공유하면, 멤버들이 관전 화면에서 자신의 팀 배정과 경기 일정을 확인할 수 있습니다.</div>
+      </div>
+    </section>
+
+    <section class="doc-section" id="stage5">
+      <div class="section-header">
+        <div class="section-icon">5️⃣</div>
+        <div>
+          <div class="section-title">5단계 — 결과 입력</div>
+          <div class="section-desc">각 경기 결과를 입력하고 내전을 마무리하는 단계</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-title">결과 입력 방법</span></div>
+        <div class="card-body">
+          <div class="steps">
+            <div class="step">
+              <div class="step-left"><div class="step-num">1</div><div class="step-line"></div></div>
+              <div class="step-body">
+                <div class="step-title">매치 선택</div>
+                <div class="step-desc">대진표에서 결과를 입력할 경기를 선택합니다.</div>
+              </div>
+            </div>
+            <div class="step">
+              <div class="step-left"><div class="step-num">2</div><div class="step-line"></div></div>
+              <div class="step-body">
+                <div class="step-title">승팀 선택</div>
+                <div class="step-desc">경기에서 이긴 팀을 선택합니다.</div>
+              </div>
+            </div>
+            <div class="step">
+              <div class="step-left"><div class="step-num">3</div><div class="step-line"></div></div>
+              <div class="step-body">
+                <div class="step-title">매치 ID 연결 (선택)</div>
+                <div class="step-desc">Riot API로 실제 게임 매치 ID를 자동 검색하거나 직접 입력해 연결할 수 있습니다.</div>
+                <div class="step-tip"><b>매치 ID란?</b> 게임이 끝난 후 Riot API에 기록되는 고유 식별 번호입니다. 연결 시 게임 내 스탯이 표시됩니다.</div>
+              </div>
+            </div>
+            <div class="step">
+              <div class="step-left"><div class="step-num">4</div><div class="step-line"></div></div>
+              <div class="step-body">
+                <div class="step-title">결과 저장</div>
+                <div class="step-desc"><code>결과 저장</code> 버튼을 누르면 레이팅이 자동으로 가감되고 결과가 기록됩니다.</div>
+              </div>
+            </div>
+            <div class="step">
+              <div class="step-left"><div class="step-num">5</div><div class="step-line"></div></div>
+              <div class="step-body">
+                <div class="step-title">내전 종료</div>
+                <div class="step-desc">모든 경기 결과를 입력한 후 <code>내전 종료</code> 버튼을 눌러 마무리합니다.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-title">결과 종료 후 추가 기능</span></div>
+        <div class="card-body">
+          <ul class="guide-list">
+            <li><b>결과 디스코드 공유:</b> 내전 결과를 디스코드 채널로 자동 공유합니다.</li>
+            <li><b>후기 DM 발송:</b> 디스코드로 참여한 멤버 전원에게 내전 후기 링크를 DM으로 발송합니다.</li>
+            <li><b>레이팅 확인:</b> 결과 화면에서 각 멤버의 레이팅 변동을 확인할 수 있습니다.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════
+         추가 기능
+    ══════════════════════════════════════ -->
+
+    <section class="doc-section" id="discord">
+      <div class="section-header">
+        <div class="section-icon">💬</div>
+        <div>
+          <div class="section-title">디스코드 연동</div>
+          <div class="section-desc">디스코드 서버와 연결해 알림·결과 공유를 자동화하는 기능</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-body">
+          <table class="cmp-table">
+            <thead>
+              <tr>
+                <th>기능</th>
+                <th>설명</th>
+                <th>설정 위치</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>내전 참가 봇</td>
+                <td>멤버가 <code>/내전참가</code> 디스코드 커맨드로 직접 참가 신청</td>
+                <td>커뮤니티 설정 → 디스코드 서버 ID 등록</td>
+              </tr>
+              <tr>
+                <td>내전 알림</td>
+                <td>내전 시작 1시간 전 지정 채널에 자동 알림 전송</td>
+                <td>커뮤니티 설정 → 알림 채널 ID 등록</td>
+              </tr>
+              <tr>
+                <td>결과 자동 공유</td>
+                <td>내전 종료 시 결과를 지정 채널에 자동 포스팅</td>
+                <td>커뮤니티 설정 → 기록 채널 ID 등록</td>
+              </tr>
+              <tr>
+                <td>후기 DM 발송</td>
+                <td>내전 종료 후 참가자에게 후기 링크 DM 자동 발송</td>
+                <td>결과 입력 화면 → 후기 DM 버튼</td>
+              </tr>
+              <tr>
+                <td>디스코드 호출</td>
+                <td>멤버들을 @멘션해 내전 참여를 독려하는 메시지 전송</td>
+                <td>멤버 등록 화면 → 디스코드 호출 버튼</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="callout callout-warn">
+        <span class="callout-icon">⚠️</span>
+        <div>디스코드 연동을 사용하려면 커뮤니티 설정에서 디스코드 서버 ID와 채널 ID를 먼저 등록해야 합니다. 자세한 설정은 마스터 관리자에게 문의하세요.</div>
+      </div>
+    </section>
+
+    <section class="doc-section" id="rating">
+      <div class="section-header">
+        <div class="section-icon">⭐</div>
+        <div>
+          <div class="section-title">레이팅 시스템</div>
+          <div class="section-desc">내전 결과에 따라 자동으로 점수가 가감되는 랭킹 시스템</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-title">레이팅 작동 방식</span></div>
+        <div class="card-body">
+          <ul class="guide-list">
+            <li><b>자동 가감:</b> 경기 결과를 저장하면 승팀 멤버는 레이팅이 오르고, 패팀 멤버는 내려갑니다.</li>
+            <li><b>티어별 차등:</b> 높은 티어 팀이 낮은 티어 팀을 이기면 획득 점수가 적고, 반대의 경우 더 많이 얻습니다.</li>
+            <li><b>글로우 효과:</b> 레이팅 2000+부터 카드에 글로우 효과가 적용됩니다 (2000→금색, 2500→주황, 3000→빨강).</li>
+            <li><b>원복 처리:</b> 결과를 삭제하면 레이팅도 자동으로 원복됩니다.</li>
+            <li><b>시즌제:</b> 시즌별로 레이팅이 분리 관리됩니다. 시즌 종료 후 새 시즌에서 초기화됩니다.</li>
+            <li><b>승률 랭킹:</b> 홈 화면 사이드바에서 커뮤니티 내 승률 랭킹을 확인할 수 있습니다.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="doc-section" id="blacklist">
+      <div class="section-header">
+        <div class="section-icon">🚫</div>
+        <div>
+          <div class="section-title">블랙리스트 관리</div>
+          <div class="section-desc">커뮤니티 내전 참가를 제한할 소환사를 관리하는 기능 (관리자 전용)</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-title">블랙리스트 등록/해제</span></div>
+        <div class="card-body">
+          <ul class="guide-list">
+            <li>헤더 메뉴에서 <b>블랙리스트 관리</b> 화면으로 진입합니다.</li>
+            <li>소환사명으로 검색해 PUUID를 조회한 후 사유와 함께 등록합니다.</li>
+            <li>등록된 소환사를 멤버로 추가하려 하면 경고 메시지가 표시됩니다.</li>
+            <li>해제는 블랙리스트 목록에서 해당 항목의 해제 버튼을 누르면 됩니다.</li>
+            <li>관리자가 일시적으로 <b>숨김 처리</b>해 비공개로 관리할 수 있습니다.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="doc-section" id="community">
+      <div class="section-header">
+        <div class="section-icon">🏛</div>
+        <div>
+          <div class="section-title">커뮤니티 신청</div>
+          <div class="section-desc">새 커뮤니티를 개설하고 싶을 때 마스터에게 신청하는 방법</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-title">커뮤니티 개설 신청 절차</span></div>
+        <div class="card-body">
+          <div class="steps">
+            <div class="step">
+              <div class="step-left"><div class="step-num">1</div><div class="step-line"></div></div>
+              <div class="step-body">
+                <div class="step-title">신청 폼 작성</div>
+                <div class="step-desc">홈 화면 하단의 <b>커뮤니티 개설 신청</b> 버튼을 눌러 커뮤니티명, 설명, 연락처를 입력합니다.</div>
+              </div>
+            </div>
+            <div class="step">
+              <div class="step-left"><div class="step-num">2</div><div class="step-line"></div></div>
+              <div class="step-body">
+                <div class="step-title">마스터 검토</div>
+                <div class="step-desc">마스터 관리자가 신청 내용을 검토합니다.</div>
+              </div>
+            </div>
+            <div class="step">
+              <div class="step-left"><div class="step-num">3</div><div class="step-line"></div></div>
+              <div class="step-body">
+                <div class="step-title">승인 및 계정 발급</div>
+                <div class="step-desc">신청이 승인되면 마스터가 관리자 초대 링크를 발송합니다. 링크로 접속해 계정을 만들면 됩니다.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout callout-info">
+        <span class="callout-icon">ℹ️</span>
+        <div>커뮤니티 개설 후 디스코드 서버 ID, 채널 ID, 딥롤 ID 등을 설정하면 더 많은 기능을 활용할 수 있습니다. 설정은 관리자 로그인 후 <b>커뮤니티 설정</b> 메뉴에서 진행하세요.</div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════
+         전적 페이지
+    ══════════════════════════════════════ -->
+    <section class="doc-section" id="stats-overview">
+      <div class="section-header">
+        <div class="section-icon">📊</div>
+        <div>
+          <h2 class="section-title">전적 페이지</h2>
+          <p class="section-subtitle">커뮤니티 멤버 전체의 내전 전적·레이팅·챔피언 통계를 한눈에</p>
+        </div>
+      </div>
+
+      <p style="color:var(--text-white);line-height:1.8;margin-bottom:1.5rem;">
+        전적 페이지(<code style="background:var(--bg-card);padding:2px 6px;border-radius:3px;font-size:12px;color:var(--blue);">roonging.com/stats.html?…</code>)는 커뮤니티에 등록된 모든 멤버의 내전 기록을 분석해 보여주는 전용 대시보드입니다.
+        내전 목록에서 <b>📊 전적</b> 버튼을 누르거나, 관리자가 공유한 링크로 접속할 수 있습니다.
+      </p>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:2rem;">
+        <div class="card" style="text-align:center;padding:1.25rem;">
+          <div style="font-size:2rem;margin-bottom:.5rem;">📋</div>
+          <div style="font-family:'Rajdhani',sans-serif;font-weight:700;color:var(--gold);letter-spacing:1px;margin-bottom:.3rem;">전적 탭</div>
+          <div style="font-size:12px;color:var(--text-muted);line-height:1.6;">멤버 전체 목록, 승률·KDA·챔피언 정렬</div>
+        </div>
+        <div class="card" style="text-align:center;padding:1.25rem;">
+          <div style="font-size:2rem;margin-bottom:.5rem;">📈</div>
+          <div style="font-family:'Rajdhani',sans-serif;font-weight:700;color:var(--gold);letter-spacing:1px;margin-bottom:.3rem;">레이팅 변화</div>
+          <div style="font-size:12px;color:var(--text-muted);line-height:1.6;">시즌 내 레이팅 증감 랭킹</div>
+        </div>
+        <div class="card" style="text-align:center;padding:1.25rem;">
+          <div style="font-size:2rem;margin-bottom:.5rem;">🏆</div>
+          <div style="font-family:'Rajdhani',sans-serif;font-weight:700;color:var(--gold);letter-spacing:1px;margin-bottom:.3rem;">커뮤니티 통계</div>
+          <div style="font-size:12px;color:var(--text-muted);line-height:1.6;">시간대·요일·챔피언 픽율 분석</div>
+        </div>
+        <div class="card" style="text-align:center;padding:1.25rem;">
+          <div style="font-size:2rem;margin-bottom:.5rem;">🔭</div>
+          <div style="font-family:'Rajdhani',sans-serif;font-weight:700;color:var(--gold);letter-spacing:1px;margin-bottom:.3rem;">스카우트</div>
+          <div style="font-size:12px;color:var(--text-muted);line-height:1.6;">멤버 심층 분석 보고서</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="doc-section" id="stats-tab">
+      <div class="section-header">
+        <div class="section-icon">📋</div>
+        <div>
+          <h2 class="section-title">전적 탭</h2>
+          <p class="section-subtitle">기본 탭 — 멤버 전체 성적 일람표</p>
+        </div>
+      </div>
+
+      <p style="color:var(--text-white);line-height:1.8;margin-bottom:1rem;">
+        전적 페이지에 처음 진입하면 표시되는 기본 탭입니다. 커뮤니티에 등록된 모든 멤버의 내전 성적을 한 표로 볼 수 있습니다.
+      </p>
+
+      <div class="card" style="margin-bottom:1.5rem;">
+        <div class="card-header">📊 표 컬럼 안내</div>
+        <div class="card-body">
+          <table style="width:100%;border-collapse:collapse;font-size:13px;">
+            <thead>
+              <tr style="border-bottom:1px solid var(--border-gold);">
+                <th style="padding:8px 10px;text-align:left;color:var(--gold);font-family:'Rajdhani',sans-serif;letter-spacing:1px;">컬럼</th>
+                <th style="padding:8px 10px;text-align:left;color:var(--gold);font-family:'Rajdhani',sans-serif;letter-spacing:1px;">설명</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="border-bottom:1px solid var(--border-subtle);">
+                <td style="padding:8px 10px;color:var(--text-white);white-space:nowrap;">소환사명</td>
+                <td style="padding:8px 10px;color:var(--text-muted);">클릭하면 개인 상세 전적 모달이 열립니다</td>
+              </tr>
+              <tr style="border-bottom:1px solid var(--border-subtle);">
+                <td style="padding:8px 10px;color:var(--text-white);white-space:nowrap;">현 티어 / 최고 티어</td>
+                <td style="padding:8px 10px;color:var(--text-muted);">Riot API 기준 현재 솔로랭크 티어 및 역대 최고 티어. 뱃지에 마우스를 올리면 LP까지 확인 가능</td>
+              </tr>
+              <tr style="border-bottom:1px solid var(--border-subtle);">
+                <td style="padding:8px 10px;color:var(--text-white);white-space:nowrap;">레이팅 ⭐</td>
+                <td style="padding:8px 10px;color:var(--text-muted);">내전 10판 이상 참여 시 산출되는 커뮤니티 전용 점수. 마우스오버 시 항목별 점수 분해 툴팁 표시</td>
+              </tr>
+              <tr style="border-bottom:1px solid var(--border-subtle);">
+                <td style="padding:8px 10px;color:var(--text-white);white-space:nowrap;">모스트 챔피언</td>
+                <td style="padding:8px 10px;color:var(--text-muted);">내전에서 가장 많이 플레이한 챔피언 아이콘 표시 (최대 3개)</td>
+              </tr>
+              <tr style="border-bottom:1px solid var(--border-subtle);">
+                <td style="padding:8px 10px;color:var(--text-white);white-space:nowrap;">KDA</td>
+                <td style="padding:8px 10px;color:var(--text-muted);">(킬+어시스트) / 데스 비율. 클릭하여 오름/내림차순 정렬 가능</td>
+              </tr>
+              <tr style="border-bottom:1px solid var(--border-subtle);">
+                <td style="padding:8px 10px;color:var(--text-white);white-space:nowrap;">승률</td>
+                <td style="padding:8px 10px;color:var(--text-muted);">내전 전체 승률 (%). 소표본 보정(Wilson Score) 적용</td>
+              </tr>
+              <tr style="border-bottom:1px solid var(--border-subtle);">
+                <td style="padding:8px 10px;color:var(--text-white);white-space:nowrap;">게임 수</td>
+                <td style="padding:8px 10px;color:var(--text-muted);">총 내전 참여 횟수. 기본 정렬 기준</td>
+              </tr>
+              <tr>
+                <td style="padding:8px 10px;color:var(--text-white);white-space:nowrap;">최근 게임</td>
+                <td style="padding:8px 10px;color:var(--text-muted);">가장 최근 내전 참여 일시</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:1.5rem;">
+        <div class="card-header">🔍 검색 및 필터</div>
+        <div class="card-body" style="display:flex;flex-direction:column;gap:.75rem;">
+          <div style="display:flex;gap:10px;align-items:flex-start;">
+            <span style="font-size:1.2rem;">🔎</span>
+            <div>
+              <div style="color:var(--text-white);font-weight:500;margin-bottom:3px;">소환사 검색</div>
+              <div style="color:var(--text-muted);font-size:13px;line-height:1.6;">우측 상단 검색창에 닉네임을 입력하면 실시간으로 필터링됩니다.</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start;">
+            <span style="font-size:1.2rem;">↕️</span>
+            <div>
+              <div style="color:var(--text-white);font-weight:500;margin-bottom:3px;">컬럼 정렬</div>
+              <div style="color:var(--text-muted);font-size:13px;line-height:1.6;">티어, 최고티어, KDA, 승률, 게임 수, 최근 게임 컬럼 헤더를 클릭해 정렬할 수 있습니다. 한 번 더 클릭하면 역순 정렬.</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start;">
+            <span style="font-size:1.2rem;">🎯</span>
+            <div>
+              <div style="color:var(--text-white);font-weight:500;margin-bottom:3px;">포지션 필터</div>
+              <div style="color:var(--text-muted);font-size:13px;line-height:1.6;">표 상단의 포지션 아이콘(탑/정글/미드/원딜/서포터)을 클릭하면 해당 포지션 플레이어만 표시됩니다.</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start;">
+            <span style="font-size:1.2rem;">↻</span>
+            <div>
+              <div style="color:var(--text-white);font-weight:500;margin-bottom:3px;">새로고침</div>
+              <div style="color:var(--text-muted);font-size:13px;line-height:1.6;">우측 상단 <b>↻ 새로고침</b> 버튼으로 최신 데이터를 다시 불러옵니다. 자동 업데이트 주기도 버튼 옆에 표시됩니다.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="doc-section" id="stats-detail">
+      <div class="section-header">
+        <div class="section-icon">🔍</div>
+        <div>
+          <h2 class="section-title">개인 상세 전적</h2>
+          <p class="section-subtitle">소환사명 클릭 시 열리는 심층 분석 모달</p>
+        </div>
+      </div>
+
+      <p style="color:var(--text-white);line-height:1.8;margin-bottom:1.5rem;">
+        전적 표에서 소환사명을 클릭하면 해당 멤버의 개인 상세 전적 모달이 열립니다. 6개의 탭으로 구성되어 있습니다.
+      </p>
+
+      <div style="display:flex;flex-direction:column;gap:1rem;margin-bottom:1.5rem;">
+        <div class="card">
+          <div class="card-header">📊 분석 탭</div>
+          <div class="card-body" style="font-size:13px;color:var(--text-muted);line-height:1.8;">
+            <ul style="list-style:none;padding:0;display:flex;flex-direction:column;gap:.5rem;">
+              <li>• <b style="color:var(--text-white);">기본 스탯</b> — 총 게임 수, 승률, KDA, 이번 주 게임 수</li>
+              <li>• <b style="color:var(--text-white);">챔피언 통계</b> — 내전에서 플레이한 챔피언별 게임 수·승률·KDA. 승률이 낮은 챔피언은 빨간색으로 강조</li>
+              <li>• <b style="color:var(--text-white);">포지션 분포</b> — 주로 플레이한 포지션 비율 시각화</li>
+              <li>• <b style="color:var(--text-white);">아군/상대 궁합</b> — 함께할 때 승률이 높은 아군 TOP 5, 상대했을 때 이기기 어려운 상대 TOP 5</li>
+              <li>• <b style="color:var(--text-white);">최근 경기 목록</b> — 최근 내전 게임 결과 및 챔피언 확인</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">📈 레이팅 로그 탭</div>
+          <div class="card-body" style="font-size:13px;color:var(--text-muted);line-height:1.8;">
+            시즌 중 레이팅이 어떻게 변화했는지 게임별 내역을 타임라인으로 확인합니다. 각 게임에서 레이팅이 올랐는지 내렸는지, 얼마나 변동했는지 상세 항목별로 표시됩니다.
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">🎯 주간 미션 탭</div>
+          <div class="card-body" style="font-size:13px;color:var(--text-muted);line-height:1.8;">
+            관리자가 설정한 이번 주 주간 미션 현황과 해당 멤버의 달성 여부를 확인합니다.
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">💬 코멘트 탭</div>
+          <div class="card-body" style="font-size:13px;color:var(--text-muted);line-height:1.8;">
+            관리자가 해당 멤버에 대해 남긴 코멘트(특이사항, 메모 등)를 확인합니다.
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">🗺️ 히트맵 탭</div>
+          <div class="card-body" style="font-size:13px;color:var(--text-muted);line-height:1.8;">
+            요일·시간대별 내전 참여 패턴을 히트맵으로 시각화합니다. 어느 시간대에 내전을 자주 하는지 한눈에 파악할 수 있습니다.
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">🏷️ 닉네임 탭</div>
+          <div class="card-body" style="font-size:13px;color:var(--text-muted);line-height:1.8;">
+            해당 멤버의 닉네임 변경 이력을 확인합니다.
+          </div>
+        </div>
+      </div>
+
+      <div class="callout callout-tip">
+        <span class="callout-icon">💡</span>
+        <div>모달 상단의 <b>딥롤 바로가기</b> 버튼을 누르면 해당 소환사의 딥롤 페이지가 새 탭으로 열립니다.</div>
+      </div>
+    </section>
+
+    <section class="doc-section" id="stats-rating-rank">
+      <div class="section-header">
+        <div class="section-icon">📈</div>
+        <div>
+          <h2 class="section-title">레이팅 변화 랭킹</h2>
+          <p class="section-subtitle">이번 시즌 레이팅 상승/하락 TOP 랭킹</p>
+        </div>
+      </div>
+
+      <p style="color:var(--text-white);line-height:1.8;margin-bottom:1.5rem;">
+        상단 탭에서 <b>📈 레이팅 변화</b>를 클릭하면 이번 시즌 동안 레이팅이 가장 많이 오른 멤버와 가장 많이 떨어진 멤버를 순위별로 확인할 수 있습니다.
+      </p>
+
+      <div class="card" style="margin-bottom:1rem;">
+        <div class="card-header">⭐ 레이팅이란?</div>
+        <div class="card-body" style="font-size:13px;color:var(--text-muted);line-height:1.8;">
+          내전 10판 이상 참여한 멤버에게 부여되는 커뮤니티 전용 점수입니다. 승패 외에도 <b style="color:var(--text-white);">KDA, 승률, 티어</b> 등 여러 항목을 종합해 산출됩니다. 각 항목별 점수는 전적 표에서 레이팅 뱃지에 마우스를 올리면 확인할 수 있습니다.
+        </div>
+      </div>
+
+      <div class="callout callout-info">
+        <span class="callout-icon">ℹ️</span>
+        <div>레이팅은 시즌 단위로 관리됩니다. 관리자가 새 시즌을 시작하면 이전 시즌 기록은 보존되고 레이팅이 초기화됩니다.</div>
+      </div>
+    </section>
+
+    <section class="doc-section" id="stats-community">
+      <div class="section-header">
+        <div class="section-icon">🏆</div>
+        <div>
+          <h2 class="section-title">커뮤니티 통계</h2>
+          <p class="section-subtitle">커뮤니티 전체 내전 패턴 분석</p>
+        </div>
+      </div>
+
+      <p style="color:var(--text-white);line-height:1.8;margin-bottom:1.5rem;">
+        상단 탭에서 <b>🏆 커뮤니티 통계</b>를 클릭하면 커뮤니티 전체 내전 데이터를 집계한 통계를 볼 수 있습니다.
+      </p>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;margin-bottom:1.5rem;">
+        <div class="card" style="padding:1rem;">
+          <div style="font-size:1.1rem;margin-bottom:.4rem;">🕐</div>
+          <div style="font-weight:600;color:var(--text-white);margin-bottom:.3rem;font-size:13px;">시간대별 경기 수</div>
+          <div style="font-size:12px;color:var(--text-muted);line-height:1.6;">하루 중 내전이 가장 많이 열리는 시간대를 막대그래프로 확인합니다.</div>
+        </div>
+        <div class="card" style="padding:1rem;">
+          <div style="font-size:1.1rem;margin-bottom:.4rem;">📅</div>
+          <div style="font-weight:600;color:var(--text-white);margin-bottom:.3rem;font-size:13px;">요일별 경기 수</div>
+          <div style="font-size:12px;color:var(--text-muted);line-height:1.6;">요일별 내전 빈도를 비교합니다. 주말에 몰리는지, 특정 요일이 높은지 파악할 수 있습니다.</div>
+        </div>
+        <div class="card" style="padding:1rem;">
+          <div style="font-size:1.1rem;margin-bottom:.4rem;">🏅</div>
+          <div style="font-weight:600;color:var(--text-white);margin-bottom:.3rem;font-size:13px;">챔피언 픽율 TOP</div>
+          <div style="font-size:12px;color:var(--text-muted);line-height:1.6;">커뮤니티 내전에서 가장 많이 선택된 챔피언 순위를 확인합니다.</div>
+        </div>
+        <div class="card" style="padding:1rem;">
+          <div style="font-size:1.1rem;margin-bottom:.4rem;">🎖️</div>
+          <div style="font-weight:600;color:var(--text-white);margin-bottom:.3rem;font-size:13px;">MVP / 최다 참여</div>
+          <div style="font-size:12px;color:var(--text-muted);line-height:1.6;">시즌 MVP 및 개근상(최다 참여) 수상자를 확인할 수 있습니다.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="doc-section" id="stats-scout">
+      <div class="section-header">
+        <div class="section-icon">🔭</div>
+        <div>
+          <h2 class="section-title">스카우트 보고서</h2>
+          <p class="section-subtitle">특정 멤버를 내 팀에 데려올 때 참고하는 심층 분석</p>
+        </div>
+      </div>
+
+      <p style="color:var(--text-white);line-height:1.8;margin-bottom:1.5rem;">
+        상단 탭에서 <b>🔭 스카우트</b>를 선택하면 특정 멤버의 성향과 강점을 분석한 보고서를 생성할 수 있습니다. 팀 구성 전에 활용하면 유용합니다.
+      </p>
+
+      <div class="card" style="margin-bottom:1.5rem;">
+        <div class="card-header">📄 보고서에 포함되는 내용</div>
+        <div class="card-body">
+          <ul style="list-style:none;padding:0;display:flex;flex-direction:column;gap:.6rem;font-size:13px;color:var(--text-muted);">
+            <li style="display:flex;gap:8px;align-items:flex-start;"><span style="color:var(--blue);flex-shrink:0;">▸</span><span><b style="color:var(--text-white);">포지션 적합도</b> — 각 포지션에서의 실제 게임 수와 성과를 종합한 적합도 점수</span></li>
+            <li style="display:flex;gap:8px;align-items:flex-start;"><span style="color:var(--blue);flex-shrink:0;">▸</span><span><b style="color:var(--text-white);">챔피언 풀</b> — 자주 쓰는 챔피언과 각 챔피언의 승률·숙련도</span></li>
+            <li style="display:flex;gap:8px;align-items:flex-start;"><span style="color:var(--blue);flex-shrink:0;">▸</span><span><b style="color:var(--text-white);">시너지 분석</b> — 함께할 때 승률이 높은 아군 멤버 목록</span></li>
+            <li style="display:flex;gap:8px;align-items:flex-start;"><span style="color:var(--blue);flex-shrink:0;">▸</span><span><b style="color:var(--text-white);">상대 기록</b> — 특정 멤버를 상대했을 때의 승률</span></li>
+            <li style="display:flex;gap:8px;align-items:flex-start;"><span style="color:var(--blue);flex-shrink:0;">▸</span><span><b style="color:var(--text-white);">최근 폼</b> — 최근 10경기 기준 승률 트렌드</span></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="callout callout-tip">
+        <span class="callout-icon">💡</span>
+        <div>경매 내전에서 팀장이 멤버를 지명하기 전, 스카우트 보고서를 미리 확인해두면 더 효율적으로 팀을 구성할 수 있습니다.</div>
+      </div>
+    </section>
+
+    <section class="doc-section" id="stats-etc">
+      <div class="section-header">
+        <div class="section-icon">🔧</div>
+        <div>
+          <h2 class="section-title">기타 관리 기능</h2>
+          <p class="section-subtitle">관리자 전용 — 전적 페이지 운영 도구</p>
+        </div>
+      </div>
+
+      <p style="color:var(--text-white);line-height:1.8;margin-bottom:1.5rem;">
+        관리자로 로그인하면 전적 페이지 우측 상단에 추가 버튼들이 활성화됩니다.
+      </p>
+
+      <div style="display:flex;flex-direction:column;gap:1rem;margin-bottom:1.5rem;">
+        <div class="card">
+          <div class="card-header">👑 초기 레이팅 계산 <span style="font-size:11px;background:rgba(157,72,224,.15);color:#B97EEA;border:1px solid rgba(157,72,224,.3);border-radius:3px;padding:1px 6px;margin-left:6px;font-family:'Rajdhani',sans-serif;">관리자</span></div>
+          <div class="card-body" style="font-size:13px;color:var(--text-muted);line-height:1.8;">
+            새 시즌을 시작하거나 레이팅을 처음 도입할 때, 기존 전적 데이터를 기반으로 초기 레이팅을 일괄 계산합니다.
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">🎯 주간 미션 설정 <span style="font-size:11px;background:rgba(157,72,224,.15);color:#B97EEA;border:1px solid rgba(157,72,224,.3);border-radius:3px;padding:1px 6px;margin-left:6px;font-family:'Rajdhani',sans-serif;">관리자</span></div>
+          <div class="card-body" style="font-size:13px;color:var(--text-muted);line-height:1.8;">
+            이번 주 달성 목표(예: 3판 이상 참여, 승률 60% 이상 등)를 설정합니다. 미션이 설정되면 멤버 개인 상세 전적의 주간 미션 탭에 표시됩니다.
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">🔄 최고티어 전체 업데이트 <span style="font-size:11px;background:rgba(157,72,224,.15);color:#B97EEA;border:1px solid rgba(157,72,224,.3);border-radius:3px;padding:1px 6px;margin-left:6px;font-family:'Rajdhani',sans-serif;">관리자</span></div>
+          <div class="card-body" style="font-size:13px;color:var(--text-muted);line-height:1.8;">
+            등록된 모든 멤버의 역대 최고 티어 정보를 Riot API에서 일괄 갱신합니다. 시즌 초기화 후 실행하면 정확한 데이터를 유지할 수 있습니다.
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">🏷️ 닉네임 변경 이력 탭</div>
+          <div class="card-body" style="font-size:13px;color:var(--text-muted);line-height:1.8;">
+            상단 탭에서 선택 가능한 뷰입니다. 특정 닉네임으로 검색해 해당 소환사의 이전 닉네임 변경 내역을 추적할 수 있습니다. 멤버가 닉네임을 바꿨을 때 동일 인물인지 확인하는 데 유용합니다.
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">🎯 임시 티어 관리 탭 <span style="font-size:11px;background:rgba(157,72,224,.15);color:#B97EEA;border:1px solid rgba(157,72,224,.3);border-radius:3px;padding:1px 6px;margin-left:6px;font-family:'Rajdhani',sans-serif;">관리자</span></div>
+          <div class="card-body" style="font-size:13px;color:var(--text-muted);line-height:1.8;">
+            멤버에게 임시 티어를 수동으로 부여하거나 수정합니다. Riot API로 조회되는 실제 티어와 별개로, 커뮤니티 내 밸런스를 위해 관리자가 조정할 수 있는 기능입니다. 팀 짜기 시 임시 티어가 반영됩니다.
+          </div>
+        </div>
+      </div>
+
+      <div class="callout callout-warning">
+        <span class="callout-icon">⚠️</span>
+        <div>관리자 전용 버튼은 로그인 후에만 표시됩니다. 전적 페이지 우측 상단 <b>🔑 관리자 로그인</b> 버튼으로 로그인하세요.</div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+// 스크롤 진행 바
+window.addEventListener('scroll', () => {
+  const el = document.documentElement;
+  const pct = (el.scrollTop / (el.scrollHeight - el.clientHeight)) * 100;
+  document.getElementById('progress-fill').style.width = pct + '%';
+});
+
+// 사이드바 활성 항목
+function setActive(el) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// 스크롤 감지로 사이드바 하이라이트
+const sections = document.querySelectorAll('.doc-section');
+const navItems = document.querySelectorAll('.nav-item');
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      const id = e.target.id;
+      navItems.forEach(n => {
+        n.classList.toggle('active', n.getAttribute('href') === '#' + id);
+      });
+    }
+  });
+}, { rootMargin: '-20% 0px -70% 0px' });
+sections.forEach(s => observer.observe(s));
+</script>
+</body>
+</html>

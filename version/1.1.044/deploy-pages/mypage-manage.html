@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>유저페이지 관리 — Roonging</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Bebas+Neue&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #060D18;
+      --bg-card: #0D1620;
+      --bg-dark: #080E14;
+      --border: rgba(255,255,255,.08);
+      --blue: #4B8FE0;
+      --blue-bright: #0AC8B9;
+      --gold: #C8AA6E;
+      --white: #E8E0D0;
+      --muted: #4A5568;
+      --text: #A0AEC0;
+      --red: #E05050;
+      --green: #10B981;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--white);
+      font-family: 'Noto Sans KR', sans-serif;
+      min-height: 100vh;
+    }
+    .mpm-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: .75rem 1.25rem;
+      background: var(--bg-dark);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .mpm-logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 18px;
+      letter-spacing: 3px;
+      color: var(--gold);
+    }
+    .mpm-title {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--muted);
+      letter-spacing: .5px;
+    }
+
+    /* 관리자 로그인 */
+    #admin-login-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 80vh;
+      gap: .75rem;
+    }
+    .admin-login-box {
+      background: var(--bg-card);
+      border: 1px solid rgba(200,170,110,.2);
+      border-radius: 10px;
+      padding: 1.75rem;
+      width: 320px;
+      max-width: 92vw;
+    }
+    .admin-login-box h3 {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--gold);
+      letter-spacing: .5px;
+      margin-bottom: 1rem;
+    }
+    .mpm-input {
+      width: 100%;
+      padding: .6rem .75rem;
+      background: #111820;
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 5px;
+      color: var(--white);
+      font-family: 'Noto Sans KR', sans-serif;
+      font-size: 12px;
+      outline: none;
+      margin-bottom: .5rem;
+    }
+    .mpm-input:focus { border-color: rgba(200,170,110,.4); }
+    .mpm-btn {
+      width: 100%;
+      padding: .6rem;
+      border-radius: 5px;
+      border: none;
+      background: rgba(200,170,110,.12);
+      border: 1px solid rgba(200,170,110,.35);
+      color: var(--gold);
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .mpm-btn:hover { background: rgba(200,170,110,.22); }
+    .mpm-err { font-size: 11px; color: var(--red); min-height: 16px; margin-bottom: .5rem; }
+
+    /* 로딩 */
+    #loading-screen {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 80vh;
+      gap: .75rem;
+    }
+    .spinner {
+      width: 32px; height: 32px;
+      border: 3px solid rgba(10,200,185,.15);
+      border-top-color: var(--blue-bright);
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* 메인 */
+    #main-section { display: none; }
+    .mpm-content { max-width: 900px; margin: 0 auto; padding: 1.25rem; }
+
+    .mpm-section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+    .mpm-section-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 16px;
+      letter-spacing: 2px;
+      color: var(--blue-bright);
+    }
+    .mpm-count {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    /* 검색 */
+    .mpm-search-row {
+      display: flex;
+      gap: .5rem;
+      margin-bottom: 1rem;
+    }
+    .mpm-search-input {
+      flex: 1;
+      padding: .55rem .75rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      color: var(--white);
+      font-family: 'Noto Sans KR', sans-serif;
+      font-size: 12px;
+      outline: none;
+    }
+    .mpm-search-input:focus { border-color: rgba(10,200,185,.4); }
+
+    /* 테이블 */
+    .mpm-table-wrap { overflow-x: auto; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    th {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .5px;
+      color: var(--muted);
+      text-transform: uppercase;
+      padding: .5rem .75rem;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+      white-space: nowrap;
+    }
+    td {
+      padding: .6rem .75rem;
+      border-bottom: 1px solid rgba(255,255,255,.04);
+      vertical-align: middle;
+    }
+    tr:hover td { background: rgba(255,255,255,.02); }
+
+    .discord-cell {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .discord-cell img {
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      border: 1px solid rgba(114,137,218,.3);
+      flex-shrink: 0;
+    }
+    .discord-name { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 12px; color: #7289da; }
+    .discord-id { font-size: 10px; color: var(--muted); }
+
+    .riot-name { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 13px; color: var(--white); }
+    .riot-tag { font-size: 10px; color: var(--muted); }
+    .linked-at { font-size: 10px; color: var(--muted); white-space: nowrap; }
+    .td-clickable { cursor: pointer; position: relative; transition: background .15s; }
+    .td-clickable:hover { background: rgba(255,255,255,.05); }
+    .td-clickable:hover .riot-name { color: #7aa2f7; text-decoration: underline; }
+    .td-link-hint { position: absolute; top: 6px; right: 6px; font-size: 10px; color: var(--muted); opacity: 0; transition: opacity .15s; }
+    .td-clickable:hover .td-link-hint { opacity: 1; }
+
+    .btn-action {
+      padding: 3px 10px;
+      border-radius: 3px;
+      border: none;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 10px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all .15s;
+      white-space: nowrap;
+    }
+    .btn-edit {
+      background: rgba(75,143,224,.1);
+      border: 1px solid rgba(75,143,224,.3);
+      color: var(--blue);
+      margin-right: 4px;
+    }
+    .btn-edit:hover { background: rgba(75,143,224,.2); }
+    .btn-delete {
+      background: rgba(224,80,80,.08);
+      border: 1px solid rgba(224,80,80,.25);
+      color: var(--red);
+    }
+    .btn-delete:hover { background: rgba(224,80,80,.18); }
+
+    .empty-msg {
+      text-align: center;
+      padding: 3rem;
+      color: var(--muted);
+      font-size: 12px;
+      font-family: 'Rajdhani', sans-serif;
+      font-weight: 600;
+      letter-spacing: .5px;
+    }
+
+    /* 수정 팝업 */
+    #edit-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.85);
+      z-index: 3000;
+      align-items: center;
+      justify-content: center;
+    }
+    .edit-popup {
+      background: var(--bg-card);
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 10px;
+      padding: 1.75rem;
+      width: 400px;
+      max-width: 94vw;
+      position: relative;
+    }
+    /* 멤버 검색 드롭다운 */
+    .member-search-wrap { position: relative; margin-bottom: .5rem; }
+    .member-search-input {
+      width: 100%;
+      padding: .55rem .75rem;
+      background: #111820;
+      border: 1px solid rgba(10,200,185,.3);
+      border-radius: 5px;
+      color: var(--white);
+      font-family: 'Noto Sans KR', sans-serif;
+      font-size: 12px;
+      outline: none;
+    }
+    .member-search-input:focus { border-color: rgba(10,200,185,.6); }
+    .member-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0; right: 0;
+      background: #0D1A28;
+      border: 1px solid rgba(10,200,185,.25);
+      border-top: none;
+      border-radius: 0 0 5px 5px;
+      max-height: 180px;
+      overflow-y: auto;
+      z-index: 100;
+      display: none;
+    }
+    .member-dropdown.open { display: block; }
+    .member-item {
+      padding: .45rem .75rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      border-bottom: 1px solid rgba(255,255,255,.04);
+    }
+    .member-item:hover { background: rgba(10,200,185,.08); }
+    .member-item .mi-name { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 13px; color: var(--white); }
+    .member-item .mi-tag { font-size: 10px; color: var(--muted); }
+    .member-item .mi-tier { font-size: 10px; color: var(--gold); margin-left: auto; white-space: nowrap; }
+    .edit-popup h4 {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--white);
+      margin-bottom: .25rem;
+    }
+    .edit-popup .edit-sub {
+      font-size: 10px;
+      color: var(--muted);
+      margin-bottom: 1rem;
+    }
+    .edit-label {
+      font-size: 10px;
+      color: var(--muted);
+      font-family: 'Rajdhani', sans-serif;
+      font-weight: 700;
+      letter-spacing: .4px;
+      margin-bottom: .25rem;
+    }
+    .edit-row { margin-bottom: .75rem; }
+    .edit-actions { display: flex; gap: .5rem; margin-top: .25rem; }
+    .btn-cancel {
+      flex: 1;
+      padding: .55rem;
+      border-radius: 5px;
+      border: 1px solid rgba(255,255,255,.1);
+      background: transparent;
+      color: var(--muted);
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .btn-save {
+      flex: 2;
+      padding: .55rem;
+      border-radius: 5px;
+      border: 1px solid rgba(10,200,185,.4);
+      background: rgba(10,200,185,.1);
+      color: var(--blue-bright);
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .btn-save:hover { background: rgba(10,200,185,.2); }
+    .edit-msg { font-size: 11px; min-height: 16px; margin-bottom: .5rem; }
+
+    /* 토스트 */
+    #toast {
+      position: fixed;
+      bottom: 1.5rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(60px);
+      background: #111820;
+      border: 1px solid rgba(10,200,185,.35);
+      border-radius: 6px;
+      padding: .6rem 1.25rem;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--blue-bright);
+      z-index: 9999;
+      transition: transform .25s ease, opacity .25s ease;
+      opacity: 0;
+      white-space: nowrap;
+    }
+    #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+    #toast.error { border-color: rgba(224,80,80,.35); color: var(--red); }
+
+    @media (max-width: 600px) {
+      th:nth-child(3), td:nth-child(3) { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="mpm-header">
+  <div class="mpm-logo">ROONGING</div>
+  <div class="mpm-title">🛡️ 유저페이지 관리</div>
+</div>
+
+<!-- 관리자 로그인 -->
+<div id="admin-login-section">
+  <div class="admin-login-box">
+    <h3>🔑 관리자 로그인</h3>
+    <input class="mpm-input" id="al-id" type="text" placeholder="관리자 ID" onkeydown="if(event.key==='Enter')alLogin()">
+    <input class="mpm-input" id="al-pw" type="password" placeholder="비밀번호" onkeydown="if(event.key==='Enter')alLogin()">
+    <div class="mpm-err" id="al-err"></div>
+    <button class="mpm-btn" onclick="alLogin()">로그인</button>
+  </div>
+</div>
+
+<!-- 로딩 -->
+<div id="loading-screen">
+  <div class="spinner"></div>
+  <div style="font-size:11px;color:var(--muted);font-family:'Rajdhani',sans-serif;">불러오는 중...</div>
+</div>
+
+<!-- 메인 -->
+<div id="main-section">
+  <div class="mpm-content">
+    <div class="mpm-section-header">
+      <div class="mpm-section-title">DISCORD 연동 목록</div>
+      <div class="mpm-count" id="link-count">0 개</div>
+    </div>
+    <div class="mpm-search-row">
+      <input class="mpm-search-input" id="search-input" type="text" placeholder="소환사명, Discord 이름, ID 검색..." oninput="renderTable()">
+    </div>
+    <div class="mpm-table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Discord</th>
+            <th>소환사</th>
+            <th>연동일시</th>
+            <th>작업</th>
+          </tr>
+        </thead>
+        <tbody id="link-tbody"></tbody>
+      </table>
+    </div>
+    <div id="empty-msg" class="empty-msg" style="display:none;">연동 데이터가 없습니다.</div>
+  </div>
+</div>
+
+<!-- 수정 팝업 -->
+<div id="edit-overlay" style="display:none;" onclick="if(event.target===this)closeEdit()">
+  <div class="edit-popup">
+    <button onclick="closeEdit()" style="position:absolute;top:.75rem;right:.75rem;background:transparent;border:none;color:var(--muted);font-size:18px;cursor:pointer;line-height:1;">✕</button>
+    <h4>✏️ 소환사 정보 수정</h4>
+    <div class="edit-sub" id="edit-discord-info">Discord: —</div>
+    <div class="edit-row">
+      <div class="edit-label" style="margin-bottom:.35rem;">소환사 검색</div>
+      <div class="member-search-wrap">
+        <input class="member-search-input" id="edit-member-search" type="text" placeholder="소환사명 검색..." autocomplete="off">
+        <div class="member-dropdown" id="edit-member-dropdown"></div>
+      </div>
+      <div id="edit-selected-info" style="display:none;margin-top:.5rem;padding:.45rem .65rem;background:rgba(10,200,185,.07);border:1px solid rgba(10,200,185,.25);border-radius:4px;font-family:'Rajdhani',sans-serif;font-size:12px;color:var(--blue-bright);"></div>
+    </div>
+    <input type="hidden" id="edit-riot-name">
+    <input type="hidden" id="edit-riot-tag">
+    <div class="edit-msg" id="edit-msg" style="color:var(--red);"></div>
+    <div class="edit-actions">
+      <button class="btn-cancel" onclick="closeEdit()">취소</button>
+      <button class="btn-save" onclick="saveEdit()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- 토스트 -->
+<div id="toast"></div>
+
+<script>
+var WORKER_URL = 'https://api.roonging.com';
+var params = new URLSearchParams(location.search);
+var CID = params.get('cid') || '';
+
+var _adminToken = '';
+var _adminRole = '';
+var _linkList = [];
+var _editTarget = null; // { discordId, cid, ... }
+var _memberList = []; // deeplol 멤버 목록
+var _serverIdCache = ''; // deeplolServerId 캐시 (마이페이지 URL 생성용)
+
+// deeplol server_info에서 멤버 목록 로드
+async function loadMemberList() {
+  if (_memberList.length) return;
+  if (!CID) return;
+  try {
+    // communities_info에서 deeplolServerId 조회
+    var r = await fetch(WORKER_URL + '/db-public-read', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ path: 'communities_info/' + CID + '/deeplolServerId' })
+    });
+    var rj = await r.json();
+    if (!rj.ok || !rj.data) return;
+    var serverId = rj.data;
+    _serverIdCache = serverId; // openMyPage()에서 재사용
+    var res = await fetch('https://b2c-api-cdn.deeplol.gg/tournament/server_info?server_id=' + serverId, {
+      headers: { 'Referer': 'https://www.deeplol.gg/' }
+    });
+    var info = await res.json();
+    _memberList = (info && info.tournament_stats && info.tournament_stats.tournament_stats_all_list) || [];
+  } catch(e) {}
+}
+
+var _filteredMembers = []; // 드롭다운에 표시 중인 목록
+
+function renderMemberDropdown(q) {
+  var dd = document.getElementById('edit-member-dropdown');
+  q = (q || '').trim().toLowerCase();
+  _filteredMembers = q
+    ? _memberList.filter(function(m) {
+        return (m.riot_name||'').toLowerCase().includes(q) || (m.riot_tag||'').toLowerCase().includes(q);
+      }).slice(0, 30)
+    : _memberList.slice(0, 30);
+  if (!_filteredMembers.length) {
+    dd.innerHTML = '<div class="member-item"><span class="mi-tag">검색 결과 없음</span></div>';
+  } else {
+    dd.innerHTML = _filteredMembers.map(function(m, i) {
+      var tier = m.tier_info && m.tier_info.tier
+        ? m.tier_info.tier.charAt(0).toUpperCase() + m.tier_info.tier.slice(1).toLowerCase() : '';
+      return '<div class="member-item" data-idx="' + i + '">' +
+        '<div><span class="mi-name">' + esc(m.riot_name) + '</span>' +
+        '<span class="mi-tag"> #' + esc(m.riot_tag) + '</span></div>' +
+        (tier ? '<span class="mi-tier">' + esc(tier) + '</span>' : '') +
+      '</div>';
+    }).join('');
+    // 이벤트 위임으로 클릭 처리
+    dd.querySelectorAll('.member-item[data-idx]').forEach(function(el) {
+      el.addEventListener('mousedown', function(e) {
+        e.preventDefault();
+        var idx = parseInt(this.getAttribute('data-idx'), 10);
+        selectMember(_filteredMembers[idx]);
+      });
+    });
+  }
+  dd.classList.add('open');
+}
+
+function selectMember(m) {
+  document.getElementById('edit-riot-name').value = m.riot_name || '';
+  document.getElementById('edit-riot-tag').value = m.riot_tag || '';
+  document.getElementById('edit-member-search').value = '';
+  document.getElementById('edit-member-dropdown').classList.remove('open');
+  var info = document.getElementById('edit-selected-info');
+  info.textContent = '✓ ' + (m.riot_name || '') + ' #' + (m.riot_tag || '');
+  info.style.display = 'block';
+}
+
+// 검색 input 이벤트 연결 (DOMContentLoaded 후)
+document.addEventListener('DOMContentLoaded', function() {
+  var searchEl = document.getElementById('edit-member-search');
+  if (!searchEl) return;
+  searchEl.addEventListener('input', function() {
+    if (_memberList.length) {
+      renderMemberDropdown(this.value);
+    } else {
+      var dd = document.getElementById('edit-member-dropdown');
+      dd.innerHTML = '<div class="member-item"><span class="mi-tag">로딩 중...</span></div>';
+      dd.classList.add('open');
+      loadMemberList().then(function() { renderMemberDropdown(searchEl.value); });
+    }
+  });
+  searchEl.addEventListener('focus', function() {
+    if (_memberList.length) renderMemberDropdown(this.value);
+  });
+  searchEl.addEventListener('blur', function() {
+    setTimeout(function() {
+      var dd = document.getElementById('edit-member-dropdown');
+      if (dd) dd.classList.remove('open');
+    }, 150);
+  });
+});
+
+// 자동 로그인 시도 (localStorage에 저장된 ID/PW로 재로그인)
+(async function() {
+  try {
+    var id = localStorage.getItem('sa_id');
+    var pw = localStorage.getItem('sa_pw');
+    if (id && pw && CID) {
+      var res = await fetch(WORKER_URL + '/admin-login', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ id, pw, type: 'master' })
+      });
+      var j = await res.json();
+      if (!j.ok) {
+        res = await fetch(WORKER_URL + '/admin-login', {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ id, pw, type: 'admin' })
+        });
+        j = await res.json();
+      }
+      if (j.ok && (j.role === 'admin' || j.role === 'master')) {
+        _adminToken = j.token;
+        _adminRole = j.role;
+        startLoad();
+        return;
+      }
+    }
+  } catch(e) {}
+})();
+
+async function alLogin() {
+  var id = (document.getElementById('al-id').value || '').trim();
+  var pw = (document.getElementById('al-pw').value || '').trim();
+  var errEl = document.getElementById('al-err');
+  errEl.textContent = '';
+  if (!id || !pw) { errEl.textContent = 'ID와 비밀번호를 입력해주세요.'; return; }
+  if (!CID) { errEl.textContent = 'cid 파라미터가 없습니다.'; return; }
+  try {
+    // 마스터 로그인 시도
+    var res = await fetch(WORKER_URL + '/admin-login', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ id, pw, type: 'master' })
+    });
+    var j = await res.json();
+    // 마스터 실패 시 관리자 로그인 시도
+    if (!j.ok) {
+      res = await fetch(WORKER_URL + '/admin-login', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ id, pw, type: 'admin' })
+      });
+      j = await res.json();
+    }
+    if (!j.ok) { errEl.textContent = j.error || '로그인 실패'; return; }
+    _adminToken = j.token;
+    _adminRole = j.role;
+    startLoad();
+  } catch(e) {
+    errEl.textContent = '네트워크 오류: ' + e.message;
+  }
+}
+
+async function startLoad() {
+  document.getElementById('admin-login-section').style.display = 'none';
+  document.getElementById('loading-screen').style.display = 'flex';
+  await loadLinks();
+  document.getElementById('loading-screen').style.display = 'none';
+  document.getElementById('main-section').style.display = 'block';
+}
+
+async function loadLinks() {
+  if (!CID) return;
+  try {
+    var res = await fetch(WORKER_URL + '/discord-link-list', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ cid: CID, token: _adminToken })
+    });
+    var j = await res.json();
+    if (j.ok && Array.isArray(j.list)) {
+      _linkList = j.list;
+    } else {
+      _linkList = [];
+    }
+  } catch(e) { _linkList = []; }
+  renderTable();
+}
+
+function renderTable() {
+  var q = (document.getElementById('search-input').value || '').toLowerCase().trim();
+  var filtered = _linkList.filter(function(item) {
+    if (!q) return true;
+    return (item.discordName || '').toLowerCase().includes(q) ||
+      (item.discordId || '').toLowerCase().includes(q) ||
+      (item.riotName || '').toLowerCase().includes(q) ||
+      (item.riotTag || '').toLowerCase().includes(q);
+  });
+
+  document.getElementById('link-count').textContent = _linkList.length + ' 개';
+  var tbody = document.getElementById('link-tbody');
+  var emptyEl = document.getElementById('empty-msg');
+
+  if (!filtered.length) {
+    tbody.innerHTML = '';
+    emptyEl.style.display = '';
+    return;
+  }
+  emptyEl.style.display = 'none';
+
+  tbody.innerHTML = filtered.map(function(item) {
+    var avatarSrc = item.discordAvatar || 'https://cdn.discordapp.com/embed/avatars/0.png';
+    var linkedAt = item.linkedAt ? new Date(item.linkedAt).toLocaleString('ko-KR', {
+      year:'2-digit', month:'2-digit', day:'2-digit',
+      hour:'2-digit', minute:'2-digit'
+    }) : '—';
+    var hasRiot = !!(item.riotName);
+    return '<tr>' +
+      '<td><div class="discord-cell">' +
+        '<img src="' + esc(avatarSrc) + '" onerror="this.src=\'https://cdn.discordapp.com/embed/avatars/0.png\'">' +
+        '<div><div class="discord-name">' + esc(item.discordName || '—') + '</div>' +
+        '<div class="discord-id">' + esc(item.discordId) + '</div></div>' +
+      '</div></td>' +
+      '<td class="td-mypage-link' + (hasRiot ? ' td-clickable' : '') + '"' +
+        (hasRiot ? ' onclick=\'openMyPage(' + JSON.stringify(JSON.stringify(item)) + ')\' title="마이페이지 열기"' : '') + '>' +
+        '<div class="riot-name">' + esc(item.riotName || '—') + '</div>' +
+        '<div class="riot-tag">#' + esc(item.riotTag || '') + '</div>' +
+        (hasRiot ? '<span class="td-link-hint">↗</span>' : '') +
+      '</td>' +
+      '<td class="linked-at">' + esc(linkedAt) + '</td>' +
+      '<td>' +
+        '<button class="btn-action btn-edit" onclick=\'openEdit(' + JSON.stringify(JSON.stringify(item)) + ')\'>✏️ 수정</button>' +
+        '<button class="btn-action btn-delete" onclick=\'deleteLink(' + JSON.stringify(JSON.stringify(item)) + ')\'>🗑️ 해제</button>' +
+      '</td>' +
+    '</tr>';
+  }).join('');
+}
+
+// 마이페이지 새탭으로 열기
+async function openMyPage(itemJson) {
+  var item = JSON.parse(itemJson);
+  if (!item.discordId) return;
+
+  // _memberList 로드 (serverId + deeplol server_info 포함) — loadMemberList()가 이미 처리
+  await loadMemberList();
+
+  // _memberList(deeplol server_info)에서 riotName+riotTag로 puu_id 조회
+  var puuId = '';
+  if (item.riotName && item.riotTag && _memberList.length) {
+    var found = _memberList.find(function(m) {
+      return (m.riot_name||'').toLowerCase() === (item.riotName||'').toLowerCase() &&
+             (m.riot_tag||'').toLowerCase() === (item.riotTag||'').toLowerCase();
+    });
+    if (found && found.puu_id) puuId = found.puu_id;
+  }
+
+  var url = '/mypage?cid=' + encodeURIComponent(CID) +
+    '&did=' + encodeURIComponent(item.discordId) +
+    '&admin_token=' + encodeURIComponent(_adminToken);
+  if (_serverIdCache) url += '&server_id=' + encodeURIComponent(_serverIdCache);
+  if (puuId) url += '&puu_id=' + encodeURIComponent(puuId);
+  window.open(url, '_blank');
+}
+
+function esc(str) {
+  if (!str && str !== 0) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// 수정 팝업
+function openEdit(itemJson) {
+  _editTarget = JSON.parse(itemJson);
+  document.getElementById('edit-discord-info').textContent =
+    'Discord: ' + (_editTarget.discordName || '—') + ' (' + _editTarget.discordId + ')';
+  document.getElementById('edit-riot-name').value = _editTarget.riotName || '';
+  document.getElementById('edit-riot-tag').value = _editTarget.riotTag || '';
+  document.getElementById('edit-member-search').value = '';
+  document.getElementById('edit-member-dropdown').classList.remove('open');
+  // 현재 연동된 소환사를 선택 표시로 초기 노출
+  var infoEl = document.getElementById('edit-selected-info');
+  if (_editTarget.riotName) {
+    infoEl.textContent = '현재: ' + _editTarget.riotName + ' #' + (_editTarget.riotTag || '');
+    infoEl.style.display = 'block';
+  } else {
+    infoEl.textContent = '';
+    infoEl.style.display = 'none';
+  }
+  document.getElementById('edit-msg').textContent = '';
+  document.getElementById('edit-overlay').style.display = 'flex';
+  // 멤버 목록 미리 로드
+  loadMemberList();
+  setTimeout(function(){ document.getElementById('edit-member-search').focus(); }, 150);
+}
+
+function closeEdit() {
+  document.getElementById('edit-overlay').style.display = 'none';
+  _editTarget = null;
+}
+
+async function saveEdit() {
+  if (!_editTarget) return;
+  var riotName = (document.getElementById('edit-riot-name').value || '').trim();
+  var riotTag = (document.getElementById('edit-riot-tag').value || '').trim();
+  var msgEl = document.getElementById('edit-msg');
+  msgEl.textContent = '';
+  if (!riotName || !riotTag) { msgEl.textContent = '멤버를 검색해서 선택해주세요.'; return; }
+  try {
+    var res = await fetch(WORKER_URL + '/discord-link-update', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        discordId: _editTarget.discordId,
+        cid: CID,
+        riotName: riotName,
+        riotTag: riotTag,
+        token: _adminToken
+      })
+    });
+    var j = await res.json();
+    if (j.ok) {
+      // 로컬 목록 업데이트
+      var idx = _linkList.findIndex(function(x) { return x.discordId === _editTarget.discordId; });
+      if (idx !== -1) {
+        _linkList[idx].riotName = riotName;
+        _linkList[idx].riotTag = riotTag;
+      }
+      closeEdit();
+      renderTable();
+      showToast('✅ 소환사 정보가 수정됐습니다.', false);
+    } else {
+      msgEl.textContent = j.error || '수정 실패';
+    }
+  } catch(e) {
+    msgEl.textContent = '네트워크 오류: ' + e.message;
+  }
+}
+
+// 연동 해제
+async function deleteLink(itemJson) {
+  var item = JSON.parse(itemJson);
+  if (!confirm(item.discordName + ' (' + item.riotName + '#' + item.riotTag + ') 의 연동을 해제하시겠습니까?')) return;
+  try {
+    var res = await fetch(WORKER_URL + '/discord-link-delete', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ discordId: item.discordId, cid: CID, token: _adminToken })
+    });
+    var j = await res.json();
+    if (j.ok) {
+      _linkList = _linkList.filter(function(x) { return x.discordId !== item.discordId; });
+      renderTable();
+      showToast('🗑️ 연동이 해제됐습니다.', false);
+    } else {
+      showToast('오류: ' + (j.error || '해제 실패'), true);
+    }
+  } catch(e) {
+    showToast('네트워크 오류: ' + e.message, true);
+  }
+}
+
+// 토스트
+var _toastTimer = null;
+function showToast(msg, isError) {
+  var el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'show' + (isError ? ' error' : '');
+  if (_toastTimer) clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(function() { el.className = ''; }, 2800);
+}
+</script>
+</body>
+</html>

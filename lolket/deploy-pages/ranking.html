@@ -8,7 +8,9 @@
 <meta property="og:image" content="https://roonging.com/og-image-v2.png">
 <meta property="og:type" content="website">
 <title>주간 레이팅 랭킹</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 :root{
@@ -17,7 +19,7 @@
   --gold:#C8AA6E;--blue:#0AC8B9;--red:#E84057;
   --white:#F0E6D3;--muted:#5B6474;--sub:#A0A8B0;
 }
-html,body{min-height:100%;background:var(--bg);color:var(--white);font-family:'Noto Sans KR',sans-serif;}
+html,body{min-height:100%;background:var(--bg);color:var(--white);font-family:'IBM Plex Sans KR',sans-serif;}
 ::-webkit-scrollbar{width:4px;height:4px;}
 ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:2px;}
 
@@ -31,19 +33,19 @@ html,body{min-height:100%;background:var(--bg);color:var(--white);font-family:'N
   backdrop-filter:blur(8px);
   min-width:0;
 }
-.logo-link{display:flex;align-items:center;gap:6px;text-decoration:none;color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;flex-shrink:0;}
+.logo-link{display:flex;align-items:center;gap:6px;text-decoration:none;color:var(--gold);font-family:'IBM Plex Sans KR',sans-serif;font-size:18px;letter-spacing:2px;flex-shrink:0;}
 .logo-diamond{width:8px;height:8px;background:var(--blue);transform:rotate(45deg);box-shadow:0 0 6px rgba(10,200,185,.5);flex-shrink:0;}
 .header-center{flex:1;min-width:0;overflow:hidden;}
-.page-title{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.page-title{font-family:'IBM Plex Sans KR',sans-serif;font-size:20px;letter-spacing:2px;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .week-badge{
-  font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;
+  font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;
   color:var(--blue);background:rgba(10,200,185,.1);border:1px solid rgba(10,200,185,.25);
   border-radius:3px;padding:2px 8px;margin-left:.4rem;vertical-align:middle;
   white-space:nowrap;
 }
 .header-back{
   padding:5px 10px;border-radius:3px;border:1px solid var(--border);background:transparent;
-  color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;
+  color:var(--muted);font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;
   cursor:pointer;transition:all .15s;text-decoration:none;display:inline-flex;align-items:center;gap:4px;
   flex-shrink:0;white-space:nowrap;
 }
@@ -52,7 +54,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--white);font-family:'N
 /* ── LOADING ── */
 @keyframes spin{to{transform:rotate(360deg);}}
 .spinner{width:20px;height:20px;border:2px solid rgba(255,255,255,.08);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0;}
-.loading-wrap{display:flex;align-items:center;justify-content:center;gap:12px;padding:5rem 2rem;font-family:'Rajdhani',sans-serif;font-size:13px;color:var(--muted);letter-spacing:1px;}
+.loading-wrap{display:flex;align-items:center;justify-content:center;gap:12px;padding:5rem 2rem;font-family:'IBM Plex Sans KR',sans-serif;font-size:13px;color:var(--muted);letter-spacing:1px;}
 
 /* ── MAIN LAYOUT ── */
 .main-wrap{max-width:1280px;margin:0 auto;padding:1rem .75rem;}
@@ -70,7 +72,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--white);font-family:'N
 .section-head{
   display:flex;align-items:center;gap:.5rem;
   padding:.65rem 1rem;border-radius:6px 6px 0 0;
-  font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;letter-spacing:1.5px;
+  font-family:'IBM Plex Sans KR',sans-serif;font-size:13px;font-weight:700;letter-spacing:1.5px;
 }
 .section-head.rise{background:rgba(10,200,185,.06);border:1px solid rgba(10,200,185,.15);border-bottom:none;}
 .section-head.drop{background:rgba(232,64,87,.06);border:1px solid rgba(232,64,87,.15);border-bottom:none;}
@@ -103,7 +105,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--white);font-family:'N
 }
 
 .rank-num{
-  font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;
+  font-family:'IBM Plex Sans KR',sans-serif;font-size:18px;letter-spacing:1px;
   width:24px;text-align:center;flex-shrink:0;
 }
 .rank-num.top3-1{color:var(--gold);}
@@ -117,16 +119,16 @@ html,body{min-height:100%;background:var(--bg);color:var(--white);font-family:'N
 .rank-info{flex:1;min-width:0;}
 .rank-name{font-size:13px;font-weight:700;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .rank-meta{display:flex;align-items:center;gap:6px;margin-top:2px;flex-wrap:wrap;}
-.rank-tier{font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;padding:1px 6px;border-radius:2px;}
-.rank-stat{font-family:'Rajdhani',sans-serif;font-size:10px;color:var(--muted);}
+.rank-tier{font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;padding:1px 6px;border-radius:2px;}
+.rank-stat{font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;color:var(--muted);}
 .rank-stat span{color:var(--sub);font-weight:700;}
 .rank-delta{
-  font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;
+  font-family:'IBM Plex Sans KR',sans-serif;font-size:20px;letter-spacing:1px;
   flex-shrink:0;text-align:right;min-width:64px;
 }
 .rank-delta.pos{color:var(--blue);}
 .rank-delta.neg{color:var(--red);}
-.rank-rating{font-family:'Rajdhani',sans-serif;font-size:10px;color:var(--muted);text-align:right;margin-top:1px;}
+.rank-rating{font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;color:var(--muted);text-align:right;margin-top:1px;}
 
 /* ── DETAIL EXPAND ── */
 .rank-detail{
@@ -143,17 +145,17 @@ html,body{min-height:100%;background:var(--bg);color:var(--white);font-family:'N
 
 /* chart */
 .detail-chart-wrap{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05);border-radius:5px;padding:.6rem;}
-.detail-chart-title{font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;color:var(--muted);margin-bottom:.4rem;}
+.detail-chart-title{font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;color:var(--muted);margin-bottom:.4rem;}
 
 /* mini section */
 .detail-section{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05);border-radius:5px;padding:.65rem .85rem;}
-.detail-sec-title{font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:2px;color:var(--gold);margin-bottom:.5rem;}
-.detail-loading{font-family:'Rajdhani',sans-serif;font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px;padding:.25rem 0;}
+.detail-sec-title{font-family:'IBM Plex Sans KR',sans-serif;font-size:13px;letter-spacing:2px;color:var(--gold);margin-bottom:.5rem;}
+.detail-loading{font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px;padding:.25rem 0;}
 .detail-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;}
 @media(max-width:500px){.detail-grid-2{grid-template-columns:1fr;}}
 
 /* user/champ table */
-.mini-table{width:100%;border-collapse:collapse;font-family:'Rajdhani',sans-serif;font-size:11px;}
+.mini-table{width:100%;border-collapse:collapse;font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;}
 .mini-table th{color:var(--muted);font-size:9px;font-weight:700;letter-spacing:1px;padding:3px 5px;border-bottom:1px solid rgba(255,255,255,.05);text-align:left;}
 .mini-table td{padding:4px 5px;border-bottom:1px solid rgba(255,255,255,.03);}
 .mini-table td:last-child{text-align:right;font-weight:700;}
@@ -163,9 +165,9 @@ html,body{min-height:100%;background:var(--bg);color:var(--white);font-family:'N
 .champ-row{display:flex;align-items:center;gap:7px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.03);}
 .champ-row:last-child{border-bottom:none;}
 .champ-icon{width:22px;height:22px;border-radius:50%;border:1px solid rgba(255,255,255,.1);object-fit:cover;}
-.champ-name{flex:1;font-family:'Rajdhani',sans-serif;font-size:11px;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.champ-wr{font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;}
-.champ-games{font-family:'Rajdhani',sans-serif;font-size:10px;color:var(--muted);}
+.champ-name{flex:1;font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.champ-wr{font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;}
+.champ-games{font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;color:var(--muted);}
 
 /* wr bar */
 .wr-mini{display:flex;align-items:center;gap:4px;}
@@ -175,7 +177,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--white);font-family:'N
 
 /* AI 분석 섹션 */
 .ai-analysis-wrap{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05);border-radius:5px;padding:.65rem .85rem;}
-.ai-analysis-title{font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:2px;color:var(--gold);margin-bottom:.5rem;display:flex;align-items:center;gap:.4rem;}
+.ai-analysis-title{font-family:'IBM Plex Sans KR',sans-serif;font-size:13px;letter-spacing:2px;color:var(--gold);margin-bottom:.5rem;display:flex;align-items:center;gap:.4rem;}
 .ai-analysis-content{max-height:200px;overflow-y:auto;padding-right:.25rem;}
 .ai-analysis-content::-webkit-scrollbar{width:3px;}
 .ai-analysis-content::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:2px;}
@@ -184,16 +186,16 @@ html,body{min-height:100%;background:var(--bg);color:var(--white);font-family:'N
 .master-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:2000;display:none;align-items:center;justify-content:center;}
 .master-overlay.open{display:flex;}
 .master-box{background:#0D1620;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:2rem;width:300px;text-align:center;}
-.master-modal-title{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;color:var(--gold);margin-bottom:.25rem;}
-.master-modal-desc{font-family:'Rajdhani',sans-serif;font-size:11px;color:var(--muted);margin-bottom:1.25rem;letter-spacing:.5px;}
-.master-modal-input{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:3px;padding:7px 10px;color:var(--white);font-family:'Noto Sans KR',sans-serif;font-size:13px;outline:none;margin-bottom:.6rem;transition:border-color .15s;}
+.master-modal-title{font-family:'IBM Plex Sans KR',sans-serif;font-size:20px;letter-spacing:2px;color:var(--gold);margin-bottom:.25rem;}
+.master-modal-desc{font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;color:var(--muted);margin-bottom:1.25rem;letter-spacing:.5px;}
+.master-modal-input{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:3px;padding:7px 10px;color:var(--white);font-family:'IBM Plex Sans KR',sans-serif;font-size:13px;outline:none;margin-bottom:.6rem;transition:border-color .15s;}
 .master-modal-input:focus{border-color:var(--blue);}
-.master-modal-btn{width:100%;background:rgba(10,200,185,.1);border:1px solid var(--blue);border-radius:3px;color:var(--blue);font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;padding:7px;cursor:pointer;transition:background .15s;}
+.master-modal-btn{width:100%;background:rgba(10,200,185,.1);border:1px solid var(--blue);border-radius:3px;color:var(--blue);font-family:'IBM Plex Sans KR',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;padding:7px;cursor:pointer;transition:background .15s;}
 .master-modal-btn:hover{background:rgba(10,200,185,.18);}
-.master-modal-err{color:var(--red);font-family:'Rajdhani',sans-serif;font-size:11px;margin-top:.5rem;min-height:16px;}
+.master-modal-err{color:var(--red);font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;margin-top:.5rem;min-height:16px;}
 
 /* error */
-.err-state{text-align:center;padding:3rem 1rem;font-family:'Rajdhani',sans-serif;font-size:13px;color:var(--red);letter-spacing:.5px;}
+.err-state{text-align:center;padding:3rem 1rem;font-family:'IBM Plex Sans KR',sans-serif;font-size:13px;color:var(--red);letter-spacing:.5px;}
 
 /* stagger entry animation for cards */
 @keyframes cardSlideIn{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:none}}
@@ -234,6 +236,139 @@ html,body{min-height:100%;background:var(--bg);color:var(--white);font-family:'N
   .champ-games{font-size:9px;}
 }
 </style>
+<style id="rg-ranking">
+/* ═══ ranking 리디자인 v2 (rg) ═══ */
+:root{--rg-bg:#0A0D13;--rg-s1:#11151D;--rg-s2:#151A23;--rg-s3:#1A202B;--rg-s4:#1D2430;--rg-line:#1A1F29;--rg-ring:#222A36;--rg-t1:#E9ECF1;--rg-t2:#A3ACBA;--rg-t3:#8B95A7;--rg-t4:#7D8797;--rg-accent:#2BD9C5;--rg-red:#FF6B7A;--rg-gold:#E8CB86;--rg-ease:cubic-bezier(.2,.7,.2,1);
+  --bg:#0A0D13;--panel:#11151D;--card:#11151D;--hover:#151A23;--border:#1F2631;--gold:#E8CB86;--blue:#2BD9C5;--white:#E9ECF1;--muted:#7D8797;--sub:#A3ACBA}
+@keyframes rgRise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes rgModalIn{from{opacity:0;transform:translateY(8px) scale(.97)}to{opacity:1;transform:none}}
+html,body{background:var(--rg-bg)!important;color:var(--rg-t1)}
+body *{letter-spacing:0!important}
+::selection{background:rgba(43,217,197,.3)}
+*{scrollbar-width:thin;scrollbar-color:#2A3241 transparent}
+::-webkit-scrollbar{width:8px!important;height:8px!important}
+::-webkit-scrollbar-thumb{background:#2A3241!important;border-radius:8px!important}
+:focus-visible{outline:2px solid rgba(43,217,197,.7);outline-offset:2px}
+[style*="border-radius:2px;"],[style*="border-radius:3px;"],[style*="border-radius:4px;"],[style*="border-radius: 2px;"],[style*="border-radius: 3px;"],[style*="border-radius: 4px;"]{border-radius:8px!important}
+
+/* ── 헤더: 포로 겨울 마을 + 눈 ── */
+.page-header{isolation:isolate;padding:14px 24px!important;gap:12px!important;border-bottom:1px solid var(--rg-line)!important;
+  background:
+    linear-gradient(90deg,rgba(7,9,13,.82) 0%,rgba(7,9,13,.66) 40%,rgba(7,9,13,.58) 100%),
+    linear-gradient(180deg,rgba(7,9,13,.20) 0%,rgba(7,9,13,.55) 100%),
+    url('/poro-header-bg.webp') center 60%/cover no-repeat #0A0D13 !important;
+  -webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+.page-header > *{position:relative;z-index:1}
+.page-header::before,.page-header::after{content:'';position:absolute;inset:0;z-index:0;pointer-events:none;background-repeat:repeat}
+.page-header::before{background-image:radial-gradient(circle at 18px 24px,rgba(255,255,255,0.85) 0 1.2px,transparent 1.8px),radial-gradient(circle at 92px 70px,rgba(255,255,255,0.85) 0 1.2px,transparent 1.8px),radial-gradient(circle at 150px 12px,rgba(255,255,255,0.85) 0 1.2px,transparent 1.8px),radial-gradient(circle at 40px 118px,rgba(255,255,255,0.85) 0 1.2px,transparent 1.8px),radial-gradient(circle at 128px 140px,rgba(255,255,255,0.85) 0 1.2px,transparent 1.8px),radial-gradient(circle at 70px 166px,rgba(255,255,255,0.85) 0 1.2px,transparent 1.8px),radial-gradient(circle at 165px 96px,rgba(255,255,255,0.85) 0 1.2px,transparent 1.8px),radial-gradient(circle at 8px 80px,rgba(255,255,255,0.85) 0 1.2px,transparent 1.8px);background-size:180px 180px;animation:hdrSnowS 9s linear infinite;opacity:.75}
+.page-header::after{background-image:radial-gradient(circle at 30px 40px,rgba(255,255,255,0.75) 0 2.0px,transparent 2.6px),radial-gradient(circle at 210px 90px,rgba(255,255,255,0.75) 0 2.0px,transparent 2.6px),radial-gradient(circle at 120px 200px,rgba(255,255,255,0.75) 0 2.0px,transparent 2.6px),radial-gradient(circle at 260px 250px,rgba(255,255,255,0.75) 0 2.0px,transparent 2.6px),radial-gradient(circle at 60px 270px,rgba(255,255,255,0.75) 0 2.0px,transparent 2.6px),radial-gradient(circle at 180px 20px,rgba(255,255,255,0.75) 0 2.0px,transparent 2.6px);background-size:300px 300px;animation:hdrSnowL 15s linear infinite;opacity:.5}
+@keyframes hdrSnowS{from{background-position:0 0}to{background-position:30px 180px}}
+@keyframes hdrSnowL{from{background-position:0 0}to{background-position:-50px 300px}}
+.logo-link{gap:9px!important;color:var(--rg-t1)!important;font-size:16px!important;font-weight:700}
+.logo-diamond{position:relative;width:22px!important;height:22px!important;border-radius:6px;background:var(--rg-accent)!important;transform:none!important;box-shadow:none!important}
+.logo-diamond::after{content:'';position:absolute;left:50%;top:50%;width:8px;height:8px;background:var(--rg-bg);border-radius:1px;transform:translate(-50%,-50%) rotate(45deg)}
+.page-title{font-size:20px!important;font-weight:700!important;color:var(--rg-t1)!important}
+.week-badge{border:none!important;border-radius:999px!important;background:rgba(43,217,197,.14)!important;color:var(--rg-accent)!important;font-family:'Space Grotesk','IBM Plex Sans KR',sans-serif!important;font-size:12px!important;font-weight:600!important;padding:3px 10px!important}
+.week-badge-mobile{font-family:'Space Grotesk','IBM Plex Sans KR',sans-serif!important;font-size:12px!important;color:var(--rg-t3)!important}
+.hdr-actions{display:flex;align-items:center;gap:8px;flex-shrink:0;margin-left:auto}
+.hdr-actions button,#master-status button{height:36px;padding:0 14px!important;border:none!important;border-radius:10px!important;font-family:inherit!important;font-size:13px!important;font-weight:600!important;white-space:nowrap;transition:filter .15s,transform .1s}
+.hdr-actions button:hover{filter:brightness(1.2)}
+.hdr-actions button:active{transform:scale(.97)}
+#btn-master-login{background:rgba(232,203,134,.14)!important;color:var(--rg-gold)!important}
+#btn-diag{background:rgba(255,107,122,.14)!important;color:var(--rg-red)!important}
+#master-status{gap:8px!important}
+#master-status-text{font-size:13px!important;color:var(--rg-gold)!important;white-space:nowrap}
+#master-status button:first-of-type{background:rgba(43,217,197,.14)!important;color:var(--rg-accent)!important}
+#master-status button:last-of-type{background:var(--rg-s2)!important;color:var(--rg-t2)!important}
+
+/* ── 본문 ── */
+.main-wrap{max-width:1280px!important;padding:28px 24px 64px!important}
+.split-grid{gap:28px!important;animation:rgRise .5s var(--rg-ease) both!important}
+.loading-wrap{font-size:14px!important;color:var(--rg-t4)!important}
+.spinner{border-color:var(--rg-s4)!important;border-top-color:var(--rg-accent)!important}
+.section-head{padding:0 4px 12px!important;border:none!important;border-radius:0!important;background:none!important;font-size:17px!important;font-weight:700!important;color:var(--rg-t1)}
+.section-head .sh-icon{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:8px;font-size:15px}
+.section-head.rise .sh-icon{background:rgba(43,217,197,.14)}
+.section-head.drop .sh-icon{background:rgba(255,107,122,.14);color:var(--rg-red)!important}
+.section-head .sh-count{font-size:13px!important;color:var(--rg-t4)!important}
+
+.rank-card{background:var(--rg-s1)!important;border:none!important;border-radius:14px!important;box-shadow:0 0 0 1px #1C222D;margin-top:8px;transition:background-color .15s,box-shadow .2s,transform .2s var(--rg-ease)!important}
+.rank-list > .rank-card:first-child{margin-top:0}
+.rank-card::before{display:none!important}
+.rank-card:hover{background:var(--rg-s2)!important;transform:translateY(-2px)}
+.rank-card.rise-style:hover,.rank-card.rise-style.active{box-shadow:0 0 0 1px rgba(43,217,197,.4),0 12px 28px -16px rgba(0,0,0,.9)}
+.rank-card.drop-style:hover,.rank-card.drop-style.active{box-shadow:0 0 0 1px rgba(255,107,122,.4),0 12px 28px -16px rgba(0,0,0,.9)}
+.rank-card.active{border-radius:14px 14px 0 0!important;transform:none;background:var(--rg-s2)!important}
+.rise-style,.drop-style{animation:rgRise .45s var(--rg-ease) both!important}
+.rank-card-inner{padding:12px 16px!important;gap:12px!important}
+.rank-num{display:inline-flex;align-items:center;justify-content:center;width:28px!important;height:28px;border-radius:999px;font-family:'Space Grotesk','IBM Plex Sans KR',sans-serif!important;font-size:14px!important;font-weight:700;color:var(--rg-t4)}
+.rank-num.top3-1{background:rgba(232,203,134,.16);color:var(--rg-gold)!important}
+.rank-num.top3-2{background:rgba(163,172,186,.14);color:#C9D1DC!important}
+.rank-num.top3-3{background:rgba(205,97,51,.16);color:#E08A5E!important}
+.rank-avatar{width:40px!important;height:40px!important;border:none!important;box-shadow:0 0 0 2px var(--rg-ring);border-radius:12px!important}
+.rank-name{font-size:15px!important;font-weight:600!important}
+.rank-meta{gap:6px!important;margin-top:4px!important}
+.rank-tier{border-radius:6px!important;font-size:11px!important;font-weight:600!important;padding:2px 7px!important}
+.rank-stat{font-size:12px!important;color:var(--rg-t4)!important}
+.rank-stat span{color:var(--rg-t2)!important;font-weight:600!important}
+.rank-delta{font-family:'Space Grotesk','IBM Plex Sans KR',sans-serif!important;font-size:22px!important;font-weight:700;font-variant-numeric:tabular-nums}
+.rank-delta.neg{color:var(--rg-red)!important}
+.rank-rating{font-family:'Space Grotesk','IBM Plex Sans KR',sans-serif!important;font-size:12px!important;color:var(--rg-t4)!important}
+.rank-detail{background:var(--rg-s2)!important;border:none!important;border-radius:0 0 14px 14px;box-shadow:0 0 0 1px #1C222D}
+.rank-detail:not(.open){box-shadow:none}
+.rank-detail-inner{padding:14px 16px 18px!important;gap:12px!important}
+.detail-chart-wrap,.detail-section,.ai-analysis-wrap{background:var(--rg-s1)!important;border:none!important;border-radius:12px!important;padding:12px 14px!important}
+.detail-chart-title,.detail-sec-title,.ai-analysis-title{font-family:inherit!important;font-size:14px!important;font-weight:700!important;color:var(--rg-t1)!important;text-transform:none!important}
+.detail-loading{font-size:13px!important;color:var(--rg-t4)!important}
+.mini-table{font-family:inherit!important;font-size:12px!important}
+.mini-table th{font-size:11px!important;color:var(--rg-t4)!important;border-bottom-color:var(--rg-line)!important}
+.mini-table td{border-bottom-color:var(--rg-line)!important}
+.champ-row{border-bottom-color:var(--rg-line)!important}
+.champ-icon{border:none!important;border-radius:8px!important}
+.champ-name,.champ-wr{font-size:12px!important}
+.champ-games{font-size:11px!important;color:var(--rg-t4)!important}
+.wr-bar-mini{height:6px!important;border-radius:999px!important;background:var(--rg-s3)!important}
+.err-state{font-size:14px!important;color:var(--rg-red)!important}
+
+/* ── 모달 ── */
+.master-overlay{background:rgba(5,7,10,.72)!important;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.master-box{background:var(--rg-s1)!important;border:none!important;border-radius:18px!important;box-shadow:0 32px 64px -16px rgba(0,0,0,.85),0 0 0 1px var(--rg-ring)!important;animation:rgModalIn .22s var(--rg-ease) both}
+.master-modal-title{font-family:inherit!important;font-size:18px!important;font-weight:700!important;color:var(--rg-t1)!important}
+.master-modal-desc{font-size:13px!important;color:var(--rg-t3)!important}
+.master-modal-input{height:42px;border:none!important;border-radius:10px!important;background:var(--rg-s2)!important;box-shadow:0 0 0 1px var(--rg-ring);font-family:inherit!important;font-size:14px!important}
+.master-modal-input:focus{box-shadow:0 0 0 2px rgba(43,217,197,.55)!important}
+.master-modal-btn{height:42px;border:none!important;border-radius:10px!important;background:var(--rg-accent)!important;color:var(--rg-bg)!important;font-family:inherit!important;font-size:14px!important;font-weight:600!important}
+.master-modal-btn:hover{background:#5BE6D5!important}
+.master-modal-err{font-size:12px!important}
+#diag-out{background:var(--rg-bg)!important}
+
+/* ── 모바일 ── */
+@media(max-width:700px){
+  .page-header{flex-wrap:wrap!important;row-gap:10px!important;padding:12px 16px!important;
+    background:
+      linear-gradient(180deg,rgba(7,9,13,.72) 0%,rgba(7,9,13,.62) 100%),
+      url('/poro-header-bg-m.webp') 60% 62%/cover no-repeat #0A0D13 !important}
+  .logo-link{font-size:15px!important}
+  .header-center{flex:1 1 0!important;min-width:0}
+  .page-title{font-size:17px!important}
+  /* 마스터 로그인 상태(버튼 여러 개)면 버튼 줄을 아래로 내려 한 줄 가로 스크롤 */
+  .page-header:has(#master-status[style*="display: flex"]) .hdr-actions,.page-header:has(#master-status[style*="display:flex"]) .hdr-actions{flex-basis:100%;order:3;margin-left:0;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+  .page-header:has(#master-status[style*="display: flex"]) .hdr-actions::-webkit-scrollbar{display:none}
+  .hdr-actions button,#master-status button{height:34px;padding:0 12px!important;font-size:12px!important}
+  .main-wrap{padding:16px 12px 48px!important}
+  .split-grid{gap:24px!important}
+  .rank-card-inner{padding:10px 12px!important;gap:10px!important}
+  .rank-avatar{width:34px!important;height:34px!important;border-radius:10px!important}
+  .rank-name{font-size:14px!important}
+  .rank-delta{font-size:19px!important}
+  .rank-card:hover{transform:none}
+  .rank-card:active{transform:scale(.99)}
+}
+@media(prefers-reduced-motion:reduce){
+  .page-header::before,.page-header::after,.rise-style,.drop-style,.split-grid,.master-box{animation:none!important}
+  .rank-card{transition:none!important}
+}
+</style>
 </head>
 <body>
 
@@ -245,22 +380,24 @@ html,body{min-height:100%;background:var(--bg);color:var(--white);font-family:'N
       <span class="page-title">주간 레이팅 랭킹</span>
       <span class="week-badge" id="week-badge">로딩 중...</span>
     </div>
-    <div class="week-badge-mobile" id="week-badge-mobile" style="display:none;font-family:'Rajdhani',sans-serif;font-size:9px;color:var(--muted);letter-spacing:.5px;margin-top:1px;"></div>
+    <div class="week-badge-mobile" id="week-badge-mobile" style="display:none;font-family:'IBM Plex Sans KR',sans-serif;font-size:9px;color:var(--muted);letter-spacing:.5px;margin-top:1px;"></div>
   </div>
-  <a class="header-back" href="javascript:history.back()">← 돌아가기</a>
-  <button id="btn-master-login" onclick="openMasterModal()" style="padding:4px 10px;border-radius:3px;border:1px solid rgba(200,170,110,.3);background:rgba(200,170,110,.07);color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:1px;flex-shrink:0;">🔑 마스터</button>
+  <div class="hdr-actions">
+  <button id="btn-master-login" onclick="openMasterModal()" style="padding:4px 10px;border-radius:3px;border:1px solid rgba(200,170,110,.3);background:rgba(200,170,110,.07);color:var(--gold);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:1px;flex-shrink:0;">마스터</button>
   <div id="master-status" style="display:none;align-items:center;gap:6px;flex-shrink:0;">
-    <span id="master-status-text" style="font-family:'Rajdhani',sans-serif;font-size:10px;color:var(--gold);letter-spacing:.5px;"></span>
-    <button onclick="openBulkPromptModal()" style="padding:3px 10px;border-radius:3px;border:1px solid rgba(10,200,185,.3);background:rgba(10,200,185,.07);color:var(--blue);font-family:'Rajdhani',sans-serif;font-size:9px;font-weight:700;cursor:pointer;letter-spacing:.5px;">📋 일괄 프롬프트</button>
-    <button onclick="masterLogout()" style="padding:3px 7px;border-radius:2px;border:1px solid rgba(255,255,255,.1);background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:9px;font-weight:700;cursor:pointer;">로그아웃</button>
+    <span id="master-status-text" style="font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;color:var(--gold);letter-spacing:.5px;"></span>
+    <button onclick="openBulkPromptModal()" style="padding:3px 10px;border-radius:3px;border:1px solid rgba(10,200,185,.3);background:rgba(10,200,185,.07);color:var(--blue);font-family:'IBM Plex Sans KR',sans-serif;font-size:9px;font-weight:700;cursor:pointer;letter-spacing:.5px;">일괄 프롬프트</button>
+    <button onclick="masterLogout()" style="padding:3px 7px;border-radius:2px;border:1px solid rgba(255,255,255,.1);background:transparent;color:var(--muted);font-family:'IBM Plex Sans KR',sans-serif;font-size:9px;font-weight:700;cursor:pointer;">로그아웃</button>
   </div>
-  <button onclick="runDiag()" style="padding:4px 10px;border-radius:3px;border:1px solid rgba(255,100,100,.4);background:rgba(255,100,100,.08);color:#ff6666;font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:1px;flex-shrink:0;">🔍 진단</button>
+  <button id="btn-diag" onclick="runDiag()" style="display:none;padding:4px 10px;border-radius:3px;border:1px solid rgba(255,100,100,.4);background:rgba(255,100,100,.08);color:#ff6666;font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:1px;flex-shrink:0;">진단</button>
+  </div>
 </header>
 <div id="diag-out" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#0a0f13;z-index:9999;overflow:auto;padding:1.5rem;font-family:monospace;font-size:11px;line-height:1.6;color:#aaa;white-space:pre-wrap;"></div>
 
 <!-- 마스터 로그인 모달 -->
-<div class="master-overlay" id="master-overlay">
-  <div class="master-box">
+<div class="master-overlay" id="master-overlay" onclick="if(event.target===this)closeMasterModal()">
+  <div class="master-box" style="position:relative;">
+    <button type="button" onclick="closeMasterModal()" aria-label="닫기" style="position:absolute;top:10px;right:10px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;background:transparent;border:none;border-radius:6px;color:var(--muted);font-size:16px;cursor:pointer;">✕</button>
     <div class="master-modal-title">MASTER LOGIN</div>
     <div class="master-modal-desc">마스터 권한이 필요합니다</div>
     <input class="master-modal-input" id="master-modal-id" type="text" placeholder="아이디" autocomplete="off">
@@ -277,36 +414,36 @@ html,body{min-height:100%;background:var(--bg);color:var(--white);font-family:'N
       <div class="master-modal-title" style="margin-bottom:0;">📋 일괄 AI 프롬프트</div>
       <button onclick="closeBulkPromptModal()" style="background:transparent;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:0 4px;">✕</button>
     </div>
-    <div id="bulk-prompt-status" style="font-family:'Rajdhani',sans-serif;font-size:11px;color:var(--muted);margin-bottom:.75rem;letter-spacing:.5px;min-height:16px;"></div>
+    <div id="bulk-prompt-status" style="font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;color:var(--muted);margin-bottom:.75rem;letter-spacing:.5px;min-height:16px;"></div>
 
     <!-- 탭 -->
     <div style="display:flex;gap:6px;margin-bottom:1rem;">
-      <button id="bulk-tab-generate" onclick="switchBulkTab('generate')" style="flex:1;padding:5px;border-radius:3px;border:1px solid var(--blue);background:rgba(10,200,185,.12);color:var(--blue);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">1️⃣ 프롬프트 생성</button>
-      <button id="bulk-tab-input" onclick="switchBulkTab('input')" style="flex:1;padding:5px;border-radius:3px;border:1px solid rgba(255,255,255,.1);background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">2️⃣ 결과 입력 &amp; 저장</button>
+      <button id="bulk-tab-generate" onclick="switchBulkTab('generate')" style="flex:1;padding:5px;border-radius:3px;border:1px solid var(--blue);background:rgba(10,200,185,.12);color:var(--blue);font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">1️⃣ 프롬프트 생성</button>
+      <button id="bulk-tab-input" onclick="switchBulkTab('input')" style="flex:1;padding:5px;border-radius:3px;border:1px solid rgba(255,255,255,.1);background:transparent;color:var(--muted);font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">2️⃣ 결과 입력 &amp; 저장</button>
     </div>
 
     <!-- 탭1: 프롬프트 생성 -->
     <div id="bulk-panel-generate">
-      <div style="font-family:'Rajdhani',sans-serif;font-size:11px;color:var(--muted);margin-bottom:.5rem;letter-spacing:.3px;">
+      <div style="font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;color:var(--muted);margin-bottom:.5rem;letter-spacing:.3px;">
         떡상/떡락 전체 유저 프롬프트를 생성합니다. 상세 데이터가 없는 유저는 자동으로 로드합니다.
       </div>
       <div style="display:flex;gap:6px;margin-bottom:.75rem;">
-        <button onclick="generateBulkPrompts()" style="flex:1;padding:7px;border-radius:3px;border:1px solid var(--blue);background:rgba(10,200,185,.1);color:var(--blue);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">🔄 프롬프트 생성 &amp; 복사</button>
+        <button onclick="generateBulkPrompts()" style="flex:1;padding:7px;border-radius:3px;border:1px solid var(--blue);background:rgba(10,200,185,.1);color:var(--blue);font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">🔄 프롬프트 생성 &amp; 복사</button>
       </div>
-      <textarea id="bulk-prompt-output" readonly style="width:100%;height:260px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:3px;padding:.75rem;color:var(--white);font-family:'Noto Sans KR',monospace;font-size:11px;line-height:1.6;resize:vertical;outline:none;box-sizing:border-box;" placeholder="여기에 생성된 프롬프트가 표시됩니다..."></textarea>
+      <textarea id="bulk-prompt-output" readonly style="width:100%;height:260px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:3px;padding:.75rem;color:var(--white);font-family:'IBM Plex Sans KR',monospace;font-size:11px;line-height:1.6;resize:vertical;outline:none;box-sizing:border-box;" placeholder="여기에 생성된 프롬프트가 표시됩니다..."></textarea>
     </div>
 
     <!-- 탭2: 결과 입력 -->
     <div id="bulk-panel-input" style="display:none;">
-      <div style="font-family:'Rajdhani',sans-serif;font-size:11px;color:var(--muted);margin-bottom:.5rem;letter-spacing:.3px;">
+      <div style="font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;color:var(--muted);margin-bottom:.5rem;letter-spacing:.3px;">
         Claude 응답을 그대로 붙여넣으면 번호를 파싱해서 각 유저에 저장합니다.<br>
         구분자 형식: <code style="color:var(--gold);font-size:10px;">=== 1번 ===</code> 또는 <code style="color:var(--gold);font-size:10px;">=== 1번 (닉네임) ===</code>
       </div>
-      <textarea id="bulk-result-input" style="width:100%;height:260px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:3px;padding:.75rem;color:var(--white);font-family:'Noto Sans KR',monospace;font-size:11px;line-height:1.6;resize:vertical;outline:none;box-sizing:border-box;" placeholder="Claude 응답을 여기에 붙여넣으세요..."></textarea>
-      <div id="bulk-parse-preview" style="margin-top:.6rem;font-family:'Rajdhani',sans-serif;font-size:10px;color:var(--muted);letter-spacing:.3px;"></div>
+      <textarea id="bulk-result-input" style="width:100%;height:260px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:3px;padding:.75rem;color:var(--white);font-family:'IBM Plex Sans KR',monospace;font-size:11px;line-height:1.6;resize:vertical;outline:none;box-sizing:border-box;" placeholder="Claude 응답을 여기에 붙여넣으세요..."></textarea>
+      <div id="bulk-parse-preview" style="margin-top:.6rem;font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;color:var(--muted);letter-spacing:.3px;"></div>
       <div style="display:flex;gap:6px;margin-top:.75rem;">
-        <button onclick="previewBulkResults()" style="flex:1;padding:7px;border-radius:3px;border:1px solid rgba(200,170,110,.3);background:rgba(200,170,110,.07);color:var(--gold);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">🔍 미리보기</button>
-        <button onclick="saveBulkResults()" style="flex:1;padding:7px;border-radius:3px;border:1px solid var(--blue);background:rgba(10,200,185,.1);color:var(--blue);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">💾 일괄 저장</button>
+        <button onclick="previewBulkResults()" style="flex:1;padding:7px;border-radius:3px;border:1px solid rgba(200,170,110,.3);background:rgba(200,170,110,.07);color:var(--gold);font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">🔍 미리보기</button>
+        <button onclick="saveBulkResults()" style="flex:1;padding:7px;border-radius:3px;border:1px solid var(--blue);background:rgba(10,200,185,.1);color:var(--blue);font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">💾 일괄 저장</button>
       </div>
     </div>
   </div>
@@ -913,7 +1050,7 @@ async function fetchAiAnalysis(promptText) {
 
 async function renderAiSection(containerEl, puuId, isRise, rank, totalDelta, analysis, userName) {
   // DB에서 저장된 분석 결과 로드 시도
-  containerEl.innerHTML = `<div style="display:flex;align-items:center;gap:8px;justify-content:center;padding:.5rem 0;font-family:'Rajdhani',sans-serif;font-size:11px;color:var(--muted);letter-spacing:.5px;"><div class="spinner"></div>분석 로드 중...</div>`;
+  containerEl.innerHTML = `<div style="display:flex;align-items:center;gap:8px;justify-content:center;padding:.5rem 0;font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;color:var(--muted);letter-spacing:.5px;"><div class="spinner"></div>분석 로드 중...</div>`;
   let savedText = AI_ANALYSIS_CACHE[puuId] || null;
   if (!savedText) {
     try {
@@ -934,7 +1071,7 @@ async function renderAiSection(containerEl, puuId, isRise, rank, totalDelta, ana
     if (savedText) {
       containerEl.innerHTML = formatAiText(savedText);
     } else {
-      containerEl.innerHTML = `<div style="font-family:'Rajdhani',sans-serif;font-size:11px;color:var(--muted);text-align:center;padding:.5rem 0;">분석 결과가 없습니다.</div>`;
+      containerEl.innerHTML = `<div style="font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;color:var(--muted);text-align:center;padding:.5rem 0;">분석 결과가 없습니다.</div>`;
     }
   }
 }
@@ -944,15 +1081,15 @@ function renderAiEditForm(containerEl, puuId, initialText) {
     <div style="display:flex;flex-direction:column;gap:.5rem;">
       <textarea id="ai-textarea-${puuId}" style="
         width:100%;min-height:120px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);
-        border-radius:4px;padding:.5rem .65rem;color:var(--white);font-family:'Noto Sans KR',sans-serif;
+        border-radius:4px;padding:.5rem .65rem;color:var(--white);font-family:'IBM Plex Sans KR',sans-serif;
         font-size:12px;line-height:1.7;resize:vertical;outline:none;transition:border-color .15s;"
         placeholder="분석 내용을 직접 입력하세요..."
         onfocus="this.style.borderColor='rgba(10,200,185,.4)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'"
       >${esc(initialText)}</textarea>
       <div style="display:flex;justify-content:flex-end;gap:.5rem;">
-        ${initialText ? `<button onclick="cancelAiEdit('${puuId}')" style="font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;padding:4px 12px;border-radius:3px;border:1px solid rgba(255,255,255,.1);background:transparent;color:var(--muted);cursor:pointer;">취소</button>` : ''}
+        ${initialText ? `<button onclick="cancelAiEdit('${puuId}')" style="font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;padding:4px 12px;border-radius:3px;border:1px solid rgba(255,255,255,.1);background:transparent;color:var(--muted);cursor:pointer;">취소</button>` : ''}
         <button id="ai-form-save-btn-${puuId}" onclick="submitAiForm('${puuId}')" style="
-          font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:.5px;
+          font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;letter-spacing:.5px;
           padding:4px 14px;border-radius:3px;border:1px solid rgba(10,200,185,.4);
           background:rgba(10,200,185,.1);color:var(--blue);cursor:pointer;">💾 저장하기</button>
       </div>
@@ -966,7 +1103,7 @@ function showAiReadView(containerEl, puuId, text) {
     editRow.style.cssText = 'display:flex;justify-content:flex-end;margin-top:.4rem;';
     const editBtn = document.createElement('button');
     editBtn.textContent = '✏️ 수정';
-    editBtn.style.cssText = 'font-family:Rajdhani,sans-serif;font-size:10px;font-weight:700;padding:3px 10px;border-radius:3px;border:1px solid rgba(255,255,255,.1);background:transparent;color:var(--muted);cursor:pointer;';
+    editBtn.style.cssText = 'font-family:IBM Plex Sans KR,sans-serif;font-size:10px;font-weight:700;padding:3px 10px;border-radius:3px;border:1px solid rgba(255,255,255,.1);background:transparent;color:var(--muted);cursor:pointer;';
     editBtn.onclick = () => renderAiEditForm(containerEl, puuId, AI_ANALYSIS_CACHE[puuId] || '');
     editRow.appendChild(editBtn);
     containerEl.appendChild(editRow);
@@ -1006,7 +1143,7 @@ async function triggerAiAnalysis(puuId, isRise, rank, totalDelta) {
   if (!container) return;
 
   // 로딩 상태
-  container.innerHTML = `<div style="display:flex;align-items:center;gap:8px;justify-content:center;padding:.75rem 0;font-family:'Rajdhani',sans-serif;font-size:11px;color:var(--muted);letter-spacing:.5px;"><div class="spinner"></div>AI 분석 중...</div>`;
+  container.innerHTML = `<div style="display:flex;align-items:center;gap:8px;justify-content:center;padding:.75rem 0;font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;color:var(--muted);letter-spacing:.5px;"><div class="spinner"></div>AI 분석 중...</div>`;
 
   try {
     const analysis = detailDataCache[puuId];
@@ -1033,7 +1170,7 @@ async function triggerAiAnalysis(puuId, isRise, rank, totalDelta) {
 
     container.innerHTML = formatAiText(text);
   } catch(e) {
-    container.innerHTML = `<div style="font-family:'Rajdhani',sans-serif;font-size:11px;color:var(--red);padding:.5rem 0;">분석 실패: ${esc(e.message)}</div>`;
+    container.innerHTML = `<div style="font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;color:var(--red);padding:.5rem 0;">분석 실패: ${esc(e.message)}</div>`;
   }
 }
 
@@ -1043,7 +1180,7 @@ function formatAiText(text) {
     .replace(/\n\n/g, '</p><p style="margin-top:.6rem;">')
     .replace(/\n/g, '<br>')
     .replace(/(📊|🗡️|⚔️|👥|💡)[^\n<]*/g, m => `<span style="color:var(--white);font-weight:700;">${m}</span>`);
-  return `<div style="font-family:'Noto Sans KR',sans-serif;font-size:12px;line-height:1.75;color:var(--sub);"><p>${html}</p></div>`;
+  return `<div style="font-family:'IBM Plex Sans KR',sans-serif;font-size:12px;line-height:1.75;color:var(--sub);"><p>${html}</p></div>`;
 }
 
 // onclick에서 접근 가능하도록 전역 노출
@@ -1156,6 +1293,8 @@ function onMasterLoggedIn() {
   const statusWrap = document.getElementById('master-status');
   document.getElementById('master-status-text').textContent = '👑 ' + _rankingMasterId;
   statusWrap.style.display = 'flex';
+  const diagBtn = document.getElementById('btn-diag');
+  if (diagBtn) diagBtn.style.display = '';
   // 이미 열려 있는 AI 섹션의 마스터 버튼 표시
   document.querySelectorAll('.ai-copy-btn').forEach(el => el.style.display = '');
   document.querySelectorAll('.ai-save-btn').forEach(el => el.style.display = '');
@@ -1173,6 +1312,9 @@ function masterLogout() {
   } catch(e) {}
   document.getElementById('btn-master-login').style.display = '';
   document.getElementById('master-status').style.display = 'none';
+  const diagBtn = document.getElementById('btn-diag');
+  if (diagBtn) diagBtn.style.display = 'none';
+  document.getElementById('diag-out').style.display = 'none';
   document.querySelectorAll('.ai-copy-btn').forEach(el => el.style.display = 'none');
   document.querySelectorAll('.ai-save-btn').forEach(el => el.style.display = 'none');
 }
@@ -1434,7 +1576,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // ── SVG 레이팅 차트 ──
 function buildChart(entries) {
   const chartData = entries.slice().sort((a,b)=>a.timestamp-b.timestamp);
-  if (!chartData.length) return '<div style="font-family:Rajdhani,sans-serif;font-size:11px;color:var(--muted);padding:.5rem 0;">기록 없음</div>';
+  if (!chartData.length) return '<div style="font-family:IBM Plex Sans KR,sans-serif;font-size:11px;color:var(--muted);padding:.5rem 0;">기록 없음</div>';
   const ratings = chartData.map(e=>Math.round(e.rating));
   const minR=Math.min(...ratings), maxR=Math.max(...ratings), rangeR=maxR-minR||1;
   const W=440,H=100,PL=44,PR=8,PT=8,PB=20,gW=W-PL-PR,gH=H-PT-PB,n=chartData.length;
@@ -1448,14 +1590,14 @@ function buildChart(entries) {
   const yLabels=[minR,Math.round((minR+maxR)/2),maxR];
   const yHtml=yLabels.map(v=>{
     const y=PT+gH-(v-minR)/rangeR*gH;
-    return `<text x="${PL-4}" y="${y+4}" text-anchor="end" fill="rgba(255,255,255,.35)" font-size="9" font-family="Rajdhani,sans-serif">${v}</text><line x1="${PL}" y1="${y}" x2="${W-PR}" y2="${y}" stroke="rgba(255,255,255,.04)" stroke-width="1"/>`;
+    return `<text x="${PL-4}" y="${y+4}" text-anchor="end" fill="rgba(255,255,255,.35)" font-size="9" font-family="IBM Plex Sans KR,sans-serif">${v}</text><line x1="${PL}" y1="${y}" x2="${W-PR}" y2="${y}" stroke="rgba(255,255,255,.04)" stroke-width="1"/>`;
   }).join('');
   const step=Math.max(1,Math.floor(n/5));
   let xHtml='';
   for(let xi=0;xi<n;xi+=step){
     const p=pts[xi],ts=chartData[xi].timestamp?new Date(chartData[xi].timestamp):null;
     const lbl=ts?(ts.getMonth()+1)+'/'+(ts.getDate()):chartData[xi].date;
-    xHtml+=`<text x="${p.x}" y="${H-4}" text-anchor="middle" fill="rgba(255,255,255,.35)" font-size="9" font-family="Rajdhani,sans-serif">${lbl}</text>`;
+    xHtml+=`<text x="${p.x}" y="${H-4}" text-anchor="middle" fill="rgba(255,255,255,.35)" font-size="9" font-family="IBM Plex Sans KR,sans-serif">${lbl}</text>`;
   }
   const circleHtml=pts.map(p=>`<circle cx="${p.x}" cy="${p.y}" r="2.5" fill="var(--blue)" stroke="#0A0F13" stroke-width="1.5"><title>${p.r}</title></circle>`).join('');
   return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block;">
@@ -1475,18 +1617,18 @@ function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').rep
 function wrColor(v){ return v>=55?'var(--red)':v>=50?'var(--gold)':'#5383E8'; }
 
 function buildUserTable(users, label) {
-  if(!users.length) return `<div style="font-family:Rajdhani,sans-serif;font-size:11px;color:var(--muted);">데이터 없음</div>`;
+  if(!users.length) return `<div style="font-family:IBM Plex Sans KR,sans-serif;font-size:11px;color:var(--muted);">데이터 없음</div>`;
   const rows = users.slice(0,5).map(u=>{
     const pct=(u.wr||0).toFixed(0);
     const wl=`${u.win}승 ${u.total-u.win}패`;
     const pctW=(u.win/u.total*100).toFixed(1), pctL=((u.total-u.win)/u.total*100).toFixed(1);
     return `<tr>
       <td class="ur-name">${esc(u.name)}</td>
-      <td style="font-family:Rajdhani,sans-serif;color:var(--muted);">${u.total}판</td>
+      <td style="font-family:IBM Plex Sans KR,sans-serif;color:var(--muted);">${u.total}판</td>
       <td>
         <div class="wr-mini">
           <div class="wr-bar-mini"><div class="wr-fill-w" style="width:${pctW}%"></div><div class="wr-fill-l" style="width:${pctL}%"></div></div>
-          <span style="font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;color:${wrColor(u.wr)};min-width:32px;text-align:right;">${pct}%</span>
+          <span style="font-family:IBM Plex Sans KR,sans-serif;font-size:11px;font-weight:700;color:${wrColor(u.wr)};min-width:32px;text-align:right;">${pct}%</span>
         </div>
       </td>
     </tr>`;
@@ -1495,7 +1637,7 @@ function buildUserTable(users, label) {
 }
 
 function buildChampRows(champs) {
-  if(!champs.length) return `<div style="font-family:Rajdhani,sans-serif;font-size:11px;color:var(--muted);">데이터 없음</div>`;
+  if(!champs.length) return `<div style="font-family:IBM Plex Sans KR,sans-serif;font-size:11px;color:var(--muted);">데이터 없음</div>`;
   return champs.slice(0,5).map(c=>{
     const pct=(c.wr||0).toFixed(0);
     const pctW=(c.win/c.total*100).toFixed(1), pctL=((c.total-c.win)/c.total*100).toFixed(1);
@@ -1569,23 +1711,23 @@ function renderDetailContent(analysis, ratingEntries, detailEl, puuId, isRise, r
     <div class="ai-analysis-wrap">
       <div class="ai-analysis-title" style="justify-content:space-between;">
         <span>✨ AI 분석</span>
-        <button class="ai-copy-btn" onclick="copyAiPrompt('${puuId}',${isRise},${rank},${totalDelta})" style="display:${_rankingMasterAuthed?'':'none'};font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:.5px;padding:3px 10px;border-radius:3px;border:1px solid rgba(200,170,110,.3);background:rgba(200,170,110,.07);color:var(--gold);cursor:pointer;" title="AI에게 물어볼 프롬프트 복사">📋 프롬프트 복사</button>
+        <button class="ai-copy-btn" onclick="copyAiPrompt('${puuId}',${isRise},${rank},${totalDelta})" style="display:${_rankingMasterAuthed?'':'none'};font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;letter-spacing:.5px;padding:3px 10px;border-radius:3px;border:1px solid rgba(200,170,110,.3);background:rgba(200,170,110,.07);color:var(--gold);cursor:pointer;" title="AI에게 물어볼 프롬프트 복사">📋 프롬프트 복사</button>
       </div>
       <div class="ai-analysis-content" id="ai-content-${puuId}"></div>
     </div>
     <div class="detail-grid-2">
       <div class="detail-section">
         <div class="detail-sec-title">함께한 유저 승률</div>
-        <div style="margin-bottom:.5rem;font-family:Rajdhani,sans-serif;font-size:10px;color:var(--muted);">✅ 승률 높은 유저</div>
+        <div style="margin-bottom:.5rem;font-family:IBM Plex Sans KR,sans-serif;font-size:10px;color:var(--muted);">✅ 승률 높은 유저</div>
         ${goodWith}
-        <div style="margin:.65rem 0 .4rem;font-family:Rajdhani,sans-serif;font-size:10px;color:var(--muted);">❌ 승률 낮은 유저</div>
+        <div style="margin:.65rem 0 .4rem;font-family:IBM Plex Sans KR,sans-serif;font-size:10px;color:var(--muted);">❌ 승률 낮은 유저</div>
         ${badWith}
       </div>
       <div class="detail-section">
         <div class="detail-sec-title">맞라인 챔피언 승률</div>
-        <div style="margin-bottom:.5rem;font-family:Rajdhani,sans-serif;font-size:10px;color:var(--muted);">✅ 잘 이기는 챔피언</div>
+        <div style="margin-bottom:.5rem;font-family:IBM Plex Sans KR,sans-serif;font-size:10px;color:var(--muted);">✅ 잘 이기는 챔피언</div>
         ${goodChamp}
-        <div style="margin:.65rem 0 .4rem;font-family:Rajdhani,sans-serif;font-size:10px;color:var(--muted);">❌ 잘 지는 챔피언</div>
+        <div style="margin:.65rem 0 .4rem;font-family:IBM Plex Sans KR,sans-serif;font-size:10px;color:var(--muted);">❌ 잘 지는 챔피언</div>
         ${badChamp}
       </div>
     </div>
@@ -1983,11 +2125,11 @@ function renderPage(rise, drop) {
   document.getElementById('root').innerHTML = `
     <div class="split-grid">
       <div>
-        <div class="section-head rise"><span class="sh-icon">🔺</span><span class="sh-label" style="color:var(--blue);">떡상 TOP 10</span><span class="sh-count">저번주 레이팅 상승</span></div>
+        <div class="section-head rise"><span class="sh-icon"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg></span><span class="sh-label" style="color:var(--blue);">떡상 TOP 10</span><span class="sh-count">저번주 레이팅 상승</span></div>
         <div class="rank-list">${riseHtml||'<div class="err-state" style="border:1px solid rgba(255,255,255,.05);border-radius:0 0 6px 6px;">데이터 없음</div>'}</div>
       </div>
       <div>
-        <div class="section-head drop"><span class="sh-icon">🔻</span><span class="sh-label" style="color:var(--red);">떡락 TOP 10</span><span class="sh-count">저번주 레이팅 하락</span></div>
+        <div class="section-head drop"><span class="sh-icon"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l6 6 4-4 8 8"/><path d="M14 17h7v-7"/></svg></span><span class="sh-label" style="color:var(--red);">떡락 TOP 10</span><span class="sh-count">저번주 레이팅 하락</span></div>
         <div class="rank-list">${dropHtml||'<div class="err-state" style="border:1px solid rgba(255,255,255,.05);border-radius:0 0 6px 6px;">데이터 없음</div>'}</div>
       </div>
     </div>
