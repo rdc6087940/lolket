@@ -20996,11 +20996,11 @@ function subscribeDiscordMembers(cid, matchId) {
   if (!window._fb || !window._fb.fbSubscribePath) return;
   var path = 'communities/' + cid + '/matches/' + matchId + '/_members';
   _discordMembersUnsub = window._fb.fbSubscribePath(path, function(data) {
-    if (!data) return;
-    var remoteMembers = Array.isArray(data) ? data : Object.values(data);
+    var remoteMembers = data ? (Array.isArray(data) ? data : Object.values(data)) : [];
+    // 디스코드에서 참가 취소한 멤버 제거 (이전 서버 목록에 있었는데 사라진 디스코드 멤버)
+    var changed = _removeDiscordLeftMembers(_lastDiscordMembers, remoteMembers);
     _lastDiscordMembers = remoteMembers;
     // 현재 members에 없는 디스코드 멤버만 추가
-    var changed = false;
     remoteMembers.forEach(function(rm) {
       if (!rm || !rm.id) return;
       if (_locallyRemovedIds.has(rm.id)) return; // 로컬에서 삭제된 멤버 제외
@@ -21013,6 +21013,17 @@ function subscribeDiscordMembers(cid, matchId) {
       if (typeof updateConditions === 'function') updateConditions();
     }
   });
+}
+
+// 디스코드 참가 취소 반영: 디스코드로 참가한 멤버(discordId 있음)가 서버 목록(next)에 없으면 로컬에서도 제거
+// 디스코드 참가는 항상 서버에 먼저 기록되므로, 서버에 없는 디스코드 멤버 = 디스코드에서 취소한 멤버
+// (웹에서 직접 추가한 멤버는 discordId가 없어서 영향 없음)
+function _removeDiscordLeftMembers(prev, next) {
+  var nextIds = {};
+  (next || []).forEach(function(rm) { if (rm && rm.id != null) nextIds[String(rm.id)] = true; });
+  var before = members.length;
+  members = members.filter(function(m) { return !(m && m.discordId && !nextIds[String(m.id)]); });
+  return members.length !== before;
 }
 
 // 저장 전 디스코드 멤버 병합 (관리자 편집 중 저장 시 덮어쓰기 방지)
@@ -21032,8 +21043,8 @@ async function syncDiscordMembersBeforeSave() {
   try {
     var path = 'communities/' + window._currentCommunityId + '/matches/' + match.id + '/_members';
     var data = await window._fb.fbGet(path);
-    if (!data) return;
-    var remoteMembers = Array.isArray(data) ? data : Object.values(data);
+    var remoteMembers = data ? (Array.isArray(data) ? data : Object.values(data)) : [];
+    _removeDiscordLeftMembers(_lastDiscordMembers, remoteMembers);
     _lastDiscordMembers = remoteMembers;
     remoteMembers.forEach(function(rm) {
       if (!rm || !rm.id) return;

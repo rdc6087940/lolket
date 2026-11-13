@@ -6124,15 +6124,17 @@ async function handleLeaveMatch(cid, matchId, discordUserId, appId, token, env) 
 const _FIXED_LANES = [['top','탑'],['jg','정글'],['mid','미드'],['bot','원딜'],['sup','서폿']];
 function _forumPostComponents(cid, matchId, laneFixed) {
   const registerBtn = { type: 2, style: 2, label: '🎮 소환사 계정 등록', custom_id: `register_account__${cid}` };
+  const leaveBtn = { type: 2, style: 4, label: '❌ 참가 취소', custom_id: `leave_match__${cid}__${matchId}` };
   if (laneFixed) {
     return [
       { type: 1, components: _FIXED_LANES.map(([code, ko]) => ({ type: 2, style: 1, label: `${ko} 참여`, custom_id: `join_lane__${cid}__${matchId}__${code}` })) },
-      { type: 1, components: [registerBtn] },
+      { type: 1, components: [registerBtn, leaveBtn] },
     ];
   }
   return [{ type: 1, components: [
     { type: 2, style: 1, label: '⚔️ 참가 신청', custom_id: `join_match__${cid}__${matchId}` },
     registerBtn,
+    leaveBtn,
   ] }];
 }
 async function _refreshForumPostButtons(cid, matchId, env) {
