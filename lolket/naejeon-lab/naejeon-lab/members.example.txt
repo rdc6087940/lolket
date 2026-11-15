@@ -1,0 +1,3 @@
+# members.bat 을 실행하면 deeplol 커뮤니티 멤버가 puuid 로 자동 작성됩니다.
+# 직접 쓸 때: 한 줄에 한 명, deeplol puuid 또는 닉네임#태그
+# 예) Hide on bush#KR1

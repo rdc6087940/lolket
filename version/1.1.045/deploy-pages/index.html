@@ -1,6 +1,36 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
+<script>
+/* 진행자 디스코드 연동 OAuth 콜백 (index로 돌아옴) — 다른 코드보다 먼저 처리 */
+(function(){
+  try {
+    var pendingRaw = localStorage.getItem('rg_host_discord_pending');
+    if (!pendingRaw) return;
+    var sp = new URLSearchParams(location.search);
+    var code = sp.get('code');
+    var err = sp.get('error');
+    if (!code && !err) return;
+    var pending = JSON.parse(pendingRaw);
+    localStorage.removeItem('rg_host_discord_pending');
+    history.replaceState({}, '', location.pathname);
+    if (!pending || Date.now() - (pending.ts || 0) > 15 * 60 * 1000) return;
+    var finish = function(result){
+      if (result) { try { localStorage.setItem('rg_host_discord_result', JSON.stringify(Object.assign({ cid: pending.cid, hostId: pending.hostId, t: Date.now() }, result))); } catch(e) {} }
+      if (window.opener && !window.opener.closed) window.close();
+      else document.documentElement.style.visibility = '';
+    };
+    if (!code) { if (window.opener && !window.opener.closed) window.close(); return; }
+    document.documentElement.style.visibility = 'hidden';
+    fetch('https://api.roonging.com/discord-oauth-callback', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: code, redirectUri: pending.redirectUri || (location.origin + '/') })
+    }).then(function(r){ return r.json(); }).then(function(j){
+      if (j && j.ok && j.user && j.user.id) finish({ user: j.user }); else finish({ error: (j && j.error) || '인증 실패' });
+    }).catch(function(e){ finish({ error: e.message }); });
+  } catch(e) {}
+})();
+</script>
 
 <!-- Google Analytics 4 -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-MY5Z9P4L0W"></script>
@@ -5202,13 +5232,21 @@ async function _tryRelogin() {
 }
 
 async function _workerDelete(path, requireRole) {
-  const masterToken = isMaster ? await _getMasterToken() : '';
-  const res = await fetch(RIOT_PROXY_URL + '/db-delete', {
-    method: 'POST',
-    headers: _getHeaders(),
-    body: JSON.stringify({ path, requireRole, masterToken }),
-  });
-  const result = await res.json();
+  const doDelete = async () => {
+    const masterToken = isMaster ? await _getMasterToken() : '';
+    const res = await fetch(RIOT_PROXY_URL + '/db-delete', {
+      method: 'POST',
+      headers: _getHeaders(),
+      body: JSON.stringify({ path, requireRole, masterToken }),
+    });
+    return await res.json();
+  };
+  let result = await doDelete();
+  // 세션 만료 시 자동 재로그인 후 재시도 (_workerWrite와 동일)
+  if (!result.ok && (result.error === '권한이 없습니다' || result.error === '로그인이 필요합니다')) {
+    const relogOk = await _tryRelogin();
+    if (relogOk) result = await doDelete();
+  }
   if (!result.ok) throw new Error(result.error || 'DB 삭제 실패');
   return result;
 }
@@ -14470,8 +14508,8 @@ localStorage.setItem(DB_KEY, JSON.stringify(list));
 }
 async function dbDelete(id) {
 if (_fbReady) {
-try { await window._fb.fbDelete(id); }
-catch(e) { }
+// 실패를 삼키지 않고 호출한 쪽에 알림
+return await window._fb.fbDelete(id);
 } else {
 const list = JSON.parse(localStorage.getItem(DB_KEY) || '[]').filter(m => m.id !== id);
 localStorage.setItem(DB_KEY, JSON.stringify(list));
@@ -14954,14 +14992,27 @@ if (_snap && !isMaster && isAdmin && _snap.communityId && window._currentCommuni
   return;
 }
 if (!confirm('내전을 삭제하시겠습니까?')) return;
-dbDelete(id);
-// 알람 예약 + match_index 함께 삭제
-if (_fbReady && window._fb.fbDeleteMatchAlarm) {
-  window._fb.fbDeleteMatchAlarm(id).catch(()=>{});
-}
-_workerDelete('match_index/' + id, null).catch(()=>{});
-renderMatchList();
-toast('내전이 삭제되었습니다', 'ok');
+(async function() {
+  var r = null;
+  try { r = await dbDelete(id); }
+  catch (e) { toast('내전 삭제 실패: ' + e.message, 'err'); return; }
+  // 알람 예약 + match_index 함께 삭제
+  if (_fbReady && window._fb.fbDeleteMatchAlarm) {
+    window._fb.fbDeleteMatchAlarm(id).catch(()=>{});
+  }
+  _workerDelete('match_index/' + id, null).catch(()=>{});
+  renderMatchList();
+  var fp = r && r.forumPost;
+  if (fp && String(fp).indexOf('failed') === 0) {
+    toast('내전은 삭제됐지만 디스코드 포스트 삭제 실패: ' + String(fp).slice(7), 'err');
+  } else if (fp === 'deleted') {
+    toast('내전과 디스코드 포스트가 삭제되었습니다', 'ok');
+  } else if (fp === 'notfound') {
+    toast('내전은 삭제됐지만 연결된 디스코드 포스트를 찾지 못했습니다', 'err');
+  } else {
+    toast('내전이 삭제되었습니다', 'ok');
+  }
+})();
 }
 function openMatch(id) {
 const list = dbLoad();
@@ -18229,6 +18280,44 @@ async function autoBalance() {
 
 // 관전/내전 상세 링크 복사
 
+// ── 팀 정보 복사 공통 ──
+// 헤더: 내전 제목 | 진행자 | 내전 종류
+function _teamCopyHeader() {
+  var TYPE_KO = { normal: '일반 내전', lane: '라인고정 내전', auction: '경매 내전' };
+  var name = (match && match.name) || '내전';
+  var admin = (match && match.admin) || '';
+  var typeLabel = TYPE_KO[matchType] || '';
+  return '📌 ' + name + (admin ? '  |  진행자: ' + admin : '') + (typeLabel ? '  |  ' + typeLabel : '');
+}
+// 1단계에서 등록한 멤버 원본 (팀/슬롯에는 일부 필드만 저장되어 있을 수 있음)
+function _teamCopyFullMember(m) {
+  if (!m) return m;
+  var full = (Array.isArray(members) ? members : []).find(function(x) { return x && x.id === m.id; });
+  return full ? Object.assign({}, m, full) : m;
+}
+// 1단계 등록 티어 → 짧은 표기 (예: DIAMOND II → D2, MASTER 254LP → M254)
+function _teamCopyTierText(m) {
+  var tf = String(m.tierFull || m.tier || 'UNRANKED').trim().toUpperCase();
+  var HIGH = { GRANDMASTER:'GM', CHALLENGER:'C', MASTER:'M' };
+  var MID  = { DIAMOND:'D', EMERALD:'E', PLATINUM:'P', GOLD:'G', SILVER:'S', BRONZE:'B', IRON:'I' };
+  var lpMatch = tf.match(/^(GRANDMASTER|CHALLENGER|MASTER|GM|C|M)\s*(\d+)(?:LP)?/);
+  if (lpMatch) return (HIGH[lpMatch[1]] || lpMatch[1]) + lpMatch[2];
+  if (tf === 'UNRANKED' || !tf) return 'U';
+  var parts = tf.split(/\s+/);
+  var abbr = HIGH[parts[0]] || MID[parts[0]] || parts[0][0];
+  var div = parts[1] ? parts[1].replace(/^([IVX1-4]+).*/, '$1') : '';
+  var divNum = { 'I':'1','II':'2','III':'3','IV':'4' };
+  return abbr + (divNum[div] || div || '');
+}
+function _teamCopySubLanes(m) {
+  var POS_KO = { top:'탑', jg:'정글', mid:'미드', bot:'원딜', sup:'서폿' };
+  var arr = Array.isArray(m.subLane) ? m.subLane : (m.subLane ? [m.subLane] : []);
+  if (Array.isArray(m.subLanes)) arr = arr.concat(m.subLanes);
+  var seen = {}, out = [];
+  arr.forEach(function(l) { if (l && l !== m.mainLane && !seen[l]) { seen[l] = 1; out.push(POS_KO[l] || l); } });
+  return out.length ? out.join(',') : '—';
+}
+
 function copyTeamText() {
   const TEAM_EMOJI = ['🔵','🔴','🟢','🟡','🟣','🟠'];
   const POS_KO = { top:'탑', jg:'정글', mid:'미드', bot:'원딜', sup:'서폿' };
@@ -18275,10 +18364,8 @@ function copyTeamText() {
 
   const lines = [];
 
-  // 내전명 + 진행자
-  const matchName = match.name || '내전';
-  const admin     = match.admin || '';
-  lines.push('📌 ' + matchName + (admin ? '  |  진행자: ' + admin : ''));
+  // 내전명 + 진행자 + 내전 종류
+  lines.push(_teamCopyHeader());
   lines.push('');
 
   const sortedTeams = [...teams].sort((a, b) => a.id - b.id);
@@ -18315,15 +18402,17 @@ function copyTeamText() {
       return str + ' '.repeat(Math.max(0, targetW - w));
     }
 
-    const rows = teamMembers.filter(Boolean).map(m => ({
+    // 1단계에서 등록한 티어만 표시 + 주라인/부라인
+    const rows = teamMembers.filter(Boolean).map(_teamCopyFullMember).map(m => ({
       name: m.name + (m.tag ? '#' + m.tag : ''),
-      tier: tierText(m) + ' / ' + soloTierText(m),
+      tier: _teamCopyTierText(m),
       main: posLabel(m.mainLane),
+      sub: _teamCopySubLanes(m),
     }));
     const nameW = Math.max(...rows.map(r => visWidth(r.name)), 0);
     const tierW = Math.max(...rows.map(r => visWidth(r.tier)), 0);
     rows.forEach(r => {
-      lines.push('  • ' + padEnd(r.name, nameW) + '  ' + padEnd(r.tier, tierW) + '  │  주라인: ' + r.main);
+      lines.push('  • ' + padEnd(r.name, nameW) + '  ' + padEnd(r.tier, tierW) + '  │  주라인: ' + r.main + '  부라인: ' + r.sub);
     });
 
     if (ti < sortedTeams.length - 1) {
@@ -22748,9 +22837,9 @@ async function addHost() {
 // ── 진행자 디스코드 연동 (Discord OAuth: 로그인 또는 열린 디스코드 앱으로 승인) ──
 var _HOST_DC_PENDING_KEY = 'rg_host_discord_pending';
 var _HOST_DC_RESULT_KEY = 'rg_host_discord_result';
-// stats 페이지 디스코드 로그인과 같은 redirect 주소 사용 (디스코드 개발자 포털에 이미 등록된 주소)
-// 콜백은 stats.html 상단 스크립트가 처리해서 결과를 넘겨줌
-function _hostDiscordRedirectUri() { return window.location.origin + '/stats'; }
+// 디스코드 개발자 포털 OAuth2 → Redirects에 https://roonging.com/ 등록 필요
+// 승인 후 index로 돌아오고, 페이지 맨 위(head) 스크립트가 처리
+function _hostDiscordRedirectUri() { return window.location.origin + '/'; }
 
 async function startHostDiscordLink(hostId) {
   var cid = window._currentCommunityId;
@@ -23358,13 +23447,18 @@ function convertLaneTeamsToTeams() {
 function copyLaneTeamText() {
   var lines = [];
   var LANE_KO = { top:'탑', jg:'정글', mid:'미드', bot:'원딜', sup:'서폿' };
-  laneTeams.forEach(function(t) {
-    lines.push('▣ ' + t.name);
+  // 내전명 + 진행자 + 내전 종류
+  lines.push(_teamCopyHeader());
+  lines.push('');
+  laneTeams.forEach(function(t, ti) {
+    var tName = String(t.name || '').trim();
+    if (!tName || tName === '팀') tName = '팀 ' + (ti + 1);
+    lines.push('▣ ' + tName);
     var LANE_SLOTS2 = ['top','jg','mid','bot','sup'];
     LANE_SLOTS2.forEach(function(slot) {
-      var m = t.slots[slot];
+      var m = _teamCopyFullMember(t.slots[slot]);
       if (m) {
-        var tier = m.soloTier || 'UNRANKED';
+        var tier = _teamCopyTierText(m); // 1단계에서 등록한 티어
         var mainLabel = m.mainLane ? (LANE_KO[m.mainLane] || m.mainLane) : '—';
         var nameTag = m.name + (m.tag ? '#' + m.tag : '');
         lines.push('  • [' + LANE_KO[slot] + '] ' + nameTag + '  ' + tier + '  │  주라인: ' + mainLabel);

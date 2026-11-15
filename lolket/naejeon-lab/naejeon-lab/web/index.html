@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>내전 분석 랩</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&family=Rubik:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F4F5F7; --card:#FFFFFF; --ink:#14171C; --ink2:#4B5361; --ink3:#8A93A3; --line:#E7E9EE;
+  --acc:#6D4AFF; --acc-soft:#EFEAFF; --score:#C58A12; --score-soft:#FFF5DE; --win:#118A55; --lose:#D14343;
+  --blue:#2F6BFF; --red:#E5484D; --hi:#FFF3C9; --shadow:0 1px 2px rgba(16,24,40,.04),0 4px 16px rgba(16,24,40,.05);
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0E1014; --card:#171A20; --ink:#ECEEF2; --ink2:#B4BAC5; --ink3:#7C8494; --line:#252A33;
+  --acc:#9A84FF; --acc-soft:#221D3A; --score:#E3B04B; --score-soft:#2B2414; --win:#3DCB8A; --lose:#FF6B6B;
+  --blue:#5B8CFF; --red:#FF6B6E; --hi:#2E2A16; --shadow:none; } }
+:root[data-theme="dark"]{
+  --bg:#0E1014; --card:#171A20; --ink:#ECEEF2; --ink2:#B4BAC5; --ink3:#7C8494; --line:#252A33;
+  --acc:#9A84FF; --acc-soft:#221D3A; --score:#E3B04B; --score-soft:#2B2414; --win:#3DCB8A; --lose:#FF6B6B;
+  --blue:#5B8CFF; --red:#FF6B6E; --hi:#2E2A16; --shadow:none; }
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:'Noto Sans KR',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.num{font-family:'Rubik','Noto Sans KR',sans-serif;font-variant-numeric:tabular-nums}
+header{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.hwrap{max-width:1120px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;gap:14px}
+.brand{font-weight:800;font-size:17px;letter-spacing:-.3px}
+.brand small{color:var(--ink3);font-weight:500;font-size:12px;margin-left:6px}
+nav.top{display:flex;gap:4px;margin-left:auto}
+nav.top a,nav.bot a{color:var(--ink2);text-decoration:none;font-weight:700;font-size:14px;padding:8px 12px;border-radius:10px;cursor:pointer}
+nav.top a.on{background:var(--card);color:var(--ink);box-shadow:var(--shadow)}
+.theme{border:1px solid var(--line);background:var(--card);color:var(--ink2);border-radius:10px;width:34px;height:34px;cursor:pointer}
+main{max-width:1120px;margin:0 auto;padding:18px 16px 96px}
+h1{font-size:26px;margin:4px 0 14px;letter-spacing:-.5px}
+.grid{display:grid;gap:12px;grid-template-columns:repeat(12,1fr)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:var(--shadow);min-width:0}
+.c4{grid-column:span 4}.c6{grid-column:span 6}.c8{grid-column:span 8}.c12{grid-column:span 12}.c3{grid-column:span 3}
+.lbl{font-size:13px;color:var(--ink2);font-weight:700;display:flex;align-items:center;gap:6px}
+.big{font-size:34px;font-weight:700;letter-spacing:-1px;margin-top:6px}
+.big small{font-size:14px;color:var(--ink3);font-weight:500;margin-left:2px}
+.sub{font-size:12px;color:var(--ink3);margin-top:4px}
+.acc-card{background:linear-gradient(160deg,var(--score-soft),var(--card) 70%)}
+.vs{display:flex;align-items:center;gap:10px;margin:12px 0 4px}
+.vs .s{color:var(--score);font-weight:700}.vs .a{color:var(--acc);font-weight:700;font-size:24px}
+.vs .line{flex:1;height:2px;background:linear-gradient(90deg,var(--score),var(--acc));position:relative;border-radius:2px}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%}
+.bar{height:8px;border-radius:999px;background:var(--line);overflow:hidden;display:flex}
+.bar i{display:block;height:100%}
+.rows{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.row{display:grid;grid-template-columns:90px 1fr 60px;align-items:center;gap:10px;font-size:12px;color:var(--ink2)}
+.row b{color:var(--ink)}
+.search{width:100%;padding:11px 14px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;outline:none}
+.search:focus{border-color:var(--acc)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{color:var(--ink3);font-weight:700;text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap;cursor:pointer}
+td{padding:9px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+tr.click{cursor:pointer}tr.click:hover td{background:var(--acc-soft)}
+.pill{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;background:var(--line);color:var(--ink2)}
+.pill.win{background:color-mix(in srgb,var(--win) 15%,transparent);color:var(--win)}
+.pill.lose{background:color-mix(in srgb,var(--lose) 15%,transparent);color:var(--lose)}
+.pill.ai{background:var(--acc-soft);color:var(--acc)}.pill.sc{background:var(--score-soft);color:var(--score)}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center}
+.cal .w{font-size:11px;color:var(--ink3);padding:4px 0}
+.cal button{border:none;background:transparent;border-radius:10px;padding:6px 0;cursor:pointer;color:var(--ink);font:inherit}
+.cal button .d{font-size:13px;font-weight:700}.cal button .n{font-size:10px;color:var(--acc);height:12px}
+.cal button.sel{background:var(--acc-soft);box-shadow:inset 0 0 0 1.5px var(--acc)}
+.cal button:disabled{opacity:.3;cursor:default}
+.series{margin-top:12px}
+.game{border-top:1px solid var(--line);padding-top:10px;margin-top:10px}
+.teams{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}
+.team{border-radius:12px;padding:8px 10px;background:color-mix(in srgb,var(--blue) 6%,transparent)}
+.team.red{background:color-mix(in srgb,var(--red) 6%,transparent)}
+.team h4{margin:0 0 6px;font-size:12px;display:flex;justify-content:space-between}
+.pl{display:grid;grid-template-columns:34px 1fr auto;gap:6px;font-size:12px;padding:3px 0;align-items:center}
+.pl .r{color:var(--ink3);font-size:11px}.pl .k{color:var(--ink3);font-size:11px}
+.btn{border:none;border-radius:12px;padding:10px 16px;font:inherit;font-weight:700;cursor:pointer;background:var(--acc);color:#fff}
+.btn.ghost{background:var(--card);color:var(--ink2);border:1px solid var(--line)}
+textarea{width:100%;min-height:180px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:12px;font:inherit;resize:vertical}
+.empty{padding:40px 10px;text-align:center;color:var(--ink3)}
+.drawer{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;z-index:20}
+.drawer.on{display:block}
+.drawer .panel{position:absolute;right:0;top:0;bottom:0;width:min(560px,100%);background:var(--bg);overflow:auto;padding:18px 16px 40px;animation:slide .25s ease}
+@keyframes slide{from{transform:translateX(30px);opacity:0}to{transform:none;opacity:1}}
+.wbar{display:grid;grid-template-columns:120px 1fr 64px;gap:8px;align-items:center;font-size:12px;padding:4px 0}
+.wbar .t{height:10px;border-radius:999px;background:var(--line);position:relative;overflow:hidden}
+.wbar .t i{position:absolute;top:0;bottom:0}
+.md{white-space:pre-wrap;font-size:13px;line-height:1.7;color:var(--ink2)}
+nav.bot{display:none}
+@media (max-width:860px){
+  .c4,.c6,.c8,.c3{grid-column:span 12}
+  nav.top{display:none}
+  nav.bot{display:flex;position:fixed;left:10px;right:10px;bottom:10px;z-index:6;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:6px;justify-content:space-around;box-shadow:0 8px 30px rgba(0,0,0,.12)}
+  nav.bot a{font-size:12px;padding:8px 10px}
+  nav.bot a.on{background:var(--acc-soft);color:var(--acc)}
+  .teams{grid-template-columns:1fr}
+  .hide-m{display:none}
+}
+</style>
+</head>
+<body>
+<header><div class="hwrap">
+  <div class="brand">내전 분석 랩<small id="hdr-sub"></small></div>
+  <nav class="top" id="nav-top"></nav>
+  <button class="theme" onclick="toggleTheme()" title="테마">◐</button>
+</div></header>
+<main id="app"></main>
+<nav class="bot" id="nav-bot"></nav>
+<div class="drawer" id="drawer" onclick="if(event.target===this)closeDrawer()"><div class="panel" id="drawer-body"></div></div>
+
+<script>
+const TABS=[['dash','지표'],['players','사용자'],['matches','내전'],['predict','팀뽑'],['model','모델']];
+const ROLE_KO={TOP:'탑',JUNGLE:'정글',MIDDLE:'미드',BOTTOM:'원딜',UTILITY:'서폿'};
+const ROLES=['TOP','JUNGLE','MIDDLE','BOTTOM','UTILITY'];
+const $=s=>document.querySelector(s);
+const esc=t=>String(t??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const pct=(v,d=1)=>v==null?'-':(v*100).toFixed(d);
+const api=async(p,o)=>{const r=await fetch(p,o);if(!r.ok)throw new Error(await r.text());return r.json()};
+let cur='dash';
+function toggleTheme(){const r=document.documentElement;const d=r.dataset.theme==='dark'||(!r.dataset.theme&&matchMedia('(prefers-color-scheme: dark)').matches);r.dataset.theme=d?'light':'dark';try{localStorage.setItem('theme',r.dataset.theme)}catch(e){}}
+try{const t=localStorage.getItem('theme');if(t)document.documentElement.dataset.theme=t}catch(e){}
+function nav(){const h=TABS.map(([k,v])=>`<a class="${k===cur?'on':''}" onclick="go('${k}')">${v}</a>`).join('');$('#nav-top').innerHTML=h;$('#nav-bot').innerHTML=h}
+function go(t){cur=t;nav();location.hash=t;window.scrollTo(0,0);({dash,players,matches,predict,model}[t])()}
+
+// ── 지표 ─────────────────────────────
+async function dash(){
+  const s=await api('/api/summary');
+  $('#hdr-sub').textContent=s.first?`${new Date(s.first).toLocaleDateString()} ~ ${new Date(s.last).toLocaleDateString()}`:'';
+  const a=s.accuracy||{};const g=a.cv_linear,gs=a.cv_score,se=a.series_linear||{},ss=a.series_score||{};
+  const more=(g&&gs)?Math.round((g.acc-gs.acc)*g.n):0;
+  const bins=(s.fav_bins||[]).map(b=>{const r=b.n?b.fav_win/b.n:0;return `<div class="row"><span>${b.from}%${b.from>=70?'+':'~'+(b.from+5)+'%'}</span><div class="bar"><i style="width:${r*100}%;background:var(--score)"></i></div><b class="num">${pct(r)}% <span class="sub">${b.n}판</span></b></div>`}).join('');
+  const tiers=Object.entries(s.tiers||{}).sort((x,y)=>y[1]-x[1]);const tmax=Math.max(1,...tiers.map(t=>t[1]));
+  $('#app').innerHTML=`<h1>지표</h1><div class="grid">
+   <div class="card c6 acc-card"><div class="lbl">정답률 <span class="dot" style="background:var(--score)"></span><span class="sub">점수</span><span class="dot" style="background:var(--acc)"></span><span class="sub">AI</span></div>
+     <div class="sub" style="margin-top:10px">경기 정답률 ${more>0?`· AI가 ${more}경기 더 맞힘`:''}</div>
+     <div class="vs num"><span class="s">${pct(gs&&gs.acc)}%</span><span class="line"></span><span class="a">${pct(g&&g.acc)}%</span></div>
+     <div class="sub" style="margin-top:12px">시리즈 정답률</div>
+     <div class="vs num"><span class="s">${pct(ss.rate)}%</span><span class="line"></span><span class="a">${pct(se.rate)}%</span></div>
+     <div class="sub">시간순 검증(그 경기 전 정보만으로 예측) 기준 · ${g?g.n:0}경기</div></div>
+   <div class="card c3"><div class="lbl">경기 · 사용자</div><div class="big num">${s.games||0}<small>경기</small></div><div class="sub">사용자 ${s.players||0}명 · 수집 계정 ${s.accounts||0}</div></div>
+   <div class="card c3"><div class="lbl">균형 판 비율</div><div class="big num">${pct(s.balanced_ratio)}<small>%</small></div><div class="sub">점수 예측 우세 60% 미만인 판</div></div>
+   <div class="card c6"><div class="lbl">팀별 승률</div><div class="big num" style="color:var(--blue)">${pct(s.blue_win_rate)}<small>% 블루</small></div>
+     <div class="bar" style="margin-top:10px"><i style="width:${(s.blue_win_rate||0)*100}%;background:var(--blue)"></i><i style="flex:1;background:var(--red)"></i></div>
+     <div class="sub" style="display:flex;justify-content:space-between"><span>블루</span><span>레드 ${pct(s.blue_win_rate==null?null:1-s.blue_win_rate)}%</span></div></div>
+   <div class="card c6"><div class="lbl">점수 우세도에 따른 실제 승률</div><div class="rows">${bins||'<div class="sub">학습 후 표시됩니다</div>'}</div></div>
+   <div class="card c6"><div class="lbl">티어 구간별 인원</div><div class="rows">${tiers.map(([k,v])=>`<div class="row"><span>${esc(k)}</span><div class="bar"><i style="width:${v/tmax*100}%;background:var(--acc)"></i></div><b class="num">${v}명</b></div>`).join('')||'<div class="sub">-</div>'}</div></div>
+   <div class="card c12"><div class="lbl">수집 상태</div><div class="sub">원본 매치 ${s.raw_matches} · 상세 대기 ${s.queue} · 시드 ${s.seeds}명 · 최신 학습 ${esc(s.run_id||'없음')}</div></div>
+  </div>`;
+}
+
+// ── 사용자 ───────────────────────────
+let _players=[],_psort='custom_games';
+async function players(){
+  _players=await api('/api/players');
+  $('#app').innerHTML=`<h1>사용자</h1><input class="search" placeholder="닉네임 검색" oninput="renderPlayers(this.value)"><div class="card" style="margin-top:12px;padding:6px;overflow:auto"><table id="ptable"></table></div>`;
+  renderPlayers('');
+}
+function renderPlayers(q){
+  const L=_players.filter(p=>!q||String(p.name).toLowerCase().includes(q.toLowerCase())).sort((a,b)=>(b[_psort]??-1e9)-(a[_psort]??-1e9));
+  const th=(k,t)=>`<th onclick="_psort='${k}';renderPlayers(document.querySelector('.search').value)">${t}${_psort===k?' ↓':''}</th>`;
+  $('#ptable').innerHTML=`<tr><th>사용자</th>${th('custom_games','내전')}<th>승률</th>${th('elo','내전 Elo')}${th('tier','티어')}<th class="hide-m">주 라인</th>${th('score','전력 점수')}${th('ranked_games','랭크 판수')}</tr>`+
+   L.map(p=>`<tr class="click" onclick="openPlayer('${p.puuid}')"><td><b>${esc(p.name)}</b></td><td class="num">${p.custom_games}</td><td class="num">${p.custom_games?pct(p.custom_wins/p.custom_games,0)+'%':'-'}</td><td class="num">${p.elo??'-'}</td><td>${esc(p.tier_label||'-')}</td><td class="hide-m">${ROLE_KO[p.main_role]||'-'}</td><td class="num">${p.score==null?'-':(p.score>0?'+':'')+p.score.toFixed(2)}</td><td class="num">${p.ranked_games}</td></tr>`).join('');
+}
+async function openPlayer(puuid){
+  const d=await api('/api/player/'+encodeURIComponent(puuid));const m=d.model;
+  const roleRows=ROLES.map(r=>{const s=(d.roles||{})[r]||{};const ms=m&&m.roles[r];return `<tr><td>${ROLE_KO[r]}</td><td class="num">${s.g||0}</td><td class="num">${s.g?pct(s.w/s.g,0)+'%':'-'}</td><td class="num">${s.kda?s.kda.toFixed(2):'-'}</td><td class="num">${s.cspm?s.cspm.toFixed(1):'-'}</td><td class="num">${ms?((ms.score>0?'+':'')+ms.score.toFixed(2)):'-'}</td></tr>`}).join('');
+  const maxG=Math.max(1,...d.monthly.map(x=>x.g));
+  const months=d.monthly.slice(-12).map(x=>`<div class="row"><span>${x.ym}</span><div class="bar"><i style="width:${x.g/maxG*100}%;background:var(--acc)"></i></div><b class="num">${pct(x.w/x.g,0)}%</b></div>`).join('');
+  const parts=m?Object.entries(m.roles[m.main_role].parts).sort((a,b)=>Math.abs(b[1])-Math.abs(a[1])):[];
+  const pmax=Math.max(.01,...parts.map(p=>Math.abs(p[1])));
+  $('#drawer-body').innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center"><h1 style="margin:0">${esc(d.name||puuid.slice(0,8))}</h1><button class="btn ghost" onclick="closeDrawer()">닫기</button></div>
+   ${m?`<div class="sub">주 라인 ${ROLE_KO[m.main_role]} · 가장 강한 라인 ${ROLE_KO[m.best_role]} · 내전 ${m.custom_games}판 ${m.custom_wins}승 · Elo ${m.custom_elo}</div>`:''}
+   <div class="card" style="margin-top:12px"><div class="lbl">라인별 (랭크 기준 · 전력 점수는 모델)</div><table><tr><th>라인</th><th>판</th><th>승률</th><th>KDA</th><th>CS/분</th><th>전력</th></tr>${roleRows}</table></div>
+   ${parts.length?`<div class="card" style="margin-top:12px"><div class="lbl">전력 점수 구성 (${ROLE_KO[m.main_role]})</div>${parts.map(([k,v])=>`<div class="wbar"><span>${esc(k)}</span><div class="t"><i style="left:${v<0?50-Math.abs(v)/pmax*50:50}%;width:${Math.abs(v)/pmax*50}%;background:${v<0?'var(--lose)':'var(--win)'}"></i></div><b class="num">${v>0?'+':''}${v.toFixed(3)}</b></div>`).join('')}</div>`:''}
+   <div class="card" style="margin-top:12px"><div class="lbl">월별 판수 · 승률</div><div class="rows">${months||'<div class="sub">-</div>'}</div></div>
+   <div class="card" style="margin-top:12px"><div class="lbl">챔피언</div><table><tr><th>챔피언</th><th>판</th><th>승률</th><th>KDA</th></tr>${d.champions.map(c=>`<tr><td>${esc(c.champion)}</td><td class="num">${c.g}</td><td class="num">${pct(c.w/c.g,0)}%</td><td class="num">${(c.kda||0).toFixed(2)}</td></tr>`).join('')}</table></div>
+   <div class="grid" style="margin-top:12px"><div class="card c6"><div class="lbl">같은 팀 궁합 좋음</div>${d.mates_best.map(x=>`<div class="sub">${esc(x.name)} · ${x.g}판 ${pct(x.w/x.g,0)}%</div>`).join('')||'<div class="sub">-</div>'}</div>
+   <div class="card c6"><div class="lbl">같은 팀 궁합 나쁨</div>${d.mates_worst.map(x=>`<div class="sub">${esc(x.name)} · ${x.g}판 ${pct(x.w/x.g,0)}%</div>`).join('')||'<div class="sub">-</div>'}</div></div>
+   <div class="card" style="margin-top:12px"><div class="lbl">최근 내전</div><table>${d.customs.map(c=>`<tr><td>${new Date(c.game_start).toLocaleDateString()}</td><td>${ROLE_KO[c.role]||'-'}</td><td>${esc(c.champion)}</td><td class="num">${c.kills}/${c.deaths}/${c.assists}</td><td><span class="pill ${c.win?'win':'lose'}">${c.win?'승':'패'}</span></td></tr>`).join('')}</table></div>`;
+  $('#drawer').classList.add('on');
+}
+function closeDrawer(){$('#drawer').classList.remove('on')}
+
+// ── 내전 ─────────────────────────────
+let _month=null,_day=null;
+async function matches(){
+  if(!_month){const sm=await api('/api/summary');const now=sm.last?new Date(sm.last):new Date();_month=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`}
+  const days=await api('/api/daily?month='+_month);
+  const [y,m]=_month.split('-').map(Number);const first=new Date(y,m-1,1);const nd=new Date(y,m,0).getDate();
+  let cells='';for(let i=0;i<first.getDay();i++)cells+='<span></span>';
+  for(let d=1;d<=nd;d++){const n=days[d]||0;const key=`${_month}-${String(d).padStart(2,'0')}`;cells+=`<button ${n?'':'disabled'} class="${_day===key?'sel':''}" onclick="openDay('${key}')"><div class="d">${d}</div><div class="n num">${n||''}</div></button>`}
+  $('#app').innerHTML=`<h1>내전</h1><div class="grid"><div class="card c4"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><button class="btn ghost" onclick="shiftMonth(-1)">‹</button><b>${y}년 ${m}월</b><button class="btn ghost" onclick="shiftMonth(1)">›</button></div>
+   <div class="cal">${['일','월','화','수','목','금','토'].map(w=>`<div class="w">${w}</div>`).join('')}${cells}</div></div><div class="c8" id="daylist"><div class="card empty">날짜를 고르세요</div></div></div>`;
+  if(_day&&_day.startsWith(_month))openDay(_day);
+}
+function shiftMonth(d){const [y,m]=_month.split('-').map(Number);const t=new Date(y,m-1+d,1);_month=`${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}`;_day=null;matches()}
+async function openDay(key){
+  _day=key;document.querySelectorAll('.cal button').forEach(b=>b.classList.toggle('sel',b.getAttribute('onclick').includes(key)));
+  const L=await api('/api/matches?day='+key);
+  $('#daylist').innerHTML=L.map(s=>{
+    return `<div class="card series"><div class="lbl">${s.games.length}판 시리즈 · ${new Date(s.games[0].start).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</div>`+s.games.map((g,i)=>{
+      const blue=g.players.filter(p=>p.team===100),red=g.players.filter(p=>p.team===200);
+      const hit=(p)=>p==null?'':((p>0.5)===!!g.blue_win?'적중':'빗나감');
+      const tm=(ps,cls,win)=>`<div class="team ${cls}"><h4><span>${cls==='red'?'레드':'블루'}</span><span class="pill ${win?'win':'lose'}">${win?'승':'패'}</span></h4>${ps.map(p=>`<div class="pl"><span class="r">${ROLE_KO[p.role]||'-'}</span><span>${esc(p.name)} <span class="k">${esc(p.champion)}</span></span><span class="k num">${p.k}/${p.d}/${p.a}</span></div>`).join('')}</div>`;
+      return `<div class="game"><div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center"><b>${i+1}경기</b><span class="sub">${Math.round(g.duration/60)}분</span>
+        ${g.p_score!=null?`<span class="pill sc">점수 블루 ${pct(g.p_score,0)}% ${hit(g.p_score)}</span>`:''}${g.p_ai!=null?`<span class="pill ai">AI 블루 ${pct(g.p_ai,0)}% ${hit(g.p_ai)}</span>`:''}</div>
+        <div class="teams">${tm(blue,'',g.blue_win)}${tm(red,'red',!g.blue_win)}</div></div>`}).join('')+`</div>`}).join('')||'<div class="card empty">내전 없음</div>';
+}
+
+// ── 팀뽑 ─────────────────────────────
+function predict(){
+  $('#app').innerHTML=`<h1>팀뽑</h1><div class="grid"><div class="card c6"><div class="lbl">참가자 명단 (10명, 한 줄에 닉네임#태그)</div><textarea id="roster" placeholder="닉네임#태그"></textarea>
+   <div style="display:flex;gap:8px;margin-top:10px"><button class="btn" onclick="doBalance()">균형 제안</button></div><div class="sub">전력 점수로 5:5 조합(126가지)과 라인 배치(120가지)를 모두 계산해서 승률이 50%에 가장 가까운 순으로 보여줍니다.</div></div>
+   <div class="c6" id="bal"><div class="card empty">명단을 넣고 균형 제안을 누르세요</div></div></div>`;
+}
+async function doBalance(){
+  const names=$('#roster').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  if(names.length!==10){alert('10명을 입력하세요 ('+names.length+'명)');return}
+  try{const L=await api('/api/balance',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({players:names})});
+    $('#bal').innerHTML=L.map((r,i)=>`<div class="card" style="margin-bottom:10px"><div class="lbl">제안 ${i+1} · A팀 예상 승률 <span class="num" style="color:var(--acc)">${pct(r.p_a)}%</span></div>
+     <div class="teams">${[['A',r.a,''],['B',r.b,'red']].map(([t,ps,c])=>`<div class="team ${c}"><h4><span>${t}팀</span></h4>${ps.slice().sort((x,y)=>ROLES.indexOf(x.role)-ROLES.indexOf(y.role)).map(p=>`<div class="pl"><span class="r">${ROLE_KO[p.role]}</span><span>${esc(p.name)}</span><span></span></div>`).join('')}</div>`).join('')}</div></div>`).join('')}
+  catch(e){alert('실패: '+e.message)}
+}
+
+// ── 모델 ─────────────────────────────
+async function model(){
+  const d=await api('/api/model');const md=d.model,rp=d.report;
+  if(!md){$('#app').innerHTML='<h1>모델</h1><div class="card empty">아직 학습된 모델이 없습니다</div>';return}
+  const fs=md.formula.features;const wmax=Math.max(.01,...fs.map(f=>Math.abs(f.weight)));
+  const cal=(rp&&rp.calibration)||[];
+  const runs=(d.runs||[]).slice().reverse();
+  $('#app').innerHTML=`<h1>모델</h1><div class="grid">
+   <div class="card c6"><div class="lbl">수식 가중치 (표준화된 팀 평균 차이 기준)</div>${fs.map(f=>`<div class="wbar"><span title="${esc(md.feature_docs[f.name]||'')}">${esc(f.name)}</span><div class="t"><i style="left:${f.weight<0?50-Math.abs(f.weight)/wmax*50:50}%;width:${Math.abs(f.weight)/wmax*50}%;background:${f.weight<0?'var(--lose)':'var(--acc)'}"></i></div><b class="num">${f.weight>0?'+':''}${f.weight.toFixed(3)}</b></div>`).join('')}
+     <div class="sub" style="margin-top:8px">버전 ${esc(md.version)} · 학습 ${md.games}경기 · 진영 보정 ${md.side_bias}</div></div>
+   <div class="card c6"><div class="lbl">보정 곡선 (예측 확률 vs 실제 승률)</div>${cal.map(c=>`<div class="row"><span class="num">${pct(c.pred,0)}% 예측</span><div class="bar"><i style="width:${c.actual*100}%;background:var(--acc)"></i></div><b class="num">${pct(c.actual,0)}% <span class="sub">${c.n}</span></b></div>`).join('')||'<div class="sub">-</div>'}</div>
+   <div class="card c12" style="overflow:auto"><div class="lbl">학습 기록</div><table><tr><th>실행</th><th>경기</th><th>점수</th><th>AI</th><th>GBM(참고)</th><th>시리즈</th><th>변수</th></tr>${runs.map(r=>`<tr><td>${esc(r.run_id)}</td><td class="num">${r.n}</td><td class="num">${pct(r.cv_score&&r.cv_score.acc)}%</td><td class="num"><b>${pct(r.cv_linear&&r.cv_linear.acc)}%</b></td><td class="num">${pct(r.holdout_gbm&&r.holdout_gbm.acc)}%</td><td class="num">${pct(r.series_linear&&r.series_linear.rate)}%</td><td>${(r.features||[]).length}</td></tr>`).join('')}</table></div>
+   <div class="card c12"><div class="lbl">AI 분석가 조언 (LLM)</div><div class="md">${esc(d.advice||'아직 없음 — python -m lab train --advise')}</div></div>
+  </div>`;
+}
+
+nav();go((location.hash||'#dash').slice(1)||'dash');
+</script>
+</body>
+</html>
