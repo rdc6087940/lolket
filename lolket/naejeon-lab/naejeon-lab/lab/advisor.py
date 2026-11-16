@@ -24,6 +24,8 @@ ALLOWED_PARAM_RANGES = {
     "prior_games": (3, 80),
     "recent_n": [10, 20, 40],
     "elo_k": (8, 48),
+    "elo_tier_scale": (0, 60),
+    "stat_prior": (0, 30),
     "C": (1e-3, 10),
 }
 

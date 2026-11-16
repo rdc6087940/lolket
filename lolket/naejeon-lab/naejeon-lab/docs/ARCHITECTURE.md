@@ -1,89 +1,72 @@
 # 내전 분석 랩 — 구조 설계
 
 룽잉닷컴과 완전히 분리된 **로컬 전용 데이터 수집·학습 프로그램**입니다.
+**커뮤니티 멤버들끼리 한 내전 기록만** 사용합니다 (솔로랭크 기록·Riot API 사용 안 함).
 결과물(수식 + 선수 점수)만 GitHub에 올리고, 룽잉닷컴은 그 JSON을 읽어서 씁니다.
 
 ```
- members.txt ──seed──▶ accounts
-                          │
-  deeplol(내전) + Riot API(랭크) ◀──collect── 매치 ID 전부(바닥까지) → 매치 상세 원본(matches_raw)
-                          │          └ 내전 같이 뛴 사람 자동 추가(discover)
-                          ▼
-                       build ── games / game_players / 시리즈 묶기
-                          │
-                          ▼
+ members.txt (deeplol puuid) ──seed──▶ members
+                                        │
+ deeplol ◀──collect── 멤버별 커스텀 경기 목록(바닥까지) → member_matches
+                       │  10명 전원이 멤버인 경기만 = 커뮤니티 내전
+                       └→ 내전 상세 원본 통째로 → matches_raw
+                                        ▼
+                                     build ── games / game_players / game_events / game_timeline / 시리즈
+                                        ▼
    ┌────────────── train (학습 루프) ──────────────┐
-   │ features: 그 경기 "이전" 기록만으로 선수 지표 계산 │
+   │ features: 그 경기 "이전" 커뮤니티 내전 기록만으로 변수 계산 │
    │ Optuna: 변수 계산 방식 + 변수 선택 + 규제 탐색     │
-   │ 시간순 교차검증으로 평가 (미래 정보 누설 없음)      │
+   │ 시간순 교차검증 (미래 정보 누설 없음)               │
    │ 최종 수식 = 로지스틱(팀 평균 차이) → 가중치 확정    │
-   │ LightGBM = 비교용 기준 (수식이 얼마나 놓치는지)    │
+   │ LightGBM = 비교용 기준                            │
    └──────────────┬───────────────────────────────┘
-                  │ report.json
                   ▼
-        advisor (Ollama 로컬 LLM, 무료·선택) ── 결과 해석 + 다음 실험 제안(JSON)
-                  │                     └ 다음 train 의 첫 시도로 자동 투입
+        advisor (Ollama 로컬 LLM, 무료·선택) ── 결과 해석 + 다음 실험 제안 → 다음 train 첫 시도
                   ▼
    export → output/model/latest.json + players.json
                   │
         serve(로컬 조회 페이지)    publish → GitHub → 룽잉닷컴이 raw URL로 읽음
 ```
 
-## 1. 수집 (lab/collect.py, lab/riot.py)
+## 1. 수집 (lab/collect.py, lab/deeplol.py)
 
 | 단계 | 내용 |
 |---|---|
-| seed | `members.txt`의 `닉네임#태그` → account-v1(asia)로 puuid 확인 |
-| scan_ids | 내전: deeplol 목록을 `days`까지 과거로 내려감 · 랭크: match-v5 `by-puuid/ids`를 큐별(420 솔랭·440 자랭)로 100개씩. 처음엔 백필, 이후엔 새로 생긴 것만 |
-| fetch_details | 상세 대기열에서 **내전 우선**으로 받아 `matches_raw`에 원본 JSON 그대로 저장 |
-| discover | 내전에서 같이 뛴 10명 중 아직 없는 사람을 수집 대상에 자동 추가 |
-| league | league-v4(kr)로 티어 스냅샷을 주기적으로 기록 (시점별 티어용) |
+| members | deeplol 커뮤니티 멤버 목록(`/tournament/server_info?server_id=156`) → members.txt (deeplol puuid) |
+| seed | members.txt → members 표. 사람 구분은 deeplol puuid (닉네임이 바뀌어도 그대로) |
+| 목록 | 멤버마다 `/match/matches?queue_type=CUSTOM` 을 20개씩 `collect.days`(0=끝)까지 내려가며 member_matches 에 기록. 다음 실행부터는 새 경기만 |
+| 내전 판정 | **멤버 10명의 목록에 모두 나온 경기**만 후보 → 상세에서 10명 전원이 멤버인지 다시 확인 (`community_min_members: 10`) |
+| 상세 | `/match/match-cached` 원본을 통째로 matches_raw 에 저장 (참가자 전 스탯·룬·아이템·스킬·핑·AI 점수 세부, 이벤트, 분 단위 타임라인) |
 
-- **개발 키 24시간 만료**: 매 요청마다 `.env`를 다시 읽습니다. 401/403이 나면 멈춰서 기다리고, `.env`의 키만 새 걸로 저장하면 그 자리에서 이어집니다.
-- **속도 제한**: 응답 헤더 `X-App-Rate-Limit`을 읽어 창(1초/2분)별로 90%까지만 씁니다. 429면 `Retry-After`만큼 쉼.
-- 언제 끊어도 됩니다. 모든 진행 상태가 SQLite(`data/lab.sqlite`)에 있어서 다시 실행하면 이어서 합니다.
-- 개발 키 한도(약 100회/2분) 기준 매치 상세 1건 = 요청 1회 → **시간당 약 3,000경기**. 50명 × 1년(랭크 포함) 수만 경기면 하루 이상 걸릴 수 있습니다.
-
-### 내전(정답) 데이터 출처 = deeplol API
-Riot API는 **일반 사용자 설정 게임(커스텀) 기록을 정책상 제공하지 않습니다** (토너먼트 코드로 연 게임만 예외).
-그래서 내전 기록은 룽잉닷컴 stats 페이지와 같은 **deeplol API**에서 받습니다 (`lab/deeplol.py`).
-
-| 용도 | 출처 |
-|---|---|
-| 내전 목록 | `b2c-api-cdn.deeplol.gg/match/matches?puu_id=…&queue_type=CUSTOM` (20개씩, 최신순) |
-| 내전 상세 | `/match/match-cached?match_id=…` → match-v5 모양으로 변환해 `matches_raw`에 저장 |
-| 랭크 기록·티어 | Riot API (match-v5, league-v4) |
-
-- **계정 연결**: deeplol 은 puuid 를 자기 키로 암호화해서 주므로 내 Riot 키의 puuid 와 값이 다릅니다.
-  deeplol 커뮤니티 멤버 목록(`/tournament/server_info?server_id=156`의 닉네임#태그 + deeplol puuid)으로 계정을 찾고,
-  내전 참가자는 닉네임#태그로 Riot 계정을 조회해 내 키 puuid 로 바꿔 저장합니다(`puuid_map` 캐시).
-  Riot에서 못 찾은 참가자(닉네임 변경 등)는 `dl:<deeplol puuid>`로 구분해 내전 기록만 사용합니다.
-- 다시하기(remake)·10명이 아닌 경기는 제외
-- 상세 대기열에서 우선순위 0 = deeplol 내전, 3 = Riot 랭크
-- 비공식 API라 예고 없이 바뀌거나 막힐 수 있음 → 요청 간격 `collect.deeplol_interval_s`(기본 0.4초)
-- `config.yaml`의 `collect.custom_source`: `deeplol`(기본) / `riot`(토너먼트 코드 등 Riot에 기록이 있는 경우) / `none`
-- `doctor`로 deeplol에서 그 계정의 최근 내전이 받아지는지 먼저 확인
+- Riot API는 일반 커스텀 게임 기록을 정책상 주지 않아(토너먼트 코드 게임만 예외) deeplol 을 씁니다. 비공식 API라 예고 없이 바뀌거나 막힐 수 있어 요청 간격(`deeplol_interval_s`, 기본 0.4초)을 둡니다.
+- 외부인이 섞인 경기는 상세를 아예 받지 않습니다(요청 절약).
+- 언제 끊어도 다시 실행하면 이어서 합니다.
 
 ## 2. 정리 (lab/build.py)
-- `games`: 경기 1건 (블루 승 여부, 내전 여부, 패치, 시리즈 번호)
-- `game_players`: 선수 1명 × 경기 (라인 = teamPosition → individualPosition → lane 순서로 판단, KDA·CS·골드·딜·시야)
-- 시리즈: 같은 10명이 `series_gap_hours`(기본 3시간) 안에 이어서 한 경기들을 묶음
+- `games`: 승패, 길이, 패치, 첫 킬/포탑/용/유충/전령/바론, 팀별 킬·용·바론·전령·유충·포탑·억제기·골드, 15분 팀 점수·승률 지표, 시리즈
+- `game_players`: 라인, 챔피언, 경기 당시 티어, 최종·라인전(15분) 스탯, 분당 수치, 딜·골드 비중, 시야, AI 점수, 솔로킬/데스, 선취점, 15분 전 킬/데스, 오브젝트 관여, 룬·스펠·아이템·스킬·핑(JSON 포함)
+- `game_events`: 킬·오브젝트·포탑·아이템 이벤트 (시각·좌표·관여자·승률 변화)
+- `game_timeline`: 분 단위 라인별 점수와 오브젝트
+- 시리즈: 같은 10명이 `series_gap_hours`(기본 3시간) 안에 이어서 한 경기
 
 ## 3. 변수 (lab/features.py)
-경기 시각 t 직전까지의 기록만으로 선수 × 라인 지표를 계산합니다 (point-in-time, 누설 없음).
+경기 시각 t 직전까지의 **커뮤니티 내전 기록만**으로 선수 × 라인 지표를 계산합니다 (point-in-time).
 
 | 변수 | 의미 |
 |---|---|
-| tier | 그 시점 티어 점수 (스냅샷 또는 최근 경기 기준) |
-| custom_elo / custom_wr / custom_games | 내전 Elo, 내전 승률(베이즈 보정), 내전 판수 |
-| wr / role_wr / role_share | 랭크 승률, 그 라인 승률, 그 라인 비중 |
-| form | 최근 N판 승률 |
-| kda / cspm / dpm / gpm / vspm | 그 라인 기준 지표 (시간 감쇠 가중 평균) |
-| champ_games | 그 챔피언 숙련도 |
+| tier | 경기 당시 티어 (그 내전 기록에 함께 저장된 값 — 경기 전에 알 수 있음) |
+| elo / wr / games / form | 내전 Elo, 승률(표본 보정), 경험, 최근 N판 승률 |
+| role_wr / role_share | 이번 라인 승률, 라인 비중 |
+| ai / lane_ai | deeplol AI 점수, 라인전 AI 점수 |
+| kda / kp / cspm / dpm / gpm / dtpm / vision | 라인 기준 시간 감쇠 평균 |
+| dmg_share / gold_share | 팀 내 비중 |
+| early_death / solo_kill / obj | 15분 전 데스, 솔로킬, 오브젝트 관여 |
+| champ_games / champ_wr | 이번 챔피언 숙련·승률 |
+| duo | 이번 팀원들과 같은 팀일 때 승률 (쌍별) |
+| lane_vs | 이번 맞라인 상대와의 상대전적 |
 
-**변수를 "어떻게 계산할지"도 학습 대상**입니다: 반감기(half_life_days), 기간(window_days), 베이즈 사전 판수(prior_games), 최근 폼 판수(recent_n), Elo K, 티어 스냅샷 사용 여부.
-
-입력 X = (블루팀 5명 평균) − (레드팀 5명 평균), 정답 y = 블루 승.
+**변수를 "어떻게 계산할지"도 학습 대상**: 반감기, 기간, 표본 보정 강도, 최근 폼 판수, Elo K.
+입력 X = (블루 5명 평균) − (레드 5명 평균), 정답 y = 블루 승. 점수 기준선 = 경기 당시 티어만 쓴 모델.
 
 ## 4. 학습 루프 (lab/train.py, lab/advisor.py)
 1. Optuna(TPE)가 한 번 시도할 때마다: 변수 계산 방식 + 어떤 변수를 쓸지 + 규제 강도 C 를 고름
@@ -143,8 +126,8 @@ const pA = 1 / (1 + Math.exp(-(bias + (sumA - sumB) / 5)));   // A팀 승률
 ## 7. 파일
 ```
 lab/db.py        SQLite 스키마
-lab/riot.py      Riot API + 속도 제한 + 키 자동 재로딩
-lab/collect.py   수집 / doctor
+lab/deeplol.py   deeplol API (멤버·내전 목록·상세)
+lab/collect.py   수집 / 내전 판정 / doctor
 lab/build.py     정리 + 시리즈
 lab/features.py  시점별 변수
 lab/train.py     최적화·학습·검증

@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>내전 후기</title>
+<style>
+:root {
+  --bg: #0D0E12; --bg-panel: #131620; --bg-dark: #0A0C10; --bg-card: #171B26;
+  --border: #1E2D40; --border-gold: rgba(200,170,110,.35);
+  --gold: #C8AA6E; --blue: #0AC8B9; --text: #A0AEC0; --white: #E8EAF0;
+  --red: #E05050; --purple: #9D48E0;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: 'Noto Sans KR', sans-serif; min-height: 100vh; }
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600&family=Rajdhani:wght@600;700&family=Bebas+Neue&display=swap');
+
+.wrap { max-width: 700px; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
+
+/* 헤더 */
+.header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; gap: 12px; flex-wrap: wrap; }
+.title { font-family: 'Bebas Neue', sans-serif; font-size: 28px; letter-spacing: 3px; color: var(--gold); }
+.btn-submit { padding: 10px 24px; background: rgba(10,200,185,.15); border: 1px solid rgba(10,200,185,.5); border-radius: 4px; color: var(--blue); font-family: 'Rajdhani', sans-serif; font-size: 14px; font-weight: 700; letter-spacing: 1.5px; cursor: pointer; transition: all .15s; white-space: nowrap; }
+.btn-submit:hover { background: rgba(10,200,185,.25); }
+.btn-submit:disabled { opacity: .4; cursor: not-allowed; }
+
+/* 내전 정보 */
+.match-info { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 4px; padding: .75rem 1rem; margin-bottom: 1.25rem; font-size: 12px; color: var(--text); font-family: 'Rajdhani', sans-serif; letter-spacing: .5px; }
+.match-info strong { color: var(--white); }
+
+/* 이미 제출됨 */
+.submitted-banner { background: rgba(10,200,185,.08); border: 1px solid rgba(10,200,185,.3); border-radius: 4px; padding: 1.25rem 1.5rem; text-align: center; margin-bottom: 1.25rem; }
+.submitted-banner p { color: var(--blue); font-family: 'Rajdhani', sans-serif; font-size: 15px; font-weight: 700; letter-spacing: 1px; }
+
+/* 팀 섹션 */
+.team-section { margin-bottom: 1.25rem; }
+.team-header { display: flex; align-items: center; gap: 8px; padding: .5rem .75rem; border-radius: 3px 3px 0 0; font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 2px; }
+.team-header.blue { background: rgba(10,100,160,.2); border: 1px solid rgba(42,95,165,.4); color: #7EC8E3; }
+.team-header.red { background: rgba(139,32,32,.2); border: 1px solid rgba(139,32,32,.4); color: #E57373; }
+.team-header.none { background: rgba(200,170,110,.06); border: 1px solid var(--border-gold); color: var(--gold); }
+
+/* 팀 그리드 */
+.teams-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; }
+
+/* 멤버 카드 */
+.member-card { background: var(--bg-panel); border: 1px solid var(--border); border-top: none; padding: .6rem .75rem; display: flex; flex-direction: column; gap: 6px; }
+.member-card:last-child { border-radius: 0 0 3px 3px; }
+.member-card.is-self { opacity: .45; pointer-events: none; cursor: not-allowed; }
+.member-info { display: flex; align-items: center; gap: 8px; }
+.member-avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--bg-dark); border: 1px solid var(--border); overflow: hidden; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 12px; color: var(--text); }
+.member-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.member-meta { flex: 1; min-width: 0; }
+.member-name { font-size: 12px; font-weight: 600; color: var(--white); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.member-sub { font-size: 10px; color: var(--text); font-family: 'Rajdhani', sans-serif; margin-top: 1px; }
+.self-label { font-size: 9px; font-family: 'Rajdhani', sans-serif; letter-spacing: 1px; color: var(--text); background: rgba(255,255,255,.06); padding: 2px 6px; border-radius: 2px; flex-shrink: 0; }
+
+/* 스티커 버튼 */
+.sticker-row { display: flex; gap: 4px; flex-wrap: wrap; }
+.sticker-btn { display: flex; align-items: center; gap: 3px; padding: 3px 7px; border-radius: 20px; border: 1px solid var(--border); background: transparent; color: var(--text); font-size: 11px; cursor: pointer; transition: all .15s; white-space: nowrap; }
+.sticker-btn:hover { border-color: var(--gold); color: var(--white); }
+.sticker-btn.selected { border-color: var(--gold); background: rgba(200,170,110,.15); color: var(--gold); }
+.sticker-btn.selected.mvp { border-color: #FFD700; background: rgba(255,215,0,.12); color: #FFD700; }
+.sticker-btn.selected.hmm { border-color: #9D48E0; background: rgba(157,72,224,.12); color: #B97EEA; }
+.sticker-btn.selected.shield { border-color: #5BBCE4; background: rgba(91,188,228,.12); color: #5BBCE4; }
+.sticker-btn.selected.imti { border-color: #E05050; background: rgba(224,80,80,.12); color: #E05050; }
+.sticker-btn.selected.buddy { border-color: #0AC8B9; background: rgba(10,200,185,.12); color: #0AC8B9; }
+.sticker-btn.disabled-sticker { opacity: .35; cursor: not-allowed; pointer-events: none; }
+
+.loading { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; gap: 12px; color: var(--text); font-family: 'Rajdhani', sans-serif; font-size: 13px; letter-spacing: 1px; }
+.spinner { width: 28px; height: 28px; border: 2px solid rgba(10,200,185,.2); border-top-color: var(--blue); border-radius: 50%; animation: spin .7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.error-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; gap: 8px; color: var(--red); font-family: 'Rajdhani', sans-serif; font-size: 14px; letter-spacing: 1px; text-align: center; }
+</style>
+</head>
+<body>
+<div class="wrap" id="app">
+  <div class="loading" id="loading"><div class="spinner"></div>로딩 중...</div>
+</div>
+
+<script>
+const WORKER = 'https://api.roonging.com';
+const DD_VER = '16.14.1';
+
+const STICKERS = [
+  { key: 'mvp',    label: '🏆 MVP',   cls: 'mvp'    },
+  { key: 'hmm',    label: '🤔 흐음..',  cls: 'hmm'    },
+  { key: 'shield', label: '🛡️ 방패',  cls: 'shield'  },
+  { key: 'imti',   label: '😤 임티',   cls: 'imti'   },
+  { key: 'buddy',  label: '🤝 동반자', cls: 'buddy'  },
+];
+
+const params = new URLSearchParams(location.search);
+const CID     = params.get('cid');
+const MATCH   = params.get('match');
+const REVIEWER= params.get('reviewer'); // reviewer puuid
+
+// selections: { targetPuuid: Set<stickerKey> }
+const selections = {};
+let matchData = null;
+let allMembers = [];
+let alreadySubmitted = false;
+
+async function dbRead(path) {
+  const r = await fetch(WORKER + '/db-public-read', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ path })
+  });
+  const j = await r.json();
+  return j.ok ? j.data : null;
+}
+
+async function init() {
+  if (!CID || !MATCH || !REVIEWER) return renderError('잘못된 링크입니다.');
+  try {
+    // 내전 데이터 로드
+    const [mData, reviewData] = await Promise.all([
+      dbRead('communities/' + CID + '/matches/' + MATCH),
+      dbRead('communities/' + CID + '/reviews/' + MATCH + '/' + REVIEWER),
+    ]);
+    if (!mData) return renderError('내전 정보를 찾을 수 없습니다.');
+    matchData = mData;
+
+    // 멤버 수집 (teams 또는 _members)
+    const teams = mData._teams || mData.teams || [];
+    const teamsArr = Array.isArray(teams) ? teams : Object.values(teams);
+    if (teamsArr.length > 0) {
+      teamsArr.forEach((t, ti) => {
+        const members = t.members || (t._members ? Object.values(t._members) : []);
+        members.forEach(m => {
+          allMembers.push({ ...m, teamIdx: ti, teamName: t.name || ('팀 ' + (ti+1)), teamSide: t.side || (ti === 0 ? 'blue' : 'red') });
+        });
+      });
+    }
+    // _members 폴백 (팀 없거나 멤버 없을 때)
+    if (allMembers.length === 0) {
+      const mems = mData._members ? Object.values(mData._members) : (mData.members || []);
+      mems.forEach(m => allMembers.push({ ...m, teamIdx: -1, teamName: '전체', teamSide: 'none' }));
+    }
+
+    // 리뷰어 본인 확인 (puuid 또는 discordId로 매칭)
+    const self = allMembers.find(m => m.puuid === REVIEWER || m.discordId === REVIEWER);
+    if (!self) {
+      // 참여자 목록에 없어도 링크를 받았으면 접근 허용 (가상 멤버 생성)
+      allMembers.push({ name: '?', tag: '', puuid: REVIEWER, discordId: REVIEWER, teamIdx: -1, teamName: '전체', teamSide: 'none' });
+    }
+
+    // 이미 제출됐으면
+    if (reviewData && reviewData.submittedAt) {
+      alreadySubmitted = true;
+    }
+
+    // 딥롤 서버 API에서 riot_name#tag → 딥롤 puu_id 매핑
+    try {
+      const ciRes = await dbRead('communities_info/' + CID);
+      const serverId = ciRes?.deeplolServerId;
+      if (serverId) {
+        const dpRes = await fetch('https://b2c-api-cdn.deeplol.gg/tournament/server_info?server_id=' + serverId, {
+          headers: { 'Referer': 'https://www.deeplol.gg/' }
+        });
+        if (dpRes.ok) {
+          const dpData = await dpRes.json();
+          const dpList = dpData?.tournament_stats?.tournament_stats_all_list || [];
+          // riot_name#tag(소문자) → 딥롤 puu_id 맵
+          window._dpPuuMap = {};
+          dpList.forEach(m => {
+            if (m.puu_id && m.riot_name && m.riot_tag) {
+              window._dpPuuMap[(m.riot_name + '#' + m.riot_tag).toLowerCase()] = m.puu_id;
+            }
+          });
+        }
+      }
+    } catch(e2) {}
+
+    console.log('[review] _dpPuuMap size before render:', Object.keys(window._dpPuuMap||{}).length);
+    render(self);
+  } catch(e) {
+    renderError('오류가 발생했습니다: ' + e.message);
+  }
+}
+
+function getLaneKo(lane) {
+  return { top:'탑', jg:'정글', mid:'미드', bot:'원딜', sup:'서폿' }[lane] || lane || '';
+}
+
+function getTierStr(m) {
+  return m.tierFull || m.tier || m.highTier || '';
+}
+
+function getIconSrc(m) {
+  if (m.icon && m.icon !== '0') return 'https://ddragon.leagueoflegends.com/cdn/' + DD_VER + '/img/profileicon/' + m.icon + '.png';
+  return '';
+}
+
+function isStickerDisabled(stickerKey) {
+  // 이 스티커 키를 이미 다른 멤버에게 부여했는지 확인
+  return Object.values(selections).some(set => set.has(stickerKey));
+}
+
+function toggleSticker(targetKey, stickerKey) {
+  if (!selections[targetKey]) selections[targetKey] = new Set();
+  const set = selections[targetKey];
+  if (set.has(stickerKey)) {
+    set.delete(stickerKey);
+  } else {
+    // 다른 멤버에게 이미 부여됐는지 확인 (자기 자신 제외)
+    const usedByOther = Object.entries(selections).some(([k, s]) => k !== targetKey && s.has(stickerKey));
+    if (usedByOther) return;
+    set.add(stickerKey);
+  }
+  renderStickerRows();
+}
+
+function renderStickerRows() {
+  allMembers.forEach(m => {
+    if (m.puuid === REVIEWER || m.discordId === REVIEWER) return;
+    const _ntk = ((m.name||'') + '#' + (m.tag||'')).toLowerCase();
+    const memberKey = (window._dpPuuMap && window._dpPuuMap[_ntk]) || m.puuid || m.discordId || _ntk;
+    STICKERS.forEach(s => {
+      const btn = document.getElementById('sticker-' + memberKey + '-' + s.key);
+      if (!btn) return;
+      const mySet = selections[m.puuid] || new Set();
+      const mySet2 = selections[memberKey] || new Set();
+      const isSelected = mySet2.has(s.key);
+      // 다른 멤버에게 이미 부여했는지 (본인 selections 제외)
+      const isUsedElsewhere = !isSelected && Object.entries(selections).some(([pk, set]) => pk !== memberKey && set.has(s.key));
+      btn.className = 'sticker-btn' + (isSelected ? ' selected ' + s.cls : '') + (!isSelected && isUsedElsewhere ? ' disabled-sticker' : '');
+    });
+  });
+}
+
+function render(self) {
+  const app = document.getElementById('app');
+
+  // 팀별 그룹
+  const teamMap = {};
+  allMembers.forEach(m => {
+    const key = m.teamIdx + '_' + m.teamName + '_' + m.teamSide;
+    if (!teamMap[key]) teamMap[key] = { name: m.teamName, side: m.teamSide, members: [] };
+    teamMap[key].members.push(m);
+  });
+
+  let html = '';
+
+  // 헤더
+  html += '<div class="header">';
+  html += '<div class="title">내전 후기</div>';
+  if (!alreadySubmitted) {
+    html += '<button class="btn-submit" id="btn-submit" onclick="submitReview()">📨 후기 전송</button>';
+  }
+  html += '</div>';
+
+  // 내전 정보
+  html += '<div class="match-info">⚔️ <strong>' + (matchData.name || '내전') + '</strong>';
+  if (matchData.admin) html += '&nbsp;&nbsp;|&nbsp;&nbsp;진행자: <strong>' + matchData.admin + '</strong>';
+  html += '</div>';
+
+  // 이미 제출
+  if (alreadySubmitted) {
+    html += '<div class="submitted-banner"><p>✅ 이미 후기를 제출하셨습니다.</p><p style="margin-top:6px;font-size:12px;color:var(--text);font-weight:400;">후기는 수정이 불가합니다.</p></div>';
+  }
+
+  // 팀별 멤버 - 그리드
+  html += '<div class="teams-grid">';
+  Object.values(teamMap).forEach(team => {
+    const sideCls = team.side === 'blue' ? 'blue' : team.side === 'red' ? 'red' : 'none';
+    const sideLabel = team.side === 'blue' ? '🔵 BLUE' : team.side === 'red' ? '🔴 RED' : '⚔️';
+    html += '<div class="team-section">';
+    html += '<div class="team-header ' + sideCls + '">' + sideLabel + ' &nbsp; ' + team.name + '</div>';
+
+    team.members.forEach(m => {
+      const _ntk2 = ((m.name||'') + '#' + (m.tag||'')).toLowerCase();
+      const _mk = (window._dpPuuMap && window._dpPuuMap[_ntk2]) || m.puuid || m.discordId || _ntk2;
+      const isSelf = m.puuid === REVIEWER || m.discordId === REVIEWER || _mk === REVIEWER;
+      const iconSrc = getIconSrc(m);
+      const tierStr = getTierStr(m);
+      const mainKo = getLaneKo(m.mainLane);
+      const subKo = (m.subLane || m.subLanes || []);
+      const subArr = Array.isArray(subKo) ? subKo : [subKo];
+      const subStr = subArr.map(l => getLaneKo(l)).filter(Boolean).join('/');
+
+      html += '<div class="member-card' + (isSelf ? ' is-self' : '') + '">';
+      html += '<div class="member-info">';
+      html += '<div class="member-avatar">';
+      if (iconSrc) html += '<img src="' + iconSrc + '" onerror="this.style.display=\'none\'">';
+      else html += (m.name || '?')[0];
+      html += '</div>';
+      html += '<div class="member-meta">';
+      html += '<div class="member-name">' + (m.name || '?') + (m.tag ? ' <span style="color:var(--text);font-weight:400;font-size:11px;">#' + m.tag + '</span>' : '') + '</div>';
+      html += '<div class="member-sub">' + [tierStr, mainKo ? '주:'+mainKo : '', subStr ? '부:'+subStr : ''].filter(Boolean).join(' · ') + '</div>';
+      html += '</div>';
+      if (isSelf) html += '<span class="self-label">나</span>';
+      html += '</div>';
+
+      if (!isSelf && !alreadySubmitted) {
+        html += '<div class="sticker-row" id="sticker-row-' + _mk + '">';
+        STICKERS.forEach(s => {
+          html += '<button class="sticker-btn" id="sticker-' + _mk + '-' + s.key + '" data-mk="' + _mk + '" data-sk="' + s.key + '" onclick="toggleSticker(this.dataset.mk, this.dataset.sk)">' + s.label + '</button>';
+        });
+        html += '</div>';
+      }
+
+      html += '</div>';
+    });
+
+    html += '</div>';
+  });
+  html += '</div>'; // teams-grid 닫기
+
+  app.innerHTML = html;
+}
+
+async function submitReview() {
+  const entries = Object.entries(selections).filter(([p, set]) => set.size > 0);
+  if (!confirm('후기를 전송하시겠습니까?\n전송하시면 수정이 불가합니다.')) return;
+
+  const btn = document.getElementById('btn-submit');
+  if (btn) { btn.disabled = true; btn.textContent = '전송 중...'; }
+
+  try {
+    const data = {};
+    entries.forEach(([puuid, set]) => { data[puuid] = Array.from(set); });
+
+    const res = await fetch(WORKER + '/review-submit', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cid: CID, matchId: MATCH, reviewerPuuid: REVIEWER, stickers: data })
+    });
+    const j = await res.json();
+    if (j.ok) {
+      alreadySubmitted = true;
+      render(allMembers.find(m => m.puuid === REVIEWER));
+    } else {
+      alert('전송 실패: ' + (j.error || '알 수 없는 오류'));
+      if (btn) { btn.disabled = false; btn.textContent = '📨 후기 전송'; }
+    }
+  } catch(e) {
+    alert('오류: ' + e.message);
+    if (btn) { btn.disabled = false; btn.textContent = '📨 후기 전송'; }
+  }
+}
+
+function renderError(msg) {
+  document.getElementById('app').innerHTML = '<div class="error-wrap"><div>⚠️</div><div>' + msg + '</div></div>';
+}
+
+init();
+</script>
+</body>
+</html>

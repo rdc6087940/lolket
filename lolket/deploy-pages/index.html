@@ -3326,6 +3326,11 @@ body:has(#screen-0.active){background-color:var(--rg-bg)!important;background-im
     </div>
     <div style="width:1px;height:28px;background:var(--border-subtle);margin:0 2px;"></div>
     <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+      <span style="font-size:9px;letter-spacing:1px;color:var(--text-muted);font-family:'IBM Plex Sans KR',sans-serif;white-space:nowrap;">티어제한</span>
+      <button id="btn-tier-limit" onclick="toggleTierLimit()" title="ON: 설정한 티어 조건에 맞는 유저만 디스코드로 참여 가능" style="padding:2px 8px;border-radius:3px;border:1px solid var(--border-subtle);background:transparent;color:var(--muted);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;">OFF</button>
+    </div>
+    <div style="width:1px;height:28px;background:var(--border-subtle);margin:0 2px;"></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
       <span style="font-size:9px;letter-spacing:1px;color:var(--text-muted);font-family:'IBM Plex Sans KR',sans-serif;white-space:nowrap;">디스코드</span>
       <button id="btn-discord-sync" onclick="syncDiscordMembersNow()" title="디스코드 참가자 정보(참가·취소·라인)를 서버 기준으로 다시 맞춥니다" style="padding:2px 8px;border-radius:3px;border:1px solid rgba(88,101,242,.45);background:transparent;color:#9AA6FF;font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;">동기화</button>
     </div>
@@ -3357,7 +3362,7 @@ body:has(#screen-0.active){background-color:var(--rg-bg)!important;background-im
  <div class="tier-row"> <span class="tier-row-label">솔랭 판수</span> <span class="tier-row-val" id="r-solo-games" style="font-family:'IBM Plex Sans KR',sans-serif;">—</span> </div> <div class="tier-row" id="r-match-count-row"> <span class="tier-row-label">내전 판수</span> <span class="tier-row-val" id="r-match-count" style="font-family:'IBM Plex Sans KR',sans-serif;color:var(--blue-bright);">—</span> </div> <div class="tier-row"> <span class="tier-row-label">LEVEL</span> <span class="tier-row-val" id="r-level">—</span> </div> <div class="tier-row" id="r-prev-row" style="display:none;background:rgba(200,170,110,0.04);border-radius:2px;padding:3px 6px;margin-top:2px;"> <span class="tier-row-label" style="display:flex;align-items:center;gap:4px;"><span style="font-size:9px;">🏆</span>전 시즌 최고</span> <span class="tier-row-val" id="r-prev-season" style="font-size:11px;">—</span> </div> </div> <div style="padding:.6rem 1rem;border-top:1px solid var(--border-subtle);background:rgba(200,170,110,0.03);"> <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;"> <span style="font-size:10px;font-family:'IBM Plex Sans KR',sans-serif;font-weight:700;letter-spacing:1px;color:var(--gold);">✏ 티어 직접 설정</span> <button onclick="applyTierOverride('')" style="font-size:9px;font-family:'IBM Plex Sans KR',sans-serif;font-weight:700;color:var(--text-muted);background:transparent;border:1px solid var(--border-subtle);border-radius:2px;padding:1px 7px;cursor:pointer;letter-spacing:.5px;" id="r-tier-reset">API 값으로 초기화</button> </div> <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;" id="r-tier-btns"> <button class="tier-override-btn" data-tier="UNRANKED" onclick="applyTierOverride('UNRANKED')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-iron);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;letter-spacing:.3px;">UNRANK</button> <button class="tier-override-btn" data-tier="IRON" onclick="applyTierOverride('IRON')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-iron);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">IRON</button> <button class="tier-override-btn" data-tier="BRONZE" onclick="applyTierOverride('BRONZE')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-bronze);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">BRONZE</button> <button class="tier-override-btn" data-tier="SILVER" onclick="applyTierOverride('SILVER')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-silver);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">SILVER</button> <button class="tier-override-btn" data-tier="GOLD" onclick="applyTierOverride('GOLD')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-gold);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">GOLD</button> <button class="tier-override-btn" data-tier="PLATINUM" onclick="applyTierOverride('PLATINUM')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-plat);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">PLAT</button> <button class="tier-override-btn" data-tier="EMERALD" onclick="applyTierOverride('EMERALD')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-emerald);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">EMERALD</button> <button class="tier-override-btn" data-tier="DIAMOND" onclick="applyTierOverride('DIAMOND')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-diamond);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">DIAMOND</button> <button class="tier-override-btn" data-tier="MASTER" onclick="applyTierOverride('MASTER')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-master);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">MASTER</button> <button class="tier-override-btn" data-tier="GRANDMASTER" onclick="applyTierOverride('GRANDMASTER')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-grandmaster);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">GM</button> <button class="tier-override-btn" data-tier="CHALLENGER" onclick="applyTierOverride('CHALLENGER')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-challenger);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">CHALL</button> </div> </div> <div class="lane-select"> <div class="lane-select-label">주 포지션</div> <div class="lane-buttons" id="main-lanes"> <button class="lane-btn" data-lane="top" onclick="selectLane('main','top')">TOP</button> <button class="lane-btn" data-lane="jg" onclick="selectLane('main','jg')">JG</button> <button class="lane-btn" data-lane="mid" onclick="selectLane('main','mid')">MID</button> <button class="lane-btn" data-lane="bot" onclick="selectLane('main','bot')">BOT</button> <button class="lane-btn" data-lane="sup" onclick="selectLane('main','sup')">SUP</button> </div> <div class="lane-select-label" style="margin-top:4px;">보조 포지션</div> <div class="lane-buttons" id="sub-lanes"> <button class="lane-btn" data-lane="top" onclick="selectLane('sub','top')">TOP</button> <button class="lane-btn" data-lane="jg" onclick="selectLane('sub','jg')">JG</button> <button class="lane-btn" data-lane="mid" onclick="selectLane('sub','mid')">MID</button> <button class="lane-btn" data-lane="bot" onclick="selectLane('sub','bot')">BOT</button> <button class="lane-btn" data-lane="sup" onclick="selectLane('sub','sup')">SUP</button> </div> </div> <div style="padding:.75rem 1rem;border-top:1px solid var(--border-subtle);"> <button class="btn-add-member" id="btn-add" onclick="addMember()" disabled>멤버 추가</button> </div> </div> </div> </div> </div></div> <div class="next-wrap"> <div class="next-condition"> <div class="cond-item"> <div class="cond-dot" id="cond-count"></div> <span id="cond-count-text" style="font-size:12px;color:var(--text-muted);">인원 10의 배수</span> </div> <div class="cond-item"> <div class="cond-dot" id="cond-attend"></div> <span id="cond-attend-text" style="font-size:12px;color:var(--text-muted);">전원 출석</span> </div> </div> <button onclick="copyMatchLink()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(10,200,185,.4);background:rgba(10,200,185,.06);color:var(--blue-bright);font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="내전 상세 링크 복사">링크 복사</button>
 <button onclick="copyMemberMentions()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(100,150,255,.4);background:rgba(100,150,255,.06);color:#7EB2FF;font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="참여 멤버 @멘션 복사">@ 멘션 복사</button> <button id="btn-confirm-members" onclick="openConfirmMembersModal()" title="진행 인원만 남기고 나머지 멤버를 제외합니다 (10명 초과일 때)" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(232,203,134,.45);background:rgba(232,203,134,.08);color:#E8CB86;font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;">멤버 확정하기</button> <button id="btn-cut-members" onclick="openCutMembersModal()" title="멤버 확정으로 제외된 멤버" style="display:none;padding:7px 14px;border-radius:2px;border:1px solid rgba(255,148,85,.45);background:rgba(255,148,85,.08);color:#FF9455;font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;">잘린 멤버</button> <button id="btn-attend-all" onclick="toggleAttendAll()" style="padding:7px 16px;border-radius:2px;border:1px solid rgba(10,200,185,0.4);background:rgba(10,200,185,0.08);color:var(--blue-bright);font-family:'IBM Plex Sans KR',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;cursor:pointer;transition:all .15s;">전체 출석</button> <button id="btn-discord-notify" onclick="sendDiscordNotify()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(114,137,218,0.4);background:rgba(114,137,218,0.08);color:#7289DA;font-family:'IBM Plex Sans KR',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;cursor:pointer;transition:all .15s;"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;margin-right:4px;"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>알림 전송</button> <button class="btn-next" id="btn-next" disabled onclick="goNextStage()">다음 단계 →</button> </div>
 </div>
-</div> <div class="modal-overlay" id="edit-time-modal" style="display:none;"> <div class="modal" style="max-width:360px;"> <div class="modal-title">시작 시간 수정</div> <div class="form-row"> <div class="form-label">새 시작 시간</div> <input class="form-input" type="datetime-local" id="et-time"> </div> <div class="modal-actions"> <button class="btn-secondary" onclick="closeEditTimeModal()">취소</button> <button class="btn-primary" onclick="saveEditTime()">저장</button> </div> </div>
+</div> <div class="modal-overlay" id="edit-time-modal" style="display:none;"> <div class="modal" style="max-width:360px;"> <div class="modal-title">내전 정보 수정</div> <div class="form-row"> <div class="form-label">내전 제목</div> <input class="form-input" type="text" id="et-name" maxlength="90" placeholder="예) 금요 정기 내전 시즌 1" onkeydown="if(event.key==='Enter')saveEditTime()"> </div> <div class="form-row"> <div class="form-label">시작 시간</div> <input class="form-input" type="datetime-local" id="et-time"> </div> <div class="modal-actions"> <button class="btn-secondary" onclick="closeEditTimeModal()">취소</button> <button class="btn-primary" id="btn-et-save" onclick="saveEditTime()">저장</button> </div> </div>
 </div> <div class="modal-overlay" id="em-modal" style="display:none;" data-id=""> <div class="modal" style="max-width:420px;"> <div class="modal-title">내전 정보 수정</div> <div class="form-row"> <div class="form-label">내전 이름</div> <input class="form-input" type="text" id="em-name"> </div> <div class="form-row"> <div class="form-label">시작 시간</div> <input class="form-input" type="datetime-local" id="em-time"> </div> <div class="form-row"> <div class="form-label">진행 관리자 (선택)</div> <input class="form-input" type="text" id="em-admin" placeholder="공란 가능"> </div> <div class="modal-actions"> <button class="btn-secondary" onclick="closeEditMatchModal()">취소</button> <button class="btn-secondary" onclick="saveEditMatch()">저장</button> <button class="btn-primary" onclick="(function(){saveEditMatch();setTimeout(()=>{const list=dbLoad();const snap=list.find(m=>m.name===document.getElementById('em-name').value.trim());if(snap)proceedToStage1(snap);},100)})()">진행하기 →</button> </div> </div>
 </div> <div class="modal-overlay" id="create-modal" style="display:none;">
  <div class="modal">
@@ -11688,21 +11693,41 @@ if (!match) return;
 const nowStr = new Date(Date.now() - new Date().getTimezoneOffset()*60000).toISOString().slice(0,16);
 document.getElementById('et-time').min = nowStr;
 document.getElementById('et-time').value = match.time;
+document.getElementById('et-name').value = match.name || '';
 document.getElementById('edit-time-modal').style.display = 'flex';
 }
 function closeEditTimeModal() {
 document.getElementById('edit-time-modal').style.display = 'none';
 }
-function saveEditTime() {
+async function saveEditTime() {
 const newTime = document.getElementById('et-time').value;
+const newName = (document.getElementById('et-name').value || '').trim();
+if (!newName) return toast('내전 제목을 입력하세요', 'err');
 if (!newTime) return toast('시간을 선택하세요', 'err');
-if (new Date(newTime) <= new Date()) return toast('시작 시간은 현재 시간 이후여야 합니다', 'err');
+const timeChanged = newTime !== match.time;
+const nameChanged = newName !== (match.name || '');
+// 시간을 바꾼 경우에만 "현재 이후" 검사 (제목만 바꿀 때는 지난 시작 시간 그대로 저장 가능)
+if (timeChanged && new Date(newTime) <= new Date()) return toast('시작 시간은 현재 시간 이후여야 합니다', 'err');
+if (!timeChanged && !nameChanged) { closeEditTimeModal(); return; }
 match.time = newTime;
+match.name = newName;
 updateMatchBar();
 closeEditTimeModal();
-toast('시작 시간이 수정되었습니다', 'ok');
-// 알람 예약 업데이트 (notified 리셋 포함)
-if (_fbReady && window._fb.fbUpdateMatchAlarmTime && match.id) {
+toast(nameChanged && timeChanged ? '제목과 시작 시간이 수정되었습니다' : (nameChanged ? '내전 제목이 수정되었습니다' : '시작 시간이 수정되었습니다'), 'ok');
+try { await saveCurrentMatch(); } catch (e) {}
+if (nameChanged) {
+  // 디스코드 포럼 포스트 제목·원문 갱신 (서버가 방금 저장된 제목을 읽어서 반영)
+  try {
+    var _fr = await fetch('https://api.roonging.com/match-forum-title', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cid: window._currentCommunityId, matchId: match.id }),
+    }).then(function(r){ return r.json(); });
+    if (_fr && _fr.ok === false) toast('디스코드 포스트 제목 변경 실패: ' + (_fr.error || ''), 'err');
+    else if (_fr && _fr.ok && !_fr.skipped) toast('디스코드 포스트 제목도 변경되었습니다', 'ok');
+  } catch (e) { toast('디스코드 포스트 제목 변경 실패: ' + e.message, 'err'); }
+}
+// 알람 예약 업데이트 (notified 리셋 포함) — 시간을 바꾼 경우만
+if (timeChanged && _fbReady && window._fb.fbUpdateMatchAlarmTime && match.id) {
   const startMs = new Date(newTime).getTime();
   if (!isNaN(startMs) && startMs > Date.now()) {
     window._fb.fbUpdateMatchAlarmTime(match.id, startMs).catch(()=>{});
@@ -14959,7 +14984,7 @@ try {
 }
 }
 function restoreMatch(snapshot) {
-match = { id: snapshot.id, name: snapshot.name, time: snapshot.time, admin: snapshot.admin, status: snapshot.status, discordJoinable: snapshot.discordJoinable || false, discordLeaveDisabled: snapshot.discordLeaveDisabled || false, isAram: snapshot.isAram || false, maxMembers: snapshot.maxMembers || null, laneFixedRecruit: snapshot.laneFixedRecruit || false, laneRestrictOff: snapshot.laneRestrictOff || false, cutMembers: snapshot.cutMembers || null };
+match = { id: snapshot.id, name: snapshot.name, time: snapshot.time, admin: snapshot.admin, status: snapshot.status, discordJoinable: snapshot.discordJoinable || false, discordLeaveDisabled: snapshot.discordLeaveDisabled || false, isAram: snapshot.isAram || false, maxMembers: snapshot.maxMembers || null, laneFixedRecruit: snapshot.laneFixedRecruit || false, laneRestrictOff: snapshot.laneRestrictOff || false, cutMembers: snapshot.cutMembers || null, tierLimit: snapshot.tierLimit || null };
 members = snapshot._members || [];
 // 내전 점수 로드
 if (typeof loadDoomScores === 'function') loadDoomScores();
@@ -21426,6 +21451,7 @@ function _renderLaneFixedBtn() {
     rb.style.color = ron ? '#A78BFA' : 'var(--muted)';
     rb.style.borderColor = ron ? 'rgba(167,139,250,.45)' : 'var(--border-subtle)';
   }
+  try { _renderTierLimitBtn(); } catch (e) {}
 }
 // ── 라인제한 토글 (라인고정모집 ON일 때) ──
 // ON(기본): 디스코드 라인 참여 시 주라인·부라인만 허용 / OFF: 부라인이 아니어도 아무 라인이나 참여
@@ -21435,6 +21461,116 @@ async function toggleLaneRestrict() {
   _renderLaneFixedBtn();
   await saveCurrentMatch();
   toast(match.laneRestrictOff ? '라인제한 OFF (아무 라인이나 참여 가능)' : '라인제한 ON (주라인·부라인만 참여 가능)', 'ok');
+}
+// ── 티어 제한 토글 (기본 OFF) ──
+// ON 하면 팝업에서 티어 + 이상/이하 선택 → match.tierLimit = { tier, div, dir }
+// 이미 참여한 멤버 중 조건에 맞지 않는 사람이 있으면 적용 불가 + 명단 표시
+var _TL_ORDER = ['IRON','BRONZE','SILVER','GOLD','PLATINUM','EMERALD','DIAMOND','MASTER','GRANDMASTER','CHALLENGER'];
+var _TL_KO = { IRON:'아이언', BRONZE:'브론즈', SILVER:'실버', GOLD:'골드', PLATINUM:'플래티넘', EMERALD:'에메랄드', DIAMOND:'다이아몬드', MASTER:'마스터', GRANDMASTER:'그랜드마스터', CHALLENGER:'챌린저' };
+var _TL_SHORT = { IRON:'아이언', BRONZE:'브론즈', SILVER:'실버', GOLD:'골드', PLATINUM:'플래', EMERALD:'에메', DIAMOND:'다이아', MASTER:'마스터', GRANDMASTER:'그마', CHALLENGER:'챌린저' };
+var _tlDir = 'gte';
+function _tlIsHigh(t) { return t === 'MASTER' || t === 'GRANDMASTER' || t === 'CHALLENGER'; }
+function _tlValue(tier, div) { var i = _TL_ORDER.indexOf(tier); if (i < 0) return null; return _tlIsHigh(tier) ? i * 10 + 4 : i * 10 + (div ? 4 - div : 0); }
+function _tlLabel(lim, short) {
+  if (!lim || !lim.tier) return '';
+  var nm = (short ? _TL_SHORT : _TL_KO)[lim.tier] || lim.tier;
+  return nm + (_tlIsHigh(lim.tier) ? '' : (short ? '' : ' ') + lim.div) + (lim.dir === 'lte' ? ' 이하' : ' 이상');
+}
+function _tlMemberTier(m) {
+  var t = String(m.tier || '').toUpperCase().trim();
+  if (_TL_ORDER.indexOf(t) < 0) return null;
+  if (_tlIsHigh(t)) return { tier: t, div: 0 };
+  var tf = String(m.tierFull || '').toUpperCase().replace(/\(임시\)/g, '').trim();
+  var rest = tf.indexOf(t) === 0 ? tf.slice(t.length).trim() : tf.replace(/^[A-Z]+\s*/, '').trim();
+  var tok = rest.split(/\s+/)[0] || '';
+  var R = { I:1, II:2, III:3, IV:4 };
+  var div = R[tok] || (/^[1-4]$/.test(tok) ? parseInt(tok) : 0);
+  return { tier: t, div: div };
+}
+// 디스코드 참여 검사와 같은 규칙 (worker.js _tierLimitDeny)
+function _tlMemberOk(m, lim) {
+  var mt = _tlMemberTier(m);
+  if (!mt) return false; // 티어 정보 없음
+  var limV = _tlValue(lim.tier, lim.div);
+  var v = (!_tlIsHigh(mt.tier) && !mt.div) ? _tlValue(mt.tier, lim.dir === 'lte' ? 1 : 4) : _tlValue(mt.tier, mt.div);
+  return lim.dir === 'lte' ? v <= limV : v >= limV;
+}
+function _renderTierLimitBtn() {
+  var b = document.getElementById('btn-tier-limit');
+  if (!b || !match) return;
+  var lim = match.tierLimit;
+  b.textContent = lim && lim.tier ? _tlLabel(lim, true) : 'OFF';
+  b.title = lim && lim.tier ? ('티어제한 ON: ' + _tlLabel(lim) + ' 유저만 디스코드 참여 가능 (누르면 OFF)') : 'ON: 설정한 티어 조건에 맞는 유저만 디스코드로 참여 가능';
+  b.style.color = lim ? '#E8CB86' : 'var(--muted)';
+  b.style.borderColor = lim ? 'rgba(232,203,134,.5)' : 'var(--border-subtle)';
+}
+function _tlSetDir(d) {
+  _tlDir = d;
+  ['gte', 'lte'].forEach(function(k) {
+    var el = document.getElementById('tl-dir-' + k);
+    var on = k === d;
+    el.style.background = on ? 'rgba(232,203,134,.15)' : 'transparent';
+    el.style.border = '1px solid ' + (on ? 'rgba(232,203,134,.6)' : 'var(--border-subtle)');
+    el.style.color = on ? '#E8CB86' : 'var(--text-muted)';
+  });
+  _tlClearErr();
+}
+function _tlClearErr() { document.getElementById('tl-err').textContent = ''; document.getElementById('tl-bad-list').innerHTML = ''; }
+async function toggleTierLimit() {
+  if (!match) return;
+  if (match.tierLimit) {
+    match.tierLimit = null;
+    _renderTierLimitBtn();
+    await saveCurrentMatch();
+    toast('티어제한 OFF', 'ok');
+    return;
+  }
+  var sel = document.getElementById('tl-tier');
+  if (!sel.options.length) {
+    var html = '';
+    _TL_ORDER.forEach(function(t) {
+      if (_tlIsHigh(t)) html += '<option value="' + t + '|0">' + _TL_KO[t] + '</option>';
+      else for (var d = 4; d >= 1; d--) html += '<option value="' + t + '|' + d + '">' + _TL_KO[t] + ' ' + d + '</option>';
+    });
+    sel.innerHTML = html;
+    sel.value = 'EMERALD|3';
+  }
+  _tlSetDir('gte');
+  document.getElementById('tier-limit-modal').style.display = 'flex';
+}
+function closeTierLimitModal() { document.getElementById('tier-limit-modal').style.display = 'none'; }
+async function applyTierLimit() {
+  if (!match) return;
+  var v = document.getElementById('tl-tier').value.split('|');
+  var lim = { tier: v[0], div: parseInt(v[1], 10) || 0, dir: _tlDir };
+  var btn = document.getElementById('btn-tl-apply');
+  btn.disabled = true;
+  try {
+    // 디스코드로 막 들어온 참가자까지 확인하기 위해 서버의 최신 멤버 목록과 합쳐서 검사
+    var list = (members || []).filter(Boolean).slice();
+    try {
+      if (window._fb && window._fb.fbGet && window._currentCommunityId) {
+        var latest = await window._fb.fbGet('communities/' + window._currentCommunityId + '/matches/' + match.id + '/_members');
+        var arr = Array.isArray(latest) ? latest.filter(Boolean) : Object.values(latest || {});
+        arr.forEach(function(m) {
+          if (!list.some(function(x) { return x.id === m.id || (x.name === m.name && (x.tag || '') === (m.tag || '')); })) list.push(m);
+        });
+      }
+    } catch (e) {}
+    var bad = list.filter(function(m) { return !_tlMemberOk(m, lim); });
+    if (bad.length) {
+      document.getElementById('tl-err').innerHTML = '조건에 맞지 않는 유저가 있어 티어제한이 불가합니다.<br><span style="color:var(--text-muted);">' + _tlLabel(lim) + ' 조건에 맞지 않는 유저 ' + bad.length + '명</span>';
+      document.getElementById('tl-bad-list').innerHTML = bad.map(function(m) { return _cutCardHtml(m); }).join('');
+      return;
+    }
+    match.tierLimit = lim;
+    _renderTierLimitBtn();
+    await saveCurrentMatch();
+    closeTierLimitModal();
+    toast('티어제한 ON: ' + _tlLabel(lim) + ' 유저만 디스코드 참여 가능', 'ok');
+  } finally {
+    btn.disabled = false;
+  }
 }
 var _laneFixedBusy = false;
 async function toggleLaneFixedRecruit() {
@@ -23948,9 +24084,8 @@ function copyLaneTeamText() {
       var m = _teamCopyFullMember(t.slots[slot]);
       if (m) {
         var tier = _teamCopyTierText(m); // 1단계에서 등록한 티어
-        var mainLabel = m.mainLane ? (LANE_KO[m.mainLane] || m.mainLane) : '—';
         var nameTag = m.name + (m.tag ? '#' + m.tag : '');
-        lines.push('  • [' + LANE_KO[slot] + '] ' + nameTag + '  ' + tier + '  │  주라인: ' + mainLabel);
+        lines.push('  • [' + LANE_KO[slot] + '] ' + nameTag + '  ' + tier);
       } else {
         lines.push('  • [' + LANE_KO[slot] + '] 미배치');
       }
@@ -26017,6 +26152,30 @@ function showLaneMismatchPopup(opts) {
     <div class="modal-actions">
       <button class="btn-secondary" onclick="closeConfirmMembersModal()">취소</button>
       <button class="btn-primary" id="btn-cm-confirm" onclick="confirmMembersNow()" style="background:#E8CB86;color:#1A1405;">확정하기</button>
+    </div>
+  </div>
+</div>
+<!-- 티어 제한 모달 -->
+<div class="modal-overlay" id="tier-limit-modal" style="display:none;" onclick="if(event.target===this)closeTierLimitModal()">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-title">티어 제한 설정</div>
+    <div style="font-size:12px;color:var(--text-muted);line-height:1.6;margin-bottom:.75rem;">설정한 조건에 맞는 유저만 디스코드로 참여할 수 있습니다.<br>기준: 1단계 멤버에 표시되는 티어</div>
+    <div class="form-row">
+      <div class="form-label">티어</div>
+      <select class="form-input" id="tl-tier" onchange="_tlClearErr()"></select>
+    </div>
+    <div class="form-row">
+      <div class="form-label">조건</div>
+      <div style="display:flex;gap:6px;">
+        <button type="button" id="tl-dir-gte" onclick="_tlSetDir('gte')" style="flex:1;padding:8px 0;border-radius:6px;font-family:'IBM Plex Sans KR',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">이상</button>
+        <button type="button" id="tl-dir-lte" onclick="_tlSetDir('lte')" style="flex:1;padding:8px 0;border-radius:6px;font-family:'IBM Plex Sans KR',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">이하</button>
+      </div>
+    </div>
+    <div id="tl-err" style="font-size:12px;color:#E05050;min-height:16px;margin-top:6px;line-height:1.5;"></div>
+    <div id="tl-bad-list" style="display:flex;flex-direction:column;gap:6px;max-height:240px;overflow:auto;margin-top:4px;"></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeTierLimitModal()">취소</button>
+      <button class="btn-primary" id="btn-tl-apply" onclick="applyTierLimit()">적용</button>
     </div>
   </div>
 </div>

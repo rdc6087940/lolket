@@ -1,11 +1,11 @@
 """명령어
 
-  python -m lab doctor 닉네임#태그     Riot 키 확인 + deeplol 내전 기록 점검
+  python -m lab doctor 닉네임#태그     deeplol 접속·멤버·내전 기록 점검 (deeplol puuid 도 가능)
   python -m lab members [--min-games N] deeplol 커뮤니티 멤버 → members.txt (puuid)
   python -m lab seed                   members.txt → 수집 대상 등록
   python -m lab status                 수집 현황
-  python -m lab collect [--rounds N]   매치 수집 (언제 끊어도 이어서 진행)
-  python -m lab build                  원본 → 분석 테이블 + 시리즈 묶기
+  python -m lab collect                커뮤니티 내전 수집 (deeplol, 10명 전원 멤버인 경기만 · 언제 끊어도 이어서)
+  python -m lab build                  원본 → 분석 테이블(경기·선수·이벤트·타임라인) + 시리즈 묶기
   python -m lab train [--trials N] [--advise]   최적화·학습·내보내기 (+ LLM 조언)
   python -m lab cycle [--trials N]     build → train → (LLM 조언 반영 재학습) → 내보내기 한 번에
   python -m lab serve                  조회 페이지 열기 (http://127.0.0.1:8787)
@@ -26,6 +26,7 @@ def load_cfg(path="config.yaml"):
         p = Path("config.example.yaml")
     cfg = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
     cfg.setdefault("db_path", "data/lab.sqlite")
+    cfg.setdefault("collect", {})
     cfg.setdefault("output_dir", "output")
     cfg.setdefault("env_path", ".env")
     return cfg
@@ -70,6 +71,8 @@ def _print_report(r):
     log("── 결과 ─────────────────────────")
     log(f"  점수 기준선(티어) 정답률 : {pct(r.get('cv_score'))}")
     log(f"  AI(선형 수식) 정답률     : {pct(r.get('cv_linear'))}")
+    if r.get("holdout_linear"):
+        log(f"  ★ 최종 확인(최근 20%, 최적화에 안 쓴 경기) : AI {pct(r.get('holdout_linear'))} · 점수 기준선 {pct(r.get('holdout_score'))}")
     if r.get("holdout_gbm"):
         log(f"  LightGBM(참고) 홀드아웃  : {pct(r.get('holdout_gbm'))}")
     s = r.get("series_linear") or {}

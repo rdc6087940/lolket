@@ -233,29 +233,8 @@ export default {
       if (!forumChannelId) return json({ok:false,error:'포럼 채널 ID가 설정되지 않았습니다'},400);
       const botToken = env.DISCORD_BOT_TOKEN;
       if (!botToken) return json({ok:false,error:'BOT_TOKEN 없음'},500);
-      // 시간 포맷
-      let timeStr = '—';
-      if (matchTime) {
-        try {
-          const d = new Date(matchTime);
-          const days = ['일','월','화','수','목','금','토'];
-          timeStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} (${days[d.getDay()]}) ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-        } catch(e) { timeStr = matchTime; }
-      }
-      // 비회원 관전 링크
-      const spectateUrl = `https://roonging.com/?match=${cid}__${matchId}`;
-      // 포스트 제목 (최대 100자)
-      const postTitle = ('⚔️ ' + matchName).slice(0, 100);
-      // 포스트 본문
-      const lines = [
-        `**📋 ${matchName}**`,
-        '',
-        `📅 **시작 시간:** ${timeStr}`,
-        `👤 **진행자:** ${matchAdmin || '—'}`,
-        '',
-        `🔗 **관전/참가 링크:** ${spectateUrl}`,
-      ];
-      const msgContent = lines.join('\n').slice(0, 2000);
+      const postTitle = _forumPostTitle(matchName);
+      const msgContent = _forumPostContent(cid, matchId, matchName, matchTime, matchAdmin);
       // 버튼 컴포넌트 (라인 고정 모집 여부에 따라)
       const components = _forumPostComponents(cid, matchId, !!matchCheck.laneFixedRecruit);
       // Discord 포럼 포스트 생성
@@ -462,6 +441,13 @@ export default {
     }
 
     // ── 라인 고정 모집 ON/OFF 시 포럼 포스트 원문 버튼 갱신 ──
+    if (path === '/match-forum-title' && request.method === 'POST') {
+      let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
+      const { cid, matchId } = body || {};
+      if (!cid || !matchId) return json({ok:false,error:'필수 파라미터 없음'},400);
+      const r = await _updateForumPostTitle(cid, matchId, env);
+      return json(r, r.ok ? 200 : (r.status || 500));
+    }
     if (path === '/match-forum-buttons' && request.method === 'POST') {
       let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
       const { cid, matchId } = body || {};
@@ -5796,6 +5782,45 @@ async function handleListMatches(interaction, env) {
 }
 
 // ── /내전참가 처리 ──
+// ── 티어 제한 (1단계 "티어제한" ON 시 match.tierLimit = { tier, div, dir: 'gte'|'lte' }) ──
+// 비교 기준: 1단계 멤버에 표시되는 티어 (tier + tierFull 의 디비전). 마스터 이상은 디비전 없음.
+const _TL_ORDER = ['IRON','BRONZE','SILVER','GOLD','PLATINUM','EMERALD','DIAMOND','MASTER','GRANDMASTER','CHALLENGER'];
+const _TL_KO = { IRON:'아이언', BRONZE:'브론즈', SILVER:'실버', GOLD:'골드', PLATINUM:'플래티넘', EMERALD:'에메랄드', DIAMOND:'다이아몬드', MASTER:'마스터', GRANDMASTER:'그랜드마스터', CHALLENGER:'챌린저' };
+function _tlIsHigh(t) { return t === 'MASTER' || t === 'GRANDMASTER' || t === 'CHALLENGER'; }
+function _tlValue(tier, div) { // 클수록 높음. 디비전 1이 가장 높음
+  const i = _TL_ORDER.indexOf(tier);
+  if (i < 0) return null;
+  return _tlIsHigh(tier) ? i * 10 + 4 : i * 10 + (div ? 4 - div : 0);
+}
+function _tlLabel(lim) {
+  if (!lim || !lim.tier) return '';
+  return (_TL_KO[lim.tier] || lim.tier) + (_tlIsHigh(lim.tier) ? '' : ' ' + lim.div) + (lim.dir === 'lte' ? ' 이하' : ' 이상');
+}
+function _tlMemberTier(tier, tierFull) {
+  const t = String(tier || '').toUpperCase().trim();
+  if (!_TL_ORDER.includes(t)) return null;
+  if (_tlIsHigh(t)) return { tier: t, div: 0 };
+  const tf = String(tierFull || '').toUpperCase().replace(/\(임시\)/g, '').trim();
+  const rest = tf.indexOf(t) === 0 ? tf.slice(t.length).trim() : tf.replace(/^[A-Z]+\s*/, '').trim();
+  const tok = rest.split(/\s+/)[0] || '';
+  const R = { I:1, II:2, III:3, IV:4 };
+  const div = R[tok] || (/^[1-4]$/.test(tok) ? parseInt(tok) : 0);
+  return { tier: t, div };
+}
+// 조건에 맞지 않으면 사유 문자열, 맞으면 null
+function _tierLimitDeny(matchData, tier, tierFull) {
+  const lim = matchData && matchData.tierLimit;
+  if (!lim || !lim.tier) return null;
+  const mt = _tlMemberTier(tier, tierFull);
+  const shown = tierFull || tier || 'UNRANKED';
+  if (!mt) return `❌ 이 내전은 티어 제한(**${_tlLabel(lim)}**)이 있어 참여할 수 없습니다.\n티어 정보가 없습니다. (내 티어: ${shown})`;
+  const limV = _tlValue(lim.tier, lim.div);
+  // 디비전이 없으면 판단이 엄격한 쪽으로 (이상: 그 티어 4, 이하: 그 티어 1)
+  const v = (!_tlIsHigh(mt.tier) && !mt.div) ? _tlValue(mt.tier, lim.dir === 'lte' ? 1 : 4) : _tlValue(mt.tier, mt.div);
+  const ok = lim.dir === 'lte' ? v <= limV : v >= limV;
+  return ok ? null : `❌ 이 내전은 티어 제한(**${_tlLabel(lim)}**)이 있어 참여할 수 없습니다.\n내 티어: **${shown}**`;
+}
+
 async function handleJoinMatch(riotName, riotTag, laneInput, subLanesInput, matchId, discordUserId, discordName, appId, token, env, highTierInput, iconOverride, fixedLane) {
   console.log('[joinMatch] start', {riotName, riotTag, laneInput, matchId});
   const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
@@ -5950,6 +5975,10 @@ async function handleJoinMatch(riotName, riotTag, laneInput, subLanesInput, matc
     const _autoLanes = await _autoLanesFromDeeplol(env, targetCid, riotName, riotTag);
     if (_autoLanes) { mainLane = _autoLanes.mainLane; _autoSubLanes = _autoLanes.subLanes; }
   }
+
+  // 티어 제한
+  const _tlDeny = _tierLimitDeny(matchData, tierStr, tierFull);
+  if (_tlDeny) return discordFollowup(appId, token, _tlDeny, env);
 
   // 멤버 객체 생성 (index.html의 addMember와 동일 구조)
   const newMember = {
@@ -6213,6 +6242,10 @@ async function handleJoinMatchDirect(riotName, riotTag, laneInput, subLanesInput
   // 1단계 "자동 설정"과 동일하게 딥롤 솔랭 비율로 주라인/부라인 결정 (데이터 없으면 입력값 유지)
   const _autoLanes = await _autoLanesFromDeeplol(env, cid, riotName, riotTag);
   if (_autoLanes) { mainLane = _autoLanes.mainLane; subLanesMapped = _autoLanes.subLanes; }
+
+  // 티어 제한
+  const _tlDenyD = _tierLimitDeny(matchData, tierStr, tierFull);
+  if (_tlDenyD) return discordFollowup(appId, token, _tlDenyD, env);
 
   // index.html의 addMember와 동일한 멤버 구조
   const newMember = {
@@ -6553,6 +6586,61 @@ function _forumPostComponents(cid, matchId, laneFixed) {
     leaveBtn,
   ] }];
 }
+// ── 포럼 포스트 제목·원문 (생성 / 내전 제목 수정 공용) ──
+function _forumPostTitle(matchName) { return ('⚔️ ' + matchName).slice(0, 100); }
+function _forumPostContent(cid, matchId, matchName, matchTime, matchAdmin) {
+  let timeStr = '—';
+  if (matchTime) {
+    try {
+      const d = new Date(matchTime);
+      const days = ['일','월','화','수','목','금','토'];
+      timeStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} (${days[d.getDay()]}) ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    } catch(e) { timeStr = matchTime; }
+  }
+  const spectateUrl = `https://roonging.com/?match=${cid}__${matchId}`;
+  return [
+    `**📋 ${matchName}**`,
+    '',
+    `📅 **시작 시간:** ${timeStr}`,
+    `👤 **진행자:** ${matchAdmin || '—'}`,
+    '',
+    `🔗 **관전/참가 링크:** ${spectateUrl}`,
+  ].join('\n').slice(0, 2000);
+}
+
+// ── 내전 제목 수정 → 포럼 포스트 제목·원문 갱신 (DB에 저장된 현재 제목/시간/진행자 기준) ──
+async function _updateForumPostTitle(cid, matchId, env) {
+  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth='+secret : '';
+  const botToken = env.DISCORD_BOT_TOKEN;
+  if (!botToken) return { ok:false, error:'BOT_TOKEN 없음', status:500 };
+  const base = `${dbUrl}/communities/${cid}/matches/${matchId}`;
+  const [ftRes, nmRes, tmRes, adRes] = await Promise.all([
+    fetch(`${base}/discordForumThread.json${authQ}`),
+    fetch(`${base}/name.json${authQ}`),
+    fetch(`${base}/time.json${authQ}`),
+    fetch(`${base}/admin.json${authQ}`),
+  ]);
+  const ft = ftRes.ok ? await ftRes.json() : null;
+  if (!ft || !ft.threadId) return { ok:true, skipped:true }; // 포럼 포스트 없는 내전
+  const name = nmRes.ok ? await nmRes.json() : null;
+  if (!name) return { ok:false, error:'내전 제목 없음', status:400 };
+  const time = tmRes.ok ? await tmRes.json() : null;
+  const admin = adRes.ok ? await adRes.json() : null;
+  const H = { 'Content-Type': 'application/json', 'Authorization': 'Bot ' + botToken };
+  // 1) 포스트(스레드) 제목 — 보관된 포스트면 보관 해제하면서 변경
+  const t1 = await fetch(`https://discord.com/api/v10/channels/${ft.threadId}`, {
+    method: 'PATCH', headers: H, body: JSON.stringify({ name: _forumPostTitle(name), archived: false }),
+  });
+  if (!t1.ok) return { ok:false, error:'제목 변경 실패 Discord API ' + t1.status + ': ' + (await t1.text()).slice(0, 200), status:500 };
+  // 2) 포스트 원문(첫 메시지 ID = 스레드 ID)의 제목 줄
+  const t2 = await fetch(`https://discord.com/api/v10/channels/${ft.threadId}/messages/${ft.threadId}`, {
+    method: 'PATCH', headers: H, body: JSON.stringify({ content: _forumPostContent(cid, matchId, name, time, admin) }),
+  });
+  if (!t2.ok) return { ok:false, error:'원문 수정 실패 Discord API ' + t2.status + ': ' + (await t2.text()).slice(0, 200), status:500 };
+  return { ok:true };
+}
+
 async function _refreshForumPostButtons(cid, matchId, env) {
   const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
   const authQ = secret ? '?auth='+secret : '';

@@ -138,14 +138,16 @@ async function dash(){
      <div class="sub" style="margin-top:12px">시리즈 정답률</div>
      <div class="vs num"><span class="s">${pct(ss.rate)}%</span><span class="line"></span><span class="a">${pct(se.rate)}%</span></div>
      <div class="sub">시간순 검증(그 경기 전 정보만으로 예측) 기준 · ${g?g.n:0}경기</div></div>
-   <div class="card c3"><div class="lbl">경기 · 사용자</div><div class="big num">${s.games||0}<small>경기</small></div><div class="sub">사용자 ${s.players||0}명 · 수집 계정 ${s.accounts||0}</div></div>
+   <div class="card c3"><div class="lbl">경기 · 사용자</div><div class="big num">${s.games||0}<small>경기</small></div><div class="sub">사용자 ${s.players||0}명 · 멤버 ${s.accounts||0}명</div></div>
    <div class="card c3"><div class="lbl">균형 판 비율</div><div class="big num">${pct(s.balanced_ratio)}<small>%</small></div><div class="sub">점수 예측 우세 60% 미만인 판</div></div>
    <div class="card c6"><div class="lbl">팀별 승률</div><div class="big num" style="color:var(--blue)">${pct(s.blue_win_rate)}<small>% 블루</small></div>
      <div class="bar" style="margin-top:10px"><i style="width:${(s.blue_win_rate||0)*100}%;background:var(--blue)"></i><i style="flex:1;background:var(--red)"></i></div>
      <div class="sub" style="display:flex;justify-content:space-between"><span>블루</span><span>레드 ${pct(s.blue_win_rate==null?null:1-s.blue_win_rate)}%</span></div></div>
    <div class="card c6"><div class="lbl">점수 우세도에 따른 실제 승률</div><div class="rows">${bins||'<div class="sub">학습 후 표시됩니다</div>'}</div></div>
    <div class="card c6"><div class="lbl">티어 구간별 인원</div><div class="rows">${tiers.map(([k,v])=>`<div class="row"><span>${esc(k)}</span><div class="bar"><i style="width:${v/tmax*100}%;background:var(--acc)"></i></div><b class="num">${v}명</b></div>`).join('')||'<div class="sub">-</div>'}</div></div>
-   <div class="card c12"><div class="lbl">수집 상태</div><div class="sub">원본 매치 ${s.raw_matches} · 상세 대기 ${s.queue} · 시드 ${s.seeds}명 · 최신 학습 ${esc(s.run_id||'없음')}</div></div>
+   <div class="card c6"><div class="lbl">먼저 가져간 팀의 승률</div><div class="rows">${Object.entries(s.firsts||{}).map(([k,v])=>`<div class="row"><span>${esc(k)}</span><div class="bar"><i style="width:${v.win*100}%;background:var(--win)"></i></div><b class="num">${pct(v.win)}% <span class="sub">${v.n}판</span></b></div>`).join('')||'<div class="sub">-</div>'}</div></div>
+   <div class="card c6"><div class="lbl">평균 경기</div><div class="big num">${s.avg_duration?Math.round(s.avg_duration/60):'-'}<small>분</small></div><div class="sub">평균 킬 ${s.avg_kills?s.avg_kills.toFixed(1):'-'} (양 팀 합)</div></div>
+   <div class="card c12"><div class="lbl">수집 상태</div><div class="sub">커뮤니티 내전 원본 ${s.raw_matches} · 상세 대기 ${s.queue} · 멤버 ${s.accounts}명(목록 훑음 ${s.seeds||0}) · 최신 학습 ${esc(s.run_id||'없음')}</div></div>
   </div>`;
 }
 
@@ -159,25 +161,35 @@ async function players(){
 function renderPlayers(q){
   const L=_players.filter(p=>!q||String(p.name).toLowerCase().includes(q.toLowerCase())).sort((a,b)=>(b[_psort]??-1e9)-(a[_psort]??-1e9));
   const th=(k,t)=>`<th onclick="_psort='${k}';renderPlayers(document.querySelector('.search').value)">${t}${_psort===k?' ↓':''}</th>`;
-  $('#ptable').innerHTML=`<tr><th>사용자</th>${th('custom_games','내전')}<th>승률</th>${th('elo','내전 Elo')}${th('tier','티어')}<th class="hide-m">주 라인</th>${th('score','전력 점수')}${th('ranked_games','랭크 판수')}</tr>`+
-   L.map(p=>`<tr class="click" onclick="openPlayer('${p.puuid}')"><td><b>${esc(p.name)}</b></td><td class="num">${p.custom_games}</td><td class="num">${p.custom_games?pct(p.custom_wins/p.custom_games,0)+'%':'-'}</td><td class="num">${p.elo??'-'}</td><td>${esc(p.tier_label||'-')}</td><td class="hide-m">${ROLE_KO[p.main_role]||'-'}</td><td class="num">${p.score==null?'-':(p.score>0?'+':'')+p.score.toFixed(2)}</td><td class="num">${p.ranked_games}</td></tr>`).join('');
+  $('#ptable').innerHTML=`<tr><th>사용자</th>${th('custom_games','내전')}<th>승률</th>${th('elo','내전 Elo')}${th('tier','티어')}<th class="hide-m">주 라인</th>${th('score','전력 점수')}${th('ai','AI 점수')}</tr>`+
+   L.map(p=>`<tr class="click" onclick="openPlayer('${p.puuid}')"><td><b>${esc(p.name)}</b></td><td class="num">${p.custom_games}</td><td class="num">${p.custom_games?pct(p.custom_wins/p.custom_games,0)+'%':'-'}</td><td class="num">${p.elo??'-'}</td><td>${esc(p.tier_label||'-')}</td><td class="hide-m">${ROLE_KO[p.main_role]||'-'}</td><td class="num">${p.score==null?'-':(p.score>0?'+':'')+p.score.toFixed(2)}</td><td class="num">${p.ai==null?'-':p.ai.toFixed(1)}</td></tr>`).join('');
 }
 async function openPlayer(puuid){
   const d=await api('/api/player/'+encodeURIComponent(puuid));const m=d.model;
-  const roleRows=ROLES.map(r=>{const s=(d.roles||{})[r]||{};const ms=m&&m.roles[r];return `<tr><td>${ROLE_KO[r]}</td><td class="num">${s.g||0}</td><td class="num">${s.g?pct(s.w/s.g,0)+'%':'-'}</td><td class="num">${s.kda?s.kda.toFixed(2):'-'}</td><td class="num">${s.cspm?s.cspm.toFixed(1):'-'}</td><td class="num">${ms?((ms.score>0?'+':'')+ms.score.toFixed(2)):'-'}</td></tr>`}).join('');
+  const f1=(v,d=1)=>v==null?'-':Number(v).toFixed(d);
+  const roleRows=ROLES.map(r=>{const s=(d.roles||{})[r]||{};const ms=m&&m.roles[r];return `<tr><td>${ROLE_KO[r]}</td><td class="num">${s.g||0}</td><td class="num">${s.g?pct(s.w/s.g,0)+'%':'-'}</td><td class="num">${f1(s.kda,2)}</td><td class="num">${f1(s.cspm)}</td><td class="num hide-m">${f1(s.dpm,0)}</td><td class="num hide-m">${s.kp==null?'-':pct(s.kp,0)+'%'}</td><td class="num">${f1(s.ai)}</td><td class="num hide-m">${f1(s.lane_ai)}</td><td class="num">${ms?((ms.score>0?'+':'')+ms.score.toFixed(2)):'-'}</td></tr>`}).join('');
+  const t=d.tendency||{};
   const maxG=Math.max(1,...d.monthly.map(x=>x.g));
   const months=d.monthly.slice(-12).map(x=>`<div class="row"><span>${x.ym}</span><div class="bar"><i style="width:${x.g/maxG*100}%;background:var(--acc)"></i></div><b class="num">${pct(x.w/x.g,0)}%</b></div>`).join('');
   const parts=m?Object.entries(m.roles[m.main_role].parts).sort((a,b)=>Math.abs(b[1])-Math.abs(a[1])):[];
   const pmax=Math.max(.01,...parts.map(p=>Math.abs(p[1])));
   $('#drawer-body').innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center"><h1 style="margin:0">${esc(d.name||puuid.slice(0,8))}</h1><button class="btn ghost" onclick="closeDrawer()">닫기</button></div>
    ${m?`<div class="sub">주 라인 ${ROLE_KO[m.main_role]} · 가장 강한 라인 ${ROLE_KO[m.best_role]} · 내전 ${m.custom_games}판 ${m.custom_wins}승 · Elo ${m.custom_elo}</div>`:''}
-   <div class="card" style="margin-top:12px"><div class="lbl">라인별 (랭크 기준 · 전력 점수는 모델)</div><table><tr><th>라인</th><th>판</th><th>승률</th><th>KDA</th><th>CS/분</th><th>전력</th></tr>${roleRows}</table></div>
+   <div class="card" style="margin-top:12px"><div class="lbl">라인별 내전 기록 (전력 점수는 모델)</div><div style="overflow:auto"><table><tr><th>라인</th><th>판</th><th>승률</th><th>KDA</th><th>CS/분</th><th class="hide-m">딜/분</th><th class="hide-m">킬관여</th><th>AI</th><th class="hide-m">라인전 AI</th><th>전력</th></tr>${roleRows}</table></div></div>
+   <div class="card" style="margin-top:12px"><div class="lbl">플레이 성향 (내전 ${t.g||0}판 평균)</div><div class="grid" style="margin-top:8px">${[
+     ['경기 당시 티어',t.tier==null?'-':f1(t.tier)],['선취점(첫 킬)',t.fb==null?'-':pct(t.fb,0)+'%'],['15분 전 킬',f1(t.ek)],['15분 전 데스',f1(t.ed)],
+     ['솔로킬',f1(t.sk)],['솔로 데스',f1(t.sd)],['오브젝트 관여',f1(t.obj)],['딜 비중',t.dmg_share==null?'-':pct(t.dmg_share,0)+'%'],
+     ['골드 비중',t.gold_share==null?'-':pct(t.gold_share,0)+'%'],['MVP',t.mvp==null?'-':pct(t.mvp,0)+'%'],['핑',f1(t.pings,0)],
+     ['스킬 선마',(t.skill_first3||[]).map(x=>x.v).filter(Boolean).slice(0,2).join(', ')||'-']
+   ].map(([k,v])=>`<div class="c3" style="min-width:0"><div class="sub">${k}</div><b class="num">${v}</b></div>`).join('')}</div></div>
    ${parts.length?`<div class="card" style="margin-top:12px"><div class="lbl">전력 점수 구성 (${ROLE_KO[m.main_role]})</div>${parts.map(([k,v])=>`<div class="wbar"><span>${esc(k)}</span><div class="t"><i style="left:${v<0?50-Math.abs(v)/pmax*50:50}%;width:${Math.abs(v)/pmax*50}%;background:${v<0?'var(--lose)':'var(--win)'}"></i></div><b class="num">${v>0?'+':''}${v.toFixed(3)}</b></div>`).join('')}</div>`:''}
    <div class="card" style="margin-top:12px"><div class="lbl">월별 판수 · 승률</div><div class="rows">${months||'<div class="sub">-</div>'}</div></div>
    <div class="card" style="margin-top:12px"><div class="lbl">챔피언</div><table><tr><th>챔피언</th><th>판</th><th>승률</th><th>KDA</th></tr>${d.champions.map(c=>`<tr><td>${esc(c.champion)}</td><td class="num">${c.g}</td><td class="num">${pct(c.w/c.g,0)}%</td><td class="num">${(c.kda||0).toFixed(2)}</td></tr>`).join('')}</table></div>
    <div class="grid" style="margin-top:12px"><div class="card c6"><div class="lbl">같은 팀 궁합 좋음</div>${d.mates_best.map(x=>`<div class="sub">${esc(x.name)} · ${x.g}판 ${pct(x.w/x.g,0)}%</div>`).join('')||'<div class="sub">-</div>'}</div>
    <div class="card c6"><div class="lbl">같은 팀 궁합 나쁨</div>${d.mates_worst.map(x=>`<div class="sub">${esc(x.name)} · ${x.g}판 ${pct(x.w/x.g,0)}%</div>`).join('')||'<div class="sub">-</div>'}</div></div>
-   <div class="card" style="margin-top:12px"><div class="lbl">최근 내전</div><table>${d.customs.map(c=>`<tr><td>${new Date(c.game_start).toLocaleDateString()}</td><td>${ROLE_KO[c.role]||'-'}</td><td>${esc(c.champion)}</td><td class="num">${c.kills}/${c.deaths}/${c.assists}</td><td><span class="pill ${c.win?'win':'lose'}">${c.win?'승':'패'}</span></td></tr>`).join('')}</table></div>`;
+   <div class="grid" style="margin-top:12px"><div class="card c6"><div class="lbl">맞라인 상대전적 좋음</div>${(d.vs_best||[]).map(x=>`<div class="sub">${esc(x.name)} · ${x.g}판 ${pct(x.w/x.g,0)}%</div>`).join('')||'<div class="sub">-</div>'}</div>
+   <div class="card c6"><div class="lbl">맞라인 상대전적 나쁨</div>${(d.vs_worst||[]).map(x=>`<div class="sub">${esc(x.name)} · ${x.g}판 ${pct(x.w/x.g,0)}%</div>`).join('')||'<div class="sub">-</div>'}</div></div>
+   <div class="card" style="margin-top:12px"><div class="lbl">최근 내전</div><table>${d.customs.map(c=>`<tr><td>${new Date(c.game_start).toLocaleDateString()}</td><td>${ROLE_KO[c.role]||'-'}</td><td>${esc(c.champion)}</td><td class="num">${c.kills}/${c.deaths}/${c.assists}</td><td class="num hide-m">AI ${f1(c.ai_score,0)}</td><td><span class="pill ${c.win?'win':'lose'}">${c.win?'승':'패'}</span>${c.mvp?' <span class="pill sc">MVP</span>':''}</td></tr>`).join('')}</table></div>`;
   $('#drawer').classList.add('on');
 }
 function closeDrawer(){$('#drawer').classList.remove('on')}
@@ -202,8 +214,8 @@ async function openDay(key){
     return `<div class="card series"><div class="lbl">${s.games.length}판 시리즈 · ${new Date(s.games[0].start).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</div>`+s.games.map((g,i)=>{
       const blue=g.players.filter(p=>p.team===100),red=g.players.filter(p=>p.team===200);
       const hit=(p)=>p==null?'':((p>0.5)===!!g.blue_win?'적중':'빗나감');
-      const tm=(ps,cls,win)=>`<div class="team ${cls}"><h4><span>${cls==='red'?'레드':'블루'}</span><span class="pill ${win?'win':'lose'}">${win?'승':'패'}</span></h4>${ps.map(p=>`<div class="pl"><span class="r">${ROLE_KO[p.role]||'-'}</span><span>${esc(p.name)} <span class="k">${esc(p.champion)}</span></span><span class="k num">${p.k}/${p.d}/${p.a}</span></div>`).join('')}</div>`;
-      return `<div class="game"><div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center"><b>${i+1}경기</b><span class="sub">${Math.round(g.duration/60)}분</span>
+      const tm=(ps,cls,win)=>`<div class="team ${cls}"><h4><span>${cls==='red'?'레드':'블루'}</span><span class="pill ${win?'win':'lose'}">${win?'승':'패'}</span></h4>${ps.map(p=>`<div class="pl"><span class="r">${ROLE_KO[p.role]||'-'}</span><span>${esc(p.name)} <span class="k">${esc(p.champion)}${p.tier?' · '+esc(p.tier):''}</span></span><span class="k num">${p.k}/${p.d}/${p.a}${p.ai!=null?' · '+Math.round(p.ai):''}${p.mvp?' ★':''}</span></div>`).join('')}</div>`;
+      return `<div class="game"><div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center"><b>${i+1}경기</b><span class="sub">${Math.round(g.duration/60)}분${g.obj?` · 킬 ${g.obj.blue_kills}:${g.obj.red_kills} · 용 ${g.obj.blue_dragons}:${g.obj.red_dragons} · 포탑 ${g.obj.blue_towers}:${g.obj.red_towers}`:''}</span>
         ${g.p_score!=null?`<span class="pill sc">점수 블루 ${pct(g.p_score,0)}% ${hit(g.p_score)}</span>`:''}${g.p_ai!=null?`<span class="pill ai">AI 블루 ${pct(g.p_ai,0)}% ${hit(g.p_ai)}</span>`:''}</div>
         <div class="teams">${tm(blue,'',g.blue_win)}${tm(red,'red',!g.blue_win)}</div></div>`}).join('')+`</div>`}).join('')||'<div class="card empty">내전 없음</div>';
 }

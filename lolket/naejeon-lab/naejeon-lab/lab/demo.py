@@ -1,21 +1,25 @@
-"""가짜 데이터 생성기 — API 키 없이 학습·화면 동작 확인용
+"""가짜 데이터 생성기 — 키·인터넷 없이 학습·화면 동작 확인용
 
-숨은 '실력'을 가진 선수들이 랭크·내전을 했다고 가정하고 match-v5 와 같은 형식의 JSON을 만든다.
-(실제 데이터 아님. demo.sqlite / output_demo 에만 저장)
+숨은 '라인별 실력'을 가진 멤버들이 커뮤니티 내전을 했다고 가정하고,
+deeplol 경기 상세(match-cached)와 같은 모양의 원본 JSON을 만든다. (실제 데이터 아님)
 """
 import json
+import os
 import random
-import time
 
 import numpy as np
 
 from .db import DB, now_ms
 from .build import build
 
-ROLES = ["TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY"]
-CHAMPS = {"TOP": ["Aatrox", "Darius", "Ornn", "Renekton", "KSante"], "JUNGLE": ["LeeSin", "Vi", "Hecarim", "Zac", "Viego"],
-          "MIDDLE": ["Ahri", "Syndra", "Viktor", "Zoe", "Taliyah"], "BOTTOM": ["Jhin", "Kalista", "Ezreal", "Xayah", "Zeri"],
-          "UTILITY": ["Nami", "Lulu", "Rakan", "Braum", "Renata"]}
+POS = ["Top", "Jungle", "Middle", "Bot", "Supporter"]
+CODE = {"Top": "Top", "Jungle": "Jun", "Middle": "Mid", "Bot": "Bot", "Supporter": "Sup"}
+CHAMPS = {"Top": [266, 122, 516, 58, 897], "Jungle": [64, 254, 120, 154, 234], "Middle": [103, 134, 112, 142, 163],
+          "Bot": [202, 429, 81, 498, 221], "Supporter": [267, 117, 497, 201, 888]}
+CHAMP_NAMES = {266: "Aatrox", 122: "Darius", 516: "Ornn", 58: "Renekton", 897: "KSante", 64: "LeeSin", 254: "Vi",
+               120: "Hecarim", 154: "Zac", 234: "Viego", 103: "Ahri", 134: "Syndra", 112: "Viktor", 142: "Zoe",
+               163: "Taliyah", 202: "Jhin", 429: "Kalista", 81: "Ezreal", 498: "Xayah", 221: "Zeri", 267: "Nami",
+               117: "Lulu", 497: "Rakan", 201: "Braum", 888: "Renata"}
 TIERS = ["IRON", "BRONZE", "SILVER", "GOLD", "PLATINUM", "EMERALD", "DIAMOND", "MASTER"]
 NAMES = ["룽", "포로", "누룽지", "짱구", "덕냥", "현냥", "밀키", "니집", "꾸팡", "예성", "두부", "주사위", "과거", "소나무", "정민"]
 
@@ -23,84 +27,110 @@ NAMES = ["룽", "포로", "누룽지", "짱구", "덕냥", "현냥", "밀키", "
 def make_demo(cfg, n_players=60, n_games=1200, log=print, seed=7):
     rng = random.Random(seed)
     np.random.seed(seed)
-    import os
     if os.path.exists(cfg["db_path"]):
         os.remove(cfg["db_path"])
     db = DB(cfg["db_path"])
     players = []
     for i in range(n_players):
         skill = np.random.normal(0, 1)
-        main = ROLES[i % 5]
-        role_skill = {r: skill + (0.6 if r == main else np.random.normal(-0.5, 0.4)) for r in ROLES}
-        tier_idx = int(np.clip(round(4.5 + skill * 1.4 + np.random.normal(0, 0.8)), 0, 7))
-        p = {"puuid": f"demo-{i:03d}", "name": f"{rng.choice(NAMES)}{i}", "tag": "KR1", "skill": skill,
-             "role_skill": role_skill, "main": main, "tier": TIERS[tier_idx], "rank": rng.choice(["I", "II", "III", "IV"]),
-             "lp": rng.randint(0, 99) if tier_idx < 7 else rng.randint(0, 900)}
+        main = POS[i % 5]
+        role_skill = {r: skill + (0.6 if r == main else np.random.normal(-0.5, 0.4)) for r in POS}
+        ti = int(np.clip(round(4.5 + skill * 1.4 + np.random.normal(0, 0.8)), 0, 7))
+        p = {"puuid": f"demo{i:03d}" + "x" * 70, "name": f"{rng.choice(NAMES)}{i}", "tag": "KR1", "role_skill": role_skill,
+             "tier": TIERS[ti], "div": 0 if ti == 7 else rng.randint(1, 4)}
         players.append(p)
-        db.x("INSERT INTO accounts(puuid, game_name, tag_line, source, added_at, ids_done_until, backfill_done) VALUES(?,?,?,?,?,?,1)",
-             (p["puuid"], p["name"], p["tag"], "seed", now_ms(), now_ms()))
-        db.x("INSERT INTO league_snapshots VALUES(?,?,?,?,?,?,?,?)",
-             (p["puuid"], now_ms() - 400 * 86400000, "RANKED_SOLO_5x5", p["tier"], p["rank"], p["lp"], 100, 90))
-    now = now_ms()
-    start = now - 365 * 86400000
-    mid = 0
-
-    def participant(p, team, role, win, t):
-        perf = p["role_skill"][role]
-        return {"puuid": p["puuid"], "riotIdGameName": p["name"], "riotIdTagline": p["tag"], "teamId": team,
-                "teamPosition": role, "championName": rng.choice(CHAMPS[role]), "win": win,
-                "kills": max(0, int(np.random.normal(5 + perf * 1.5 + (2 if win else 0), 2))),
-                "deaths": max(0, int(np.random.normal(5 - perf + (0 if win else 2), 2))),
-                "assists": max(0, int(np.random.normal(7 + perf, 3))),
-                "totalMinionsKilled": max(0, int(np.random.normal(180 + perf * 20 if role not in ("UTILITY", "JUNGLE") else 40, 20))),
-                "neutralMinionsKilled": 120 if role == "JUNGLE" else 0, "goldEarned": int(11000 + perf * 900 + (1500 if win else 0)),
-                "totalDamageDealtToChampions": int(18000 + perf * 3000), "visionScore": int(25 + (30 if role == "UTILITY" else 0) + perf * 3)}
-
-    def add_match(ps_roles, t, queue, custom):
-        nonlocal mid
-        mid += 1
-        blue = ps_roles[:5]
-        red = ps_roles[5:]
-        sb = sum(p["role_skill"][r] for p, r in blue)
-        sr = sum(p["role_skill"][r] for p, r in red)
-        pb = 1 / (1 + np.exp(-(sb - sr) / 2.2 - 0.08))
-        bw = bool(np.random.rand() < pb)
-        parts = [participant(p, 100, r, bw, t) for p, r in blue] + [participant(p, 200, r, not bw, t) for p, r in red]
-        info = {"gameStartTimestamp": t, "gameDuration": rng.randint(1300, 2200), "queueId": queue,
-                "gameType": "CUSTOM_GAME" if custom else "MATCHED_GAME", "mapId": 11, "gameVersion": "15.22.1",
-                "participants": parts, "teams": [{"teamId": 100, "win": bool(bw)}, {"teamId": 200, "win": not bw}]}
-        m_id = f"KR_DEMO{mid}"
-        db.x("INSERT INTO matches_raw VALUES(?,?,?,?)", (m_id, now_ms(), 200, json.dumps({"metadata": {"matchId": m_id}, "info": info})))
-
-    # 랭크 기록 (선수당 ~150판, 상대는 가상의 랜덤 선수)
-    ghosts = [{"puuid": f"ghost-{i}", "name": "x", "tag": "x", "role_skill": {r: np.random.normal(0, 1) for r in ROLES}}
-              for i in range(40)]
-    for p in players:
-        for _ in range(150):
-            t = rng.randint(start, now)
-            role = p["main"] if rng.random() < 0.7 else rng.choice(ROLES)
-            others = rng.sample(ghosts, 9)
-            roles = [r for r in ROLES if r != role]
-            team = [(p, role)] + [(g, r) for g, r in zip(others[:4], roles)]
-            opp = [(g, r) for g, r in zip(others[4:], ROLES)]
-            add_match(team + opp, t, 420, False)
-    # 내전 (같은 10명이 2~3판 시리즈)
-    t = start + 30 * 86400000
-    made = 0
-    while made < n_games and t < now:
+        db.x("INSERT INTO members(puuid, game_name, tag_line, source, added_at, scan_done) VALUES(?,?,?,?,?,1)",
+             (p["puuid"], p["name"], p["tag"], "seed", now_ms()))
+    db.set_meta("champ_names", {str(k): v for k, v in CHAMP_NAMES.items()})
+    t = now_ms() - 365 * 86400000
+    made, mid = 0, 8000000000
+    while made < n_games:
         ten = rng.sample(players, 10)
-        rng.shuffle(ten)
         a, b = ten[:5], ten[5:]
         for g in range(rng.choice([2, 3])):
-            ra, rb = ROLES[:], ROLES[:]
-            rng.shuffle(ra) if rng.random() < 0.3 else None
-            ps = [(p, r) for p, r in zip(a, ra)] + [(p, r) for p, r in zip(b, rb)]
-            if g % 2:
-                ps = ps[5:] + ps[:5]
-            add_match(ps, t, 0, True)
+            ra, rb = POS[:], POS[:]
+            if rng.random() < 0.3:
+                rng.shuffle(ra)
+            blue, red = (list(zip(a, ra)), list(zip(b, rb))) if g % 2 == 0 else (list(zip(b, rb)), list(zip(a, ra)))
+            sb = sum(p["role_skill"][r] for p, r in blue)
+            sr = sum(p["role_skill"][r] for p, r in red)
+            bw = bool(np.random.rand() < 1 / (1 + np.exp(-(sb - sr) / 2.2 - 0.08)))
+            mid += 1
+            raw = _match(f"KR_{mid}", t, blue, red, bw, rng)
+            db.x("INSERT INTO matches_raw VALUES(?,?,?,?)", (f"KR_{mid}", now_ms(), 200, json.dumps(raw, ensure_ascii=False)))
+            for p, _ in blue + red:
+                db.x("INSERT OR IGNORE INTO member_matches VALUES(?,?,?)", (p["puuid"], f"KR_{mid}", t))
             t += 35 * 60000
             made += 1
         t += rng.randint(2, 30) * 3600000
     db.commit()
     build(db, log=log)
-    log(f"데모 데이터: 선수 {n_players}명 · 내전 {made}경기")
+    log(f"데모 데이터: 멤버 {n_players}명 · 내전 {made}경기")
+
+
+def _match(mid, t, blue, red, bw, rng):
+    dur = rng.randint(1300, 2200)
+    mins = dur / 60
+    parts = []
+    for side, team, win in (("BLUE", blue, bw), ("RED", red, not bw)):
+        for p, pos in team:
+            perf = p["role_skill"][pos] + (0.6 if win else -0.6) + np.random.normal(0, 0.5)
+            k = max(0, int(np.random.normal(5 + perf * 1.5, 2)))
+            d = max(0, int(np.random.normal(5 - perf, 2)))
+            a = max(0, int(np.random.normal(7 + perf, 3)))
+            cs = max(10, int((7 + perf * 0.6) * mins)) if pos not in ("Supporter",) else int(1.2 * mins)
+            dmg = int((18000 + perf * 3000) * mins / 30)
+            ai = float(np.clip(50 + perf * 9 + np.random.normal(0, 4), 5, 99))
+            parts.append({
+                "puu_id": p["puuid"], "champion_id": rng.choice(CHAMPS[pos]), "side": side, "position": pos,
+                "tier": p["tier"], "division": p["div"], "total_damage_dealt": dmg * 6,
+                "total_damage_dealt_to_champion": dmg, "total_damage_taken": int((15000 - perf * 1000) * mins / 30 + 9000),
+                "total_gold": int((380 + perf * 25) * mins),
+                "lane_stat_dict": {"ai_score": round(ai + np.random.normal(0, 5), 2), "ai_score_rank": 5, "champion_level": 10,
+                                   "kills": k // 2, "deaths": d // 2, "assists": a // 2, "cs": cs // 2,
+                                   "cspm": round(cs / mins, 2), "kill_point": 40, "vision_wards_bought": 1,
+                                   "wards_killed": 1, "wards_placed": 5},
+                "final_stat_dict": {"ai_score": round(ai, 2), "ai_score_rank": 5, "champion_level": 16, "kills": k,
+                                    "deaths": d, "assists": a, "cs": cs, "cspm": round(cs / mins, 2),
+                                    "kill_point": float(np.clip(50 + perf * 8, 10, 95)), "vision_wards_bought": 3,
+                                    "wards_killed": 4 + (6 if pos == "Supporter" else 0),
+                                    "wards_placed": 10 + (25 if pos == "Supporter" else 0)},
+                "spell_id_dict": {"spell_1": 4, "spell_2": 11 if pos == "Jungle" else 14}, "smite": "G",
+                "rune_detail_dict": {"perk_0": 8010, "perk_primary_style": 8000, "perk_sub_style": 8400},
+                "skill_seq_list": [{"minute": 1, "skill_id": 1, "type": "NORMAL"}, {"minute": 2, "skill_id": 3, "type": "NORMAL"},
+                                   {"minute": 3, "skill_id": 2, "type": "NORMAL"}],
+                "item_seq_list": [{"minute": 1, "item_id": 1055, "type": "ITEM_PURCHASED"}],
+                "final_item_dict": {"item_0": 3031, "item_1": 3006}, "total_pings_dict": {"total_pings": rng.randint(0, 40)},
+                "is_win": win, "mvp": False, "ace": False, "ai_score": round(ai, 2),
+                "double_kills": k // 4, "triple_kills": 0, "quadra_kills": 0, "penta_kills": 0,
+                "profile_icon": 29, "riot_id_name": p["name"], "riot_id_tag_line": p["tag"]})
+    # 이벤트·타임라인 (간단히)
+    codes = [("B_" if s == "BLUE" else "R_") + CODE[pos] for s, team in (("BLUE", blue), ("RED", red)) for _, pos in team]
+    ev, seq = {}, {}
+    n = 0
+    for m in range(0, int(mins), 2):
+        side_b = rng.random() < (0.6 if bw else 0.4)
+        kc = rng.choice(codes[:5] if side_b else codes[5:])
+        tc = rng.choice(codes[5:] if side_b else codes[:5])
+        n += 1
+        bucket = {str(1): {"event": {"timestamp": (m * 60 + 30) * 1000, "minute": m, "minute_float": m + 0.5, "type": "Champion",
+                                     "killer": kc, "side": "BLUE" if side_b else "RED", "target": tc,
+                                     "assists": [] if rng.random() < 0.3 else [rng.choice(codes[:5] if side_b else codes[5:])],
+                                     "coordinates": {"x_scaled": rng.uniform(0, 250), "y_scaled": rng.uniform(0, 250)}},
+                           "time": m + 0.5, "win_rate": rng.uniform(-5, 5), "win_rate_delta": rng.uniform(-2, 2)}}
+        if m in (8, 14, 20):
+            bucket["2"] = {"event": {"timestamp": (m * 60 + 50) * 1000, "minute": m, "minute_float": m + 0.8, "type": "Monster",
+                                     "killer": "B_Jun" if side_b else "R_Jun", "side": "BLUE" if side_b else "RED",
+                                     "target": "FIRE_DRAGON", "assists": [], "coordinates": {}}, "win_rate": 0, "win_rate_delta": 0}
+        if m in (12, 18):
+            bucket["3"] = {"event": {"timestamp": (m * 60 + 55) * 1000, "minute": m, "minute_float": m + 0.9, "type": "Tower",
+                                     "killer": "B_Top" if side_b else "R_Top", "side": "BLUE" if side_b else "RED",
+                                     "target": "TOP_OUTER_TOWER", "assists": [], "coordinates": {}}, "win_rate": 0, "win_rate_delta": 0}
+        ev[str(m)] = bucket
+        seq[str(m)] = {"B_Obj": [], "R_Obj": [], **{c: round(rng.uniform(40, 60), 2) for c in codes},
+                       "B_Avg": round(rng.uniform(45, 55) + (2 if bw else -2), 2), "R_Avg": round(rng.uniform(45, 55), 2)}
+    return {"match_basic_dict": {"match_id": mid, "queue_id": 3130, "creation_timestamp": t / 1000, "game_duration": dur,
+                                 "avg_tier": "EMERALD III", "avg_division": 3, "blue_win": bw, "is_remake": False,
+                                 "map_id": 11, "game_version": "16.22", "tournament_name": "데모"},
+            "participants_list": parts,
+            "time_analysis": {"concat_events_dict": ev, "concat_seq_dict": seq, "concat_participants_dict": {}}}

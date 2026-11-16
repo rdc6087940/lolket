@@ -27,7 +27,11 @@ def export(db, report, P, hist, state, run_id, out_dir="output", log=print):
     out.mkdir(parents=True, exist_ok=True)
     f = report["formula"]
     feats = f["features"]
-    accounts = [dict(a) for a in db.q("SELECT puuid, game_name, tag_line, source FROM accounts")]
+    # 내전 기록이 있는 멤버 (닉네임은 가장 최근 내전 기록의 닉네임)
+    accounts = [dict(a) for a in db.q(
+        "SELECT p.puuid, p.name game_name, p.tag tag_line, COALESCE(m.source, 'member') source FROM game_players p "
+        "JOIN (SELECT puuid, MAX(game_start) t FROM game_players GROUP BY puuid) l ON l.puuid=p.puuid AND l.t=p.game_start "
+        "LEFT JOIN members m ON m.puuid=p.puuid GROUP BY p.puuid")]
     profiles = current_profiles(db, hist, state, P, accounts)
 
     # 결측 보정용: 현재 선수들 평균값 (없으면 0 기여)
@@ -59,7 +63,7 @@ def export(db, report, P, hist, state, run_id, out_dir="output", log=print):
         cs = state.get(a["puuid"], {"elo": 1500.0, "g": 0, "w": 0})
         key = _norm_id(a["game_name"], a["tag_line"])
         players[key] = {
-            "name": f"{a['game_name']}#{a['tag_line']}", "puuid": a["puuid"], "source": a["source"],
+            "name": f"{a['game_name']}#{a['tag_line']}", "puuid": a["puuid"], "puuid_source": "deeplol", "source": a["source"],
             "main_role": main, "best_role": max(ROLES, key=lambda r: roles[r]["score"]),
             "tier": _r(pr[main].get("tier")), "custom_elo": round(cs["elo"], 1), "custom_games": cs["g"],
             "custom_wins": cs["w"], "roles": roles,

@@ -18,7 +18,41 @@ import numpy as np
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, log_loss, brier_score_loss, roc_auc_score
 
+from dataclasses import fields as _dc_fields
+
 from .features import FeatureParams, FEATURE_NAMES, build_dataset
+
+# 변수를 묶음 단위로 켜고 끈다 (경기 수가 적을 때 27개를 하나씩 고르면 검증 점수에 과적합되기 쉬움)
+FEATURE_GROUPS = {
+    "rating": ["elo", "role_elo"],
+    "tier": ["tier"],
+    "winrate": ["wr", "games", "form", "role_wr", "role_share"],
+    "ai": ["ai", "lane_ai"],
+    "combat": ["kda", "kp", "dpm", "dmg_share", "solo_kill", "early_death"],
+    "economy": ["cspm", "gpm", "gold_share", "dtpm"],
+    "map": ["vision", "obj"],
+    "champion": ["champ_games", "champ_wr"],
+    "social": ["duo", "lane_vs"],
+}
+_GROUP_OF = {f: g for g, fs in FEATURE_GROUPS.items() for f in fs}
+
+
+def params_from(best):
+    names = {f.name for f in _dc_fields(FeatureParams)}
+    return FeatureParams(**{k: best[k] for k in names if k in best})
+
+
+def mask_from(best, locked_off=()):
+    """best params → 변수 사용 여부. 예전 형식(use_<변수>)도 그대로 읽음"""
+    out = []
+    for fn in FEATURE_NAMES:
+        if fn in locked_off:
+            out.append(False)
+        elif f"use_{fn}" in best:
+            out.append(bool(best[f"use_{fn}"]))
+        else:
+            out.append(bool(best.get(f"grp_{_GROUP_OF.get(fn, fn)}", True)))
+    return np.array(out)
 
 try:
     import lightgbm as lgb
@@ -107,6 +141,7 @@ class Trainer:
     def __init__(self, db, cfg, log=print):
         self.db, self.cfg, self.log = db, cfg, log
         self.cache = {}
+        self._locked_off = set()
         self.out_dir = Path(cfg.get("output_dir", "output"))
 
     def dataset(self, P):
@@ -161,6 +196,7 @@ class Trainer:
         optuna.logging.set_verbosity(optuna.logging.WARNING)
         sugg = suggestions or {}
         locked_off = set(sugg.get("disable_features", []))
+        self._locked_off = locked_off
 
         def objective(trial):
             P = FeatureParams(
@@ -169,17 +205,19 @@ class Trainer:
                 prior_games=trial.suggest_float("prior_games", 3, 80, log=True),
                 recent_n=trial.suggest_categorical("recent_n", [10, 20, 40]),
                 elo_k=trial.suggest_float("elo_k", 8, 48),
+                elo_tier_scale=trial.suggest_float("elo_tier_scale", 0, 60),
+                stat_prior=trial.suggest_float("stat_prior", 0, 30),
             )
             X, y, meta, pp, _, _ = self.dataset(P)
-            if len(y) < 30:
+            cut = int(len(y) * 0.8)          # 마지막 20%는 최종 확인(홀드아웃)용으로 최적화에 쓰지 않음
+            if cut < 30:
                 raise optuna.TrialPruned()
-            mask = np.array([
-                (fn not in locked_off) and trial.suggest_categorical(f"use_{fn}", [True, False])
-                for fn in FEATURE_NAMES])
+            grp = {g: trial.suggest_categorical(f"grp_{g}", [True, False]) for g in FEATURE_GROUPS}
+            mask = mask_from({f"grp_{g}": v for g, v in grp.items()}, locked_off)
             if mask.sum() == 0:
                 raise optuna.TrialPruned()
             C = trial.suggest_float("C", 1e-3, 10, log=True)
-            res = self.cv_linear(X, y, mask, C)
+            res = self.cv_linear(X[:cut], y[:cut], mask, C)
             if res is None:
                 raise optuna.TrialPruned()
             yy, pp_ = res
@@ -198,12 +236,11 @@ class Trainer:
 
     # ── 최종 학습 + 리포트 ──────────────────────────────────
     def fit_final(self, best):
-        P = FeatureParams(window_days=best["window_days"], half_life_days=best["half_life_days"],
-                          prior_games=best["prior_games"], recent_n=best["recent_n"], elo_k=best["elo_k"])
+        P = params_from(best)
         X, y, meta, per_player, hist, state = self.dataset(P)
         for i, m in enumerate(meta):
             m["y"] = int(y[i])
-        mask = np.array([best.get(f"use_{fn}", True) for fn in FEATURE_NAMES])
+        mask = mask_from(best, self._locked_off)
         C = best["C"]
         n = len(y)
         cut = int(n * 0.8)

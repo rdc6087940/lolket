@@ -1,0 +1,19 @@
+# 내전 분석 랩 설정 — config.yaml 로 복사해서 수정하세요
+db_path: data/lab.sqlite
+output_dir: output
+env_path: .env
+
+collect:
+  days: 365                       # 몇 일 전까지 긁을지 (0 = 가능한 모든 기록, 바닥까지)
+  queues: [0, 420, 440]           # 0=사용자 설정(내전), 420=솔랭, 440=자랭. 비우면(null) 전체
+  discover_custom_coplayers: true # 내전에서 같이 뛴 사람도 자동으로 수집 대상에 추가
+  discover_min_custom_games: 1
+  league_snapshot_hours: 24       # 티어 스냅샷 주기
+
+series_gap_hours: 3               # 같은 10명이 이 시간 안에 이어서 하면 한 시리즈
+
+github:
+  repo_dir: ""                    # 방법1) clone 해둔 저장소 폴더 경로 (예: C:/dev/naejeon-model)
+  repo: ""                        # 방법2) owner/name  (+ .env 의 GITHUB_TOKEN)
+  branch: main
+  path: model
