@@ -426,6 +426,14 @@ export default {
       const r = await _updateForumPostTitle(cid, matchId, env);
       return json(r, r.ok ? 200 : (r.status || 500));
     }
+    // 내전 홍보 → 커뮤니티 '내전 멘션 채널'에 '내전 역할' 멘션 + 포스트 바로가기 버튼
+    if (path === '/match-promo' && request.method === 'POST') {
+      let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
+      const { cid, matchId, roleIds } = body || {};
+      if (!cid || !matchId) return json({ok:false,error:'필수 파라미터 없음'},400);
+      const r = await _sendMatchPromo(cid, matchId, env, roleIds);
+      return json(r, r.ok ? 200 : (r.status || 500));
+    }
     // 디스코드 알림 전송 / 호출 → 해당 내전 포럼 포스트에 댓글로 멘션
     if (path === '/match-forum-mention' && request.method === 'POST') {
       let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
@@ -5026,7 +5034,7 @@ async function handleDiscordInteraction(request, env, ctx) {
           components: [
             { type: 1, components: [Object.assign({ type: 4, label: '소환사명', custom_id: 'riot_name', style: 1, placeholder: '예) Roonging', required: true, min_length: 1, max_length: 50 }, ep2.riotName ? { value: String(ep2.riotName).slice(0, 50) } : {})] },
             { type: 1, components: [Object.assign({ type: 4, label: '태그', custom_id: 'riot_tag', style: 1, placeholder: '예) KR1', required: true, min_length: 1, max_length: 10 }, ep2.riotTag ? { value: String(ep2.riotTag).slice(0, 10) } : {})] },
-            { type: 1, components: [Object.assign({ type: 4, label: '최고/임시 티어', custom_id: 'high_tier', style: 1, placeholder: '예) e1 / d3 / m300 / gm500 / c', required: true, min_length: 1, max_length: 20 }, ep2.highTier ? { value: String(ep2.highTier).slice(0, 20) } : {})] },
+            { type: 1, components: [Object.assign({ type: 4, label: '최고티어 혹은 임시티어', custom_id: 'high_tier', style: 1, placeholder: '예) e1 혹은 d3 혹은 m300 과 같이 기입해주세요.', required: true, min_length: 1, max_length: 20 }, ep2.highTier ? { value: String(ep2.highTier).slice(0, 20) } : {})] },
           ],
         },
       }), { headers: { 'Content-Type': 'application/json' } });
@@ -6671,6 +6679,64 @@ function _forumPostContent(cid, matchId, matchName, matchTime, matchAdmin) {
 }
 
 // ── 내전 제목 수정 → 포럼 포스트 제목·원문 갱신 (DB에 저장된 현재 제목/시간/진행자 기준) ──
+// ── 내전 홍보 ──
+async function _sendMatchPromo(cid, matchId, env, roleIds) {
+  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth='+secret : '';
+  const botToken = env.DISCORD_BOT_TOKEN;
+  if (!botToken) return { ok:false, error:'BOT_TOKEN 없음', status:500 };
+  const base = `${dbUrl}/communities/${cid}/matches/${matchId}`;
+  const [ciRes, nmRes, adRes, ftRes] = await Promise.all([
+    fetch(`${dbUrl}/communities_info/${cid}.json${authQ}`),
+    fetch(`${base}/name.json${authQ}`),
+    fetch(`${base}/admin.json${authQ}`),
+    fetch(`${base}/discordForumThread.json${authQ}`),
+  ]);
+  const ci = ciRes.ok ? await ciRes.json() : null;
+  const channelId = ci && ci.discordPromoChannelId;
+  // 저장된 홍보 역할 목록 (예전 단일 역할 ID 도 허용)
+  let saved = ci && ci.discordPromoRoles;
+  saved = Array.isArray(saved) ? saved : (saved && typeof saved === 'object' ? Object.values(saved) : []);
+  const savedIds = saved.map(r => String((r && r.id) || '').trim()).filter(Boolean);
+  if (!savedIds.length && ci && ci.discordPromoRoleId) savedIds.push(String(ci.discordPromoRoleId));
+  if (!savedIds.length || !channelId) return { ok:false, error:'커뮤니티 설정에 홍보 역할과 내전 멘션 채널 ID를 입력해주세요', status:400 };
+  // 고른 역할 중 저장된 역할만 (아무것도 안 오면 예전처럼 첫 역할)
+  const want = Array.isArray(roleIds) ? roleIds.map(x => String(x).trim()) : [];
+  const roles = want.length ? savedIds.filter(id => want.includes(id)) : savedIds.slice(0, 1);
+  if (!roles.length) return { ok:false, error:'멘션할 역할을 골라주세요', status:400 };
+  const name = (nmRes.ok ? await nmRes.json() : null) || '내전';
+  const admin = (adRes.ok ? await adRes.json() : null) || '—';
+  const ft = ftRes.ok ? await ftRes.json() : null;
+  let threadId = ft && ft.threadId ? String(ft.threadId) : null;
+  if (!threadId) {
+    try { threadId = await _findForumThreadForMatch(env, cid, matchId); } catch (e) { threadId = null; }
+  }
+  const H = { 'Content-Type': 'application/json', 'Authorization': 'Bot ' + botToken };
+  // 포스트 링크: https://discord.com/channels/{서버ID}/{포스트ID}
+  let url = null;
+  if (threadId) {
+    let guildId = ci.discordServerId || null;
+    if (!guildId) {
+      const tr = await fetch(`https://discord.com/api/v10/channels/${threadId}`, { headers: H }).catch(() => null);
+      const t = tr && tr.ok ? await tr.json() : null;
+      guildId = t && t.guild_id;
+    }
+    if (guildId) url = `https://discord.com/channels/${guildId}/${threadId}`;
+  }
+  const content = `${roles.map(id => `<@&${id}>`).join(' ')} [${name}] [진행자 : ${admin}]\n내전이 열렸습니다. 참여 희망하시는 분은 아래 링크를 통해 확인해주세요.`;
+  const payload = { content, allowed_mentions: { roles } };
+  if (url) payload.components = [{ type: 1, components: [{ type: 2, style: 5, label: '📋 내전 포스트 바로가기', url }] }];
+  const res = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
+    method: 'POST', headers: H, body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const t = (await res.text()).slice(0, 200);
+    console.error('[match-promo]', channelId, res.status, t);
+    return { ok:false, error:'Discord API ' + res.status + ': ' + t, status:500 };
+  }
+  return { ok:true, noPost: !url };
+}
+
 // ── 내전 포럼 포스트에 댓글(멘션) 달기 ──
 async function _mentionInForumPost(cid, matchId, message, env) {
   const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;

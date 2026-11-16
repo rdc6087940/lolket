@@ -701,6 +701,45 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
 .community-card.official{border-color:rgba(200,170,110,.5);box-shadow:0 0 0 1px rgba(200,170,110,.2);}
 .official-badge{display:inline-flex;align-items:center;gap:3px;font-family:'IBM Plex Sans KR',sans-serif;font-size:9px;font-weight:700;letter-spacing:1.5px;color:var(--gold);background:rgba(200,170,110,.1);border:1px solid rgba(200,170,110,.35);border-radius:20px;padding:2px 7px;flex-shrink:0;}
 .official-badge::before{content:'✦';font-size:8px;}
+/* ── 커뮤니티 설정: 분류별 접기/펼치기 ── */
+.cm-sec-tools{display:flex;justify-content:flex-end;gap:6px;padding:0 1.5rem .6rem;flex-shrink:0;}
+.cm-sec-tools button{font-size:10px;font-family:'IBM Plex Sans KR',sans-serif;font-weight:700;color:var(--text-muted);background:transparent;border:1px solid var(--border-subtle);border-radius:3px;padding:3px 8px;cursor:pointer;}
+.cm-sec-tools button:hover{color:var(--text-white);border-color:rgba(255,255,255,.25);}
+.cm-sec{border:1px solid var(--border-subtle);border-radius:8px;background:rgba(255,255,255,.015);flex-shrink:0;}
+.cm-sec[open]{background:rgba(255,255,255,.03);border-color:rgba(255,255,255,.12);}
+.cm-sec summary{list-style:none;display:flex;align-items:center;gap:10px;padding:.7rem .85rem;cursor:pointer;user-select:none;}
+.cm-sec summary::-webkit-details-marker{display:none;}
+.cm-sec summary:hover .cm-sec-title{color:var(--blue-bright);}
+.cm-sec-ico{font-size:16px;width:22px;text-align:center;flex-shrink:0;}
+.cm-sec-txt{display:flex;flex-direction:column;gap:1px;min-width:0;flex:1;}
+.cm-sec-title{font-size:12px;font-weight:700;color:var(--text-white);font-family:'IBM Plex Sans KR',sans-serif;letter-spacing:.5px;transition:color .15s;}
+.cm-sec-desc{font-size:10px;color:var(--text-muted);font-family:'IBM Plex Sans KR',sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.cm-sec-count{font-size:10px;font-weight:700;font-family:'IBM Plex Sans KR',sans-serif;color:var(--text-muted);background:rgba(255,255,255,.05);border-radius:10px;padding:2px 8px;white-space:nowrap;flex-shrink:0;}
+.cm-sec-count.on{color:var(--blue-bright);background:rgba(10,200,185,.1);}
+.cm-sec-chev{color:var(--text-muted);font-size:16px;transition:transform .2s;flex-shrink:0;}
+.cm-sec[open] .cm-sec-chev{transform:rotate(90deg);}
+.cm-sec-body{display:flex;flex-direction:column;gap:.85rem;padding:.8rem .85rem .9rem;border-top:1px solid rgba(255,255,255,.05);}
+.cm-field{display:flex;flex-direction:column;gap:6px;}
+.cm-lbl{font-size:10px;letter-spacing:1.2px;color:var(--text-muted);font-family:'IBM Plex Sans KR',sans-serif;text-transform:uppercase;display:flex;align-items:center;gap:5px;flex-wrap:wrap;}
+.cm-sub{color:var(--text-muted);font-size:9px;opacity:.75;text-transform:none;letter-spacing:.5px;}
+.cm-hint{font-size:10px;color:var(--text-muted);font-family:'IBM Plex Sans KR',sans-serif;line-height:1.5;opacity:.85;}
+.cm-toggle-row{display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.cm-toggle-title{font-size:11px;font-family:'IBM Plex Sans KR',sans-serif;font-weight:700;letter-spacing:1px;color:var(--white);}
+.cm-toggle-row .cm-hint{margin-top:2px;}
+.cm-sec-body #cm-stats-days-row{padding:0!important;border-bottom:none!important;}
+.cm-promo-roles{display:flex;flex-direction:column;gap:6px;}
+.cm-promo-row{display:flex;gap:6px;align-items:center;}
+.cm-promo-row .cm-pr-name{flex:1 1 40%;min-width:0;}
+.cm-promo-row .cm-pr-id{flex:1 1 60%;min-width:0;}
+.cm-promo-del{flex-shrink:0;width:30px;height:30px;border-radius:4px;border:1px solid var(--border-subtle);background:transparent;color:var(--text-muted);cursor:pointer;font-size:12px;}
+.cm-promo-del:hover{color:#E05050;border-color:rgba(224,80,80,.5);}
+.cm-promo-add{align-self:flex-start;font-size:11px;font-family:'IBM Plex Sans KR',sans-serif;font-weight:700;color:#F0B232;background:rgba(240,178,50,.06);border:1px dashed rgba(240,178,50,.45);border-radius:4px;padding:5px 12px;cursor:pointer;}
+.cm-promo-add:hover{background:rgba(240,178,50,.12);}
+.mp-roles{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
+.mp-role{display:flex;align-items:center;gap:6px;padding:6px 12px;border:1px solid var(--border-subtle);border-radius:16px;cursor:pointer;font-size:12px;font-family:'IBM Plex Sans KR',sans-serif;color:var(--text-muted);transition:all .15s;user-select:none;}
+.mp-role input{accent-color:#F0B232;margin:0;cursor:pointer;}
+.mp-role:has(input:checked){border-color:rgba(240,178,50,.6);background:rgba(240,178,50,.1);color:#F0B232;}
+.mp-mini{font-size:10px;font-family:'IBM Plex Sans KR',sans-serif;font-weight:700;color:var(--text-muted);background:transparent;border:1px solid var(--border-subtle);border-radius:3px;padding:2px 7px;cursor:pointer;}
 .cm-official-row{display:flex;align-items:center;gap:10px;padding:8px 0;}
 .cm-official-toggle{position:relative;width:36px;height:20px;flex-shrink:0;}
 .cm-official-toggle input{opacity:0;width:0;height:0;}
@@ -3066,19 +3105,22 @@ body:has(#screen-0.active){background-color:var(--rg-bg)!important;background-im
     </div>
   </div>
 </div>
-<div class="modal-overlay" id="community-modal" style="display:none;"> <div class="modal" style="max-width:400px;display:flex;flex-direction:column;max-height:90vh;padding:0;overflow:hidden;"> <div class="modal-title" id="community-modal-title" style="padding:1.25rem 1.5rem 1rem;margin-bottom:0;flex-shrink:0;">커뮤니티 생성</div> <div style="display:flex;flex-direction:column;gap:1rem;overflow-y:auto;padding:0 1.5rem 1rem;flex:1;"> <div style="display:flex;flex-direction:column;gap:6px;"> <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'IBM Plex Sans KR',sans-serif;text-transform:uppercase;">커뮤니티 이름</label> <input class="form-input" type="text" id="cm-name" placeholder="예) 룽잉 내전"> </div> <div style="display:flex;flex-direction:column;gap:6px;"> <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'IBM Plex Sans KR',sans-serif;text-transform:uppercase;">설명 (선택)</label> <input class="form-input" type="text" id="cm-desc" placeholder="커뮤니티 간단 설명"> </div>
-<div style="display:flex;flex-direction:column;gap:6px;">
-  <label style="font-size:10px;letter-spacing:1.5px;color:#7289DA;font-family:'IBM Plex Sans KR',sans-serif;text-transform:uppercase;">🎮 디스코드 내전 기록 채널 ID <span style="color:var(--text-muted);font-size:9px;">(내전 결과 자동 공유)</span> <button type="button" onclick="openDiscordGuideModal()" style="width:16px;height:16px;border-radius:50%;border:1px solid #7289DA;background:rgba(88,101,242,.15);color:#7289DA;font-size:9px;font-weight:700;cursor:pointer;line-height:1;padding:0;vertical-align:middle;flex-shrink:0;">?</button></label>
-  <input class="form-input" type="text" id="cm-discord-channel" placeholder="예) 1234567890123456789" style="border-color:rgba(88,101,242,.3);">
-</div>
-<div style="display:flex;flex-direction:column;gap:6px;">
-  <label style="font-size:10px;letter-spacing:1.5px;color:#7289DA;font-family:'IBM Plex Sans KR',sans-serif;text-transform:uppercase;">🔔 디스코드 내전 알림 채널 ID <span style="color:var(--text-muted);font-size:9px;">(시작 1시간 전 자동 알림)</span></label>
-  <input class="form-input" type="text" id="cm-discord-alarm-channel" placeholder="예) 1234567890123456789" style="border-color:rgba(88,101,242,.3);">
-</div>
-<div style="display:flex;flex-direction:column;gap:6px;">
-  <label style="font-size:10px;letter-spacing:1.5px;color:#7289DA;font-family:'IBM Plex Sans KR',sans-serif;text-transform:uppercase;">🔨 경매 어시스트 채널 ID <span style="color:var(--text-muted);font-size:9px;">(낙찰 시 자동 전송)</span></label>
-  <input class="form-input" type="text" id="cm-auction-assist-channel" placeholder="예) 1234567890123456789" style="border-color:rgba(88,101,242,.3);">
-  <div style="display:flex;flex-direction:column;gap:6px;background:rgba(88,101,242,.04);border:1px solid rgba(88,101,242,.12);border-radius:4px;padding:.6rem .75rem;">
+<div class="modal-overlay" id="community-modal" style="display:none;"> <div class="modal cm-modal" style="max-width:460px;display:flex;flex-direction:column;max-height:90vh;padding:0;overflow:hidden;"> <div class="modal-title" id="community-modal-title" style="padding:1.25rem 1.5rem .5rem;margin-bottom:0;flex-shrink:0;">커뮤니티 생성</div> <div class="cm-sec-tools"><button type="button" onclick="_cmSecAll(true)">모두 펼치기</button><button type="button" onclick="_cmSecAll(false)">모두 접기</button></div> <div class="cm-sec-wrap" style="display:flex;flex-direction:column;gap:.5rem;overflow-y:auto;padding:0 1.5rem 1rem;flex:1;"><details class="cm-sec" data-sec="basic" open><summary><span class="cm-sec-ico">🏠</span><span class="cm-sec-txt"><span class="cm-sec-title">기본 정보</span><span class="cm-sec-desc">이름 · 설명 · 배너</span></span><span class="cm-sec-chev">›</span></summary><div class="cm-sec-body"><div class="cm-field"><label class="cm-lbl">커뮤니티 이름</label><input class="form-input" type="text" id="cm-name" placeholder="예) 룽잉 내전"></div><div class="cm-field"><label class="cm-lbl">설명 <span class="cm-sub">(선택)</span></label><input class="form-input" type="text" id="cm-desc" placeholder="커뮤니티 간단 설명"></div><div style="display:flex;flex-direction:column;gap:6px;">
+  <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'IBM Plex Sans KR',sans-serif;text-transform:uppercase;">🖼 커뮤니티 배너 이미지 <span style="color:var(--text-muted);font-size:9px;">(배너형 권장 · 자동 크롭)</span></label>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <button type="button" onclick="document.getElementById('cm-banner-file').click()" style="padding:5px 12px;background:rgba(255,255,255,.06);border:1px solid var(--border-subtle);border-radius:3px;color:var(--text-muted);font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;white-space:nowrap;flex-shrink:0;">파일 선택</button>
+    <span id="cm-banner-filename" style="font-size:11px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">선택된 파일 없음</span>
+    <input type="file" id="cm-banner-file" accept="image/*" onchange="onCmBannerChange(event)" style="display:none;">
+    <div id="cm-banner-remove-row" style="display:none;margin-left:auto;flex-shrink:0;">
+      <button class="cm-img-remove" onclick="removeCmBanner()">제거</button>
+    </div>
+  </div>
+  <img id="cm-banner-preview" class="cm-img-preview" alt="미리보기">
+</div><div class="cm-official-row" id="cm-official-row">
+  <label class="cm-official-toggle"><input type="checkbox" id="cm-official" onchange="_updateOfficialPreview(this.checked)"><span class="cm-official-toggle-slider"></span></label>
+  <span style="font-size:12px;color:var(--text-muted);">공식 커뮤니티로 지정</span>
+  <span class="official-badge" id="cm-official-preview" style="display:none;">공식</span>
+</div></div></details><details class="cm-sec" data-sec="discord"><summary><span class="cm-sec-ico">🤖</span><span class="cm-sec-txt"><span class="cm-sec-title">디스코드 봇 · 포럼</span><span class="cm-sec-desc">봇 연동 서버와 내전 포스트가 올라갈 포럼</span></span><span class=cm-sec-count></span><span class="cm-sec-chev">›</span></summary><div class="cm-sec-body"><div class="cm-field"><label class="cm-lbl">디스코드 서버 ID <span class="cm-sub">(봇 연동용)</span></label><input class="form-input" type="text" id="cm-discord-server-id" placeholder="예) 1499401481097449636" style="border-color:rgba(88,101,242,.3);"><span class="cm-hint">디스코드 봇 /내전참가 커맨드 연동에 사용됩니다. 서버 우클릭 → ID 복사</span></div><div class="cm-field"><label class="cm-lbl">⚔️ 내전 포럼 채널 ID <span class="cm-sub">(내전 생성 시 포럼 포스트 자동 등록)</span></label><input class="form-input" type="text" id="cm-discord-forum-channel" placeholder="예) 1234567890123456789" style="border-color:rgba(88,101,242,.3);"><span class="cm-hint">📋 내전이 생성될 때마다 해당 포럼 채널에 포스트가 자동으로 올라갑니다. 포럼 채널 우클릭 → ID 복사</span></div><div class="cm-field"><label class="cm-lbl">❄️ 칼바람 내전 포럼 채널 ID <span class="cm-sub">(선택)</span></label><input class="form-input" type="text" id="cm-discord-aram-forum-channel" placeholder="예) 1234567890123456789" style="border-color:rgba(125,211,252,.3);"><span class="cm-hint">1단계에서 칼바람을 ON 하면 내전 포럼의 포스트를 지우고 이 채널에 새로 올립니다. OFF 하면 다시 내전 포럼으로 옮깁니다.</span></div></div></details><details class="cm-sec" data-sec="alarm"><summary><span class="cm-sec-ico">🔔</span><span class="cm-sec-txt"><span class="cm-sec-title">내전 시작 알림</span><span class="cm-sec-desc">시작 1시간 전 자동 알림 채널 · 문구</span></span><span class=cm-sec-count></span><span class="cm-sec-chev">›</span></summary><div class="cm-sec-body"><div class="cm-field"><label class="cm-lbl">디스코드 내전 알림 채널 ID <span class="cm-sub">(시작 1시간 전 자동 알림)</span></label><input class="form-input" type="text" id="cm-discord-alarm-channel" placeholder="예) 1234567890123456789" style="border-color:rgba(88,101,242,.3);"></div><div style="display:flex;flex-direction:column;gap:6px;background:rgba(88,101,242,.04);border:1px solid rgba(88,101,242,.12);border-radius:4px;padding:.6rem .75rem;">
     <div style="display:flex;align-items:center;gap:8px;">
       <input type="checkbox" id="cm-alarm-everyone" style="width:14px;height:14px;accent-color:#7289DA;cursor:pointer;">
       <label for="cm-alarm-everyone" style="font-size:11px;color:var(--text-muted);cursor:pointer;">@everyone 태그 사용 <span style="color:var(--text-muted);font-size:9px;">(알림 전송 시 전체 멘션)</span></label>
@@ -3087,8 +3129,7 @@ body:has(#screen-0.active){background-color:var(--rg-bg)!important;background-im
       <input type="checkbox" id="cm-alarm-auto" style="width:14px;height:14px;accent-color:#7289DA;cursor:pointer;">
       <label for="cm-alarm-auto" style="font-size:11px;color:var(--text-muted);cursor:pointer;">1시간 전 자동 알림 사용 <span style="color:var(--text-muted);font-size:9px;">(Cron 자동 전송)</span></label>
     </div>
-  </div>
-  <div style="display:flex;flex-direction:column;gap:4px;margin-top:2px;">
+  </div><div style="display:flex;flex-direction:column;gap:4px;margin-top:2px;">
     <div style="display:flex;align-items:center;justify-content:space-between;">
       <label style="font-size:10px;letter-spacing:1px;color:var(--text-muted);font-family:'IBM Plex Sans KR',sans-serif;text-transform:uppercase;">알림 메시지 템플릿</label>
       <button type="button" onclick="document.getElementById('cm-alarm-template').value='{내전이름} 내전 {남은시간} 전입니다!\n{내전일시}\n[진행자 : {진행자명}]'" style="font-size:9px;font-family:'IBM Plex Sans KR',sans-serif;font-weight:700;color:var(--text-muted);background:transparent;border:1px solid var(--border-subtle);border-radius:2px;padding:2px 7px;cursor:pointer;letter-spacing:.5px;">기본값</button>
@@ -3105,32 +3146,11 @@ body:has(#screen-0.active){background-color:var(--rg-bg)!important;background-im
         <span style="font-size:10px;background:rgba(10,200,185,.08);border:1px solid rgba(10,200,185,.2);border-radius:3px;padding:1px 6px;color:var(--blue-bright);font-family:monospace;">{출석인원}</span>
         <span style="font-size:10px;background:rgba(10,200,185,.08);border:1px solid rgba(10,200,185,.2);border-radius:3px;padding:1px 6px;color:var(--blue-bright);font-family:monospace;">{커뮤니티명}</span>
       </div>
-    </div> <div style="display:flex;flex-direction:column;gap:6px;margin-top:.5rem;"> <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'IBM Plex Sans KR',sans-serif;text-transform:uppercase;">딥롤 커넥트 Server ID <span style="color:var(--text-muted);font-size:9px;font-weight:400;">(전적 페이지용)</span></label> <input class="form-input" type="text" id="cm-deeplol-id" placeholder="예) 156" style="border-color:rgba(200,170,110,.2);"> <span style="font-size:10px;color:var(--text-muted);font-family:'IBM Plex Sans KR',sans-serif;">딥롤 커넥트에서 생성한 서버의 ID를 입력하면 전적 페이지가 활성화됩니다.</span> </div> <div style="display:flex;flex-direction:column;gap:6px;margin-top:.5rem;"> <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'IBM Plex Sans KR',sans-serif;text-transform:uppercase;">디스코드 서버 ID <span style="color:var(--text-muted);font-size:9px;font-weight:400;">(봇 연동용)</span></label> <input class="form-input" type="text" id="cm-discord-server-id" placeholder="예) 1499401481097449636" style="border-color:rgba(88,101,242,.3);"> <span style="font-size:10px;color:var(--text-muted);font-family:'IBM Plex Sans KR',sans-serif;">디스코드 봇 /내전참가 커맨드 연동에 사용됩니다. 서버 우클릭 → ID 복사</span> </div> <div style="display:flex;flex-direction:column;gap:6px;margin-top:.5rem;"> <label style="font-size:10px;letter-spacing:1.5px;color:#7289DA;font-family:'IBM Plex Sans KR',sans-serif;text-transform:uppercase;">⚔️ 내전 포럼 채널 ID <span style="color:var(--text-muted);font-size:9px;">(내전 생성 시 포럼 포스트 자동 등록)</span></label> <input class="form-input" type="text" id="cm-discord-forum-channel" placeholder="예) 1234567890123456789" style="border-color:rgba(88,101,242,.3);"> <span style="font-size:10px;color:var(--text-muted);font-family:'IBM Plex Sans KR',sans-serif;">📋 내전이 생성될 때마다 해당 포럼 채널에 포스트가 자동으로 올라갑니다. 포럼 채널 우클릭 → ID 복사</span> </div> <div style="display:flex;flex-direction:column;gap:6px;margin-top:.5rem;"> <label style="font-size:10px;letter-spacing:1.5px;color:#7DD3FC;font-family:'IBM Plex Sans KR',sans-serif;text-transform:uppercase;">❄️ 칼바람 내전 포럼 채널 ID <span style="color:var(--text-muted);font-size:9px;">(선택)</span></label> <input class="form-input" type="text" id="cm-discord-aram-forum-channel" placeholder="예) 1234567890123456789" style="border-color:rgba(125,211,252,.3);"> <span style="font-size:10px;color:var(--text-muted);font-family:'IBM Plex Sans KR',sans-serif;">1단계에서 칼바람을 ON 하면 내전 포럼의 포스트를 지우고 이 채널에 새로 올립니다. OFF 하면 다시 내전 포럼으로 옮깁니다.</span> </div> <div style="display:flex;align-items:center;justify-content:space-between;padding:.75rem 0;border-top:1px solid rgba(255,255,255,.05);margin-top:.5rem;"> <div> <div style="font-size:11px;font-family:'IBM Plex Sans KR',sans-serif;font-weight:700;letter-spacing:1px;color:var(--white);">기본 출석</div> <div style="font-size:10px;color:var(--text-muted);font-family:'IBM Plex Sans KR',sans-serif;margin-top:2px;">ON 시 멤버 추가 시 자동으로 출석 처리</div> </div> <button id="cm-default-attend-btn" onclick="toggleCmDefaultAttend()" style="width:48px;height:26px;border-radius:13px;border:none;cursor:pointer;transition:all .2s;background:#2D3748;position:relative;"> <span id="cm-default-attend-dot" style="position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#718096;transition:all .2s;"></span> </button> <input type="hidden" id="cm-default-attend" value="false"> </div> <div style="display:flex;flex-direction:column;gap:6px;padding:.75rem 0;border-top:1px solid rgba(255,255,255,.05);"> <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'IBM Plex Sans KR',sans-serif;text-transform:uppercase;">자동 설정 부라인 기본 비율 (%)</label> <input class="form-input" type="number" id="cm-sub-lane-threshold" min="1" max="100" placeholder="15"> <span style="font-size:10px;color:var(--text-muted);font-family:'IBM Plex Sans KR',sans-serif;">멤버 추가 시 자동 설정 ON이면 솔랭 비율이 이 값(%) 이상인 라인을 부라인으로 선택합니다. 비워두면 15%가 기본값입니다.</span> </div>
-  </div>
-</div>
-<div style="display:flex;flex-direction:column;gap:6px;">
-  <label style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'IBM Plex Sans KR',sans-serif;text-transform:uppercase;">🖼 커뮤니티 배너 이미지 <span style="color:var(--text-muted);font-size:9px;">(배너형 권장 · 자동 크롭)</span></label>
-  <div style="display:flex;align-items:center;gap:8px;">
-    <button type="button" onclick="document.getElementById('cm-banner-file').click()" style="padding:5px 12px;background:rgba(255,255,255,.06);border:1px solid var(--border-subtle);border-radius:3px;color:var(--text-muted);font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;white-space:nowrap;flex-shrink:0;">파일 선택</button>
-    <span id="cm-banner-filename" style="font-size:11px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">선택된 파일 없음</span>
-    <input type="file" id="cm-banner-file" accept="image/*" onchange="onCmBannerChange(event)" style="display:none;">
-    <div id="cm-banner-remove-row" style="display:none;margin-left:auto;flex-shrink:0;">
-      <button class="cm-img-remove" onclick="removeCmBanner()">제거</button>
     </div>
-  </div>
-  <img id="cm-banner-preview" class="cm-img-preview" alt="미리보기">
-</div>
-<div style="display:flex;align-items:center;justify-content:space-between;padding:.75rem 0;border-top:1px solid rgba(255,255,255,.05);">
-  <div>
-    <div style="font-size:11px;font-family:'IBM Plex Sans KR',sans-serif;font-weight:700;letter-spacing:1px;color:var(--white);">승률 / 레이팅 공개</div>
-    <div style="font-size:10px;color:var(--text-muted);font-family:'IBM Plex Sans KR',sans-serif;margin-top:2px;">ON 시 전적 페이지에서 모든 유저에게 승률·레이팅 정보 표시</div>
-  </div>
-  <button id="cm-stats-public-btn" onclick="toggleCmStatsPublic()" style="width:48px;height:26px;border-radius:13px;border:none;cursor:pointer;transition:all .2s;background:#2D3748;position:relative;">
+  </div></div></details><details class="cm-sec" data-sec="promo"><summary><span class="cm-sec-ico">📣</span><span class="cm-sec-txt"><span class="cm-sec-title">내전 홍보</span><span class="cm-sec-desc">1단계 "내전 홍보" 버튼 — 역할 1개 이상 + 채널이 있어야 보임</span></span><span class=cm-sec-count></span><span class="cm-sec-chev">›</span></summary><div class="cm-sec-body"><div class="cm-field"><label class="cm-lbl">멘션할 역할 <span class="cm-sub">(멘션명 + 역할 ID, 여러 개 가능)</span></label><div id="cm-promo-roles" class="cm-promo-roles"></div><button type="button" class="cm-promo-add" onclick="_cmPromoRoleAdd()">＋ 역할 추가</button><span class="cm-hint">홍보 버튼을 누르면 여기 저장한 멘션명이 나열되고, 멘션할 역할을 골라서 보냅니다. 역할 ID: 서버 설정 → 역할 → 역할 우클릭 → ID 복사</span></div><div class="cm-field"><label class="cm-lbl">내전 멘션 채널 ID <span class="cm-sub">(내전 홍보용)</span></label><input class="form-input" type="text" id="cm-discord-promo-channel" placeholder="예) 1234567890123456789" style="border-color:rgba(240,178,50,.3);"><span class="cm-hint">역할이 1개 이상 있고 이 값이 있으면 1단계에 "내전 홍보" 버튼이 생기고, 누르면 고른 역할을 이 채널에 멘션해 내전을 알립니다.</span></div></div></details><details class="cm-sec" data-sec="share"><summary><span class="cm-sec-ico">📤</span><span class="cm-sec-txt"><span class="cm-sec-title">자동 공유 채널</span><span class="cm-sec-desc">내전 결과 · 경매 낙찰 자동 전송</span></span><span class=cm-sec-count></span><span class="cm-sec-chev">›</span></summary><div class="cm-sec-body"><div class="cm-field"><label class="cm-lbl">🎮 디스코드 내전 기록 채널 ID <span class="cm-sub">(내전 결과 자동 공유)</span> <button type="button" onclick="openDiscordGuideModal()" style="width:16px;height:16px;border-radius:50%;border:1px solid #7289DA;background:rgba(88,101,242,.15);color:#7289DA;font-size:9px;font-weight:700;cursor:pointer;line-height:1;padding:0;vertical-align:middle;flex-shrink:0;">?</button></label><input class="form-input" type="text" id="cm-discord-channel" placeholder="예) 1234567890123456789" style="border-color:rgba(88,101,242,.3);"></div><div class="cm-field"><label class="cm-lbl">🔨 경매 어시스트 채널 ID <span class="cm-sub">(낙찰 시 자동 전송)</span></label><input class="form-input" type="text" id="cm-auction-assist-channel" placeholder="예) 1234567890123456789" style="border-color:rgba(88,101,242,.3);"></div></div></details><details class="cm-sec" data-sec="match"><summary><span class="cm-sec-ico">⚙️</span><span class="cm-sec-txt"><span class="cm-sec-title">내전 진행 기본값</span><span class="cm-sec-desc">출석 · 부라인 자동 설정</span></span><span class=cm-sec-count></span><span class="cm-sec-chev">›</span></summary><div class="cm-sec-body"><div class="cm-toggle-row"><div><div class="cm-toggle-title">기본 출석</div><div class="cm-hint">ON 시 멤버 추가 시 자동으로 출석 처리</div></div><button id="cm-default-attend-btn" onclick="toggleCmDefaultAttend()" style="width:48px;height:26px;border-radius:13px;border:none;cursor:pointer;transition:all .2s;background:#2D3748;position:relative;"> <span id="cm-default-attend-dot" style="position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#718096;transition:all .2s;"></span> </button> <input type="hidden" id="cm-default-attend" value="false"></div><div class="cm-field"><label class="cm-lbl">자동 설정 부라인 기본 비율 (%)</label><input class="form-input" type="number" id="cm-sub-lane-threshold" min="1" max="100" placeholder="15"><span class="cm-hint">멤버 추가 시 자동 설정 ON이면 솔랭 비율이 이 값(%) 이상인 라인을 부라인으로 선택합니다. 비워두면 15%가 기본값입니다.</span></div></div></details><details class="cm-sec" data-sec="stats"><summary><span class="cm-sec-ico">📊</span><span class="cm-sec-txt"><span class="cm-sec-title">전적 페이지</span><span class="cm-sec-desc">딥롤 커넥트 · 승률/레이팅 공개</span></span><span class=cm-sec-count></span><span class="cm-sec-chev">›</span></summary><div class="cm-sec-body"><div class="cm-field"><label class="cm-lbl">딥롤 커넥트 Server ID <span class="cm-sub">(전적 페이지용)</span></label><input class="form-input" type="text" id="cm-deeplol-id" placeholder="예) 156" style="border-color:rgba(200,170,110,.2);"><span class="cm-hint">딥롤 커넥트에서 생성한 서버의 ID를 입력하면 전적 페이지가 활성화됩니다.</span></div><div class="cm-toggle-row"><div><div class="cm-toggle-title">승률 / 레이팅 공개</div><div class="cm-hint">ON 시 전적 페이지에서 모든 유저에게 승률·레이팅 정보 표시</div></div><button id="cm-stats-public-btn" onclick="toggleCmStatsPublic()" style="width:48px;height:26px;border-radius:13px;border:none;cursor:pointer;transition:all .2s;background:#2D3748;position:relative;">
     <span id="cm-stats-public-dot" style="position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#718096;transition:all .2s;"></span>
   </button>
-  <input type="hidden" id="cm-stats-public" value="false">
-</div>
-<div id="cm-stats-days-row" style="display:none;padding:.5rem 0 .75rem 0;border-bottom:1px solid rgba(255,255,255,.05);">
+  <input type="hidden" id="cm-stats-public" value="false"></div><div id="cm-stats-days-row" style="display:none;padding:.5rem 0 .75rem 0;border-bottom:1px solid rgba(255,255,255,.05);">
   <div style="font-size:10px;color:var(--text-muted);font-family:'IBM Plex Sans KR',sans-serif;margin-bottom:.5rem;">공개 요일 선택 (비활성 요일엔 가림)</div>
   <div style="display:flex;gap:6px;">
     <button class="cm-day-btn active" data-day="0" onclick="toggleCmDay(0)" style="width:34px;height:34px;border-radius:6px;border:1px solid rgba(16,185,129,.5);background:rgba(16,185,129,.15);color:#10B981;font-size:11px;font-family:'IBM Plex Sans KR',sans-serif;cursor:pointer;font-weight:600;transition:all .15s;">월</button>
@@ -3141,13 +3161,7 @@ body:has(#screen-0.active){background-color:var(--rg-bg)!important;background-im
     <button class="cm-day-btn active" data-day="5" onclick="toggleCmDay(5)" style="width:34px;height:34px;border-radius:6px;border:1px solid rgba(16,185,129,.5);background:rgba(16,185,129,.15);color:#10B981;font-size:11px;font-family:'IBM Plex Sans KR',sans-serif;cursor:pointer;font-weight:600;transition:all .15s;">토</button>
     <button class="cm-day-btn active" data-day="6" onclick="toggleCmDay(6)" style="width:34px;height:34px;border-radius:6px;border:1px solid rgba(16,185,129,.5);background:rgba(16,185,129,.15);color:#10B981;font-size:11px;font-family:'IBM Plex Sans KR',sans-serif;cursor:pointer;font-weight:600;transition:all .15s;">일</button>
   </div>
-</div>
-<div class="cm-official-row" id="cm-official-row">
-  <label class="cm-official-toggle"><input type="checkbox" id="cm-official" onchange="_updateOfficialPreview(this.checked)"><span class="cm-official-toggle-slider"></span></label>
-  <span style="font-size:12px;color:var(--text-muted);">공식 커뮤니티로 지정</span>
-  <span class="official-badge" id="cm-official-preview" style="display:none;">공식</span>
-</div>
-</div> <div class="modal-actions" style="padding:.75rem 1.5rem 1.25rem;margin-top:0;border-top:1px solid var(--border-subtle);flex-shrink:0;"> <button class="btn-secondary" onclick="closeCommunityModal()">취소</button> <button class="btn-primary" onclick="saveCommunity()">저장</button> </div> </div>
+</div></div></details></div> <div class="modal-actions" style="padding:.75rem 1.5rem 1.25rem;margin-top:0;border-top:1px solid var(--border-subtle);flex-shrink:0;"> <button class="btn-secondary" onclick="closeCommunityModal()">취소</button> <button class="btn-primary" onclick="saveCommunity()">저장</button> </div> </div>
 </div> <div class="modal-overlay" id="invite-manage-modal" style="display:none;"> <div class="modal" style="max-width:520px;"> <div class="modal-title">초대 링크 관리</div> <div style="font-size:12px;color:var(--text-muted);margin-bottom:1rem;line-height:1.6;">
  커뮤니티를 선택하고 초대 링크를 생성하세요.<br>
  링크는 1회용이며 계정 생성 후 자동 폐기됩니다.
@@ -3366,9 +3380,9 @@ body:has(#screen-0.active){background-color:var(--rg-bg)!important;background-im
  예) 페이커#KR1 · Hide on bush#KR1
  </div> <div id="search-loading" style="display:none;justify-content:center;padding:1.5rem;"> <div class="spinner"></div> </div> <div id="search-result" style="display:none;"> <div class="search-result"> <div class="result-profile"> <div class="result-avatar" id="r-avatar">?</div> <div> <div class="result-name" id="r-name">—</div> <div class="result-tag" id="r-tag">—</div> </div> </div> <div class="result-tiers"> <div class="tier-row"> <span class="tier-row-label">SOLO/DUO</span> <span class="tier-row-val" id="r-solo">—</span> </div> <div class="tier-row"> <span class="tier-row-label">FLEX</span> <span class="tier-row-val" id="r-flex">—</span> </div> <div class="tier-row" id="r-main-lane-row" style="display:none;"> <span class="tier-row-label">커뮤니티 주라인</span> <span class="tier-row-val" id="r-main-lane" style="color:var(--blue-bright);">—</span> </div>
  <div class="tier-row"> <span class="tier-row-label">솔랭 판수</span> <span class="tier-row-val" id="r-solo-games" style="font-family:'IBM Plex Sans KR',sans-serif;">—</span> </div> <div class="tier-row" id="r-match-count-row"> <span class="tier-row-label">내전 판수</span> <span class="tier-row-val" id="r-match-count" style="font-family:'IBM Plex Sans KR',sans-serif;color:var(--blue-bright);">—</span> </div> <div class="tier-row"> <span class="tier-row-label">LEVEL</span> <span class="tier-row-val" id="r-level">—</span> </div> <div class="tier-row" id="r-prev-row" style="display:none;background:rgba(200,170,110,0.04);border-radius:2px;padding:3px 6px;margin-top:2px;"> <span class="tier-row-label" style="display:flex;align-items:center;gap:4px;"><span style="font-size:9px;">🏆</span>전 시즌 최고</span> <span class="tier-row-val" id="r-prev-season" style="font-size:11px;">—</span> </div> </div> <div style="padding:.6rem 1rem;border-top:1px solid var(--border-subtle);background:rgba(200,170,110,0.03);"> <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;"> <span style="font-size:10px;font-family:'IBM Plex Sans KR',sans-serif;font-weight:700;letter-spacing:1px;color:var(--gold);">✏ 티어 직접 설정</span> <button onclick="applyTierOverride('')" style="font-size:9px;font-family:'IBM Plex Sans KR',sans-serif;font-weight:700;color:var(--text-muted);background:transparent;border:1px solid var(--border-subtle);border-radius:2px;padding:1px 7px;cursor:pointer;letter-spacing:.5px;" id="r-tier-reset">API 값으로 초기화</button> </div> <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;" id="r-tier-btns"> <button class="tier-override-btn" data-tier="UNRANKED" onclick="applyTierOverride('UNRANKED')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-iron);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;letter-spacing:.3px;">UNRANK</button> <button class="tier-override-btn" data-tier="IRON" onclick="applyTierOverride('IRON')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-iron);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">IRON</button> <button class="tier-override-btn" data-tier="BRONZE" onclick="applyTierOverride('BRONZE')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-bronze);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">BRONZE</button> <button class="tier-override-btn" data-tier="SILVER" onclick="applyTierOverride('SILVER')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-silver);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">SILVER</button> <button class="tier-override-btn" data-tier="GOLD" onclick="applyTierOverride('GOLD')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-gold);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">GOLD</button> <button class="tier-override-btn" data-tier="PLATINUM" onclick="applyTierOverride('PLATINUM')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-plat);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">PLAT</button> <button class="tier-override-btn" data-tier="EMERALD" onclick="applyTierOverride('EMERALD')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-emerald);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">EMERALD</button> <button class="tier-override-btn" data-tier="DIAMOND" onclick="applyTierOverride('DIAMOND')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-diamond);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">DIAMOND</button> <button class="tier-override-btn" data-tier="MASTER" onclick="applyTierOverride('MASTER')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-master);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">MASTER</button> <button class="tier-override-btn" data-tier="GRANDMASTER" onclick="applyTierOverride('GRANDMASTER')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-grandmaster);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">GM</button> <button class="tier-override-btn" data-tier="CHALLENGER" onclick="applyTierOverride('CHALLENGER')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-challenger);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">CHALL</button> </div> </div> <div class="lane-select"> <div class="lane-select-label">주 포지션</div> <div class="lane-buttons" id="main-lanes"> <button class="lane-btn" data-lane="top" onclick="selectLane('main','top')">TOP</button> <button class="lane-btn" data-lane="jg" onclick="selectLane('main','jg')">JG</button> <button class="lane-btn" data-lane="mid" onclick="selectLane('main','mid')">MID</button> <button class="lane-btn" data-lane="bot" onclick="selectLane('main','bot')">BOT</button> <button class="lane-btn" data-lane="sup" onclick="selectLane('main','sup')">SUP</button> </div> <div class="lane-select-label" style="margin-top:4px;">보조 포지션</div> <div class="lane-buttons" id="sub-lanes"> <button class="lane-btn" data-lane="top" onclick="selectLane('sub','top')">TOP</button> <button class="lane-btn" data-lane="jg" onclick="selectLane('sub','jg')">JG</button> <button class="lane-btn" data-lane="mid" onclick="selectLane('sub','mid')">MID</button> <button class="lane-btn" data-lane="bot" onclick="selectLane('sub','bot')">BOT</button> <button class="lane-btn" data-lane="sup" onclick="selectLane('sub','sup')">SUP</button> </div> </div> <div style="padding:.75rem 1rem;border-top:1px solid var(--border-subtle);"> <button class="btn-add-member" id="btn-add" onclick="addMember()" disabled>멤버 추가</button> </div> </div> </div> </div> </div></div> <div class="next-wrap"> <div class="next-condition"> <div class="cond-item"> <div class="cond-dot" id="cond-count"></div> <span id="cond-count-text" style="font-size:12px;color:var(--text-muted);">인원 10의 배수</span> </div> <div class="cond-item"> <div class="cond-dot" id="cond-attend"></div> <span id="cond-attend-text" style="font-size:12px;color:var(--text-muted);">전원 출석</span> </div> </div> <button onclick="copyMatchLink()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(10,200,185,.4);background:rgba(10,200,185,.06);color:var(--blue-bright);font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="내전 상세 링크 복사">링크 복사</button>
-<button onclick="copyMemberMentions()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(100,150,255,.4);background:rgba(100,150,255,.06);color:#7EB2FF;font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="참여 멤버 @멘션 복사">@ 멘션 복사</button> <button id="btn-confirm-members" onclick="openConfirmMembersModal()" title="진행 인원만 남기고 나머지 멤버를 제외합니다 (10명 초과일 때)" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(232,203,134,.45);background:rgba(232,203,134,.08);color:#E8CB86;font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;">멤버 확정하기</button> <button id="btn-cut-members" onclick="openCutMembersModal()" title="멤버 확정으로 제외된 멤버" style="display:none;padding:7px 14px;border-radius:2px;border:1px solid rgba(255,148,85,.45);background:rgba(255,148,85,.08);color:#FF9455;font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;">잘린 멤버</button> <button id="btn-attend-all" onclick="toggleAttendAll()" style="padding:7px 16px;border-radius:2px;border:1px solid rgba(10,200,185,0.4);background:rgba(10,200,185,0.08);color:var(--blue-bright);font-family:'IBM Plex Sans KR',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;cursor:pointer;transition:all .15s;">전체 출석</button> <button id="btn-discord-notify" onclick="sendDiscordNotify()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(114,137,218,0.4);background:rgba(114,137,218,0.08);color:#7289DA;font-family:'IBM Plex Sans KR',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;cursor:pointer;transition:all .15s;"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;margin-right:4px;"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>알림 전송</button> <button class="btn-next" id="btn-next" disabled onclick="goNextStage()">다음 단계 →</button> </div>
+<button onclick="copyMemberMentions()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(100,150,255,.4);background:rgba(100,150,255,.06);color:#7EB2FF;font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="참여 멤버 @멘션 복사">@ 멘션 복사</button> <button id="btn-confirm-members" onclick="openConfirmMembersModal()" title="진행 인원만 남기고 나머지 멤버를 제외합니다 (10명 초과일 때)" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(232,203,134,.45);background:rgba(232,203,134,.08);color:#E8CB86;font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;">멤버 확정하기</button> <button id="btn-cut-members" onclick="openCutMembersModal()" title="멤버 확정으로 제외된 멤버" style="display:none;padding:7px 14px;border-radius:2px;border:1px solid rgba(255,148,85,.45);background:rgba(255,148,85,.08);color:#FF9455;font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;">잘린 멤버</button> <button id="btn-attend-all" onclick="toggleAttendAll()" style="padding:7px 16px;border-radius:2px;border:1px solid rgba(10,200,185,0.4);background:rgba(10,200,185,0.08);color:var(--blue-bright);font-family:'IBM Plex Sans KR',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;cursor:pointer;transition:all .15s;">전체 출석</button> <button id="btn-match-promo" onclick="sendMatchPromo()" title="내전 멘션 채널에 역할을 멘션해 이 내전을 홍보합니다" style="display:none;padding:7px 14px;border-radius:2px;border:1px solid rgba(240,178,50,.45);background:rgba(240,178,50,.08);color:#F0B232;font-family:'IBM Plex Sans KR',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;cursor:pointer;transition:all .15s;">📣 내전 홍보</button> <button id="btn-discord-notify" onclick="sendDiscordNotify()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(114,137,218,0.4);background:rgba(114,137,218,0.08);color:#7289DA;font-family:'IBM Plex Sans KR',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;cursor:pointer;transition:all .15s;"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;margin-right:4px;"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>알림 전송</button> <button class="btn-next" id="btn-next" disabled onclick="goNextStage()">다음 단계 →</button> </div>
 </div>
-</div> <div class="modal-overlay" id="edit-time-modal" style="display:none;"> <div class="modal" style="max-width:360px;"> <div class="modal-title">내전 정보 수정</div> <div class="form-row"> <div class="form-label">내전 제목</div> <input class="form-input" type="text" id="et-name" maxlength="90" placeholder="예) 금요 정기 내전 시즌 1" onkeydown="if(event.key==='Enter')saveEditTime()"> </div> <div class="form-row"> <div class="form-label">시작 시간</div> <input class="form-input" type="datetime-local" id="et-time"> <label style="display:flex;align-items:center;gap:6px;margin-top:6px;font-size:12px;color:var(--text-muted);cursor:pointer;"><input type="checkbox" id="et-mobasi" onchange="_toggleMobasiInput('et')"> 모바시 (모두 모이면 바로 시작 · 시작 시간 없음)</label> </div> <div class="modal-actions"> <button class="btn-secondary" onclick="closeEditTimeModal()">취소</button> <button class="btn-primary" id="btn-et-save" onclick="saveEditTime()">저장</button> </div> </div>
+</div> <div class="modal-overlay" id="edit-time-modal" style="display:none;"> <div class="modal" style="max-width:400px;"> <div class="modal-title">내전 정보 수정</div> <div class="form-row"> <div class="form-label">내전 제목</div> <input class="form-input" type="text" id="et-name" maxlength="90" placeholder="예) 금요 정기 내전 시즌 1" onkeydown="if(event.key==='Enter')saveEditTime()"> </div> <div class="form-row"> <div class="form-label">시작 시간</div> <input class="form-input" type="datetime-local" id="et-time"> <label style="display:flex;align-items:center;gap:6px;margin-top:6px;font-size:12px;color:var(--text-muted);cursor:pointer;"><input type="checkbox" id="et-mobasi" onchange="_toggleMobasiInput('et')"> 모바시 (모두 모이면 바로 시작 · 시작 시간 없음)</label> </div> <div class="form-row"> <div class="form-label">진행자 (선택)</div> <div id="et-admin-btns" style="display:flex;flex-wrap:wrap;gap:6px;min-height:32px;padding:4px 0;"></div> </div> <div class="form-row" id="et-type-row" style="display:none;"> <div class="form-label">내전 종류 (선택)</div> <select class="form-input" id="et-type" style="cursor:pointer;font-family:'IBM Plex Sans KR',sans-serif;font-size:12px;"><option value="">없음</option></select> </div> <div class="modal-actions"> <button class="btn-secondary" onclick="closeEditTimeModal()">취소</button> <button class="btn-primary" id="btn-et-save" onclick="saveEditTime()">저장</button> </div> </div>
 </div> <div class="modal-overlay" id="em-modal" style="display:none;" data-id=""> <div class="modal" style="max-width:420px;"> <div class="modal-title">내전 정보 수정</div> <div class="form-row"> <div class="form-label">내전 이름</div> <input class="form-input" type="text" id="em-name"> </div> <div class="form-row"> <div class="form-label">시작 시간</div> <input class="form-input" type="datetime-local" id="em-time"> </div> <div class="form-row"> <div class="form-label">진행 관리자 (선택)</div> <input class="form-input" type="text" id="em-admin" placeholder="공란 가능"> </div> <div class="modal-actions"> <button class="btn-secondary" onclick="closeEditMatchModal()">취소</button> <button class="btn-secondary" onclick="saveEditMatch()">저장</button> <button class="btn-primary" onclick="(function(){saveEditMatch();setTimeout(()=>{const list=dbLoad();const snap=list.find(m=>m.name===document.getElementById('em-name').value.trim());if(snap)proceedToStage1(snap);},100)})()">진행하기 →</button> </div> </div>
 </div> <div class="modal-overlay" id="create-modal" style="display:none;">
  <div class="modal">
@@ -5715,6 +5729,7 @@ document.getElementById('bar-time').textContent = _matchTimeShort(match.time);
 document.getElementById('bar-status').textContent=match.status;
 document.getElementById('btn-edit-time').style.display='inline-block';
 updateDiscordJoinableBtn();
+_updatePromoBtn();
 // 디스코드 멤버 + 대기자 구독
 var _mbCid = window._currentCommunityId;
 if (_mbCid && match && match.id) {
@@ -11339,6 +11354,9 @@ const dcInput2 = document.getElementById('cm-discord-channel');
 if (dcInput2) dcInput2.value = '';
 const subThInput2 = document.getElementById('cm-sub-lane-threshold');
 if (subThInput2) subThInput2.value = '';
+_cmPromoRolesRender([]);
+const promoCh2 = document.getElementById('cm-discord-promo-channel');
+if (promoCh2) promoCh2.value = '';
 window._resetCmBannerUI('');
 // 마스터만 공식 커뮤니티 지정 가능
 const officialRow2 = document.getElementById('cm-official-row');
@@ -11348,6 +11366,7 @@ if (_oc) { _oc.checked = false; _updateOfficialPreview(false); }
 setCmStatsPublic(false);
 setCmStatsDays(null);
 document.getElementById('community-modal').style.display = 'flex';
+try { _cmSecOnOpen(); } catch (e) {}
 }
 function openCommunityEditModal(cid) {
 if (!_fbReady) return;
@@ -11376,6 +11395,9 @@ const forumInput = document.getElementById('cm-discord-forum-channel');
 if (forumInput) forumInput.value = c.discordForumChannelId || '';
 const aramForumInput = document.getElementById('cm-discord-aram-forum-channel');
 if (aramForumInput) aramForumInput.value = c.discordAramForumChannelId || '';
+_cmPromoRolesRender(_promoRolesOf(c));
+const promoChInput = document.getElementById('cm-discord-promo-channel');
+if (promoChInput) promoChInput.value = c.discordPromoChannelId || '';
 const subThInput = document.getElementById('cm-sub-lane-threshold');
 if (subThInput) subThInput.value = (c.subLaneThreshold != null && c.subLaneThreshold !== '') ? c.subLaneThreshold : '';
 const alarmInput = document.getElementById('cm-discord-alarm-channel');
@@ -11395,6 +11417,7 @@ if (officialChk) { officialChk.checked = !!c.official; _updateOfficialPreview(!!
 const officialRow = document.getElementById('cm-official-row');
 if (officialRow) officialRow.style.display = isMaster ? '' : 'none';
 document.getElementById('community-modal').style.display = 'flex';
+try { _cmSecOnOpen(); } catch (e) {}
 });
 }
 
@@ -11440,6 +11463,8 @@ try {
   }
 
   const official = !!(document.getElementById('cm-official')?.checked);
+  const _prBad = _cmPromoRolesInvalid();
+  if (_prBad) { toast(_prBad, 'err'); return; }
 
   // _cmBannerData: null=변경없음, ''=제거, 'data:...'=새이미지
   let finalBanner;
@@ -11461,6 +11486,9 @@ try {
       discordServerId: discordServerId || null,
       discordForumChannelId: discordForumChannelId || null,
       discordAramForumChannelId: (document.getElementById('cm-discord-aram-forum-channel')?.value || '').trim() || null,
+      discordPromoRoles: _cmPromoRolesCollect(),
+      discordPromoRoleId: null,
+      discordPromoChannelId: (document.getElementById('cm-discord-promo-channel')?.value || '').trim() || null,
   auctionAssistChannelId: (document.getElementById('cm-auction-assist-channel')?.value || '').trim() || null,
   deeplolServerId: deeplolServerId || null,
     alarmChannelId: alarmChannelId || null,
@@ -11480,7 +11508,12 @@ try {
   // 현재 진입한 커뮤니티면 부라인 기본 비율 즉시 반영
   if (window._currentCommunity && window._currentCommunity.id === cObj.id) {
     window._currentCommunity.subLaneThreshold = cObj.subLaneThreshold;
+    window._currentCommunity.discordPromoRoles = cObj.discordPromoRoles;
+    window._currentCommunity.discordPromoRoleId = null;
+    window._currentCommunity.discordPromoChannelId = cObj.discordPromoChannelId;
+    window._currentCommunity._promoChecked = true;
     _applySubLaneDefaultPlaceholder();
+    _updatePromoBtn();
   }
   // 캐시 클리어 (저장 후 즉시 반영)
   _commListMemCache = null;
@@ -11781,7 +11814,39 @@ const _etMb = document.getElementById('et-mobasi');
 if (_etMb) { _etMb.checked = _isMobasi(match.time); _toggleMobasiInput('et'); }
 document.getElementById('et-time').value = _isMobasi(match.time) ? '' : match.time;
 document.getElementById('et-name').value = match.name || '';
+// 진행자: 지금 진행자들을 선택된 상태로 (진행자 목록에 없는 이름도 그대로 표시)
+_etHosts = String(match.admin || '').split(',').map(function (x) { return x.trim(); }).filter(function (x) { return x && x !== '—'; });
+_etRenderHosts();
+// 내전 종류
+var _etSel = document.getElementById('et-type'), _etRow = document.getElementById('et-type-row');
+if (_etSel && _etRow) {
+  var _types = (typeof _matchTypes !== 'undefined' && _matchTypes) ? _matchTypes.slice() : [];
+  if (match.matchType && !_types.some(function (t) { return t.id === match.matchType; })) _types.push({ id: match.matchType, name: '(삭제된 종류)' });
+  _etRow.style.display = _types.length ? '' : 'none';
+  _etSel.innerHTML = '<option value="">없음</option>' + _types.map(function (t) {
+    return '<option value="' + _escHtml(t.id) + '">' + _escHtml(t.name) + '</option>';
+  }).join('');
+  _etSel.value = match.matchType || '';
+}
 document.getElementById('edit-time-modal').style.display = 'flex';
+}
+var _etHosts = [];
+function _etRenderHosts() {
+  var box = document.getElementById('et-admin-btns');
+  if (!box) return;
+  var names = (typeof _hosts !== 'undefined' && _hosts ? _hosts.map(function (h) { return h.name; }) : []);
+  _etHosts.forEach(function (n) { if (names.indexOf(n) < 0) names.push(n); });
+  if (!names.length) { box.innerHTML = '<span style="font-size:11px;color:var(--text-muted);font-family:IBM Plex Sans KR,sans-serif;">등록된 진행자가 없습니다</span>'; return; }
+  box.innerHTML = names.map(function (n) {
+    var on = _etHosts.indexOf(n) >= 0;
+    return '<button type="button" class="host-select-btn" data-name="' + _escHtml(n) + '" onclick="_etToggleHost(this)" style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:3px;border:1px solid ' + (on ? 'var(--blue-bright)' : 'var(--border-subtle)') + ';background:' + (on ? 'rgba(10,200,185,0.15)' : 'transparent') + ';color:' + (on ? 'var(--blue-bright)' : 'var(--text-muted)') + ';font-family:IBM Plex Sans KR,sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;">' + _escHtml(n) + '</button>';
+  }).join('');
+}
+function _etToggleHost(btn) {
+  var n = btn.dataset.name;
+  var i = _etHosts.indexOf(n);
+  if (i >= 0) _etHosts.splice(i, 1); else _etHosts.push(n);
+  _etRenderHosts();
 }
 function closeEditTimeModal() {
 document.getElementById('edit-time-modal').style.display = 'none';
@@ -11794,16 +11859,29 @@ if (!newName) return toast('내전 제목을 입력하세요', 'err');
 if (!newTime) return toast('시간을 선택하세요', 'err');
 const timeChanged = newTime !== match.time;
 const nameChanged = newName !== (match.name || '');
+const newAdmin = _etHosts.length ? _etHosts.join(', ') : '—';
+const adminChanged = newAdmin !== (match.admin || '—');
+const _etTypeEl = document.getElementById('et-type');
+const _etTypeShown = _etTypeEl && document.getElementById('et-type-row') && document.getElementById('et-type-row').style.display !== 'none';
+const newType = _etTypeShown ? (_etTypeEl.value || null) : (match.matchType || null);
+const typeChanged = newType !== (match.matchType || null);
 // 시간을 바꾼 경우에만 "현재 이후" 검사 (제목만 바꿀 때는 지난 시작 시간 그대로 저장 가능)
 if (timeChanged && !_etMobasi && new Date(newTime) <= new Date()) return toast('시작 시간은 현재 시간 이후여야 합니다', 'err');
-if (!timeChanged && !nameChanged) { closeEditTimeModal(); return; }
+if (!timeChanged && !nameChanged && !adminChanged && !typeChanged) { closeEditTimeModal(); return; }
 match.time = newTime;
 match.name = newName;
+match.admin = newAdmin;
+match.matchType = newType;
 updateMatchBar();
 closeEditTimeModal();
-toast(nameChanged && timeChanged ? '제목과 시작 시간이 수정되었습니다' : (nameChanged ? '내전 제목이 수정되었습니다' : '시작 시간이 수정되었습니다'), 'ok');
+var _etParts = [];
+if (nameChanged) _etParts.push('제목');
+if (timeChanged) _etParts.push('시작 시간');
+if (adminChanged) _etParts.push('진행자');
+if (typeChanged) _etParts.push('내전 종류');
+toast(_etParts.join(' · ') + ' 수정되었습니다', 'ok');
 try { await saveCurrentMatch(); } catch (e) {}
-if (nameChanged || timeChanged) {
+if (nameChanged || timeChanged || adminChanged) {
   // 디스코드 포럼 포스트 제목·원문 갱신 (서버가 방금 저장된 제목을 읽어서 반영)
   try {
     var _fr = await fetch('https://api.roonging.com/match-forum-title', {
@@ -16924,6 +17002,181 @@ async function sendDiscordNotifyNow() {
 }
 
 // ── Discord 수동 알림 전송 끝 ──
+
+// ── 커뮤니티 설정 분류 접기/펼치기 + 입력 개수 표시 ──
+function _cmSecAll(open) {
+  document.querySelectorAll('#community-modal .cm-sec').forEach(function (d) { d.open = !!open; });
+}
+function _cmSecRefresh() {
+  document.querySelectorAll('#community-modal .cm-sec').forEach(function (d) {
+    var c = d.querySelector('.cm-sec-count');
+    if (!c) return;
+    var ins = d.querySelectorAll('input.form-input');
+    var n = 0;
+    ins.forEach(function (x) { if (String(x.value || '').trim()) n++; });
+    c.textContent = n + '/' + ins.length + ' 입력';
+    c.classList.toggle('on', n > 0);
+  });
+}
+function _cmSecOnOpen() {
+  // 열 때마다 기본 정보만 펼치고 나머지는 접은 뒤, 분류별 입력 개수 갱신
+  document.querySelectorAll('#community-modal .cm-sec').forEach(function (d) { d.open = d.getAttribute('data-sec') === 'basic'; });
+  _cmSecRefresh();
+  var w = document.querySelector('#community-modal .cm-sec-wrap'); if (w) w.scrollTop = 0;
+}
+document.addEventListener('input', function (e) {
+  if (e.target && e.target.closest && e.target.closest('#community-modal')) _cmSecRefresh();
+});
+window._cmSecAll = _cmSecAll;
+
+// ── 내전 홍보: 커뮤니티 설정의 '내전 멘션 채널'에 '내전 역할'을 멘션 ──
+var _promoLoading = false;
+async function _updatePromoBtn() {
+  var btn = document.getElementById('btn-match-promo');
+  if (!btn) return;
+  var c = window._currentCommunity;
+  var cid = window._currentCommunityId;
+  if (!cid) { btn.style.display = 'none'; return; }
+  // 커뮤니티 정보에 홍보 설정이 없으면(최소 정보만 있는 경우) 한 번 불러와서 확인
+  if (c && c.id === cid && !c._promoChecked && !(_promoRolesOf(c).length && c.discordPromoChannelId) &&
+      !_promoLoading && _fbReady && window._fb.fbGetCommunities) {
+    _promoLoading = true;
+    try {
+      var list = await window._fb.fbGetCommunities();
+      var f = (list || []).find(function (x) { return x.id === cid; });
+      if (f) { c.discordPromoRoles = f.discordPromoRoles || null; c.discordPromoRoleId = f.discordPromoRoleId || null; c.discordPromoChannelId = f.discordPromoChannelId || null; }
+    } catch (e) {}
+    c._promoChecked = true;
+    _promoLoading = false;
+  }
+  var on = !!(c && c.id === cid && _promoRolesOf(c).length && c.discordPromoChannelId);
+  btn.style.display = on ? '' : 'none';
+}
+// 저장된 홍보 역할 목록 [{name, id}] (예전 단일 역할 ID 도 읽음)
+function _promoRolesOf(c) {
+  if (!c) return [];
+  var raw = c.discordPromoRoles;
+  var arr = Array.isArray(raw) ? raw : (raw && typeof raw === 'object' ? Object.values(raw) : []);
+  arr = arr.filter(function (r) { return r && String(r.id || '').trim(); })
+           .map(function (r) { return { name: String(r.name || '').trim() || ('역할 ' + r.id), id: String(r.id).trim() }; });
+  if (!arr.length && c.discordPromoRoleId) arr = [{ name: '내전 역할', id: String(c.discordPromoRoleId) }];
+  return arr;
+}
+// ── 커뮤니티 설정: 홍보 역할 목록 편집 ──
+function _cmPromoRoleRowHtml(r) {
+  return '<div class="cm-promo-row">' +
+    '<input class="form-input cm-pr-name" type="text" placeholder="멘션명 예) 내전러" value="' + _balEsc(r.name || '') + '">' +
+    '<input class="form-input cm-pr-id" type="text" inputmode="numeric" placeholder="역할 ID" value="' + _balEsc(r.id || '') + '">' +
+    '<button type="button" class="cm-promo-del" title="삭제" onclick="_cmPromoRoleDel(this)">✕</button></div>';
+}
+function _cmPromoRolesRender(list) {
+  var box = document.getElementById('cm-promo-roles');
+  if (!box) return;
+  box.innerHTML = (list || []).map(_cmPromoRoleRowHtml).join('');
+  if (!list || !list.length) box.innerHTML = _cmPromoRoleRowHtml({});
+  try { _cmSecRefresh(); } catch (e) {}
+}
+function _cmPromoRoleAdd() {
+  var box = document.getElementById('cm-promo-roles');
+  if (!box) return;
+  box.insertAdjacentHTML('beforeend', _cmPromoRoleRowHtml({}));
+  var rows = box.querySelectorAll('.cm-pr-name');
+  if (rows.length) rows[rows.length - 1].focus();
+  try { _cmSecRefresh(); } catch (e) {}
+}
+function _cmPromoRoleDel(btn) {
+  var row = btn && btn.closest('.cm-promo-row');
+  if (row) row.remove();
+  var box = document.getElementById('cm-promo-roles');
+  if (box && !box.children.length) box.innerHTML = _cmPromoRoleRowHtml({});
+  try { _cmSecRefresh(); } catch (e) {}
+}
+function _cmPromoRolesRows() {
+  return Array.prototype.map.call(document.querySelectorAll('#cm-promo-roles .cm-promo-row'), function (row) {
+    return { name: (row.querySelector('.cm-pr-name').value || '').trim(), id: (row.querySelector('.cm-pr-id').value || '').trim() };
+  });
+}
+function _cmPromoRolesInvalid() {
+  var rows = _cmPromoRolesRows();
+  for (var i = 0; i < rows.length; i++) {
+    var r = rows[i];
+    if (!r.name && !r.id) continue;
+    if (!r.name) return '내전 홍보: 역할 ID ' + r.id + ' 의 멘션명을 입력해주세요';
+    if (!r.id) return '내전 홍보: "' + r.name + '" 의 역할 ID를 입력해주세요';
+    if (!/^\d{5,25}$/.test(r.id)) return '내전 홍보: "' + r.name + '" 의 역할 ID는 숫자만 입력해주세요';
+  }
+  return null;
+}
+function _cmPromoRolesCollect() {
+  var out = _cmPromoRolesRows().filter(function (r) { return r.name && r.id; });
+  return out.length ? out : null;
+}
+window._cmPromoRoleAdd = _cmPromoRoleAdd;
+window._cmPromoRoleDel = _cmPromoRoleDel;
+
+// ── 1단계 "내전 홍보": 역할 고르기 팝업 → 전송 ──
+function sendMatchPromo() {
+  if (!match || !match.id) return toast('내전 정보가 없습니다', 'err');
+  var roles = _promoRolesOf(window._currentCommunity);
+  if (!roles.length) return toast('커뮤니티 설정에 홍보할 역할을 먼저 추가해주세요', 'err');
+  var box = document.getElementById('mp-roles');
+  box.innerHTML = roles.map(function (r, i) {
+    return '<label class="mp-role"><input type="checkbox" value="' + _balEsc(r.id) + '" onchange="_mpPreview()"' + (roles.length === 1 ? ' checked' : '') + '>' +
+      '<span class="mp-role-name">@' + _balEsc(r.name) + '</span></label>';
+  }).join('');
+  _mpPreview();
+  document.getElementById('mp-modal').style.display = 'flex';
+}
+function closeMatchPromoModal() { document.getElementById('mp-modal').style.display = 'none'; }
+function _mpSelected() {
+  var roles = _promoRolesOf(window._currentCommunity);
+  var ids = Array.prototype.map.call(document.querySelectorAll('#mp-roles input:checked'), function (x) { return x.value; });
+  return roles.filter(function (r) { return ids.indexOf(r.id) >= 0; });
+}
+function _mpAll(on) {
+  document.querySelectorAll('#mp-roles input').forEach(function (x) { x.checked = !!on; });
+  _mpPreview();
+}
+function _mpPreview() {
+  var sel = _mpSelected();
+  var head = sel.length ? sel.map(function (r) { return '@' + r.name; }).join(' ') : '(역할을 골라주세요)';
+  document.getElementById('mp-preview').textContent =
+    head + ' [' + (match && match.name || '내전') + '] [진행자 : ' + (match && match.admin || '—') + ']\n' +
+    '내전이 열렸습니다. 참여 희망하시는 분은 아래 링크를 통해 확인해주세요.\n[📋 내전 포스트 바로가기]';
+  var b = document.getElementById('mp-send');
+  if (b) b.disabled = !sel.length;
+}
+async function sendMatchPromoNow() {
+  var sel = _mpSelected();
+  if (!sel.length) return toast('멘션할 역할을 1개 이상 골라주세요', 'err');
+  var sendBtn = document.getElementById('mp-send');
+  var btn = document.getElementById('btn-match-promo');
+  if (sendBtn) { sendBtn.disabled = true; sendBtn.textContent = '보내는 중...'; }
+  if (btn) { btn.disabled = true; btn.textContent = '홍보 중...'; }
+  try {
+    try { await saveCurrentMatch(); } catch (e) {}
+    var res = await fetch('https://api.roonging.com/match-promo', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cid: window._currentCommunityId || match.communityId, matchId: match.id,
+                             roleIds: sel.map(function (r) { return r.id; }) }),
+    });
+    var r = null; try { r = await res.json(); } catch (e) {}
+    if (r && r.ok) {
+      closeMatchPromoModal();
+      toast(r.noPost ? '내전 홍보를 보냈습니다 (디스코드 포스트가 없어 링크 버튼은 빠졌습니다)' : '내전 홍보를 보냈습니다!', 'ok');
+    } else toast('홍보 실패: ' + ((r && r.error) || ('HTTP ' + res.status)), 'err');
+  } catch (e) {
+    toast('홍보 실패: ' + e.message, 'err');
+  } finally {
+    if (sendBtn) { sendBtn.textContent = '홍보 보내기'; _mpPreview(); }
+    if (btn) { btn.disabled = false; btn.textContent = '📣 내전 홍보'; }
+  }
+}
+window.sendMatchPromoNow = sendMatchPromoNow;
+window.closeMatchPromoModal = closeMatchPromoModal;
+window._mpPreview = _mpPreview;
+window._mpAll = _mpAll;
+window.sendMatchPromo = sendMatchPromo;
 
 // ── 전역 함수 명시적 등록 (onclick에서 접근 보장) ──
 
@@ -26576,6 +26829,28 @@ function showLaneMismatchPopup(opts) {
     <div class="modal-actions">
       <button class="btn-secondary" onclick="closeConfirmMembersModal()">취소</button>
       <button class="btn-primary" id="btn-cm-confirm" onclick="confirmMembersNow()" style="background:#E8CB86;color:#1A1405;">확정하기</button>
+    </div>
+  </div>
+</div>
+<!-- 내전 홍보: 역할 선택 모달 -->
+<div class="modal-overlay" id="mp-modal" style="display:none;" onclick="if(event.target===this)closeMatchPromoModal()">
+  <div class="modal" style="max-width:460px;">
+    <div class="modal-title">📣 내전 홍보</div>
+    <div class="form-row">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div class="form-label">멘션할 역할 <span style="font-size:10px;color:var(--text-muted);">(여러 개 선택 가능)</span></div>
+        <div style="display:flex;gap:4px;">
+          <button type="button" class="mp-mini" onclick="_mpAll(true)">전체 선택</button>
+          <button type="button" class="mp-mini" onclick="_mpAll(false)">전체 해제</button>
+        </div>
+      </div>
+      <div id="mp-roles" class="mp-roles"></div>
+    </div>
+    <div class="form-label" style="margin-top:.5rem;">미리보기</div>
+    <pre id="mp-preview" style="white-space:pre-wrap;word-break:break-all;background:var(--bg-dark);border:1px solid var(--border-subtle);border-radius:4px;padding:10px;font-size:12px;color:var(--text-white);font-family:inherit;margin:6px 0;"></pre>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeMatchPromoModal()">취소</button>
+      <button class="btn-primary" id="mp-send" onclick="sendMatchPromoNow()">홍보 보내기</button>
     </div>
   </div>
 </div>
