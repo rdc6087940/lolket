@@ -1,5 +1,7 @@
 """Riot API 클라이언트.
 
+롤하냥 내전은 토너먼트 코드 게임(queueId 3130)이라 Riot API 로 목록(type=tourney)·상세·타임라인을 받을 수 있다.
+
 - 개발 키(24시간 만료)를 전제로 설계: 요청마다 .env 를 다시 읽어서, 실행 중에 키를 바꿔 넣어도 이어서 동작
 - 응답 헤더(X-App-Rate-Limit / X-Method-Rate-Limit)를 읽어 한도에 맞춰 스스로 속도 조절
 - 429면 Retry-After 만큼 쉬고 재시도, 401/403(키 만료)이면 새 키를 기다림
@@ -146,6 +148,9 @@ class Riot:
 
     def match(self, match_id):
         return self.get(f"{REGIONAL}/lol/match/v5/matches/{match_id}")
+
+    def timeline(self, match_id):
+        return self.get(f"{REGIONAL}/lol/match/v5/matches/{match_id}/timeline")
 
     def league_by_puuid(self, puuid):
         return self.get(f"{PLATFORM}/lol/league/v4/entries/by-puuid/{puuid}")

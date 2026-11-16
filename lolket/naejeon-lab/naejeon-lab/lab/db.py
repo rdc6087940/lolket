@@ -1,8 +1,10 @@
 """SQLite 저장소 (커뮤니티 내전 전용)
 
-- members        : members.txt 의 커뮤니티 멤버 (deeplol puuid 기준)
-- member_matches : 멤버별 deeplol 커스텀 경기 목록 (내전 판정용: 10명 전원이 멤버인 경기)
-- matches_raw    : deeplol 경기 상세 원본 JSON 그대로 (재가공 가능, 아무것도 버리지 않음)
+- members        : members.txt 의 커뮤니티 멤버 (deeplol puuid 기준 + 연결된 Riot puuid)
+- member_matches : 멤버별 경기 목록 (Riot 토너먼트 목록 + deeplol 커스텀 목록 합집합, 내전 판정용)
+- riot_raw       : Riot match-v5 상세 원본 JSON 그대로 (challenges 포함)
+- riot_tl        : Riot match-v5 타임라인 원본 JSON (분 단위 골드·CS·경험치, 이벤트)
+- matches_raw    : deeplol 경기 상세 원본 JSON 그대로 (경기 당시 티어, AI 점수 — 재가공 가능)
 - games / game_players / game_events / game_timeline : build 단계에서 원본으로부터 다시 만드는 분석용 표
 """
 import json
@@ -12,7 +14,8 @@ import threading
 import time
 from pathlib import Path
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
+COMPATIBLE_VERSIONS = (2, 3)   # 2 → 3 은 데이터 그대로 두고 칸만 추가
 
 SCHEMA = """
 PRAGMA journal_mode=WAL;
@@ -28,13 +31,19 @@ CREATE TABLE IF NOT EXISTS members (
   newest_ms   INTEGER DEFAULT 0,     -- 목록에서 본 가장 최근 경기 시각
   oldest_ms   INTEGER,               -- 목록에서 본 가장 오래된 경기 시각
   list_count  INTEGER DEFAULT 0,     -- 목록에서 본 경기 수
-  scanned_at  INTEGER DEFAULT 0
+  scanned_at  INTEGER DEFAULT 0,
+  riot_puuid  TEXT,                  -- Riot API 키로 본 puuid (deeplol puuid 와 다름)
+  riot_status INTEGER DEFAULT 0,     -- 0 아직 · 200 연결됨 · 404 닉네임으로 못 찾음(경기 상세에서 자동 연결 시도)
+  riot_scan_done INTEGER DEFAULT 0,
+  riot_list_count INTEGER DEFAULT 0,
+  riot_scanned_at INTEGER DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS member_matches (
   puuid    TEXT,
   match_id TEXT,
   t_ms     INTEGER,
+  src      TEXT DEFAULT 'dl',        -- dl = deeplol 목록 · riot = Riot 토너먼트 목록
   PRIMARY KEY (puuid, match_id)
 );
 CREATE INDEX IF NOT EXISTS ix_mm_match ON member_matches(match_id);
@@ -43,6 +52,20 @@ CREATE TABLE IF NOT EXISTS matches_raw (
   match_id   TEXT PRIMARY KEY,
   fetched_at INTEGER,
   status     INTEGER,             -- 200 정상, 204 다시하기·10명 아님, 그 외 오류
+  json       TEXT
+);
+
+CREATE TABLE IF NOT EXISTS riot_raw (
+  match_id   TEXT PRIMARY KEY,
+  fetched_at INTEGER,
+  status     INTEGER,             -- 200 커뮤니티 내전, 204 내전 아님(외부인·다시하기·칼바람 등), 404 Riot에 없음
+  json       TEXT
+);
+
+CREATE TABLE IF NOT EXISTS riot_tl (
+  match_id   TEXT PRIMARY KEY,
+  fetched_at INTEGER,
+  status     INTEGER,
   json       TEXT
 );
 
@@ -107,6 +130,45 @@ CREATE TABLE IF NOT EXISTS meta (
 """
 
 
+# v3 에서 추가된 칸 (예전 DB 에도 자동으로 추가됨)
+EXTRA_COLS = {
+    "members": {"riot_puuid": "TEXT", "riot_status": "INTEGER DEFAULT 0", "riot_scan_done": "INTEGER DEFAULT 0",
+                "riot_list_count": "INTEGER DEFAULT 0", "riot_scanned_at": "INTEGER DEFAULT 0"},
+    "member_matches": {"src": "TEXT DEFAULT 'dl'"},
+    "games": {"src": "TEXT", "tournament_code": "TEXT", "bans_json": "TEXT",
+              "blue_atakhan": "INTEGER", "red_atakhan": "INTEGER", "first_inhib": "TEXT",
+              "blue_gold10": "INTEGER", "red_gold10": "INTEGER", "blue_gold15": "INTEGER", "red_gold15": "INTEGER",
+              "blue_plates": "INTEGER", "red_plates": "INTEGER", "surrender": "INTEGER"},
+    "game_players": {
+        "riot_puuid": "TEXT", "vision_score": "REAL", "vspm": "REAL",
+        # 타임라인: 10·15분 골드/CS/경험치와 맞라인 상대와의 차이
+        "gold10": "INTEGER", "cs10": "INTEGER", "xp10": "INTEGER", "gold15": "INTEGER", "cs15": "INTEGER", "xp15": "INTEGER",
+        "gd10": "REAL", "csd10": "REAL", "xpd10": "REAL", "gd15": "REAL", "csd15": "REAL", "xpd15": "REAL",
+        # Riot challenges
+        "plates": "REAL", "cc_time": "REAL", "ccpm": "REAL", "skill_hit": "REAL", "skill_dodge": "REAL",
+        "lane_minions10": "REAL", "jungle_cs10": "REAL", "early_adv": "REAL", "laning_adv": "REAL",
+        "max_cs_adv": "REAL", "max_lvl_lead": "REAL", "vision_adv": "REAL", "takedowns_early": "REAL",
+        "dmg_mitigated": "REAL", "heal_shield": "REAL", "obj_dmg": "REAL", "turret_dmg": "REAL",
+        "dragon_takedowns": "REAL", "herald_takedowns": "REAL", "baron_takedowns": "REAL",
+        "pick_kills": "REAL", "save_ally": "REAL", "immobilizations": "REAL", "enemy_jungle": "REAL",
+        "time_dead": "REAL", "longest_alive": "REAL", "first_tower": "INTEGER", "dmg_taken_share": "REAL",
+        "challenges_json": "TEXT",
+    },
+}
+
+
+def _migrate(conn):
+    for table, cols in EXTRA_COLS.items():
+        have = {r[1] for r in conn.execute(f"PRAGMA table_info({table})")}
+        for c, typ in cols.items():
+            if c not in have:
+                conn.execute(f"ALTER TABLE {table} ADD COLUMN {c} {typ}")
+    conn.execute("CREATE INDEX IF NOT EXISTS ix_members_riot ON members(riot_puuid)")
+    # 경기 ID 를 Riot 형식(KR_숫자)으로 통일 (deeplol 목록이 숫자만 줬던 경우)
+    for t in ("member_matches", "matches_raw"):
+        conn.execute(f"UPDATE OR IGNORE {t} SET match_id='KR_'||match_id WHERE match_id GLOB '[0-9]*'")
+
+
 def now_ms():
     return int(time.time() * 1000)
 
@@ -123,7 +185,7 @@ def _old_schema(path):
             r = c.execute("SELECT v FROM meta WHERE k='schema_version'").fetchone()
             ver = json.loads(r[0]) if r else None
         c.close()
-        return bool(tables) and ver != SCHEMA_VERSION
+        return bool(tables) and ver not in COMPATIBLE_VERSIONS
     except Exception:
         return False
 
@@ -141,6 +203,7 @@ class DB:
         self.conn = sqlite3.connect(str(path), timeout=60, check_same_thread=False)
         self.conn.row_factory = sqlite3.Row
         self.conn.executescript(SCHEMA)
+        _migrate(self.conn)
         self.conn.execute("INSERT OR REPLACE INTO meta(k, v) VALUES('schema_version', ?)", (json.dumps(SCHEMA_VERSION),))
         self.conn.commit()
         self.lock = threading.RLock()  # 조회 서버는 여러 스레드에서 같은 연결을 씀

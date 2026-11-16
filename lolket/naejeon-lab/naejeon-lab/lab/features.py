@@ -55,6 +55,15 @@ PLAYER_FEATURES = [
     ("early_death", "15분 전 데스 수 (적을수록 안정적)"),
     ("solo_kill", "솔로킬 수"),
     ("obj", "오브젝트·포탑 관여 수"),
+    ("gd10", "10분 맞라인 상대와의 골드 차이 (Riot 타임라인)"),
+    ("gd15", "15분 맞라인 상대와의 골드 차이 (Riot 타임라인)"),
+    ("csd15", "15분 맞라인 상대와의 CS 차이 (Riot 타임라인)"),
+    ("xpd15", "15분 맞라인 상대와의 경험치 차이 (Riot 타임라인)"),
+    ("laning_adv", "라인전 단계 골드·경험치 우위 비율 (Riot challenges)"),
+    ("plates", "포탑 방패 획득 수 (Riot challenges)"),
+    ("vspm", "분당 시야 점수 (Riot visionScore)"),
+    ("ccpm", "분당 군중제어(CC) 시간 (Riot)"),
+    ("dead_pct", "경기 시간 중 죽어 있던 비율 (낮을수록 안정적)"),
     ("champ_games", "이번 챔피언 내전 숙련 log(1+판수)"),
     ("champ_wr", "이번 챔피언 내전 승률 (표본 보정)"),
     ("duo", "이번 팀원들과 같은 팀일 때 승률 (쌍별, 표본 보정, −0.5)"),
@@ -63,10 +72,13 @@ PLAYER_FEATURES = [
 FEATURE_NAMES = [f for f, _ in PLAYER_FEATURES]
 
 _STAT_COLS = ["ai_score", "lane_ai", "kda", "kill_part", "cspm", "dpm", "gpm", "dtpm", "vision", "dmg_share",
-              "gold_share", "early_deaths", "solo_kills", "obj"]
+              "gold_share", "early_deaths", "solo_kills", "obj",
+              "gd10", "gd15", "csd15", "xpd15", "laning_adv", "plates", "vspm", "ccpm", "dead_pct"]
 _STAT_FEAT = {"ai_score": "ai", "lane_ai": "lane_ai", "kda": "kda", "kill_part": "kp", "cspm": "cspm", "dpm": "dpm",
               "gpm": "gpm", "dtpm": "dtpm", "vision": "vision", "dmg_share": "dmg_share", "gold_share": "gold_share",
-              "early_deaths": "early_death", "solo_kills": "solo_kill", "obj": "obj"}
+              "early_deaths": "early_death", "solo_kills": "solo_kill", "obj": "obj",
+              "gd10": "gd10", "gd15": "gd15", "csd15": "csd15", "xpd15": "xpd15", "laning_adv": "laning_adv",
+              "plates": "plates", "vspm": "vspm", "ccpm": "ccpm", "dead_pct": "dead_pct"}
 
 
 class History:
@@ -78,7 +90,9 @@ class History:
         rows = db.q(
             "SELECT puuid, game_start, win, role, champion, tier_score, ai_score, lane_ai, kda, kill_part, cspm, dpm, gpm, "
             "dtpm, vision, dmg_share, gold_share, early_deaths, solo_kills, "
-            "(COALESCE(monster_kills,0)+COALESCE(tower_kills,0)+COALESCE(obj_assists,0)) obj "
+            "(COALESCE(monster_kills,0)+COALESCE(tower_kills,0)+COALESCE(obj_assists,0)) obj, "
+            "gd10, gd15, csd15, xpd15, laning_adv, plates, vspm, ccpm, "
+            "CASE WHEN time_dead IS NULL OR duration IS NULL OR duration=0 THEN NULL ELSE CAST(time_dead AS REAL)/duration END dead_pct "
             "FROM game_players WHERE duration > 300 ORDER BY puuid, game_start")
         cur, buf = None, []
         for r in rows:
@@ -193,7 +207,7 @@ def build_dataset(db, P: FeatureParams, log=print):
     gp = {}
     for r in db.q("SELECT match_id, puuid, team, role, champion, win, tier_score FROM game_players"):
         gp.setdefault(r["match_id"], []).append(dict(r))
-    state = {"__pairs__": {}, "__vs__": {}, "__role__": {}}
+    state = {"__pairs__": {}, "__vs__": {}, "__role__": {}, "__tier__": {}}
     X, y, meta, per_player = [], [], [], []
     for g in games:
         ps = gp.get(g["match_id"], [])
@@ -206,6 +220,10 @@ def build_dataset(db, P: FeatureParams, log=print):
             o = next((q for q in red if q["role"] and q["role"] == p["role"]), None)
             if o:
                 opp_of[p["puuid"]], opp_of[o["puuid"]] = o["puuid"], p["puuid"]
+        # 경기 당시 티어가 없으면(deeplol 상세 없음) 그 이전 마지막으로 본 티어
+        for p in ps:
+            if p["tier_score"] is None:
+                p["tier_score"] = state["__tier__"].get(p["puuid"])
         feats = {}
         for p in ps:
             team = blue if p["team"] == 100 else red
@@ -225,8 +243,10 @@ def build_dataset(db, P: FeatureParams, log=print):
         for p in ps:
             per_player.append({"match_id": g["match_id"], "puuid": p["puuid"], "team": p["team"], "role": p["role"],
                                "win": p["win"], **{k: feats[p["puuid"]][k] for k in FEATURE_NAMES}})
-        # 경기 후 상태 갱신: Elo(전체·라인별) · 팀원 쌍 · 맞라인 상대전적
+        # 경기 후 상태 갱신: Elo(전체·라인별) · 팀원 쌍 · 맞라인 상대전적 · 마지막 티어
         for p in ps:
+            if p["tier_score"] is not None:
+                state["__tier__"][p["puuid"]] = p["tier_score"]
             if p["puuid"] not in state:
                 state[p["puuid"]] = {"elo": _elo_init(p["tier_score"], P), "g": 0, "w": 0}
             rk = (p["puuid"], p["role"])

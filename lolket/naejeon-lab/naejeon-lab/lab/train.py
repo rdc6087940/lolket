@@ -28,9 +28,10 @@ FEATURE_GROUPS = {
     "tier": ["tier"],
     "winrate": ["wr", "games", "form", "role_wr", "role_share"],
     "ai": ["ai", "lane_ai"],
-    "combat": ["kda", "kp", "dpm", "dmg_share", "solo_kill", "early_death"],
+    "combat": ["kda", "kp", "dpm", "dmg_share", "solo_kill", "early_death", "ccpm", "dead_pct"],
     "economy": ["cspm", "gpm", "gold_share", "dtpm"],
-    "map": ["vision", "obj"],
+    "laning": ["gd10", "gd15", "csd15", "xpd15", "laning_adv", "plates"],
+    "map": ["vision", "vspm", "obj"],
     "champion": ["champ_games", "champ_wr"],
     "social": ["duo", "lane_vs"],
 }

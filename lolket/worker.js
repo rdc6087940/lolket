@@ -231,41 +231,19 @@ export default {
       const ci = ciRes.ok ? (await ciRes.json()) : null;
       const forumChannelId = ci && ci.discordForumChannelId;
       if (!forumChannelId) return json({ok:false,error:'포럼 채널 ID가 설정되지 않았습니다'},400);
-      const botToken = env.DISCORD_BOT_TOKEN;
-      if (!botToken) return json({ok:false,error:'BOT_TOKEN 없음'},500);
-      const postTitle = _forumPostTitle(matchName);
-      const msgContent = _forumPostContent(cid, matchId, matchName, matchTime, matchAdmin);
-      // 버튼 컴포넌트 (라인 고정 모집 여부에 따라)
-      const components = _forumPostComponents(cid, matchId, !!matchCheck.laneFixedRecruit);
-      // Discord 포럼 포스트 생성
-      const discordRes = await fetch(`https://discord.com/api/v10/channels/${forumChannelId}/threads`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bot ' + botToken },
-        body: JSON.stringify({
-          name: postTitle,
-          auto_archive_duration: 10080,
-          message: { content: msgContent, components },
-        }),
-      });
-      if (!discordRes.ok) {
-        const err = await discordRes.text();
-        return json({ok:false,error:'Discord API '+discordRes.status+': '+err},500);
-      }
-      const threadData = await discordRes.json();
-      const threadId = threadData.id;
-      if (threadId) {
-        await fetch(`${dbUrl}/communities/${cid}/matches/${matchId}/discordForumThread.json${authQ}`, {
-          method: 'PUT', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ threadId, forumChannelId }),
-        }).catch(() => {});
-        // 내전 삭제 시 함께 지울 수 있도록 커뮤니티 단위 색인에도 기록 (내전 데이터와 별도 위치)
-        await fetch(`${dbUrl}/communities/${cid}/forum_threads/${matchId}/${threadId}.json${authQ}`, {
-          method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: 'true',
-        }).catch(() => {});
-        // 참가자 현황 댓글 생성 (이후 멤버 변경 시 이 댓글이 계속 수정됨)
-        ctx.waitUntil(updateForumPostMembers(cid, matchId, env));
-      }
-      return json({ ok: true, threadId });
+      // 칼바람 내전이고 칼바람 포럼 채널이 있으면 그쪽에 작성
+      const targetChannel = (matchCheck.isAram && ci.discordAramForumChannelId) ? ci.discordAramForumChannelId : forumChannelId;
+      const cr = await _createForumPost(cid, matchId, targetChannel, matchName, matchTime, matchAdmin, !!matchCheck.laneFixedRecruit, env, ctx);
+      return json(cr, cr.ok ? 200 : 500);
+    }
+
+    // ── 칼바람 토글: 포럼 포스트를 칼바람 포럼 ↔ 내전 포럼으로 옮김 (새 포스트 작성 → 기존 포스트 삭제) ──
+    if (path === '/match-forum-move' && request.method === 'POST') {
+      let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
+      const { cid, matchId } = body || {};
+      if (!cid || !matchId) return json({ok:false,error:'필수 파라미터 없음'},400);
+      const r = await _moveForumPost(cid, matchId, env, ctx);
+      return json(r, r.ok ? 200 : (r.status || 500));
     }
 
     // ── 경매 3단계: 출석 부르기 (참여자 전원에게 출석 체크 버튼 DM) ──
@@ -288,7 +266,7 @@ export default {
       const admin = (aRes.ok ? await aRes.json() : '') || '';
       const mt = tRes.ok ? await tRes.json() : null;
       let timeStr = '';
-      if (mt) { const d = new Date(mt); if (!isNaN(d)) timeStr = d.toLocaleString('ko-KR', { timeZone: 'Asia/Seoul', month: 'numeric', day: 'numeric', weekday: 'short', hour: '2-digit', minute: '2-digit' }); }
+      if (mt === 'mobasi') timeStr = '모바시'; else if (mt) { const d = new Date(mt); if (!isNaN(d)) timeStr = d.toLocaleString('ko-KR', { timeZone: 'Asia/Seoul', month: 'numeric', day: 'numeric', weekday: 'short', hour: '2-digit', minute: '2-digit' }); }
       const calledAt = Date.now();
       // 1) 출석 명단을 먼저 저장 (DM 받자마자 버튼을 눌러도 처리되도록)
       const acMembers = {};
@@ -351,7 +329,7 @@ export default {
       const admin = (aRes.ok ? await aRes.json() : '') || '';
       const mt = tmRes.ok ? await tmRes.json() : null;
       let timeStr = '';
-      if (mt) { const d = new Date(mt); if (!isNaN(d)) timeStr = d.toLocaleString('ko-KR', { timeZone: 'Asia/Seoul', month: 'numeric', day: 'numeric', weekday: 'short', hour: '2-digit', minute: '2-digit' }); }
+      if (mt === 'mobasi') timeStr = '모바시'; else if (mt) { const d = new Date(mt); if (!isNaN(d)) timeStr = d.toLocaleString('ko-KR', { timeZone: 'Asia/Seoul', month: 'numeric', day: 'numeric', weekday: 'short', hour: '2-digit', minute: '2-digit' }); }
       // 링크는 우리 사이트 주소일 때만 포함
       const safeLink = (typeof link === 'string' && /^https:\/\/(www\.)?roonging\.com\//.test(link)) ? link : `https://roonging.com/?match=${cid}__${matchId}`;
       const BOT = env.DISCORD_BOT_TOKEN;
@@ -411,7 +389,7 @@ export default {
       const admin = (adminRes.ok ? await adminRes.json() : '') || '';
       const mt = timeRes.ok ? await timeRes.json() : null;
       let timeStr = '';
-      if (mt) { const d = new Date(mt); if (!isNaN(d)) timeStr = d.toLocaleString('ko-KR', { timeZone: 'Asia/Seoul', month: 'numeric', day: 'numeric', weekday: 'short', hour: '2-digit', minute: '2-digit' }); }
+      if (mt === 'mobasi') timeStr = '모바시'; else if (mt) { const d = new Date(mt); if (!isNaN(d)) timeStr = d.toLocaleString('ko-KR', { timeZone: 'Asia/Seoul', month: 'numeric', day: 'numeric', weekday: 'short', hour: '2-digit', minute: '2-digit' }); }
       const BOT = env.DISCORD_BOT_TOKEN;
       if (!BOT) return json({ ok:false, error:'BOT_TOKEN 없음' }, 500);
       let sent = 0;
@@ -446,6 +424,14 @@ export default {
       const { cid, matchId } = body || {};
       if (!cid || !matchId) return json({ok:false,error:'필수 파라미터 없음'},400);
       const r = await _updateForumPostTitle(cid, matchId, env);
+      return json(r, r.ok ? 200 : (r.status || 500));
+    }
+    // 디스코드 알림 전송 / 호출 → 해당 내전 포럼 포스트에 댓글로 멘션
+    if (path === '/match-forum-mention' && request.method === 'POST') {
+      let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
+      const { cid, matchId, message } = body || {};
+      if (!cid || !matchId || !message) return json({ok:false,error:'필수 파라미터 없음'},400);
+      const r = await _mentionInForumPost(cid, matchId, String(message), env);
       return json(r, r.ok ? 200 : (r.status || 500));
     }
     if (path === '/match-forum-buttons' && request.method === 'POST') {
@@ -5129,7 +5115,7 @@ async function handleDiscordInteraction(request, env, ctx) {
 
       // 탑레계정 등록 여부 확인
       if (!ep || !ep.riotName) {
-        return discordReply('❌ 탑레계정을 먼저 등록해주세요.\n`/룽봇 탑레계정등록` 명령어를 사용하세요.', true);
+        return discordReply('❌ 소환사 계정을 먼저 등록해주세요.\n포스트 위의 **🎮 소환사 계정 등록** 버튼을 눌러 등록할 수 있습니다.', true);
       }
 
       // 탑레계정 있으면 바로 참가 처리 (defer + waitUntil)
@@ -6586,11 +6572,87 @@ function _forumPostComponents(cid, matchId, laneFixed) {
     leaveBtn,
   ] }];
 }
+// ── 포럼 포스트 작성 (내전 생성 / 칼바람 이동 공용) ──
+async function _createForumPost(cid, matchId, forumChannelId, matchName, matchTime, matchAdmin, laneFixed, env, ctx) {
+  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth='+secret : '';
+  const botToken = env.DISCORD_BOT_TOKEN;
+  if (!botToken) return { ok:false, error:'BOT_TOKEN 없음' };
+  const discordRes = await fetch(`https://discord.com/api/v10/channels/${forumChannelId}/threads`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bot ' + botToken },
+    body: JSON.stringify({
+      name: _forumPostTitle(matchName),
+      auto_archive_duration: 10080,
+      message: { content: _forumPostContent(cid, matchId, matchName, matchTime, matchAdmin), components: _forumPostComponents(cid, matchId, laneFixed) },
+    }),
+  });
+  if (!discordRes.ok) return { ok:false, error:'Discord API '+discordRes.status+': '+(await discordRes.text()).slice(0, 300) };
+  const threadData = await discordRes.json();
+  const threadId = threadData.id;
+  if (threadId) {
+    await fetch(`${dbUrl}/communities/${cid}/matches/${matchId}/discordForumThread.json${authQ}`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ threadId, forumChannelId }),
+    }).catch(() => {});
+    // 내전 삭제 시 함께 지울 수 있도록 커뮤니티 단위 색인에도 기록 (내전 데이터와 별도 위치)
+    await fetch(`${dbUrl}/communities/${cid}/forum_threads/${matchId}/${threadId}.json${authQ}`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: 'true',
+    }).catch(() => {});
+    // 참가자 현황 댓글 생성 (discordForumThread 를 새로 써서 댓글 ID·해시도 초기화됨)
+    if (ctx && ctx.waitUntil) ctx.waitUntil(updateForumPostMembers(cid, matchId, env));
+    else await updateForumPostMembers(cid, matchId, env).catch(() => {});
+  }
+  return { ok: true, threadId, forumChannelId };
+}
+
+// 칼바람 ON → 칼바람 포럼, OFF → 내전 포럼. 이미 맞는 채널이면 아무것도 안 함
+async function _moveForumPost(cid, matchId, env, ctx) {
+  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth='+secret : '';
+  const botToken = env.DISCORD_BOT_TOKEN;
+  if (!botToken) return { ok:false, error:'BOT_TOKEN 없음', status:500 };
+  const [mRes, ciRes] = await Promise.all([
+    fetch(`${dbUrl}/communities/${cid}/matches/${matchId}.json${authQ}`),
+    fetch(`${dbUrl}/communities_info/${cid}.json${authQ}`),
+  ]);
+  const m = mRes.ok ? await mRes.json() : null;
+  if (!m) return { ok:false, error:'존재하지 않는 내전', status:404 };
+  const ci = (ciRes.ok ? await ciRes.json() : null) || {};
+  const mainCh = ci.discordForumChannelId, aramCh = ci.discordAramForumChannelId;
+  if (!aramCh) return { ok:true, skipped:'칼바람 포럼 채널 ID가 설정되지 않아 포스트를 옮기지 않았습니다' };
+  const target = m.isAram ? aramCh : mainCh;
+  if (!target) return { ok:true, skipped:'내전 포럼 채널 ID가 설정되지 않았습니다' };
+  const old = m.discordForumThread || null;
+  if (old && old.forumChannelId === target) return { ok:true, skipped:'이미 해당 포럼에 포스트가 있습니다' };
+  // 1) 새 포스트 먼저 작성 (실패하면 기존 포스트 유지)
+  const cr = await _createForumPost(cid, matchId, target, m.name || '내전', m.time, m.admin, !!m.laneFixedRecruit, env, null);
+  if (!cr.ok) return { ok:false, error:'새 포스트 작성 실패 — ' + cr.error, status:500 };
+  // 2) 기존 포스트 삭제 (권한 부족이면 닫기·잠금으로 대신)
+  let oldResult = 'none';
+  if (old && old.threadId) {
+    const H = { 'Authorization': 'Bot ' + botToken };
+    const del = await fetch(`https://discord.com/api/v10/channels/${old.threadId}`, { method: 'DELETE', headers: H });
+    if (del.ok || del.status === 404) {
+      oldResult = 'deleted';
+    } else {
+      const lock = await fetch(`https://discord.com/api/v10/channels/${old.threadId}`, {
+        method: 'PATCH', headers: Object.assign({ 'Content-Type': 'application/json' }, H),
+        body: JSON.stringify({ name: ('[이동됨] ' + _forumPostTitle(m.name || '내전')).slice(0, 100), archived: true, locked: true }),
+      });
+      oldResult = lock.ok ? 'archived' : ('failed ' + del.status);
+    }
+    await fetch(`${dbUrl}/communities/${cid}/forum_threads/${matchId}/${old.threadId}.json${authQ}`, { method: 'DELETE' }).catch(() => {});
+  }
+  return { ok:true, threadId: cr.threadId, forumChannelId: target, old: oldResult };
+}
+
 // ── 포럼 포스트 제목·원문 (생성 / 내전 제목 수정 공용) ──
 function _forumPostTitle(matchName) { return ('⚔️ ' + matchName).slice(0, 100); }
 function _forumPostContent(cid, matchId, matchName, matchTime, matchAdmin) {
   let timeStr = '—';
-  if (matchTime) {
+  if (matchTime === 'mobasi') timeStr = '모바시 (모두 모이면 바로 시작)';
+  else if (matchTime) {
     try {
       const d = new Date(matchTime);
       const days = ['일','월','화','수','목','금','토'];
@@ -6609,6 +6671,38 @@ function _forumPostContent(cid, matchId, matchName, matchTime, matchAdmin) {
 }
 
 // ── 내전 제목 수정 → 포럼 포스트 제목·원문 갱신 (DB에 저장된 현재 제목/시간/진행자 기준) ──
+// ── 내전 포럼 포스트에 댓글(멘션) 달기 ──
+async function _mentionInForumPost(cid, matchId, message, env) {
+  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth='+secret : '';
+  const botToken = env.DISCORD_BOT_TOKEN;
+  if (!botToken) return { ok:false, error:'BOT_TOKEN 없음', status:500 };
+  const ftRes = await fetch(`${dbUrl}/communities/${cid}/matches/${matchId}/discordForumThread.json${authQ}`);
+  const ft = ftRes.ok ? await ftRes.json() : null;
+  let threadId = ft && ft.threadId ? String(ft.threadId) : null;
+  if (!threadId) {
+    try { threadId = await _findForumThreadForMatch(env, cid, matchId); } catch (e) { threadId = null; }
+  }
+  if (!threadId) return { ok:false, error:'이 내전의 디스코드 포럼 포스트를 찾지 못했습니다', status:404 };
+  const H = { 'Content-Type': 'application/json', 'Authorization': 'Bot ' + botToken };
+  // 보관(archived)된 포스트면 먼저 보관 해제 (실패해도 댓글 시도)
+  await fetch(`https://discord.com/api/v10/channels/${threadId}`, {
+    method: 'PATCH', headers: H, body: JSON.stringify({ archived: false }),
+  }).catch(() => {});
+  let content = message;
+  if (content.length > 2000) content = content.slice(0, 1990) + '\n…';
+  const res = await fetch(`https://discord.com/api/v10/channels/${threadId}/messages`, {
+    method: 'POST', headers: H,
+    body: JSON.stringify({ content, allowed_mentions: { parse: ['users'] } }),
+  });
+  if (!res.ok) {
+    const t = (await res.text()).slice(0, 200);
+    console.error('[forum-mention]', threadId, res.status, t);
+    return { ok:false, error:'Discord API ' + res.status + ': ' + t, status:500 };
+  }
+  return { ok:true, threadId };
+}
+
 async function _updateForumPostTitle(cid, matchId, env) {
   const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
   const authQ = secret ? '?auth='+secret : '';
@@ -6931,7 +7025,8 @@ async function _checkMatchFullAndNotify(cid, matchId, env) {
     if (!targets.length) return;
 
     let timeStr = '';
-    if (matchTime) {
+    if (matchTime === 'mobasi') timeStr = '모바시';
+    else if (matchTime) {
       const d = new Date(matchTime);
       if (!isNaN(d)) timeStr = d.toLocaleString('ko-KR', { timeZone: 'Asia/Seoul', month: 'numeric', day: 'numeric', weekday: 'short', hour: '2-digit', minute: '2-digit' });
     }

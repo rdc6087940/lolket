@@ -9,6 +9,15 @@ collect:
   deeplol_server_ids: [156]       # deeplol 커뮤니티 번호 (롤하냥 = 156, stats 페이지 주소의 server_id)
   deeplol_interval_s: 0.4         # deeplol 요청 간격(초). 막히면 늘리기
 
+  # ── Riot API (.env 의 RIOT_API_KEY 필요. 없으면 자동으로 deeplol 만 사용) ──
+  use_riot: true                  # Riot 토너먼트 경기 목록·상세·타임라인 사용
+  riot_list_type: tourney         # 멤버별 Riot 경기 목록 필터 (롤하냥 내전 = 토너먼트 코드 게임)
+  riot_list_queue:                # 비워두기. doctor 결과 type=tourney 가 0개이고 queue=3130 만 나오면 3130 으로
+  riot_timeline: true             # 타임라인(10·15분 골드·CS·경험치 차이) 받기 — 요청이 경기당 1회 늘어남
+  use_deeplol_list: true          # deeplol 커스텀 목록도 같이 훑어서 Riot 목록에서 빠진 경기 보완
+  deeplol_detail: true            # deeplol 상세(경기 당시 티어·AI 점수)도 받아서 합치기
+  candidate_min_lists: 8          # 목록에 멤버가 이만큼 이상 나온 경기만 상세 확인 (Riot 연결 못 한 멤버 대비. 최종 판정은 10명)
+
 series_gap_hours: 3               # 같은 10명이 이 시간 안에 이어서 하면 한 시리즈
 
 github:

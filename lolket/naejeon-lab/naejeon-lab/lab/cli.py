@@ -1,10 +1,10 @@
 """명령어
 
-  python -m lab doctor 닉네임#태그     deeplol 접속·멤버·내전 기록 점검 (deeplol puuid 도 가능)
+  python -m lab doctor 닉네임#태그     deeplol·Riot API 접속, Riot 토너먼트 목록(type=tourney) 지원 여부, 내전 판정 점검
   python -m lab members [--min-games N] deeplol 커뮤니티 멤버 → members.txt (puuid)
   python -m lab seed                   members.txt → 수집 대상 등록
   python -m lab status                 수집 현황
-  python -m lab collect                커뮤니티 내전 수집 (deeplol, 10명 전원 멤버인 경기만 · 언제 끊어도 이어서)
+  python -m lab collect                커뮤니티 내전 수집 (Riot 목록·상세·타임라인 + deeplol 티어·AI 점수, 10명 전원 멤버 · 이어서 가능)
   python -m lab build                  원본 → 분석 테이블(경기·선수·이벤트·타임라인) + 시리즈 묶기
   python -m lab train [--trials N] [--advise]   최적화·학습·내보내기 (+ LLM 조언)
   python -m lab cycle [--trials N]     build → train → (LLM 조언 반영 재학습) → 내보내기 한 번에

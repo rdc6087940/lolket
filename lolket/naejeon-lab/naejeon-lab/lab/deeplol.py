@@ -1,8 +1,10 @@
-"""deeplol API 클라이언트 — 내전(커스텀) 기록의 유일한 출처
+"""deeplol API 클라이언트 — 커뮤니티 멤버 목록 · 보조 경기 목록 · 경기 당시 티어/AI 점수
 
-Riot API는 일반 커스텀 게임 기록을 정책상 주지 않는다(토너먼트 코드 게임만 예외).
-룽잉닷컴 stats 페이지와 같은 deeplol API에서 커뮤니티 멤버 목록·내전 목록·내전 상세를 받는다.
-상세는 받은 그대로(타임라인·이벤트·아이템·룬·스킬·핑 등 전부) 저장한다.
+경기 목록·상세의 주 출처는 Riot API(토너먼트 코드 게임). deeplol 은
+  - 커뮤니티 멤버 목록(현재 닉네임#태그)
+  - 경기 당시 티어, deeplol AI 점수, 분 단위 라인 점수 (Riot 에 없는 값)
+  - Riot 목록에서 빠진 경기를 찾는 보조 목록
+에 쓴다. 상세는 받은 그대로 저장한다.
 
 ※ 비공식 API: 예고 없이 바뀌거나 막힐 수 있다. 요청 간격을 두고 천천히 받는다.
 """
@@ -11,6 +13,12 @@ import time
 import requests
 
 BASE = "https://b2c-api-cdn.deeplol.gg"
+
+
+def norm_mid(mid):
+    """경기 ID 통일: 'KR_8310958908' (숫자만 오면 KR_ 붙임)"""
+    s = str(mid or "").strip()
+    return "KR_" + s if s.isdigit() else s
 
 
 def riot_id_key(name, tag):
@@ -64,7 +72,12 @@ class DeepLol:
 
     def match(self, match_id):
         """경기 상세 원본 (match_basic_dict, participants_list, time_analysis)"""
-        return self.get("/match/match-cached", {"match_id": match_id, "platform_id": "KR"})
+        st, j = self.get("/match/match-cached", {"match_id": match_id, "platform_id": "KR"})
+        if (st != 200 or not j) and str(match_id).startswith("KR_"):   # 숫자만 받는 경우 대비
+            st2, j2 = self.get("/match/match-cached", {"match_id": str(match_id)[3:], "platform_id": "KR"})
+            if st2 == 200 and j2:
+                return st2, j2
+        return st, j
 
     def server_members(self, server_id):
         """deeplol 커뮤니티(서버) 멤버 목록 → [{puu_id, riot_name, riot_tag, cnt, ...}]"""

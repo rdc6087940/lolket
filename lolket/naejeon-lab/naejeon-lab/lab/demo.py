@@ -1,7 +1,7 @@
 """가짜 데이터 생성기 — 키·인터넷 없이 학습·화면 동작 확인용
 
 숨은 '라인별 실력'을 가진 멤버들이 커뮤니티 내전을 했다고 가정하고,
-deeplol 경기 상세(match-cached)와 같은 모양의 원본 JSON을 만든다. (실제 데이터 아님)
+deeplol 경기 상세(match-cached) + Riot match-v5 상세·타임라인과 같은 모양의 원본 JSON을 만든다. (실제 데이터 아님)
 """
 import json
 import os
@@ -39,8 +39,9 @@ def make_demo(cfg, n_players=60, n_games=1200, log=print, seed=7):
         p = {"puuid": f"demo{i:03d}" + "x" * 70, "name": f"{rng.choice(NAMES)}{i}", "tag": "KR1", "role_skill": role_skill,
              "tier": TIERS[ti], "div": 0 if ti == 7 else rng.randint(1, 4)}
         players.append(p)
-        db.x("INSERT INTO members(puuid, game_name, tag_line, source, added_at, scan_done) VALUES(?,?,?,?,?,1)",
-             (p["puuid"], p["name"], p["tag"], "seed", now_ms()))
+        p["riot"] = f"riot{i:03d}" + "y" * 70
+        db.x("INSERT INTO members(puuid, game_name, tag_line, source, added_at, scan_done, riot_puuid, riot_status, riot_scan_done) "
+             "VALUES(?,?,?,?,?,1,?,200,1)", (p["puuid"], p["name"], p["tag"], "seed", now_ms(), p["riot"]))
     db.set_meta("champ_names", {str(k): v for k, v in CHAMP_NAMES.items()})
     t = now_ms() - 365 * 86400000
     made, mid = 0, 8000000000
@@ -58,8 +59,12 @@ def make_demo(cfg, n_players=60, n_games=1200, log=print, seed=7):
             mid += 1
             raw = _match(f"KR_{mid}", t, blue, red, bw, rng)
             db.x("INSERT INTO matches_raw VALUES(?,?,?,?)", (f"KR_{mid}", now_ms(), 200, json.dumps(raw, ensure_ascii=False)))
+            if rng.random() < 0.85:      # 대부분은 Riot 상세·타임라인도 있음
+                rm, tl = _riot(f"KR_{mid}", t, raw, {p["puuid"]: p for p, _ in blue + red}, rng)
+                db.x("INSERT INTO riot_raw VALUES(?,?,?,?)", (f"KR_{mid}", now_ms(), 200, json.dumps(rm, ensure_ascii=False)))
+                db.x("INSERT INTO riot_tl VALUES(?,?,?,?)", (f"KR_{mid}", now_ms(), 200, json.dumps(tl)))
             for p, _ in blue + red:
-                db.x("INSERT OR IGNORE INTO member_matches VALUES(?,?,?)", (p["puuid"], f"KR_{mid}", t))
+                db.x("INSERT OR IGNORE INTO member_matches(puuid, match_id, t_ms, src) VALUES(?,?,?,?)", (p["puuid"], f"KR_{mid}", t, "riot"))
             t += 35 * 60000
             made += 1
         t += rng.randint(2, 30) * 3600000
@@ -134,3 +139,70 @@ def _match(mid, t, blue, red, bw, rng):
                                  "map_id": 11, "game_version": "16.22", "tournament_name": "데모"},
             "participants_list": parts,
             "time_analysis": {"concat_events_dict": ev, "concat_seq_dict": seq, "concat_participants_dict": {}}}
+
+
+R_POS = {"Top": "TOP", "Jungle": "JUNGLE", "Middle": "MIDDLE", "Bot": "BOTTOM", "Supporter": "UTILITY"}
+
+
+def _riot(mid, t, raw, pmap, rng):
+    """deeplol 모양 가짜 경기 → Riot match-v5 상세 + 타임라인 모양"""
+    dur = raw["match_basic_dict"]["game_duration"]
+    mins = dur / 60
+    bw = raw["match_basic_dict"]["blue_win"]
+    parts, pf = [], {}
+    for i, q in enumerate(raw["participants_list"], 1):
+        p = pmap[q["puu_id"]]
+        perf = (q["ai_score"] - 50) / 9.0
+        fs = q["final_stat_dict"]
+        team = 100 if q["side"] == "BLUE" else 200
+        lane = perf + np.random.normal(0, 0.6)
+        parts.append({
+            "participantId": i, "puuid": p["riot"], "riotIdGameName": p["name"], "riotIdTagline": p["tag"],
+            "teamId": team, "teamPosition": R_POS[q["position"]], "individualPosition": R_POS[q["position"]],
+            "championId": q["champion_id"], "championName": CHAMP_NAMES.get(q["champion_id"], ""),
+            "win": bool(q["is_win"]), "kills": fs["kills"], "deaths": fs["deaths"], "assists": fs["assists"],
+            "totalMinionsKilled": fs["cs"], "neutralMinionsKilled": 0, "champLevel": 16,
+            "goldEarned": q["total_gold"], "totalDamageDealtToChampions": q["total_damage_dealt_to_champion"],
+            "totalDamageDealt": q["total_damage_dealt"], "totalDamageTaken": q["total_damage_taken"],
+            "wardsPlaced": fs["wards_placed"], "wardsKilled": fs["wards_killed"], "detectorWardsPlaced": 3,
+            "visionScore": int((0.8 + (1.6 if q["position"] == "Supporter" else 0) + perf * 0.1) * mins),
+            "timeCCingOthers": max(0, int(20 + perf * 5 + rng.uniform(0, 20))),
+            "totalTimeSpentDead": int(fs["deaths"] * rng.uniform(15, 40)), "longestTimeSpentLiving": 600,
+            "dragonKills": 0, "baronKills": 0, "turretKills": rng.randint(0, 2), "turretTakedowns": rng.randint(0, 4),
+            "firstBloodKill": False, "firstTowerKill": False, "doubleKills": q["double_kills"], "tripleKills": 0,
+            "quadraKills": 0, "pentaKills": 0, "summoner1Id": 4, "summoner2Id": 14, "profileIcon": 29,
+            "perks": {"styles": [{"style": 8000, "selections": [{"perk": 8010}]}, {"style": 8400}]},
+            "challenges": {"killParticipation": fs["kill_point"] / 100, "soloKills": max(0, int(perf + rng.uniform(0, 2))),
+                           "teamDamagePercentage": None, "visionScorePerMinute": None,
+                           "turretPlatesTaken": max(0, int(1.5 + lane + rng.uniform(-1, 1))),
+                           "laningPhaseGoldExpAdvantage": 1 if lane > 0.3 else 0, "dragonTakedowns": 1, "baronTakedowns": 0,
+                           "riftHeraldTakedowns": 0, "skillshotsHit": 30, "skillshotsDodged": 10},
+        })
+        pf[i] = lane
+    for x in parts:
+        for k in ("teamDamagePercentage", "visionScorePerMinute"):
+            x["challenges"].pop(k)
+    frames = []
+    for m in range(int(mins) + 1):
+        fr = {"timestamp": m * 60000, "participantFrames": {}, "events": []}
+        for i in pf:
+            g = int(500 + m * (330 + pf[i] * 25))
+            fr["participantFrames"][str(i)] = {"totalGold": g, "minionsKilled": int(m * (6.5 + pf[i] * 0.5)),
+                                               "jungleMinionsKilled": 0, "xp": int(m * (420 + pf[i] * 20)), "level": min(18, 1 + m // 2)}
+        if m and m % 3 == 0:
+            k, v = (rng.randint(1, 5), rng.randint(6, 10)) if rng.random() < (0.6 if bw else 0.4) else (rng.randint(6, 10), rng.randint(1, 5))
+            fr["events"].append({"type": "CHAMPION_KILL", "timestamp": m * 60000 + 5000, "killerId": k, "victimId": v,
+                                 "assistingParticipantIds": [] if rng.random() < 0.3 else [k % 5 + 1 if k <= 5 else (k % 5) + 6],
+                                 "position": {"x": rng.randint(0, 14000), "y": rng.randint(0, 14000)}})
+        frames.append(fr)
+    tb = sum(1 for q in raw["participants_list"] if q["side"] == "BLUE")
+    teams = [{"teamId": 100, "win": bool(bw), "bans": [], "objectives": {"champion": {"first": True, "kills": 20},
+                                                                         "tower": {"first": bw, "kills": 7 if bw else 3},
+                                                                         "dragon": {"first": bw, "kills": 3 if bw else 1}}},
+             {"teamId": 200, "win": not bw, "bans": [], "objectives": {"champion": {"first": False, "kills": 18},
+                                                                       "tower": {"first": not bw, "kills": 3 if bw else 7},
+                                                                       "dragon": {"first": not bw, "kills": 1 if bw else 3}}}]
+    m = {"metadata": {"matchId": mid, "participants": [x["puuid"] for x in parts]},
+         "info": {"gameCreation": int(t), "gameStartTimestamp": int(t) + 20000, "gameDuration": dur, "queueId": 3130,
+                  "mapId": 11, "gameVersion": "16.22.1", "tournamentCode": "KR04-DEMO", "participants": parts, "teams": teams}}
+    return m, {"info": {"frames": frames}}

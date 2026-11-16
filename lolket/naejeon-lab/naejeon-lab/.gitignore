@@ -3,6 +3,7 @@
 data/
 output/
 output_demo/
+config.yaml
 config.demo.yaml
 members.txt
 __pycache__/
