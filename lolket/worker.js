@@ -426,6 +426,14 @@ export default {
       const r = await _updateForumPostTitle(cid, matchId, env);
       return json(r, r.ok ? 200 : (r.status || 500));
     }
+    // 내전 디스코드 포스트 링크
+    if (path === '/match-forum-link' && request.method === 'POST') {
+      let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
+      const { cid, matchId } = body || {};
+      if (!cid || !matchId) return json({ok:false,error:'필수 파라미터 없음'},400);
+      const r = await _forumPostLink(cid, matchId, env);
+      return json(r, r.ok ? 200 : (r.status || 500));
+    }
     // 내전 홍보 → 커뮤니티 '내전 멘션 채널'에 '내전 역할' 멘션 + 포스트 바로가기 버튼
     if (path === '/match-promo' && request.method === 'POST') {
       let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
@@ -4948,6 +4956,97 @@ async function handleDiscordInteraction(request, env, ctx) {
       return resp;
     }
 
+    // ── 관리 메뉴 (역할 있는 사람에게만 본인 화면에 버튼) ──
+    if (customId.startsWith('admin_menu__')) {
+      const { cid, matchId } = _splitCidMatch(customId, 'admin_menu__');
+      const chk = await _adminRoleCheck(interaction, cid, env);
+      if (!chk.ok) return discordReply(chk.msg, true);
+      const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+      const authQ = secret ? '?auth='+secret : '';
+      const mr = await fetch(`${dbUrl}/communities/${cid}/matches/${matchId}.json${authQ}`);
+      const m = mr.ok ? await mr.json() : null;
+      if (!m) return discordReply('❌ 내전 정보를 불러올 수 없습니다.', true);
+      const done = _isJjong(m);
+      return _ephemeralComponents(`🔧 **${m.name || '내전'}** 관리 메뉴` + (done ? '\n이미 쫑 처리된 내전입니다.' : ''), [
+        { type: 1, components: [
+          { type: 2, style: 4, label: done ? '🛑 쫑 처리됨' : '🛑 내전 쫑', custom_id: `jjong_ask__${cid}__${matchId}`, disabled: done },
+          { type: 2, style: 2, label: '🗑 내전 삭제', custom_id: `mdel_ask__${cid}__${matchId}` },
+        ] },
+      ]);
+    }
+    if (customId.startsWith('jjong_ask__')) {
+      const { cid, matchId } = _splitCidMatch(customId, 'jjong_ask__');
+      const chk = await _adminRoleCheck(interaction, cid, env);
+      if (!chk.ok) return _updateComponentMsg(chk.msg, []);
+      const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+      const authQ = secret ? '?auth='+secret : '';
+      const mr = await fetch(`${dbUrl}/communities/${cid}/matches/${matchId}.json${authQ}`);
+      const m = mr.ok ? await mr.json() : null;
+      if (!m) return _updateComponentMsg('❌ 내전 정보를 불러올 수 없습니다.', []);
+      if (_isJjong(m)) return _updateComponentMsg('이미 쫑 처리된 내전입니다.', []);
+      const mem = (Array.isArray(m._members) ? m._members : Object.values(m._members || {})).filter(Boolean);
+      let list = mem.map(x => `${x.name}#${x.tag}`).join(', ') || '참여한 멤버가 없습니다';
+      if (list.length > 1500) list = list.slice(0, 1500) + ' …';
+      return _updateComponentMsg(
+        `🛑 **정말로 내전을 쫑 내시겠습니까?**\n쫑 내면 내전 모집이 중단되고 더 이상 참여할 수 없습니다.\n\n**현재 참여 멤버 ${mem.length}명**\n${list}`,
+        [{ type: 1, components: [
+          { type: 2, style: 4, label: '예', custom_id: `jjong_yes__${cid}__${matchId}` },
+          { type: 2, style: 2, label: '아니오', custom_id: `jjong_no__${cid}__${matchId}` },
+        ] }]);
+    }
+    // ── 관리 메뉴: 내전 삭제 ──
+    if (customId.startsWith('mdel_ask__')) {
+      const { cid, matchId } = _splitCidMatch(customId, 'mdel_ask__');
+      const chk = await _adminRoleCheck(interaction, cid, env);
+      if (!chk.ok) return _updateComponentMsg(chk.msg, []);
+      const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+      const authQ = secret ? '?auth='+secret : '';
+      const mr = await fetch(`${dbUrl}/communities/${cid}/matches/${matchId}.json${authQ}`);
+      const m = mr.ok ? await mr.json() : null;
+      if (!m) return _updateComponentMsg('❌ 이미 삭제됐거나 내전 정보를 불러올 수 없습니다.', []);
+      const cnt = (Array.isArray(m._members) ? m._members : Object.values(m._members || {})).filter(Boolean).length;
+      const when = m.time === 'mobasi' ? '모바시' : (m.time ? String(m.time).replace('T', ' ') : '');
+      return _updateComponentMsg(
+        `🗑 **정말로 내전을 삭제하시겠습니까?**\n**${m.name || '내전'}**${when ? ' · ' + when : ''} · 참여 ${cnt}명\n\n삭제하면 되돌릴 수 없습니다. 이 디스코드 포스트와 시작 알림도 함께 삭제됩니다.`,
+        [{ type: 1, components: [
+          { type: 2, style: 4, label: '삭제', custom_id: `mdel_yes__${cid}__${matchId}` },
+          { type: 2, style: 2, label: '아니오', custom_id: `mdel_no__${cid}__${matchId}` },
+        ] }]);
+    }
+    if (customId.startsWith('mdel_no__')) {
+      return _updateComponentMsg('내전 삭제를 취소했습니다.', []);
+    }
+    if (customId.startsWith('mdel_yes__')) {
+      const { cid, matchId } = _splitCidMatch(customId, 'mdel_yes__');
+      const chk = await _adminRoleCheck(interaction, cid, env);
+      if (!chk.ok) return _updateComponentMsg(chk.msg, []);
+      // 포스트가 함께 지워지므로 먼저 안내를 바꾸고, 삭제는 응답 후에 진행
+      ctx.waitUntil(_doMatchDelete(cid, matchId, env).catch(e => console.log('[mdel]', e.message)));
+      return _updateComponentMsg('🗑 내전을 삭제했습니다. (이 포스트도 곧 삭제됩니다)', []);
+    }
+    if (customId.startsWith('jjong_no__')) {
+      return _updateComponentMsg('쫑을 취소했습니다.', []);
+    }
+    if (customId.startsWith('jjong_yes__')) {
+      const { cid, matchId } = _splitCidMatch(customId, 'jjong_yes__');
+      const chk = await _adminRoleCheck(interaction, cid, env);
+      if (!chk.ok) return _updateComponentMsg(chk.msg, []);
+      const appId = env.DISCORD_APP_ID || '1500717088984010883';
+      const token = interaction.token;
+      ctx.waitUntil((async () => {
+        let content;
+        try {
+          const r = await _doJjong(cid, matchId, env);
+          content = !r.ok ? r.msg : (r.posted ? '✅ 내전을 쫑 처리하고 포스트에 알렸습니다.' : '✅ 쫑 처리됨 · 포스트 알림 실패: ' + (r.error || ''));
+        } catch (e) { content = '❌ 오류: ' + e.message; }
+        await fetch(`https://discord.com/api/v10/webhooks/${appId}/${token}/messages/@original`, {
+          method: 'PATCH', headers: { 'Content-Type': 'application/json', 'Authorization': `Bot ${env.DISCORD_BOT_TOKEN}` },
+          body: JSON.stringify({ content, components: [] }),
+        }).catch(() => {});
+      })());
+      return new Response(JSON.stringify({ type: 6 }), { headers: { 'Content-Type': 'application/json' } });
+    }
+
     if (customId.startsWith('leave_match__') || customId.startsWith('leave_match_')) {
       let cid, matchId;
       if (customId.startsWith('leave_match__')) {
@@ -5238,9 +5337,10 @@ async function handleDiscordInteraction(request, env, ctx) {
       const _spResp = discordDefer(true);
       ctx.waitUntil((async () => {
         try {
-          const [_regIcon, _regLanes] = await Promise.all([
+          const [_regIcon, _regLanes, _regDl] = await Promise.all([
             _riotProfileIconId(env, _regPuuid),
             profileCid ? _autoLanesFromDeeplol(env, profileCid, riotName, _tagClean) : Promise.resolve(null),
+            _dlPuuidByRiotId(env, riotName, _tagClean),
           ]);
           const profile = {
             discordId: discordUserId,
@@ -5251,6 +5351,8 @@ async function handleDiscordInteraction(request, env, ctx) {
             riotName,
             riotTag: _tagClean,
             subLanes: (_regLanes && _regLanes.subLanes) || [],
+            riotPuuid: _regPuuid || null,     // 라이엇 키 기준 puuid
+            dlPuuid: _regDl || null,          // 딥롤 puu_id (전적·업적·마이페이지)
             updatedAt: Date.now(),
           };
           // 참가 신청/라인 참여 버튼이 읽는 커뮤니티별 위치에 저장 (예전 필드가 남지 않도록 통째로 저장)
@@ -5711,6 +5813,7 @@ async function handleListMatches(interaction, env) {
       if (!m.discordJoinable) return false;
       // 완료/취소 제외
       if (m.status === 'done' || m.status === 'cancel') return false;
+      if (_isJjong(m)) return false;
       // 12시간 이내
       const created = m.createdAt || 0;
       if (created && (now - created) > TWELVE_HOURS) return false;
@@ -5861,7 +5964,7 @@ async function handleJoinMatch(riotName, riotTag, laneInput, subLanesInput, matc
       if (!mRes.ok) continue;
       const matches = await mRes.json() || {};
       const open = Object.entries(matches)
-        .filter(([, m]) => m && m.discordJoinable && m.status !== 'done' && m.status !== 'cancel')
+        .filter(([, m]) => m && m.discordJoinable && m.status !== 'done' && m.status !== 'cancel' && !_isJjong(m))
         .sort(([, a], [, b]) => (b.createdAt||0) - (a.createdAt||0));
       if (open.length) { targetCid = cid; targetMatchId = open[0][0]; break; }
     }
@@ -5876,6 +5979,7 @@ async function handleJoinMatch(riotName, riotTag, laneInput, subLanesInput, matc
   const matchData = await matchRes.json();
   if (!matchData) return discordFollowup(appId, token, '❌ 내전 정보를 불러올 수 없습니다.', env);
   if (!matchData.discordJoinable) return discordFollowup(appId, token, '❌ 이 내전은 디스코드 참가가 비활성화되어 있습니다.', env);
+  if (_isJjong(matchData)) return discordFollowup(appId, token, '❌ 쫑 처리된 내전이라 참여할 수 없습니다.', env);
   if (!_isMatchStage1(matchData)) return discordFollowup(appId, token, _NOT_STAGE1_MSG, env);
   if (matchData.laneFixedRecruit && !fixedLane) return discordFollowup(appId, token, '❌ 라인 고정 모집 중인 내전입니다. 포럼 포스트의 라인 참여 버튼으로 참여해주세요.', env);
 
@@ -6048,6 +6152,7 @@ async function handleJoinMatchDirect(riotName, riotTag, laneInput, subLanesInput
   const matchData = await matchRes.json();
   if (!matchData) return discordFollowup(appId, token, '❌ 내전 정보를 불러올 수 없습니다.', env);
 
+  if (_isJjong(matchData)) return discordFollowup(appId, token, '❌ 쫑 처리된 내전이라 참여할 수 없습니다.', env);
   if (!_isMatchStage1(matchData)) return discordFollowup(appId, token, _NOT_STAGE1_MSG, env);
   if (matchData.laneFixedRecruit) return discordFollowup(appId, token, '❌ 라인 고정 모집 중인 내전입니다. 포럼 포스트의 라인 참여 버튼으로 참여해주세요.', env);
   const existingMembers = (matchData._members || matchData.members || []);
@@ -6557,6 +6662,10 @@ function _orderInfoText(list, member, laneFixed, maxMembers) {
 
 // ── 내전이 1단계(멤버 모집)인지 ──
 // 1단계: '내전 모집'(생성 직후), '내전 대기'(1단계로 되돌아옴). 2단계 이후: 종류 선택 / 팀 짜기 / 내전 진행 / 내전 종료
+// 내전 쫑: 모집 중단된 내전 (참여 불가)
+function _isJjong(matchData) {
+  return !!(matchData && (matchData.jjong || matchData.status === '내전 쫑'));
+}
 function _isMatchStage1(matchData) {
   const st = matchData && matchData.status;
   return !st || st === '내전 모집' || st === '내전 대기';
@@ -6568,17 +6677,127 @@ const _FIXED_LANES = [['top','탑'],['jg','정글'],['mid','미드'],['bot','원
 function _forumPostComponents(cid, matchId, laneFixed) {
   const registerBtn = { type: 2, style: 2, label: '🎮 소환사 계정 등록', custom_id: `register_account__${cid}` };
   const leaveBtn = { type: 2, style: 4, label: '❌ 참가 취소', custom_id: `leave_match__${cid}__${matchId}` };
+  // 관리 메뉴: 누구에게나 보이지만, 커뮤니티 설정의 '관리 메뉴 역할'이 있는 사람만 본인 화면에 실제 버튼이 열림
+  const adminBtn = { type: 2, style: 2, label: '🔧 관리 메뉴', custom_id: `admin_menu__${cid}__${matchId}` };
   if (laneFixed) {
     return [
       { type: 1, components: _FIXED_LANES.map(([code, ko]) => ({ type: 2, style: 1, label: `${ko} 참여`, custom_id: `join_lane__${cid}__${matchId}__${code}` })) },
-      { type: 1, components: [registerBtn, leaveBtn] },
+      { type: 1, components: [registerBtn, leaveBtn, adminBtn] },
     ];
   }
   return [{ type: 1, components: [
     { type: 2, style: 1, label: '⚔️ 참가 신청', custom_id: `join_match__${cid}__${matchId}` },
     registerBtn,
     leaveBtn,
+    adminBtn,
   ] }];
+}
+
+// ── 포스트 관리 메뉴 (역할 제한) ──
+function _splitCidMatch(customId, prefix) {
+  const inner = customId.slice(prefix.length);
+  const i = inner.indexOf('__');
+  return { cid: inner.slice(0, i), matchId: inner.slice(i + 2) };
+}
+async function _adminRoleCheck(interaction, cid, env) {
+  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth='+secret : '';
+  const r = await fetch(`${dbUrl}/communities_info/${cid}/discordAdminRoleIds.json${authQ}`);
+  let ids = r.ok ? await r.json() : null;
+  ids = Array.isArray(ids) ? ids : (ids && typeof ids === 'object' ? Object.values(ids) : []);
+  ids = ids.map(x => String(x || '').trim()).filter(Boolean);
+  if (!ids.length) return { ok:false, msg:'❌ 커뮤니티 설정에 "관리 메뉴 역할 ID"가 없습니다. 룽잉닷컴 커뮤니티 설정에서 먼저 입력해주세요.' };
+  const mine = (interaction.member && Array.isArray(interaction.member.roles)) ? interaction.member.roles.map(String) : [];
+  if (!mine.some(x => ids.includes(x))) return { ok:false, msg:'❌ 관리 메뉴는 지정된 역할을 가진 사람만 사용할 수 있습니다.' };
+  return { ok:true };
+}
+function _ephemeralComponents(content, components) {
+  return new Response(JSON.stringify({ type: 4, data: { content, flags: 64, components: components || [] } }),
+    { headers: { 'Content-Type': 'application/json' } });
+}
+function _updateComponentMsg(content, components) {
+  return new Response(JSON.stringify({ type: 7, data: { content, components: components || [] } }),
+    { headers: { 'Content-Type': 'application/json' } });
+}
+async function _jjongMentionText(matchData, env) {
+  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth='+secret : '';
+  const members = (Array.isArray(matchData._members) ? matchData._members : Object.values(matchData._members || {})).filter(Boolean);
+  // 소환사 계정 등록(라이엇 닉네임#태그 → 디스코드 ID)
+  let link = {};
+  try {
+    const cid = matchData.communityId;
+    const lr = await fetch(`${dbUrl}/communities/${cid}/discord_profiles.json${authQ}`);
+    const all = lr.ok ? await lr.json() : null;
+    for (const [did, it] of Object.entries(all || {})) {
+      if (it && it.riotName && it.riotTag) link[(it.riotName + '#' + it.riotTag).toLowerCase()] = it.discordId || did;
+    }
+  } catch (e) {}
+  const seen = {}, out = [];
+  members.forEach(m => {
+    const key = ((m.name || '') + '#' + (m.tag || '')).toLowerCase();
+    if (seen[key]) return; seen[key] = 1;
+    const did = m.discordId || link[key];
+    out.push(did ? `<@${did}>` : `@${m.name || '?'}`);
+  });
+  let text = (out.length ? out.join(' ') + '\n' : '') + '해당 내전은 쫑입니다.';
+  if (text.length > 2000) text = text.slice(0, 1990) + '\n…';
+  return text;
+}
+// 내전 삭제 (웹의 내전 삭제와 같은 동작): 내전 데이터 + 디스코드 포스트 + 시작 알림 + 목록 색인
+async function _doMatchDelete(cid, matchId, env) {
+  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth='+secret : '';
+  const base = `${dbUrl}/communities/${cid}/matches/${matchId}`;
+  const tids = new Set();
+  try {
+    const [ftRes, idxRes] = await Promise.all([
+      fetch(`${base}/discordForumThread.json${authQ}`),
+      fetch(`${dbUrl}/communities/${cid}/forum_threads/${matchId}.json${authQ}`),
+    ]);
+    const ft = ftRes.ok ? await ftRes.json() : null;
+    if (ft && ft.threadId) tids.add(String(ft.threadId));
+    const idx = idxRes.ok ? await idxRes.json() : null;
+    if (idx && typeof idx === 'object') Object.keys(idx).forEach(k => tids.add(String(k)));
+  } catch (e) {}
+  if (!tids.size && env.DISCORD_BOT_TOKEN) {
+    const found = await _findForumThreadForMatch(env, cid, matchId).catch(() => null);
+    if (found) tids.add(String(found));
+  }
+  const del = await fetch(`${base}.json${authQ}`, { method: 'DELETE' });
+  if (!del.ok) return { ok:false, error:'DB 삭제 실패: ' + del.status };
+  await Promise.all([
+    fetch(`${dbUrl}/match_alarms/${matchId}.json${authQ}`, { method: 'DELETE' }).catch(() => {}),
+    fetch(`${dbUrl}/match_index/${matchId}.json${authQ}`, { method: 'DELETE' }).catch(() => {}),
+    fetch(`${dbUrl}/communities/${cid}/forum_threads/${matchId}.json${authQ}`, { method: 'DELETE' }).catch(() => {}),
+  ]);
+  for (const tid of tids) {
+    await fetch(`https://discord.com/api/v10/channels/${tid}`, {
+      method: 'DELETE', headers: { 'Authorization': 'Bot ' + env.DISCORD_BOT_TOKEN },
+    }).catch(() => {});
+  }
+  return { ok:true };
+}
+// 내전 쫑 처리 (웹의 쫑 버튼과 같은 동작): 상태 저장 + 참여자 멘션 댓글
+async function _doJjong(cid, matchId, env) {
+  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth='+secret : '';
+  const base = `${dbUrl}/communities/${cid}/matches/${matchId}`;
+  const mr = await fetch(`${base}.json${authQ}`);
+  const m = mr.ok ? await mr.json() : null;
+  if (!m) return { ok:false, msg:'❌ 내전 정보를 불러올 수 없습니다.' };
+  if (_isJjong(m)) return { ok:false, msg:'이미 쫑 처리된 내전입니다.' };
+  const now = Date.now();
+  const pr = await fetch(`${base}.json${authQ}`, {
+    method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+    // _version 을 올려서 웹에서 열려 있는 화면도 바로 반영되게
+    body: JSON.stringify({ jjong: true, jjongAt: now, status: '내전 쫑', _version: (m._version || 0) + 1, _updatedAt: now }),
+  });
+  if (!pr.ok) return { ok:false, msg:'❌ 저장 실패 (' + pr.status + ')' };
+  if (!m.communityId) m.communityId = cid;
+  const text = await _jjongMentionText(m, env);
+  const r = await _mentionInForumPost(cid, matchId, text, env);
+  return { ok:true, posted: r.ok, error: r.error };
 }
 // ── 포럼 포스트 작성 (내전 생성 / 칼바람 이동 공용) ──
 async function _createForumPost(cid, matchId, forumChannelId, matchName, matchTime, matchAdmin, laneFixed, env, ctx) {
@@ -6679,6 +6898,30 @@ function _forumPostContent(cid, matchId, matchName, matchTime, matchAdmin) {
 }
 
 // ── 내전 제목 수정 → 포럼 포스트 제목·원문 갱신 (DB에 저장된 현재 제목/시간/진행자 기준) ──
+// ── 내전 포스트 링크: https://discord.com/channels/{서버ID}/{포스트ID} ──
+async function _forumPostLink(cid, matchId, env) {
+  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth='+secret : '';
+  const [ftRes, sidRes] = await Promise.all([
+    fetch(`${dbUrl}/communities/${cid}/matches/${matchId}/discordForumThread.json${authQ}`),
+    fetch(`${dbUrl}/communities_info/${cid}/discordServerId.json${authQ}`),
+  ]);
+  const ft = ftRes.ok ? await ftRes.json() : null;
+  let threadId = ft && ft.threadId ? String(ft.threadId) : null;
+  if (!threadId) {
+    try { threadId = await _findForumThreadForMatch(env, cid, matchId); } catch (e) { threadId = null; }
+  }
+  if (!threadId) return { ok:false, error:'이 내전의 디스코드 포스트가 없습니다', status:404 };
+  let guildId = sidRes.ok ? await sidRes.json() : null;
+  if (!guildId && env.DISCORD_BOT_TOKEN) {
+    const tr = await fetch(`https://discord.com/api/v10/channels/${threadId}`, { headers: { 'Authorization': 'Bot ' + env.DISCORD_BOT_TOKEN } }).catch(() => null);
+    const t = tr && tr.ok ? await tr.json() : null;
+    guildId = t && t.guild_id;
+  }
+  if (!guildId) return { ok:false, error:'디스코드 서버 ID를 알 수 없습니다 (커뮤니티 설정의 디스코드 서버 ID 확인)', status:404 };
+  return { ok:true, url: `https://discord.com/channels/${guildId}/${threadId}`, threadId };
+}
+
 // ── 내전 홍보 ──
 async function _sendMatchPromo(cid, matchId, env, roleIds) {
   const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
@@ -6859,6 +7102,7 @@ async function handleLaneJoin(cid, matchId, lane, ep, discordUserId, discordName
   const matchRes = await fetch(`${base}.json${authQ}`);
   const matchData = matchRes.ok ? await matchRes.json() : null;
   if (!matchData) return discordFollowup(appId, token, '❌ 내전 정보를 불러올 수 없습니다.', env);
+  if (_isJjong(matchData)) return discordFollowup(appId, token, '❌ 쫑 처리된 내전이라 참여할 수 없습니다.', env);
   if (!_isMatchStage1(matchData)) return discordFollowup(appId, token, '❌ 이미 멤버 모집(1단계)이 끝난 내전이라 참여하거나 라인을 바꿀 수 없습니다.', env);
   if (!matchData.laneFixedRecruit) return discordFollowup(appId, token, '❌ 라인 고정 모집 중인 내전이 아닙니다.', env);
   if (!matchData.discordJoinable) return discordFollowup(appId, token, '❌ 이 내전은 디스코드 참가가 비활성화되어 있습니다.', env);
@@ -7647,40 +7891,75 @@ async function handlePeakTiersWrite(request, env) {
 
 // ══════════════════════════════════════════════════
 // 소환사 연동 (Discord ↔ Summoner)
-// Firebase 경로: discord_link/{discordId}/{cid} = { riotName, riotTag, linkedAt }
+// 기준 데이터: 디스코드 "🎮 소환사 계정 등록"(참여 양식)
+//   communities/{cid}/discord_profiles/{discordId}
+//   = { riotName, riotTag, highTier, icon, mainLane, subLanes, discordId, discordName, updatedAt,
+//       riotPuuid(라이엇 키 기준), dlPuuid(딥롤 puu_id) }
+// stats 페이지에서 따로 하던 연동(discord_link)은 더 이상 쓰지 않음.
+// 아래 /discord-link-* API 는 응답 모양을 그대로 유지한 채 discord_profiles 를 읽고 씀
+// (stats·mypage·mypage-manage·업적·룽잉닷컴 멘션이 그대로 동작하도록)
 // ══════════════════════════════════════════════════
 
-// 연동 저장 (최초 1회만, 이미 연동된 경우 거부)
-async function handleDiscordLinkSet(request, env) {
-  let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
-  const { discordId, discordName, discordAvatar, cid, riotName, riotTag } = body;
-  if (!discordId || !cid || !riotName || !riotTag) return json({ok:false,error:'필수값 누락'},400);
-
+async function _riotPuuidByRiotId(env, name, tag) {
+  try {
+    const r = await fetch(`https://asia.api.riotgames.com/riot/account/v1/accounts/by-riot-id/${encodeURIComponent(name)}/${encodeURIComponent(tag)}`,
+      { headers: { 'X-Riot-Token': env.RIOT_API_KEY || '' } });
+    if (r.status === 404) return { ok:false, notFound:true };
+    if (!r.ok) return { ok:false };
+    const j = await r.json();
+    return { ok: !!(j && j.puuid), puuid: j && j.puuid };
+  } catch (e) { return { ok:false }; }
+}
+async function _dlPuuidByRiotId(env, name, tag) {
+  try {
+    const r = await fetch(`https://b2c-api-cdn.deeplol.gg/summoner/summoner?riot_id_name=${encodeURIComponent(name)}&riot_id_tag_line=${encodeURIComponent(tag)}&platform_id=KR`, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                 'Accept': 'application/json', 'Referer': 'https://www.deeplol.gg/', 'Origin': 'https://www.deeplol.gg' },
+    });
+    if (!r.ok) return null;
+    const d = await r.json();
+    return d?.summoner_basic_info_dict?.puu_id || null;
+  } catch (e) { return null; }
+}
+// 소환사 계정 등록 정보 읽기. fill=true 면 비어 있는 라이엇/딥롤 puuid 를 채워서 저장
+async function _getSummonerProfile(env, cid, discordId, fill) {
   const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
   const authQ = secret ? '?auth='+secret : '';
-
-  // 이미 해당 cid에 연동됐는지 확인
-  const existing = await fetch(`${dbUrl}/discord_link/${discordId}/${cid}.json${authQ}`);
-  if (existing.ok) {
-    const data = await existing.json();
-    if (data && data.riotName) {
-      return json({ok:false,error:'already_linked', current:{riotName:data.riotName,riotTag:data.riotTag}},409);
+  const path = `${dbUrl}/communities/${cid}/discord_profiles/${discordId}.json${authQ}`;
+  const r = await fetch(path);
+  if (!r.ok) return { error:true };
+  const p = await r.json();
+  if (!p || !p.riotName) return null;
+  if (fill && (!p.riotPuuid || !p.dlPuuid)) {
+    const [rp, dp] = await Promise.all([
+      p.riotPuuid ? Promise.resolve(null) : _riotPuuidByRiotId(env, p.riotName, p.riotTag),
+      p.dlPuuid ? Promise.resolve(null) : _dlPuuidByRiotId(env, p.riotName, p.riotTag),
+    ]);
+    const patch = {};
+    if (rp && rp.ok) patch.riotPuuid = rp.puuid;
+    if (dp) patch.dlPuuid = dp;
+    if (Object.keys(patch).length) {
+      Object.assign(p, patch);
+      await fetch(path, { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify(patch) }).catch(() => {});
     }
   }
-
-  const linkData = {
-    discordId, discordName: discordName||'', discordAvatar: discordAvatar||'',
-    cid, riotName, riotTag, linkedAt: Date.now()
+  return p;
+}
+// 예전 discord_link 응답 모양으로 변환
+function _profileAsLink(cid, discordId, p) {
+  return {
+    discordId: p.discordId || discordId, discordName: p.discordName || '', discordAvatar: p.discordAvatar || '',
+    cid, riotName: p.riotName, riotTag: p.riotTag, linkedAt: p.updatedAt || null,
+    puuId: p.dlPuuid || null, dlPuuid: p.dlPuuid || null, riotPuuid: p.riotPuuid || null,
+    highTier: p.highTier || '', mainLane: p.mainLane || '', subLanes: p.subLanes || [],
   };
-  const res = await fetch(`${dbUrl}/discord_link/${discordId}/${cid}.json${authQ}`, {
-    method: 'PUT', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify(linkData)
-  });
-  if (!res.ok) return json({ok:false,error:'저장 실패'},500);
-  return json({ok:true, data:linkData});
 }
 
-// 연동 조회 (discordId + cid로 조회)
+// stats 페이지 연동(더 이상 사용 안 함)
+async function handleDiscordLinkSet(request, env) {
+  return json({ ok:false, error:'stats 페이지 연동은 없어졌습니다. 디스코드 내전 포스트의 🎮 소환사 계정 등록 버튼으로 등록해주세요.' }, 410);
+}
+
 // 관리자 토큰 검증 (mypage.html에서 admin_token URL 파라미터로 접근 시 사용)
 async function handleAdminVerify(request, env) {
   let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
@@ -7697,86 +7976,68 @@ async function handleDiscordLinkGet(request, env) {
   let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
   const { discordId, cid } = body;
   if (!discordId || !cid) return json({ok:false,error:'필수값 누락'},400);
-
-  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
-  const authQ = secret ? '?auth='+secret : '';
-  const res = await fetch(`${dbUrl}/discord_link/${discordId}/${cid}.json${authQ}`);
-  if (!res.ok) return json({ok:false,error:'조회 실패'},500);
-  const data = await res.json();
-  if (!data) return json({ok:true, linked:false});
-  return json({ok:true, linked:true, data});
+  const p = await _getSummonerProfile(env, cid, discordId, true);
+  if (p && p.error) return json({ok:false,error:'조회 실패'},500);
+  if (!p) return json({ok:true, linked:false});
+  return json({ok:true, linked:true, data:_profileAsLink(cid, discordId, p)});
 }
 
-// 연동 해제 (관리자 전용 — 세션 토큰 검증)
+// 연동 해제 (관리자 전용) = 소환사 계정 등록 삭제
 async function handleDiscordLinkDelete(request, env) {
   let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
   const { token, discordId, cid } = body;
   if (!token || !discordId || !cid) return json({ok:false,error:'필수값 누락'},400);
-
   const session = getSession(token);
   if (!session || (session.role !== 'master' && session.role !== 'admin')) {
     return json({ok:false,error:'권한 없음'},403);
   }
-
   const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
   const authQ = secret ? '?auth='+secret : '';
-  const res = await fetch(`${dbUrl}/discord_link/${discordId}/${cid}.json${authQ}`, { method:'DELETE' });
+  const res = await fetch(`${dbUrl}/communities/${cid}/discord_profiles/${discordId}.json${authQ}`, { method:'DELETE' });
   if (!res.ok) return json({ok:false,error:'삭제 실패'},500);
   return json({ok:true});
 }
 
-// 연동 수정 (관리자 전용)
+// 연동 수정 (관리자 전용) = 소환사 계정 등록의 소환사 변경 (라이엇·딥롤 puuid 도 새로)
 async function handleDiscordLinkUpdate(request, env) {
   let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
   const { token, discordId, cid, riotName, riotTag } = body;
   if (!token || !discordId || !cid || !riotName || !riotTag) return json({ok:false,error:'필수값 누락'},400);
-
   const session = getSession(token);
   if (!session || (session.role !== 'master' && session.role !== 'admin')) {
     return json({ok:false,error:'권한 없음'},403);
   }
-
   const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
   const authQ = secret ? '?auth='+secret : '';
-
-  // 기존 데이터 읽기
-  const existing = await fetch(`${dbUrl}/discord_link/${discordId}/${cid}.json${authQ}`);
-  const prev = existing.ok ? await existing.json() : {};
-
-  const updated = { ...prev, riotName, riotTag, updatedAt: Date.now() };
-  const res = await fetch(`${dbUrl}/discord_link/${discordId}/${cid}.json${authQ}`, {
-    method:'PUT', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify(updated)
-  });
+  const name = String(riotName).trim(), tag = String(riotTag).replace(/^#/, '').trim();
+  const [rp, dp] = await Promise.all([_riotPuuidByRiotId(env, name, tag), _dlPuuidByRiotId(env, name, tag)]);
+  if (rp.notFound) return json({ok:false,error:`${name}#${tag} 은(는) 존재하지 않는 계정입니다`},400);
+  const path = `${dbUrl}/communities/${cid}/discord_profiles/${discordId}.json${authQ}`;
+  const prevRes = await fetch(path);
+  const prev = prevRes.ok ? (await prevRes.json() || {}) : {};
+  const updated = { ...prev, discordId, riotName: name, riotTag: tag, riotPuuid: rp.ok ? rp.puuid : null, dlPuuid: dp || null, updatedAt: Date.now() };
+  const res = await fetch(path, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(updated) });
   if (!res.ok) return json({ok:false,error:'수정 실패'},500);
-  return json({ok:true, data:updated});
+  return json({ok:true, data:_profileAsLink(cid, discordId, updated)});
 }
 
-// 연동 목록 조회 (관리자 전용 — cid 기준)
+// 연동 목록 (관리자 전용 — 커뮤니티의 소환사 계정 등록 전체)
 async function handleDiscordLinkList(request, env) {
   let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
   const { token, cid } = body;
   if (!token || !cid) return json({ok:false,error:'필수값 누락'},400);
-
   const session = getSession(token);
   if (!session || (session.role !== 'master' && session.role !== 'admin')) {
     return json({ok:false,error:'권한 없음'},403);
   }
-
   const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
   const authQ = secret ? '?auth='+secret : '';
-
-  // discord_link 전체 읽기 후 cid 필터
-  const res = await fetch(`${dbUrl}/discord_link.json${authQ}`);
+  const res = await fetch(`${dbUrl}/communities/${cid}/discord_profiles.json${authQ}`);
   if (!res.ok) return json({ok:false,error:'조회 실패'},500);
-  const all = await res.json();
-  if (!all) return json({ok:true, list:[]});
-
+  const all = await res.json() || {};
   const list = [];
-  for (const [discordId, cids] of Object.entries(all)) {
-    if (cids && cids[cid]) {
-      list.push({ discordId, ...cids[cid] });
-    }
+  for (const [did, p] of Object.entries(all)) {
+    if (p && p.riotName) list.push(_profileAsLink(cid, did, p));
   }
   return json({ok:true, list});
 }
@@ -7791,11 +8052,11 @@ async function handleAchClaim(request, env) {
   const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
   const authQ = secret ? '?auth='+secret : '';
 
-  // 1) 연동 확인 — discordId가 실제로 이 cid에 연동되어 있는지 검증
-  const linkRes = await fetch(`${dbUrl}/discord_link/${discordId}/${cid}.json${authQ}`);
-  if (!linkRes.ok) return json({ok:false,error:'연동 정보 조회 실패'},500);
-  const linkData = await linkRes.json();
-  if (!linkData || !linkData.riotName) return json({ok:false,error:'연동된 멤버 계정이 없습니다'},403);
+  // 1) 연동 확인 — 이 cid 에 소환사 계정 등록이 되어 있는지 + 수령하려는 puuId 가 본인 계정인지
+  const linkData = await _getSummonerProfile(env, cid, discordId, true);
+  if (linkData && linkData.error) return json({ok:false,error:'연동 정보 조회 실패'},500);
+  if (!linkData) return json({ok:false,error:'소환사 계정 등록이 되어 있지 않습니다'},403);
+  if (linkData.dlPuuid && linkData.dlPuuid !== puuId) return json({ok:false,error:'본인 계정의 업적만 수령할 수 있습니다'},403);
 
   // 2) 조건 확인 (auto_condition) — 클라이언트가 보낸 memberCnt를 사용
   if (grantType === 'auto_condition' && conditions && conditions.length > 0) {
@@ -7838,11 +8099,11 @@ async function handleAchRequest(request, env) {
   const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
   const authQ = secret ? '?auth='+secret : '';
 
-  // 연동 확인
-  const linkRes = await fetch(`${dbUrl}/discord_link/${discordId}/${cid}.json${authQ}`);
-  if (!linkRes.ok) return json({ok:false,error:'연동 정보 조회 실패'},500);
-  const linkData = await linkRes.json();
-  if (!linkData || !linkData.riotName) return json({ok:false,error:'연동된 멤버 계정이 없습니다'},403);
+  // 연동 확인 (소환사 계정 등록)
+  const linkData = await _getSummonerProfile(env, cid, discordId, true);
+  if (linkData && linkData.error) return json({ok:false,error:'연동 정보 조회 실패'},500);
+  if (!linkData) return json({ok:false,error:'소환사 계정 등록이 되어 있지 않습니다'},403);
+  if (linkData.dlPuuid && linkData.dlPuuid !== puuId) return json({ok:false,error:'본인 계정의 업적만 신청할 수 있습니다'},403);
 
   // 이미 보유 확인
   const existRes = await fetch(`${dbUrl}/communities/${cid}/member_achievements/${puuId}/${achId}.json${authQ}`);

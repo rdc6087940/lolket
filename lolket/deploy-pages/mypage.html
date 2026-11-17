@@ -4,6 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
   <title>내 페이지 — Roonging</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#0c1117">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Roonging">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Bebas+Neue&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
   <style>
@@ -33,6 +39,10 @@
     .hdr-dc{display:none;align-items:center;gap:6px}
     .hdr-dc img{width:22px;height:22px;border-radius:50%}
     .hdr-dc span{font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;color:#7289da}
+    .hdr-right{display:flex;align-items:center;gap:8px}
+    #btn-pwa-install{display:none;align-items:center;gap:5px;padding:4px 10px;border-radius:4px;border:1px solid rgba(10,200,185,.4);background:rgba(10,200,185,.08);color:var(--teal);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all .15s;white-space:nowrap}
+    #btn-pwa-install:hover{background:rgba(10,200,185,.2)}
+    #btn-pwa-install svg{flex-shrink:0}
 
     /* 탭 바 */
     .tab-bar{display:flex;background:var(--bg2);border-bottom:1px solid var(--border);position:sticky;top:46px;z-index:190}
@@ -395,9 +405,15 @@
 
 <div class="hdr">
   <div class="hdr-logo">ROONGING</div>
-  <div class="hdr-dc" id="hdr-dc">
-    <img id="hdr-dc-av" src="" alt="">
-    <span id="hdr-dc-nm"></span>
+  <div class="hdr-right">
+    <button id="btn-pwa-install" onclick="_pwaInstall()">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v13M7 11l5 5 5-5"/><path d="M3 18h18"/></svg>
+      앱 설치
+    </button>
+    <div class="hdr-dc" id="hdr-dc">
+      <img id="hdr-dc-av" src="" alt="">
+      <span id="hdr-dc-nm"></span>
+    </div>
   </div>
 </div>
 
@@ -854,7 +870,7 @@ async function init(){
       // 해당 discordId 연동 정보 조회 (discord-link-get은 공개 읽기)
       var lr=await fetch(WORKER+'/discord-link-get',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({discordId:targetDid,cid:CID})});
       var lj=await lr.json();
-      if(!lj.ok||!lj.linked||!lj.data){ showDenied('연동 정보 없음','해당 유저의 소환사 연동 정보가 없습니다.'); return; }
+      if(!lj.ok||!lj.linked||!lj.data){ showDenied('연동 정보 없음','해당 유저의 소환사 계정 등록 정보가 없습니다.'); return; }
       _link=lj.data;
       _isAdminView=true;
       // _du는 타겟 유저 ID만 가진 객체로 교체 (관리자 본인 정보가 표시되지 않도록)
@@ -868,7 +884,7 @@ async function init(){
     try{
       var r=await fetch(WORKER+'/discord-link-get',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({discordId:_du.id,cid:CID})});
       var j=await r.json();
-      if(!j.ok||!j.linked||!j.data){ showDenied((_du.displayName||_du.username)+' 님은 소환사 연동이 되어 있지 않습니다.','내전 전적 페이지에서 소환사 연동 후 이용해 주세요.'); return; }
+      if(!j.ok||!j.linked||!j.data){ showDenied((_du.displayName||_du.username)+' 님은 소환사 계정 등록이 되어 있지 않습니다.','디스코드 내전 포스트의 🎮 소환사 계정 등록 버튼으로 등록한 뒤 이용해 주세요.'); return; }
       _link=j.data;
     }catch(e){ showDenied('네트워크 오류',e.message); return; }
   }
@@ -2369,6 +2385,46 @@ function showDenied(msg,sub){
 function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 init();
+</script>
+
+<!-- PWA: Service Worker 등록 + 설치 버튼 -->
+<script>
+(function(){
+  var _pwaPrompt = null;
+
+  // Service Worker 등록
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.register('/sw.js').catch(function(){});
+  }
+
+  // beforeinstallprompt 이벤트 가로채기
+  window.addEventListener('beforeinstallprompt', function(e){
+    e.preventDefault();
+    _pwaPrompt = e;
+    var btn = document.getElementById('btn-pwa-install');
+    if(btn) btn.style.display = 'flex';
+  });
+
+  // 설치 완료 시 버튼 숨기기
+  window.addEventListener('appinstalled', function(){
+    var btn = document.getElementById('btn-pwa-install');
+    if(btn) btn.style.display = 'none';
+    _pwaPrompt = null;
+  });
+
+  // 버튼 클릭 핸들러
+  window._pwaInstall = function(){
+    if(!_pwaPrompt) return;
+    _pwaPrompt.prompt();
+    _pwaPrompt.userChoice.then(function(result){
+      if(result.outcome === 'accepted'){
+        var btn = document.getElementById('btn-pwa-install');
+        if(btn) btn.style.display = 'none';
+      }
+      _pwaPrompt = null;
+    });
+  };
+})();
 </script>
 </body>
 </html>

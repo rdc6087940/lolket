@@ -2296,8 +2296,8 @@ async function _cachedFetch(key, ttlSec, fetchFn) {
     <!-- 헤더 -->
     <div style="text-align:center;margin-bottom:1.25rem;">
       <div style="font-size:32px;margin-bottom:.5rem;">🔗</div>
-      <div style="font-family:'IBM Plex Sans KR',sans-serif;font-size:18px;font-weight:700;color:var(--white);letter-spacing:.5px;margin-bottom:.3rem;">소환사 연동하고 더 많은 기능을!</div>
-      <div style="font-size:12px;color:var(--muted);">내 디스코드 계정과 소환사를 연결하면<br>아래 기능들을 이용할 수 있어요</div>
+      <div style="font-family:'IBM Plex Sans KR',sans-serif;font-size:18px;font-weight:700;color:var(--white);letter-spacing:.5px;margin-bottom:.3rem;">소환사 계정 등록하고 더 많은 기능을!</div>
+      <div style="font-size:12px;color:var(--muted);line-height:1.6;">디스코드 내전 포스트의 <b style="color:#7289da;">🎮 소환사 계정 등록</b> 버튼으로<br>내 소환사를 등록하면 아래 기능들을 이용할 수 있어요</div>
     </div>
 
     <!-- 기능 목록 -->
@@ -2334,8 +2334,7 @@ async function _cachedFetch(key, ttlSec, fetchFn) {
 
     <!-- 버튼 -->
     <div style="display:flex;gap:.6rem;">
-      <button onclick="closeLinkNudgePopup()" style="flex:1;padding:.6rem;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'IBM Plex Sans KR',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:background .15s;" onmouseover="this.style.background='rgba(255,255,255,.05)'" onmouseout="this.style.background='transparent'">나중에</button>
-      <button onclick="closeLinkNudgePopup();openSummonerLinkPopup();" style="flex:2;padding:.6rem;border-radius:6px;border:1px solid rgba(114,137,218,.5);background:rgba(114,137,218,.15);color:#7289da;font-family:'IBM Plex Sans KR',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:background .15s;" onmouseover="this.style.background='rgba(114,137,218,.25)'" onmouseout="this.style.background='rgba(114,137,218,.15)'">지금 소환사 연동하기</button>
+      <button onclick="closeLinkNudgePopup();" style="flex:2;padding:.6rem;border-radius:6px;border:1px solid rgba(114,137,218,.5);background:rgba(114,137,218,.15);color:#7289da;font-family:'IBM Plex Sans KR',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:background .15s;" onmouseover="this.style.background='rgba(114,137,218,.25)'" onmouseout="this.style.background='rgba(114,137,218,.15)'">확인</button>
     </div>
   </div>
 </div>
@@ -6589,13 +6588,13 @@ async function checkSummonerLink() {
       body: JSON.stringify({ discordId: _discordUser.id, cid: COMMUNITY_ID })
     });
     var j = await res.json();
+    // 소환사 연동 = 디스코드 내전 포스트의 "🎮 소환사 계정 등록" (stats 페이지 연동 버튼은 없앰)
+    if (slBtn) slBtn.style.display = 'none';
     if (j.ok && j.linked && j.data) {
       _discordLinkData = j.data;
-      if (slBtn) slBtn.style.display = 'none';
       if (mpBtn) mpBtn.style.display = '';
     } else {
       _discordLinkData = null;
-      if (slBtn) slBtn.style.display = '';
       if (mpBtn) mpBtn.style.display = 'none';
       // 연동 없으면 유도 팝업 (세션 중 한 번만)
       if (!_linkNudgeShown) {
@@ -6604,7 +6603,7 @@ async function checkSummonerLink() {
       }
     }
   } catch(e) {
-    if (slBtn) slBtn.style.display = '';
+    if (slBtn) slBtn.style.display = 'none';
     if (mpBtn) mpBtn.style.display = 'none';
   }
 }
@@ -6792,7 +6791,7 @@ function goToMyPage() {
   if (SERVER_ID) url += '&server_id=' + encodeURIComponent(SERVER_ID);
   // deeplol puu_id 전달 (내전 전적 직접 조회용)
   var key = (_discordLinkData.riotName||'').toLowerCase() + '#' + (_discordLinkData.riotTag||'').toLowerCase();
-  var puuId = window._puuIdMap && window._puuIdMap[key];
+  var puuId = _discordLinkData.dlPuuid || (window._puuIdMap && window._puuIdMap[key]);
   if (puuId) url += '&puu_id=' + encodeURIComponent(puuId);
   window.open(url, '_blank');
 }

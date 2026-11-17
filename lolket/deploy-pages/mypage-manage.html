@@ -803,7 +803,7 @@ async function saveEdit() {
 // 연동 해제
 async function deleteLink(itemJson) {
   var item = JSON.parse(itemJson);
-  if (!confirm(item.discordName + ' (' + item.riotName + '#' + item.riotTag + ') 의 연동을 해제하시겠습니까?')) return;
+  if (!confirm(item.discordName + ' (' + item.riotName + '#' + item.riotTag + ') 의 소환사 계정 등록을 삭제하시겠습니까?\n삭제하면 디스코드 내전 포스트에서 다시 등록해야 내전에 참가할 수 있습니다.')) return;
   try {
     var res = await fetch(WORKER_URL + '/discord-link-delete', {
       method: 'POST', headers: {'Content-Type':'application/json'},
