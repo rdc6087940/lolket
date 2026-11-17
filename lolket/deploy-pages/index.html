@@ -740,6 +740,55 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
 .mp-role input{accent-color:#F0B232;margin:0;cursor:pointer;}
 .mp-role:has(input:checked){border-color:rgba(240,178,50,.6);background:rgba(240,178,50,.1);color:#F0B232;}
 .mp-mini{font-size:10px;font-family:'IBM Plex Sans KR',sans-serif;font-weight:700;color:var(--text-muted);background:transparent;border:1px solid var(--border-subtle);border-radius:3px;padding:2px 7px;cursor:pointer;}
+/* ── AI 밸런스 진단 (3단계) ── */
+.bc-panel{background:var(--bg-panel);border:1px solid var(--border-subtle);border-left:3px solid rgba(232,203,134,.6);border-radius:4px;margin-bottom:.6rem;font-family:'IBM Plex Sans KR',sans-serif;}
+.bc-panel.good{border-left-color:var(--blue-bright);}
+.bc-panel.warn{border-left-color:#E8CB86;}
+.bc-panel.bad{border-left-color:#E05050;}
+.bc-head{display:flex;align-items:center;gap:8px;padding:.5rem .75rem;cursor:pointer;flex-wrap:wrap;user-select:none;}
+.bc-ico{font-size:14px;}
+.bc-title{font-size:12px;font-weight:700;color:var(--text-white);letter-spacing:.5px;}
+.bc-sum{font-size:12px;color:var(--text-muted);flex:1;min-width:0;}
+.bc-sum b{color:var(--text-white);}
+.bc-verdict{font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;white-space:nowrap;}
+.bc-panel.good .bc-verdict{color:var(--blue-bright);background:rgba(10,200,185,.1);}
+.bc-panel.warn .bc-verdict{color:#E8CB86;background:rgba(232,203,134,.12);}
+.bc-panel.bad .bc-verdict{color:#E05050;background:rgba(224,80,80,.12);}
+.bc-chev{color:var(--text-muted);font-size:15px;transition:transform .2s;}
+.bc-panel.open .bc-chev{transform:rotate(90deg);}
+.bc-body{display:none;padding:.1rem .75rem .75rem;border-top:1px solid rgba(255,255,255,.05);}
+.bc-panel.open .bc-body{display:block;}
+.bc-prob{height:6px;border-radius:3px;background:rgba(224,80,80,.45);overflow:hidden;margin:.6rem 0 .2rem;}
+.bc-prob i{display:block;height:100%;background:var(--blue-bright);}
+.bc-sec-t{font-size:10px;font-weight:700;letter-spacing:1.2px;color:var(--text-muted);margin:.7rem 0 .35rem;text-transform:uppercase;}
+.bc-issues{margin:0;padding-left:1.1rem;display:flex;flex-direction:column;gap:3px;}
+.bc-issues li{font-size:12px;color:var(--text-white);line-height:1.5;}
+.bc-muted{color:var(--text-muted);font-size:11px;font-weight:400;text-transform:none;letter-spacing:0;}
+.bc-lanes{display:flex;flex-direction:column;gap:3px;}
+.bc-lane{display:grid;grid-template-columns:34px 1fr 120px 1fr;align-items:center;gap:8px;font-size:12px;}
+.bc-ln{color:var(--text-muted);font-size:11px;}
+.bc-pl{color:var(--text-white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.bc-pl.a{text-align:right;}
+.bc-pl em{font-style:normal;color:var(--text-muted);font-size:11px;}
+.bc-track{position:relative;height:8px;background:rgba(255,255,255,.04);border-radius:4px;}
+.bc-mid{position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:rgba(255,255,255,.2);}
+.bc-bar{position:absolute;top:0;bottom:0;border-radius:4px;}
+.bc-bar.a{background:var(--blue-bright);}
+.bc-bar.b{background:#E05050;}
+.bc-tag{display:inline-block;margin:0 3px;padding:0 5px;border-radius:8px;font-size:9px;font-weight:700;vertical-align:1px;}
+.bc-tag.sub{color:#E8CB86;background:rgba(232,203,134,.12);}
+.bc-tag.off{color:#E05050;background:rgba(224,80,80,.12);}
+.bc-teams{display:flex;flex-wrap:wrap;gap:6px;}
+.bc-team{font-size:12px;padding:3px 10px;border-radius:12px;border:1px solid var(--border-subtle);color:var(--text-muted);}
+.bc-team b{color:var(--text-white);}
+.bc-team.hi{border-color:rgba(10,200,185,.5);}
+.bc-team.lo{border-color:rgba(224,80,80,.5);}
+.bc-sug{display:flex;align-items:center;gap:10px;padding:7px 10px;border:1px solid var(--border-subtle);border-radius:4px;margin-bottom:6px;background:rgba(255,255,255,.02);}
+.bc-sug-txt{flex:1;font-size:12px;color:var(--text-white);line-height:1.6;}
+.bc-apply{padding:5px 12px;border-radius:3px;border:1px solid rgba(10,200,185,.5);background:rgba(10,200,185,.1);color:var(--blue-bright);font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;}
+.bc-apply:hover{background:rgba(10,200,185,.2);}
+.bc-foot{font-size:10px;color:var(--text-muted);margin-top:.6rem;}
+@media (max-width:600px){.bc-lane{grid-template-columns:30px 1fr 60px 1fr;gap:5px;font-size:11px;}.bc-tag{display:none;}}
 .cm-official-row{display:flex;align-items:center;gap:10px;padding:8px 0;}
 .cm-official-toggle{position:relative;width:36px;height:20px;flex-shrink:0;}
 .cm-official-toggle input{opacity:0;width:0;height:0;}
@@ -3505,7 +3554,7 @@ body:has(#screen-0.active){background-color:var(--rg-bg)!important;background-im
     <div id="lane-ratio-inline-normal" class="aram-hide" style="display:flex;gap:3px;align-items:center;"></div>
     <button class="btn-next" id="btn-normal-next" disabled onclick="goToStage4()" style="font-size:11px;padding:6px 14px;font-weight:700;">다음 →</button>
   </div>
-</div> <div class="builder-cond" style="margin-bottom:.4rem;"> <div class="cond-item"><div class="cond-dot" id="n-cond-pool"></div><span id="n-cond-pool-text" style="font-size:12px;color:var(--text-muted);">대기칸 비어있음</span></div> <div class="cond-item"><div class="cond-dot" id="n-cond-teams"></div><span id="n-cond-teams-text" style="font-size:12px;color:var(--text-muted);">팀 조건 충족</span></div> </div>  <div class="builder-layout"> <div class="pool-panel"> <div id="lane-ratio-section-normal" style="background:var(--bg-panel);border:1px solid var(--border-subtle);border-radius:4px;overflow:hidden;margin-bottom:.75rem;"><div onclick="_lrToggle('lane-ratio-body-normal','lane-ratio-arrow-normal')" style="padding:.4rem .75rem;display:flex;align-items:center;justify-content:space-between;background:rgba(200,170,110,.04);cursor:pointer;user-select:none;"><span style="font-family:IBM Plex Sans KR,sans-serif;font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--gold);display:flex;align-items:center;gap:6px;"><span style="width:5px;height:5px;border-radius:50%;background:var(--blue-bright);display:inline-block;flex-shrink:0;"></span>라인 비율</span><span id="lane-ratio-arrow-normal" style="font-size:10px;color:var(--text-muted);transition:transform .2s;">▼</span></div><div id="lane-ratio-body-normal" style="padding:.5rem .75rem .6rem;"><div style="margin-bottom:6px;"><div style="font-size:9px;color:var(--text-muted);font-family:IBM Plex Sans KR,sans-serif;margin-bottom:3px;">주라인</div><div id="lane-ratio-main-normal"></div></div><div><div style="font-size:9px;color:var(--text-muted);font-family:IBM Plex Sans KR,sans-serif;margin-bottom:3px;">주+부라인</div><div id="lane-ratio-both-normal"></div></div></div></div>
+</div> <div class="builder-cond" style="margin-bottom:.4rem;"> <div class="cond-item"><div class="cond-dot" id="n-cond-pool"></div><span id="n-cond-pool-text" style="font-size:12px;color:var(--text-muted);">대기칸 비어있음</span></div> <div class="cond-item"><div class="cond-dot" id="n-cond-teams"></div><span id="n-cond-teams-text" style="font-size:12px;color:var(--text-muted);">팀 조건 충족</span></div> </div> <div id="bal-check-normal" class="bc-panel" style="display:none;"></div> <div class="builder-layout"> <div class="pool-panel"> <div id="lane-ratio-section-normal" style="background:var(--bg-panel);border:1px solid var(--border-subtle);border-radius:4px;overflow:hidden;margin-bottom:.75rem;"><div onclick="_lrToggle('lane-ratio-body-normal','lane-ratio-arrow-normal')" style="padding:.4rem .75rem;display:flex;align-items:center;justify-content:space-between;background:rgba(200,170,110,.04);cursor:pointer;user-select:none;"><span style="font-family:IBM Plex Sans KR,sans-serif;font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--gold);display:flex;align-items:center;gap:6px;"><span style="width:5px;height:5px;border-radius:50%;background:var(--blue-bright);display:inline-block;flex-shrink:0;"></span>라인 비율</span><span id="lane-ratio-arrow-normal" style="font-size:10px;color:var(--text-muted);transition:transform .2s;">▼</span></div><div id="lane-ratio-body-normal" style="padding:.5rem .75rem .6rem;"><div style="margin-bottom:6px;"><div style="font-size:9px;color:var(--text-muted);font-family:IBM Plex Sans KR,sans-serif;margin-bottom:3px;">주라인</div><div id="lane-ratio-main-normal"></div></div><div><div style="font-size:9px;color:var(--text-muted);font-family:IBM Plex Sans KR,sans-serif;margin-bottom:3px;">주+부라인</div><div id="lane-ratio-both-normal"></div></div></div></div>
 <div id="s3n-guide-wrap" style="background:var(--bg-panel);border:1px solid var(--border-gold);border-radius:4px;overflow:hidden;box-shadow:0 2px 12px rgba(200,170,110,.06);margin-bottom:.75rem;"> <div onclick="_s3GuideToggle('s3n-guide-wrap','s3n-guide-list')" style="padding:.45rem 1rem;display:flex;align-items:center;justify-content:space-between;background:rgba(200,170,110,.06);cursor:pointer;user-select:none;"> <span style="font-family:IBM Plex Sans KR,sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;color:var(--gold);display:flex;align-items:center;gap:6px;"><span style="width:5px;height:5px;border-radius:50%;background:var(--blue-bright);display:inline-block;flex-shrink:0;"></span>가이드/룰 </span> <span id="s3n-guide-arrow" style="font-size:10px;color:var(--text-muted);transition:transform .2s;">▼</span> </div> <div id="s3n-guide-list" style="display:none;padding:.4rem .5rem;flex-wrap:wrap;gap:5px;max-height:100px;overflow-y:auto;"><div style="font-size:11px;color:var(--text-muted);font-family:IBM Plex Sans KR,sans-serif;text-align:center;padding:.5rem;width:100%;letter-spacing:1px;">적용된 가이드가 없습니다</div></div> </div><div class="pool-header"> <div class="pool-title"><div class="panel-title-dot"></div>대기</div> <div style="display:flex;align-items:center;gap:5px;"> <div class="filter-active-dot" id="np-filter-dot"></div> <div class="count-badge lit" id="n-pool-count">0명</div> </div> </div> <div class="filter-bar" style="padding:.4rem .5rem;gap:.35rem;"> <div class="filter-search-row"> <input class="filter-search-input" id="np-search" placeholder="닉네임 검색..." oninput="applyFilter('np')"> <button class="filter-search-clear" id="np-search-clear" onclick="clearSearch('np')">✕</button> </div> <div class="filter-row"> <span class="filter-label">포지션</span> <button id="np-lane-mode-main" onclick="setLaneMode('np','main')" style="padding:2px 7px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--muted);font-family:'IBM Plex Sans KR',sans-serif;font-size:9px;font-weight:700;cursor:pointer;letter-spacing:.5px;">주라인</button><button id="np-lane-mode-both" onclick="setLaneMode('np','both')" style="padding:2px 7px;border-radius:2px;border:1px solid rgba(10,200,185,.4);background:rgba(10,200,185,.1);color:var(--blue-bright);font-family:'IBM Plex Sans KR',sans-serif;font-size:9px;font-weight:700;cursor:pointer;letter-spacing:.5px;margin-right:4px;">주+보조</button><button class="lane-filter-btn" data-lane="top" onclick="toggleLaneFilter('np','top')">TOP</button> <button class="lane-filter-btn" data-lane="jg" onclick="toggleLaneFilter('np','jg')">JG</button> <button class="lane-filter-btn" data-lane="mid" onclick="toggleLaneFilter('np','mid')">MID</button> <button class="lane-filter-btn" data-lane="bot" onclick="toggleLaneFilter('np','bot')">BOT</button> <button class="lane-filter-btn" data-lane="sup" onclick="toggleLaneFilter('np','sup')">SUP</button> </div> <div class="filter-row"> <span class="filter-label">정렬</span> <select class="sort-select" id="np-sort" onchange="applyFilter('np')"> <option value="">기본</option> <option value="tier-asc">티어 낮은순</option> <option value="tier-desc">티어 높은순</option> <option value="name-asc">이름 ㄱ→ㅎ</option> <option value="name-desc">이름 ㅎ→ㄱ</option> <option value="doom-desc">내전 높은순</option> <option value="doom-asc">내전 낮은순</option> </select> </div> <div class="filter-row"> <span class="filter-label">내전</span> <button id="np-doom-toggle" onclick="toggleDoomScore()" style="padding:2px 10px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--text-muted);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:.5px;transition:all .15s;">내전점수 OFF</button> </div> </div> <div class="pool-body" id="n-pool"
  ondragover="onDragOver(event,'n-pool')"
  ondragleave="onDragLeave(event,'n-pool')"
@@ -3663,6 +3712,7 @@ body:has(#screen-0.active){background-color:var(--rg-bg)!important;background-im
   <div class="cond-item"><div class="cond-dot" id="lane-cond-pool"></div><span id="lane-cond-pool-text" style="font-size:12px;color:var(--text-muted);">대기칸 비어있음</span></div>
   <div class="cond-item"><div class="cond-dot" id="lane-cond-teams"></div><span id="lane-cond-teams-text" style="font-size:12px;color:var(--text-muted);">팀 조건 충족</span></div>
 </div>
+<div id="bal-check-lane" class="bc-panel" style="display:none;"></div>
 <div class="builder-layout">
   <!-- 일반 내전과 동일한 pool-panel 재사용 -->
   <div class="pool-panel"> <div id="lane-ratio-section-lane" style="background:var(--bg-panel);border:1px solid var(--border-subtle);border-radius:4px;overflow:hidden;margin-bottom:.75rem;"><div onclick="_lrToggle('lane-ratio-body-lane','lane-ratio-arrow-lane')" style="padding:.4rem .75rem;display:flex;align-items:center;justify-content:space-between;background:rgba(200,170,110,.04);cursor:pointer;user-select:none;"><span style="font-family:IBM Plex Sans KR,sans-serif;font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--gold);display:flex;align-items:center;gap:6px;"><span style="width:5px;height:5px;border-radius:50%;background:var(--blue-bright);display:inline-block;flex-shrink:0;"></span>라인 비율</span><span id="lane-ratio-arrow-lane" style="font-size:10px;color:var(--text-muted);transition:transform .2s;">▼</span></div><div id="lane-ratio-body-lane" style="padding:.5rem .75rem .6rem;"><div style="margin-bottom:6px;"><div style="font-size:9px;color:var(--text-muted);font-family:IBM Plex Sans KR,sans-serif;margin-bottom:3px;">주라인</div><div id="lane-ratio-main-lane"></div></div><div><div style="font-size:9px;color:var(--text-muted);font-family:IBM Plex Sans KR,sans-serif;margin-bottom:3px;">주+부라인</div><div id="lane-ratio-both-lane"></div></div></div></div>
@@ -22221,6 +22271,341 @@ function applyAutoBalance(ri) {
   closeAutoBalance();
   toast('추천 ' + (ri + 1) + ' 조합을 적용했습니다', 'ok');
 }
+
+// ── AI 밸런스 진단 (3단계 · 일반/라인고정) ──────────────────────────
+// 모든 팀이 5명으로 채워지면 GitHub 의 밸런스 모델(내전 분석 랩)로 예상 승률을 계산하고,
+// 어느 라인/선수가 기울게 만드는지와 맞바꾸기 개선안을 보여준다.
+var _bcTimer = null, _bcOpen = true, _bcSugs = [], _bcLoading = false, _bcErr = null;
+
+function _bcSchedule() {
+  if (_bcTimer) clearTimeout(_bcTimer);
+  _bcTimer = setTimeout(_bcRun, 150);
+}
+
+// 현재 팀 구성 → [{members:[5], lanes:[5]|null, ref}] 또는 null(아직 미완성)
+function _bcGroups() {
+  if (!match) return null;
+  if (matchType === 'lane') {
+    if (!Array.isArray(laneTeams) || laneTeams.length < 2) return null;
+    var out = [];
+    for (var i = 0; i < laneTeams.length; i++) {
+      var t = laneTeams[i], ms = [], ls = [];
+      for (var j = 0; j < 5; j++) {
+        var l = _BAL_LANES[j], m = t.slots && t.slots[l];
+        if (!m) return null;
+        ms.push(m); ls.push(l);
+      }
+      out.push({ members: ms, lanes: ls, name: t.name || ('팀 ' + (i + 1)) });
+    }
+    return out;
+  }
+  if (matchType === 'normal') {
+    if (match.aramTeam) return null;
+    if (!Array.isArray(teams) || teams.length < 2) return null;
+    if (!teams.every(function (t) { return t.members && t.members.length === 5; })) return null;
+    return teams.map(function (t, i) {
+      var ms = t.members.slice();
+      // 자동 밸런스로 라인이 정해져 있으면 그 라인 그대로
+      var ls = ms.map(function (m) { return m.balLane || null; });
+      var uniq = {}; ls.forEach(function (l) { if (l) uniq[l] = 1; });
+      return { members: ms, lanes: Object.keys(uniq).length === 5 ? ls : null, name: t.name || ('팀 ' + (i + 1)) };
+    });
+  }
+  return null;
+}
+
+// 팀 하나의 라인 배치 후보 (일반: 주·부라인 우선 · 라인고정: 지금 자리 그대로)
+function _bcOpts(g, allowOff) {
+  if (g.lanes) {
+    var sc = 0, sub = 0, off = 0;
+    g.members.forEach(function (m, i) {
+      var l = g.lanes[i];
+      sc += _balScore(m, l);
+      var main = _balNormLane(m.mainLane);
+      if (l !== main) { if (_balSubLanes(m).indexOf(l) >= 0) sub++; else off++; }
+    });
+    return [{ lanes: g.lanes.slice(), score: sc, sub: sub, off: off }];
+  }
+  var o = _balTeamOptions(g.members, null, allowOff);
+  if (!o.length) o = _balTeamOptions(g.members, null, true);
+  return o;
+}
+
+// 팀들 평가: 팀마다 '가장 자연스러운' 라인 배치(주라인 > 부라인 > 기타, 같으면 가장 강한 배치)로 계산
+// (균형을 맞추려고 억지로 비주류 라인에 넣지 않음 → 실제로 그 팀이 할 법한 배치 기준의 예측)
+function _bcEval(groups, laneMode) {
+  var allowOff = !laneMode;
+  var pen = function (o) { return laneMode ? 0 : _BAL_SUB_PEN * o.sub + _BAL_OFF_PEN * o.off; };
+  var opts = groups.map(function (g) {
+    var os = _bcOpts(g, allowOff), b = null;
+    os.forEach(function (o) { var c = pen(o); if (!b || c < b.c - 1e-9 || (Math.abs(c - b.c) < 1e-9 && o.score > b.o.score)) b = { c: c, o: o }; });
+    return b && b.o;
+  });
+  if (opts.some(function (o) { return !o; })) return null;
+  var sc = opts.map(function (o) { return o.score; });
+  var hi = sc.indexOf(Math.max.apply(null, sc)), lo = sc.indexOf(Math.min.apply(null, sc));
+  var p = groups.length === 2 ? _balWinProb(sc[0], sc[1]) : _balWinProb(sc[hi], sc[lo]);
+  var penSum = opts.reduce(function (s2, o) { return s2 + pen(o); }, 0);
+  return { cost: Math.abs(p - 0.5) + penSum, p: p, opts: opts, hi: hi, lo: lo };
+}
+
+// 맞바꾸기 개선안 탐색 (한 쌍 / 두 쌍)
+function _bcSuggest(groups, laneMode, cur) {
+  var K = groups.length;
+  function apply(swaps) {
+    var G = groups.map(function (g) { return { members: g.members.slice(), lanes: g.lanes ? g.lanes.slice() : null, name: g.name }; });
+    swaps.forEach(function (s) {
+      var a = G[s.ta], b = G[s.tb], t = a.members[s.ia];
+      a.members[s.ia] = b.members[s.ib]; b.members[s.ib] = t;
+      if (!laneMode) { a.lanes = null; b.lanes = null; }   // 일반: 바뀐 팀은 라인 다시 계산
+    });
+    return _bcEval(G, laneMode);
+  }
+  var singles = [];
+  for (var ta = 0; ta < K; ta++) for (var tb = ta + 1; tb < K; tb++) {
+    for (var i = 0; i < 5; i++) for (var j = 0; j < 5; j++) {
+      if (laneMode && groups[ta].lanes[i] !== groups[tb].lanes[j]) continue;   // 라인고정: 같은 라인끼리만
+      var sw = { ta: ta, tb: tb, ia: i, ib: j }, e = apply([sw]);
+      if (e) singles.push({ swaps: [sw], e: e });
+    }
+  }
+  singles.sort(function (a, b) { return a.e.cost - b.e.cost; });
+  var cands = singles.filter(function (c) { return c.e.cost < cur.cost - 0.01; });
+  // 두 쌍 동시 맞바꾸기: 한 쌍 후보 상위 30개끼리 조합
+  var top = singles.slice(0, 30);
+  for (var x = 0; x < top.length; x++) for (var y = x + 1; y < top.length; y++) {
+    var a = top[x].swaps[0], b = top[y].swaps[0];
+    if ((a.ta === b.ta && a.ia === b.ia) || (a.tb === b.tb && a.ib === b.ib) || (a.ta === b.tb && a.ia === b.ib) || (a.tb === b.ta && a.ib === b.ia)) continue;
+    var e2 = apply([a, b]);
+    if (e2 && e2.cost < cur.cost - 0.01) cands.push({ swaps: [a, b], e: e2 });
+  }
+  // 효과가 비슷하면 바꾸는 사람이 적은 안을 먼저
+  cands.sort(function (p, q) { return (p.e.cost + 0.015 * (p.swaps.length - 1)) - (q.e.cost + 0.015 * (q.swaps.length - 1)); });
+  var out = [];
+  for (var k = 0; k < cands.length && out.length < 3; k++) {
+    var c = cands[k];
+    // 한 쌍으로 거의 같은 효과가 나는 안이 이미 있으면 두 쌍짜리는 생략
+    if (c.swaps.length === 2 && out.some(function (o) { return o.swaps.length === 1 && o.e.cost <= c.e.cost + 0.015; })) continue;
+    out.push(c);
+  }
+  return out;
+}
+
+function _bcPct(p) { return (p * 100).toFixed(1) + '%'; }
+function _bcLaneTag(m, l) {
+  var main = _balNormLane(m.mainLane);
+  if (l === main) return '';
+  if (_balSubLanes(m).indexOf(l) >= 0) return '<span class="bc-tag sub">부라인</span>';
+  return '<span class="bc-tag off">' + (main ? '주·부라인 아님' : '라인 정보 없음') + '</span>';
+}
+
+function _bcRender(box, groups, laneMode, ev) {
+  var K = groups.length, E = _balEsc;
+  var opts = ev.opts;
+  var A = K === 2 ? 0 : ev.hi, B = K === 2 ? 1 : ev.lo;
+  var pA = K === 2 ? ev.p : _balWinProb(opts[A].score, opts[B].score);
+  var gap = Math.abs(pA - 0.5);
+  var lvl = gap <= 0.05 ? 'good' : gap <= 0.1 ? 'warn' : 'bad';
+  var verdict = { good: '✅ 균형 좋음', warn: '⚠️ 약간 기울어짐', bad: '❗ 불균형' }[lvl];
+  var head = K === 2
+    ? E(groups[0].name) + ' <b>' + _bcPct(pA) + '</b> : <b>' + _bcPct(1 - pA) + '</b> ' + E(groups[1].name)
+    : '가장 강한 ' + E(groups[A].name) + ' vs 가장 약한 ' + E(groups[B].name) + ' <b>' + _bcPct(pA) + '</b>';
+
+  // 라인별 맞대결 (A팀 vs B팀)
+  var laneRows = [], laneIssues = [];
+  var SA = opts[A].score, SB = opts[B].score;
+  _BAL_LANES.forEach(function (l) {
+    var ia = opts[A].lanes.indexOf(l), ib = opts[B].lanes.indexOf(l);
+    var ma = groups[A].members[ia], mb = groups[B].members[ib];
+    var sa = _balScore(ma, l), sb = _balScore(mb, l), d = sa - sb;
+    var impact = pA - _balWinProb(SA - d, SB);          // 이 라인 차이 때문에 생긴 승률 변화
+    laneRows.push({ l: l, ma: ma, mb: mb, sa: sa, sb: sb, d: d, impact: impact });
+    if ((pA >= 0.5 ? impact : -impact) >= 0.02) laneIssues.push({ l: l, ma: ma, mb: mb, sa: sa, sb: sb, impact: impact });
+  });
+  laneIssues.sort(function (x, y) { return Math.abs(y.impact) - Math.abs(x.impact); });
+  var maxAbs = Math.max.apply(null, laneRows.map(function (r) { return Math.abs(r.d); }).concat([0.5]));
+
+  // 문제점
+  var issues = [];
+  if (lvl !== 'good') {
+    var fav = pA >= 0.5 ? groups[A].name : groups[B].name;
+    issues.push('<b>' + E(fav) + '</b> 쪽이 유리합니다 (예상 승률 ' + _bcPct(Math.max(pA, 1 - pA)) + ').');
+  }
+  if (lvl === 'good') {
+    laneRows.filter(function (r) { return Math.abs(r.impact) >= 0.1; }).forEach(function (r) {
+      var strong = r.impact > 0 ? r.ma : r.mb, weak = r.impact > 0 ? r.mb : r.ma;
+      issues.push('<span class="bc-muted">참고: 전체 균형은 맞지만 <b>' + _BAL_KO[r.l] + '</b> 맞라인은 ' + E(strong.name) + ' 이(가) ' + E(weak.name) + ' 보다 많이 강합니다 (라인전에서 한쪽이 밀릴 수 있음)</span>');
+    });
+    laneIssues = [];
+  }
+  laneIssues.slice(0, 3).forEach(function (r) {
+    var strong = r.impact > 0 ? r.ma : r.mb, weak = r.impact > 0 ? r.mb : r.ma;
+    var strongTeam = r.impact > 0 ? groups[A].name : groups[B].name;
+    issues.push('<b>' + _BAL_KO[r.l] + '</b> 격차: ' + E(strong.name) + ' (' + E(strongTeam) + ') 이(가) ' + E(weak.name) + ' 보다 강해 승률 약 <b>' + (Math.abs(r.impact) * 100).toFixed(1) + '%p</b> 기울어짐');
+  });
+  groups.forEach(function (g, gi) {
+    opts[gi].lanes.forEach(function (l, i) {
+      var m = g.members[i], main = _balNormLane(m.mainLane);
+      if (l === main || _balSubLanes(m).indexOf(l) >= 0) return;
+      issues.push(E(g.name) + ' ' + E(m.name) + ' 이(가) ' + _BAL_KO[l] + ' (주·부라인 아님) — 실제 실력보다 낮게 나올 수 있음');
+    });
+  });
+  var unknown = [];
+  groups.forEach(function (g) { g.members.forEach(function (m) { if (!_balFindPlayer(m)) unknown.push(m.name); }); });
+  if (unknown.length) issues.push('<span class="bc-muted">내전 기록이 없어 티어로 추정: ' + unknown.map(E).join(', ') + '</span>');
+  if (lvl === 'good') issues.unshift('큰 문제 없이 균형 잡힌 구성입니다.');
+
+  // 개선안
+  _bcSugs = (lvl === 'good') ? [] : _bcSuggest(groups, laneMode, ev);
+  var sugHtml = '';
+  if (lvl !== 'good') {
+    sugHtml = _bcSugs.length ? _bcSugs.map(function (s, si) {
+      var desc = s.swaps.map(function (w) {
+        var ma = groups[w.ta].members[w.ia], mb = groups[w.tb].members[w.ib];
+        var la = !laneMode && s.e.opts[w.tb] ? ' <span class="bc-muted">→ ' + _BAL_KO[s.e.opts[w.tb].lanes[w.ib]] + '</span>' : '';
+        var lb = !laneMode && s.e.opts[w.ta] ? ' <span class="bc-muted">→ ' + _BAL_KO[s.e.opts[w.ta].lanes[w.ia]] + '</span>' : '';
+        return E(groups[w.ta].name) + ' <b>' + E(ma.name) + '</b>' + la + ' ↔ ' + E(groups[w.tb].name) + ' <b>' + E(mb.name) + '</b>' + lb +
+               (laneMode ? ' (' + _BAL_KO[groups[w.ta].lanes[w.ia]] + ')' : '');
+      }).join('<br>');
+      var np = s.e.p, before = Math.max(pA, 1 - pA), after = Math.max(np, 1 - np);
+      return '<div class="bc-sug"><div class="bc-sug-txt">' + desc + '<div class="bc-muted">예상 ' + _bcPct(before) + ' → <b style="color:var(--blue-bright)">' + _bcPct(after) + '</b>' +
+        (K === 2 ? '' : ' (가장 강한 팀 vs 가장 약한 팀)') +
+        (function () {
+          if (laneMode) return '';
+          var sub = 0, off = 0;
+          s.e.opts.forEach(function (o) { sub += o.sub; off += o.off; });
+          var sub0 = 0, off0 = 0;
+          opts.forEach(function (o) { sub0 += o.sub; off0 += o.off; });
+          var t = [];
+          if (sub > sub0) t.push('부라인 ' + (sub - sub0) + '명 늘어남');
+          if (off > off0) t.push('주·부라인 아닌 라인 ' + (off - off0) + '명 늘어남');
+          return t.length ? ' · <span style="color:#E8CB86">' + t.join(', ') + '</span>' : '';
+        })() + '</div></div>' +
+        '<button type="button" class="bc-apply" onclick="_bcApply(' + si + ')">적용</button></div>';
+    }).join('') : '<div class="bc-muted">한두 명 맞바꾸기로 더 나아지는 안이 없습니다. 자동밸런스로 전체를 다시 짜 보세요.</div>';
+  }
+
+  var lanesHtml = laneRows.map(function (r) {
+    var w = Math.min(50, Math.abs(r.d) / maxAbs * 50);
+    var bar = r.d >= 0 ? '<i class="bc-bar a" style="width:' + w + '%;left:50%"></i>' : '<i class="bc-bar b" style="width:' + w + '%;right:50%"></i>';
+    return '<div class="bc-lane"><span class="bc-ln">' + _BAL_KO[r.l] + '</span>' +
+      '<span class="bc-pl a">' + E(r.ma.name) + _bcLaneTag(r.ma, r.l) + ' <em>' + (r.sa >= 0 ? '+' : '') + r.sa.toFixed(2) + '</em></span>' +
+      '<span class="bc-track"><i class="bc-mid"></i>' + bar + '</span>' +
+      '<span class="bc-pl b"><em>' + (r.sb >= 0 ? '+' : '') + r.sb.toFixed(2) + '</em> ' + E(r.mb.name) + _bcLaneTag(r.mb, r.l) + '</span></div>';
+  }).join('');
+
+  var teamsHtml = K > 2 ? '<div class="bc-sec-t">팀 전력</div><div class="bc-teams">' + groups.map(function (g, gi) {
+    return '<span class="bc-team' + (gi === A ? ' hi' : gi === B ? ' lo' : '') + '">' + E(g.name) + ' <b>' + opts[gi].score.toFixed(2) + '</b></span>';
+  }).join('') + '</div>' : '';
+
+  var lanesNote = (!laneMode && groups.some(function (g) { return !g.lanes; })) ? '<div class="bc-muted" style="margin-top:4px;">일반 내전은 라인이 정해져 있지 않아 주·부라인 기준으로 가장 자연스러운 배치를 가정했습니다.</div>' : '';
+
+  box.className = 'bc-panel ' + lvl + (_bcOpen ? ' open' : '');
+  box.innerHTML =
+    '<div class="bc-head" onclick="_bcToggle()"><span class="bc-ico">🧠</span><span class="bc-title">AI 밸런스 진단</span>' +
+    '<span class="bc-sum">' + head + '</span><span class="bc-verdict">' + verdict + '</span><span class="bc-chev">›</span></div>' +
+    '<div class="bc-body">' +
+      (K === 2 ? '<div class="bc-prob"><i style="width:' + (pA * 100).toFixed(1) + '%"></i></div>' : '') +
+      teamsHtml +
+      '<div class="bc-sec-t">문제점</div><ul class="bc-issues">' + issues.map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ul>' +
+      '<div class="bc-sec-t">라인별 맞대결 <span class="bc-muted">(' + E(groups[A].name) + ' vs ' + E(groups[B].name) + ' · 숫자 = 모델 점수)</span></div>' +
+      '<div class="bc-lanes">' + lanesHtml + '</div>' + lanesNote +
+      (lvl !== 'good' ? '<div class="bc-sec-t">개선안</div>' + sugHtml : '') +
+      '<div class="bc-foot">모델 ' + E(String(_balModel.version || '')) + ' · 예측 정확도는 60% 안팎이라 참고용입니다.</div>' +
+    '</div>';
+  box._bc = { groups: groups, laneMode: laneMode };
+}
+
+async function _bcRun() {
+  _bcTimer = null;
+  var box = document.getElementById(matchType === 'lane' ? 'bal-check-lane' : 'bal-check-normal');
+  ['bal-check-lane', 'bal-check-normal'].forEach(function (id) {
+    var el = document.getElementById(id);
+    if (el && el !== box) { el.style.display = 'none'; el.innerHTML = ''; }
+  });
+  if (!box) return;
+  var groups = _bcGroups();
+  if (!groups) { box.style.display = 'none'; box.innerHTML = ''; return; }
+  box.style.display = '';
+  if (!_balModel || Date.now() - _balModelAt >= 10 * 60 * 1000) {
+    if (_bcLoading) return;
+    _bcLoading = true;
+    box.className = 'bc-panel';
+    box.innerHTML = '<div class="bc-head"><span class="bc-ico">🧠</span><span class="bc-title">AI 밸런스 진단</span><span class="bc-sum bc-muted">모델 불러오는 중…</span></div>';
+    try { await _balLoadModel(); _bcErr = null; } catch (e) { _bcErr = e.message; }
+    _bcLoading = false;
+    if (_bcErr) {
+      box.innerHTML = '<div class="bc-head"><span class="bc-ico">🧠</span><span class="bc-title">AI 밸런스 진단</span><span class="bc-sum bc-muted">' + _balEsc(_bcErr) + '</span></div>';
+      return;
+    }
+    groups = _bcGroups();
+    if (!groups) { box.style.display = 'none'; box.innerHTML = ''; return; }
+  }
+  var laneMode = matchType === 'lane';
+  var ev = _bcEval(groups, laneMode);
+  if (!ev) { box.style.display = 'none'; return; }
+  _bcRender(box, groups, laneMode, ev);
+}
+
+function _bcToggle() {
+  _bcOpen = !_bcOpen;
+  ['bal-check-lane', 'bal-check-normal'].forEach(function (id) {
+    var el = document.getElementById(id);
+    if (el) el.classList.toggle('open', _bcOpen);
+  });
+}
+
+// 개선안 적용: 선수 맞바꾸기
+function _bcApply(si) {
+  var s = _bcSugs[si];
+  var box = document.getElementById(matchType === 'lane' ? 'bal-check-lane' : 'bal-check-normal');
+  if (!s || !box || !box._bc) return;
+  var groups = box._bc.groups;
+  var names = s.swaps.map(function (w) { return groups[w.ta].members[w.ia].name + ' ↔ ' + groups[w.tb].members[w.ib].name; }).join(', ');
+  if (matchType === 'lane') {
+    s.swaps.forEach(function (w) {
+      var l = groups[w.ta].lanes[w.ia];
+      var ta = laneTeams[w.ta], tb = laneTeams[w.tb], t = ta.slots[l];
+      ta.slots[l] = tb.slots[l]; tb.slots[l] = t;
+    });
+    renderLaneBuilder();
+  } else {
+    var lostCap = false, changed = {};
+    s.swaps.forEach(function (w) {
+      var ta = teams[w.ta], tb = teams[w.tb];
+      var ma = ta.members[w.ia], mb = tb.members[w.ib];
+      ta.members[w.ia] = mb; tb.members[w.ib] = ma;
+      [ta, tb].forEach(function (t) { if (t.captainId != null && (t.captainId === ma.id || t.captainId === mb.id)) { t.captainId = null; lostCap = true; } });
+      changed[w.ta] = 1; changed[w.tb] = 1;
+    });
+    // 자동밸런스로 라인 표시가 있던 팀이면 새 라인으로 갱신, 없던 팀은 그대로 표시 없음
+    Object.keys(changed).forEach(function (ti) {
+      var t = teams[ti], o = s.e.opts && s.e.opts[ti];
+      var hadLanes = t.members.some(function (m) { return m.balLane; });
+      t.members.forEach(function (m, i) { if (hadLanes && o) m.balLane = o.lanes[i]; else delete m.balLane; });
+    });
+    renderNormalTeams(); checkNormalConditions();
+    if (lostCap) toast('팀이 바뀐 팀장은 해제됐습니다. 팀장을 다시 지정하세요', 'err');
+  }
+  try { saveCurrentMatch(); } catch (e) {}
+  toast('개선안 적용: ' + names, 'ok');
+}
+window._bcToggle = _bcToggle;
+window._bcApply = _bcApply;
+
+// 팀 화면이 다시 그려질 때마다 진단 갱신
+(function () {
+  function wrap(name) {
+    var orig = window[name];
+    if (typeof orig !== 'function' || orig._bcWrapped) return;
+    var w = function () { var r = orig.apply(this, arguments); try { _bcSchedule(); } catch (e) {} return r; };
+    w._bcWrapped = true;
+    window[name] = w;
+  }
+  function init() { wrap('renderNormalTeams'); wrap('renderLaneBuilder'); }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+  window.addEventListener('load', init);
+})();
 
 // ── 칼바람 내전 (3단계) ──
 function _applyAramTeamMode() {
