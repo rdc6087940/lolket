@@ -1567,8 +1567,15 @@ async function _autoResultForMatch(cid, matchId, env, opts) {
   if (!_base && m.time && m.time !== 'mobasi') { const t = Date.parse(String(m.time).length <= 16 ? m.time + ':00+09:00' : m.time); if (!isNaN(t)) _base = t; }
   if (!_base) _base = Date.now() - 24 * 60 * 60 * 1000;
   let startMs = _base - 30 * 60 * 1000;
-  // 수동으로 가져올 때는 최근 24시간 이내 게임만
-  if (manual) startMs = Math.max(startMs, Date.now() - 24 * 60 * 60 * 1000);
+  // 스케줄러(자동): 내전을 만든 시간부터 (4단계로 늦게 넘어가도 그 전 게임까지 찾도록)
+  if (!manual) {
+    const _idTs = Number((/^match_(\d{12,})/.exec(String(matchId)) || [])[1] || 0);
+    const _created = Number(m.createdAt || m._createdAt || 0) || _idTs;
+    if (_created && _created < Date.now()) startMs = _created;
+  }
+  // 수동으로 가져올 때는 4단계 진입 시간과 상관없이 최근 24시간 이내 게임 전체
+  //   (4단계로 늦게 넘어가서 그 전에 한 게임이 빠지는 경우 대비)
+  if (manual) startMs = Date.now() - 24 * 60 * 60 * 1000;
   startMsOut = startMs;
   const startSec = Math.floor(startMs / 1000);
   // 후보 경기 ID 모으기: 팀이 많으면 팀당 인원을 줄임 (2팀 3명, 그 이상 2명)
@@ -1626,6 +1633,7 @@ async function _autoResultForMatch(cid, matchId, env, opts) {
   }
   // 이미 저장된 경기는 상세 조회 생략 (다시 눌러도 남은 경기부터 확인)
   const cands = Object.keys(cnt).sort((a, b) => cnt[b].size - cnt[a].size).filter(id => cnt[id].size >= 2 && !existingCodes.has(id)).slice(0, 20);
+  diag.saved = Object.keys(cnt).filter(id => cnt[id].size >= 2 && existingCodes.has(id)).length;   // 목록에 보였지만 이미 저장된 경기
   diag.cands = cands.length;
 
   // 경기 판정
@@ -1661,7 +1669,7 @@ async function _autoResultForMatch(cid, matchId, env, opts) {
   const found = games.length;
   // 이미 저장된 경기는 빼고 새 경기만
   const newGames = games.filter(g => !existingCodes.has(normId(g.mid)));
-  if (!newGames.length) return noGames(found ? '새 경기 없음' : '맞는 경기 없음');
+  if (!newGames.length) return noGames((found || diag.saved) ? '새 경기 없음 (이미 저장된 ' + existingCodes.size + '경기)' : '맞는 경기 없음');
 
   // 결과 만들기 + 부계정 찾기
   const ser = (t) => ({ id: t.id, captainId: t.captainId || null, captainCode: t.captainCode || null, color: t.color || null, name: t.name || null,
