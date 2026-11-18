@@ -199,6 +199,14 @@ export default {
     const url  = new URL(request.url);
     const path = url.pathname;
 
+    // 내전 공유 링크 (카톡 등 미리보기용) → 디스코드 포스트로 이동
+    if (request.method === 'GET' && /^\/m\/[^/]+\/?$/.test(path)) {
+      return handleMatchShare(decodeURIComponent(path.split('/')[2]), env, url.searchParams.get('c'));
+    }
+    if (request.method === 'GET' && /^\/og-banner\/[^/]+$/.test(path)) {
+      return handleOgBanner(decodeURIComponent(path.split('/')[2].replace(/\.(jpg|jpeg|png)$/i, '')), env);
+    }
+
     // 크롤러가 stats 페이지 요청 시 동적 OG HTML 반환
     if (path === '/stats' || path === '/stats.html') {
       const ua = request.headers.get('User-Agent') || '';
@@ -396,11 +404,12 @@ export default {
       for (const id of targets) {
         const m = cut.find(x => String(x.discordId) === id) || {};
         const content =
-          `😢 **${m.name || ''}${m.tag ? '#' + m.tag : ''}** 님, 아쉬운 소식을 전해드려요.\n\n` +
+          `⏳ **${m.name || ''}${m.tag ? '#' + m.tag : ''}** 님, 대기 멤버로 등록되었어요.\n\n` +
           `📋 내전: **${matchName}**${timeStr ? '  ·  🕒 ' + timeStr : ''}\n` +
-          `👥 진행 인원이 **${m.cutConfirmCount || ''}명**으로 확정되면서 이번 내전에는 참여하지 못하게 되었습니다.\n` +
+          `👥 진행 인원이 **${m.cutConfirmCount || ''}명**으로 확정되면서 **대기 멤버**로 옮겨졌습니다.\n` +
+          `🔄 빈자리가 생기면 진행자가 선수 교체로 넣어드릴 수 있어요.\n` +
           (admin ? `👤 진행자: **${admin}**\n` : '') +
-          `\n참여 신청해주셔서 감사합니다. 다음 내전에서 꼭 만나요! 🙏`;
+          `\n참여 신청해주셔서 감사합니다! 🙏`;
         try {
           const ch = await fetch('https://discord.com/api/v10/users/@me/channels', {
             method: 'POST', headers: { 'Authorization': 'Bot ' + BOT, 'Content-Type': 'application/json' },
@@ -425,6 +434,32 @@ export default {
       if (!cid || !matchId) return json({ok:false,error:'필수 파라미터 없음'},400);
       const r = await _updateForumPostTitle(cid, matchId, env);
       return json(r, r.ok ? 200 : (r.status || 500));
+    }
+    // 게임 결과 가져오기 (수동) — 자동 저장과 같은 판정, 이미 저장된 경기는 건너뜀
+    if (path === '/match-auto-result' && request.method === 'POST') {
+      let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
+      const { cid, matchId, token } = body || {};
+      if (!cid || !matchId) return json({ok:false,error:'필수 파라미터 없음'},400);
+      const session = getSession(token);
+      if (!session || (session.role !== 'master' && session.role !== 'admin')) return json({ok:false,error:'관리자 로그인이 필요합니다'},403);
+      try {
+        const r = await _autoResultForMatch(cid, matchId, env, { manual: true });
+        if (r.skip) return json({ ok:false, error: r.error || r.skip }, 400);
+        return json(r);
+      } catch (e) { return json({ ok:false, error: e.message }, 500); }
+    }
+    // 게임 상세 분석 (타임라인·빌드 요약본)
+    if (path === '/match-detail' && request.method === 'GET') return handleMatchDetail(url, env);
+    // 출석 확인: 참여자들이 어느 음성 채널에 있는지
+    if (path === '/match-voice-check' && request.method === 'POST') {
+      let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
+      const { cid, people } = body || {};
+      if (!cid || !Array.isArray(people)) return json({ok:false,error:'필수 파라미터 없음'},400);
+      // 워커 1회 요청당 외부 호출 50개 제한 → 한 번에 15명까지 (화면에서 나눠서 여러 번 보냄)
+      try {
+        const r = await _voiceCheck(cid, people.slice(0, 15), env);
+        return json(r, r.ok ? 200 : (r.status || 500));
+      } catch (e) { return json({ ok:false, error:'출석 확인 중 오류: ' + e.message }, 500); }
     }
     // 내전 디스코드 포스트 링크
     if (path === '/match-forum-link' && request.method === 'POST') {
@@ -508,6 +543,15 @@ export default {
       // 토큰 검증 생략 (BOT_TOKEN으로 DM 발송 권한 확인)
       const BOT_TOKEN = env.DISCORD_BOT_TOKEN;
       if (!BOT_TOKEN) return json({ok:false,error:'BOT_TOKEN 없음'},500);
+      // 내전당 한 번: 5단계 진입 자동 발송(auto)은 이미 보낸 내전이면 건너뜀 (수동 '후기 DM 발송' 버튼은 확인 후 재발송 가능)
+      const _rdAuthQ = env.FB_DB_SECRET ? '?auth=' + env.FB_DB_SECRET : '';
+      const _rdPath = `${env.FB_DATABASE_URL}/communities/${cid}/matches/${matchId}`;
+      if (body.auto) {
+        try {
+          const sr = await fetch(`${_rdPath}/reviewDmSent.json${_rdAuthQ}`);
+          if (sr.ok && (await sr.json()) === true) return json({ ok:true, skipped:true, results:[] });
+        } catch (e) {}
+      }
       const results = [];
       for (const m of members) {
         if (!m.discordId) continue;
@@ -537,6 +581,11 @@ export default {
           results.push({ puuid: m.puuid, ok: false, error: e.message });
         }
       }
+      // 보냈다는 기록을 서버에도 남김 (웹 화면 상태와 상관없이 다시 자동 발송되지 않게)
+      await fetch(`${_rdPath}.json${_rdAuthQ}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reviewDmSent: true, reviewDmAt: Date.now() }),
+      }).catch(() => {});
       return json({ ok:true, results });
     }
 
@@ -1111,12 +1160,14 @@ export default {
     return json({ error: '알 수 없는 경로' }, 404);
   },
 
-  // ── Cron: 5분=알람체크, 3시간=레이팅계산 ──
+  // ── Cron: 15분=알람체크·결과 자동 저장, 6시간=레이팅계산 ──
   async scheduled(event, env, ctx) {
     _setSignKey(env);
     const cron = event.cron;
-    if (cron === '*/5 * * * *') {
+    // 15분 스케줄러 (예전 5분 설정이 남아 있어도 같은 작업)
+    if (cron === '*/15 * * * *' || cron === '*/5 * * * *') {
       ctx.waitUntil(runAlarmCheck(env));
+      ctx.waitUntil(runAutoResultCheck(env).catch(e => console.error('[auto-result]', e.message)));   // 내전 결과 자동 저장
     } else if (cron === '0 */6 * * *') {
       ctx.waitUntil(runScheduledRatingCalc(env));
     } else if (cron === '0 15 * * *') {
@@ -1133,6 +1184,527 @@ export default {
     }
   },
 };
+
+// ══════════════════════════════════════════════════
+// 내전 결과 자동 저장
+//   - 4단계로 넘어갈 때(1회) auto_results/{matchId} = { cid, at: 4단계 진입 + 3시간 } 예약
+//   - 15분 Cron 이 at 이 지난 예약을 꺼내 '확인함'으로 처리(예약 삭제 + autoResultChecked)한 뒤 1번만 탐색
+//   - 팀 멤버들의 Riot 최근 경기에서, 4단계 진입 이후 10인 경기 중
+//     블루 5명 중 3명+ 가 한 팀, 레드 5명 중 3명+ 가 다른 팀이면 그 두 팀의 경기로 판단 (20인이면 모든 팀 조합 대상)
+//   - 찾은 경기들을 5단계 결과로 저장하고 내전 상태를 '내전 종료'로
+//   - 팀에서 맞지 않은 멤버 1명 ↔ 참가자 1명만 남으면 그 참가자 계정을 멤버 디스코드 계정의 부계정 목록에 추가
+//     (5단계 결과 화면의 선수 연결은 2명 이상 남아도 라인으로 짝지어 표시)
+// ══════════════════════════════════════════════════
+const _AUTO_RESULT_DELAY_MS = 3 * 60 * 60 * 1000;
+
+async function runAutoResultCheck(env) {
+  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth=' + secret : '';
+  const res = await fetch(`${dbUrl}/auto_results.json${authQ}`);
+  if (!res.ok) return;
+  const all = await res.json();
+  if (!all) return;
+  const now = Date.now();
+  const due = Object.entries(all).filter(([, it]) => it && it.cid && (it.at || 0) <= now).slice(0, 3);
+  for (const [matchId, it] of due) {
+    // 먼저 '확인함' 처리 (예약 삭제) → 실패해도 다시 검사하지 않음
+    await fetch(`${dbUrl}/auto_results/${matchId}.json${authQ}`, { method: 'DELETE' }).catch(() => {});
+    try {
+      const r = await _autoResultForMatch(it.cid, matchId, env);
+      console.log('[auto-result]', matchId, JSON.stringify(r));
+    } catch (e) {
+      console.error('[auto-result] error', matchId, e.message);
+      await fetch(`${dbUrl}/communities/${it.cid}/matches/${matchId}.json${authQ}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ autoResultChecked: true, autoResult: { at: Date.now(), games: 0, error: String(e.message || e).slice(0, 200) } }),
+      }).catch(() => {});
+    }
+  }
+}
+
+function _arKey(name, tag) { return (String(name || '').trim() + '#' + String(tag || '').trim()).toLowerCase(); }
+function _arArr(v) { return Array.isArray(v) ? v.filter(Boolean) : (v && typeof v === 'object' ? Object.values(v).filter(Boolean) : []); }
+
+// 라인 표기 통일 → Riot teamPosition (TOP/JUNGLE/MIDDLE/BOTTOM/UTILITY)
+function _arPos(l) {
+  const k = String(l || '').trim().toLowerCase();
+  return ({ top: 'TOP', jg: 'JUNGLE', jungle: 'JUNGLE', jug: 'JUNGLE', mid: 'MIDDLE', middle: 'MIDDLE',
+            bot: 'BOTTOM', adc: 'BOTTOM', bottom: 'BOTTOM', ad: 'BOTTOM', sup: 'UTILITY', support: 'UTILITY', utility: 'UTILITY', spt: 'UTILITY' })[k] || '';
+}
+// 맞지 않은 멤버(um) ↔ 맞지 않은 참가자(up) 짝짓기. 확실한 짝만 돌려줌
+function _arPairUnmatched(um, up) {
+  if (!um.length || !up.length) return [];
+  if (um.length === 1 && up.length === 1) return [[um[0], up[0]]];
+  const pairs = [], usedM = new Set(), usedP = new Set();
+  // 1) 확정 라인(라인고정 배정 라인, 없으면 주라인)이 같은 참가자가 딱 1명일 때
+  // 2) 남은 사람은 부라인으로 한 번 더
+  const rounds = [x => [x._lane || _arPos(x.mainLane)], x => [].concat(x.subLane || [], x.subLanes || []).map(_arPos)];
+  for (const laneOf of rounds) {
+    const byPos = {};
+    up.filter(p => !usedP.has(p.puuid)).forEach(p => { const k = p.teamPosition || p.individualPosition || ''; (byPos[k] = byPos[k] || []).push(p); });
+    const want = {};
+    um.filter(x => !usedM.has(x.id)).forEach(x => laneOf(x).filter(Boolean).forEach(l => { (want[l] = want[l] || []).push(x); }));
+    Object.keys(want).forEach(l => {
+      const ms = want[l].filter(x => !usedM.has(x.id)), ps = (byPos[l] || []).filter(p => !usedP.has(p.puuid));
+      if (ms.length === 1 && ps.length === 1) { pairs.push([ms[0], ps[0]]); usedM.add(ms[0].id); usedP.add(ps[0].puuid); }
+    });
+  }
+  // 3) 그래도 1명씩만 남으면 그 둘을 짝
+  const rm = um.filter(x => !usedM.has(x.id)), rp = up.filter(p => !usedP.has(p.puuid));
+  if (rm.length === 1 && rp.length === 1) pairs.push([rm[0], rp[0]]);
+  return pairs;
+}
+
+function _arTeams(m) {
+  let teams = _arArr(m._teams).filter(t => _arArr(t.members).length);
+  if (!teams.length && m._laneTeams) {
+    teams = _arArr(m._laneTeams).map(t => {
+      const mem = ['top', 'jg', 'mid', 'bot', 'sup'].map(s => t.slots && t.slots[s]).filter(Boolean);
+      return { id: t.id, name: t.name, captainId: t.captainId || null, members: mem };
+    }).filter(t => t.members.length);
+  }
+  // 라인고정 내전이면 멤버별 배정 라인
+  const slotLane = {};
+  _arArr(m._laneTeams).forEach(t => ['top', 'jg', 'mid', 'bot', 'sup'].forEach(s => { const x = t.slots && t.slots[s]; if (x) slotLane[x.id] = _arPos(s); }));
+  return teams.map(t => ({ ...t, members: _arArr(t.members).map(x => ({ ...x, _lane: slotLane[x.id] || '' })) }));
+}
+function _arTeamName(t, allMembers) {
+  const cap = t.captainId != null ? (allMembers.find(x => x.id === t.captainId) || t.members.find(x => x.id === t.captainId)) : null;
+  if (cap) return cap.name + ' 팀';
+  return t.name || ('팀 ' + t.id);
+}
+
+// Riot 경기 → 5단계 gameData (웹의 parseRiotMatchData 와 같은 모양)
+function _arGameData(data, teamA, teamB, blueIsA) {
+  const info = data.info;
+  const participants = info.participants || [];
+  const dur = info.gameDuration || 0;
+  const duration = `${Math.floor(dur / 60)}:${String(dur % 60).padStart(2, '0')}`;
+  const verMatch = (info.gameVersion || '').match(/^(\d+\.\d+)/);
+  const ddVer = verMatch ? verMatch[1] + '.1' : '16.14.1';
+  const teamAId = blueIsA ? 100 : 200, teamBId = blueIsA ? 200 : 100;
+  const POS_ORDER = { TOP: 0, JUNGLE: 1, MIDDLE: 2, BOTTOM: 3, UTILITY: 4 };
+  const toPlayer = (p) => ({
+    name: p.riotIdGameName || p.summonerName || '소환사',
+    champion: p.championName || '?',
+    k: p.kills || 0, d: p.deaths || 0, a: p.assists || 0,
+    dmg: p.totalDamageDealtToChampions || 0,
+    gold: p.goldEarned || 0,
+    cs: (p.totalMinionsKilled || 0) + (p.neutralMinionsKilled || 0),
+    wards: (p.wardsPlaced || 0) + (p.visionWardsBoughtInGame || 0),
+    tankDmg: p.damageSelfMitigated || 0,
+    win: p.win || false,
+    items: [p.item0, p.item1, p.item2, p.item3, p.item4, p.item5, p.item6].map(id => id || 0),
+    pos: p.teamPosition || p.individualPosition || 'UTILITY',
+  });
+  const used = new Set();
+  const matchMember = (member, tid, puuSet) => {
+    const p = participants.find(p => p.teamId === tid && !used.has(p.puuid) && (
+      (member.puuid && p.puuid === member.puuid) || (puuSet && puuSet.has(p.puuid)) ||
+      (p.riotIdGameName && member.name && p.riotIdGameName.trim().toLowerCase() === String(member.name).trim().toLowerCase())));
+    if (p) { used.add(p.puuid); return toPlayer(p); }
+    return null;
+  };
+  const buildTeam = (team, tid) => {
+    const tp = participants.filter(p => p.teamId === tid);
+    const first = team.members.map(m => matchMember(m, tid, m._puus));
+    // 안 맞은 멤버는 라인으로 짝지어 연결 (부계정 판단과 같은 규칙)
+    const pairs = _arPairUnmatched(team.members.filter((m, i) => !first[i]), tp.filter(p => !used.has(p.puuid)));
+    pairs.forEach(([mm, pp]) => { const i = team.members.indexOf(mm); used.add(pp.puuid); first[i] = toPlayer(pp); });
+    const result = team.members.map((m, i) => {
+      if (first[i]) return first[i];
+      const fb = tp.find(p => !used.has(p.puuid));
+      if (fb) { used.add(fb.puuid); return toPlayer(fb); }
+      return { name: m.name, champion: '?', k: 0, d: 0, a: 0, dmg: 0, gold: 0, cs: 0, win: false, items: [0, 0, 0, 0, 0, 0, 0] };
+    });
+    return result.sort((a, b) => (POS_ORDER[a.pos] ?? 9) - (POS_ORDER[b.pos] ?? 9));
+  };
+  return { duration, ddVer, teamA: buildTeam(teamA, teamAId), teamB: buildTeam(teamB, teamBId) };
+}
+
+// opts.manual = 웹의 '게임 결과 가져오기' 버튼 (확인함 처리 안 함 → 예약된 스케줄러는 나중에 그대로 동작)
+// ═══════════════════════════════════════════════════════════════
+// 게임 상세 분석 (match-v5 + timeline 요약본)
+// match_details/{KR_xxx} 에 요약본만 저장 → 다음부터는 Riot 호출 없이 바로 반환
+// ═══════════════════════════════════════════════════════════════
+const MD_VERSION = 1;
+function _mdNormId(x) {
+  const t = String(x || '').trim();
+  if (/^\d+$/.test(t)) return 'KR_' + t;
+  return /^[A-Za-z0-9]+_\d+$/.test(t) ? t.toUpperCase() : '';
+}
+function _mdSummarize(mid, data, tl) {
+  const info = data.info || {};
+  const parts = info.participants || [];
+  const verM = String(info.gameVersion || '').match(/^(\d+\.\d+)/);
+  const pidOf = {}; // participantId → index in p[]
+  const p = parts.map((x, i) => {
+    pidOf[x.participantId || (i + 1)] = i;
+    const st = (x.perks && x.perks.styles) || [];
+    const pri = st.find(s => s.description === 'primaryStyle') || st[0] || {};
+    const sub = st.find(s => s.description === 'subStyle') || st[1] || {};
+    const sp = (x.perks && x.perks.statPerks) || {};
+    return {
+      puuid: x.puuid || '', name: x.riotIdGameName || x.summonerName || '', tag: x.riotIdTagline || '',
+      champ: x.championName || '', champId: x.championId || 0, team: x.teamId || 0,
+      pos: x.teamPosition || x.individualPosition || '', lv: x.champLevel || 0,
+      k: x.kills || 0, d: x.deaths || 0, a: x.assists || 0,
+      cs: (x.totalMinionsKilled || 0) + (x.neutralMinionsKilled || 0),
+      gold: x.goldEarned || 0, dmg: x.totalDamageDealtToChampions || 0,
+      taken: x.totalDamageTaken || 0, vis: x.visionScore || 0, win: !!x.win,
+      items: [x.item0, x.item1, x.item2, x.item3, x.item4, x.item5, x.item6].map(v => v || 0),
+      spells: [x.summoner1Id || 0, x.summoner2Id || 0],
+      rune: {
+        p: pri.style || 0, s: sub.style || 0,
+        perks: [...(pri.selections || []), ...(sub.selections || [])].map(s => s.perk || 0),
+        shards: [sp.offense || 0, sp.flex || 0, sp.defense || 0],
+      },
+      build: [], skills: '',
+    };
+  });
+  const teams = {};
+  (info.teams || []).forEach(t => {
+    const o = t.objectives || {};
+    const n = k => (o[k] && o[k].kills) || 0;
+    teams[t.teamId] = { win: !!t.win, obj: { kills: n('champion'), dragon: n('dragon'), baron: n('baron'), herald: n('riftHerald'), horde: n('horde'), atakhan: n('atakhan'), tower: n('tower'), inhib: n('inhibitor') } };
+  });
+  const out = {
+    v: MD_VERSION, id: mid, ver: info.gameVersion || '', ddVer: verM ? verM[1] + '.1' : '',
+    created: info.gameStartTimestamp || info.gameCreation || 0, dur: info.gameDuration || 0,
+    queue: info.queueId != null ? info.queueId : null,
+    teams, p, f: null, ev: [],
+  };
+  const frames = tl && tl.info && tl.info.frames;
+  if (Array.isArray(frames) && frames.length) {
+    // 타임라인 참가자 번호 → puuid 기준으로 다시 맞춤
+    const tlP = (tl.info.participants || []);
+    const map = {};
+    tlP.forEach(tp => { const i = p.findIndex(x => x.puuid && x.puuid === tp.puuid); if (i >= 0) map[tp.participantId] = i; });
+    const idx = pid => (map[pid] != null ? map[pid] : (pidOf[pid] != null ? pidOf[pid] : -1));
+    const g = [], cs = [], xp = [], lv = [];
+    frames.forEach(fr => {
+      const pf = fr.participantFrames || {};
+      const row = k => p.map(() => 0);
+      const gr = row(), cr = row(), xr = row(), lr = row();
+      Object.keys(pf).forEach(key => {
+        const i = idx(+key); if (i < 0) return;
+        const v = pf[key] || {};
+        gr[i] = v.totalGold || 0; cr[i] = (v.minionsKilled || 0) + (v.jungleMinionsKilled || 0);
+        xr[i] = v.xp || 0; lr[i] = v.level || 0;
+      });
+      g.push(gr); cs.push(cr); xp.push(xr); lv.push(lr);
+    });
+    out.f = { g, cs, xp, lv };
+    const buys = p.map(() => []), skills = p.map(() => []);
+    const sec = ms => Math.round((ms || 0) / 1000);
+    frames.forEach(fr => (fr.events || []).forEach(e => {
+      const t = sec(e.timestamp);
+      switch (e.type) {
+        case 'ITEM_PURCHASED': { const i = idx(e.participantId); if (i >= 0 && e.itemId) buys[i].push([t, e.itemId]); break; }
+        case 'ITEM_UNDO': {
+          const i = idx(e.participantId); if (i < 0) break;
+          const b = buys[i];
+          if (e.beforeId) { for (let j = b.length - 1; j >= 0; j--) if (b[j][1] === e.beforeId) { b.splice(j, 1); break; } }
+          break;
+        }
+        case 'SKILL_LEVEL_UP': {
+          const i = idx(e.participantId);
+          if (i >= 0 && e.skillSlot >= 1 && e.skillSlot <= 4 && (e.levelUpType || 'NORMAL') === 'NORMAL') skills[i].push(e.skillSlot);
+          break;
+        }
+        case 'CHAMPION_KILL': {
+          const v = idx(e.victimId); if (v < 0) break;
+          out.ev.push({ t, ty: 'kill', k: idx(e.killerId), v, as: (e.assistingParticipantIds || []).map(idx).filter(x => x >= 0) });
+          break;
+        }
+        case 'ELITE_MONSTER_KILL': {
+          const k = idx(e.killerId);
+          const team = e.killerTeamId || (k >= 0 ? p[k].team : 0);
+          out.ev.push({ t, ty: 'mon', m: e.monsterType || '', sub: e.monsterSubType || '', team, k });
+          break;
+        }
+        case 'BUILDING_KILL': {
+          // teamId = 건물을 잃은 팀 → 파괴한 팀으로 바꿔 저장
+          const lost = e.teamId || 0;
+          out.ev.push({ t, ty: 'bld', b: e.buildingType === 'INHIBITOR_BUILDING' ? 'inhib' : 'tower', lane: e.laneType || '', tier: e.towerType || '', team: lost === 100 ? 200 : lost === 200 ? 100 : 0, k: idx(e.killerId) });
+          break;
+        }
+      }
+    }));
+    p.forEach((x, i) => { x.build = buys[i]; x.skills = skills[i].join(''); });
+    out.ev.sort((a, b) => a.t - b.t);
+  }
+  return out;
+}
+async function _mdFetch(env, mid, dataIn) {
+  const key = env.RIOT_API_KEY || '';
+  const base = `https://asia.api.riotgames.com/lol/match/v5/matches/${encodeURIComponent(mid)}`;
+  const H = { headers: { 'X-Riot-Token': key } };
+  const [mr, tr] = await Promise.all([
+    dataIn ? null : fetch(base, H),
+    fetch(base + '/timeline', H),
+  ]);
+  let data = dataIn;
+  if (!data) {
+    if (!mr.ok) return { error: mr.status === 404 ? '매치를 찾을 수 없습니다' : 'Riot API 오류 (' + mr.status + ')', status: mr.status === 404 ? 404 : 502 };
+    data = await mr.json();
+  }
+  const tl = tr && tr.ok ? await tr.json().catch(() => null) : null;
+  return { data, tl };
+}
+// 요약본 만들어서 저장 (이미 있으면 그대로)
+async function _mdBuildStore(env, mid, dataIn) {
+  const dbUrl = env.FB_DATABASE_URL, authQ = env.FB_DB_SECRET ? '?auth=' + env.FB_DB_SECRET : '';
+  const ref = `${dbUrl}/match_details/${mid}.json${authQ}`;
+  const cur = await fetch(ref).then(r => r.ok ? r.json() : null).catch(() => null);
+  if (cur && cur.v === MD_VERSION && cur.f) return { detail: cur, cached: true };
+  const r = await _mdFetch(env, mid, dataIn);
+  if (r.error) return r;
+  if (!r.data || !r.data.info) return { error: '매치 정보가 비어 있습니다', status: 502 };
+  // 내전 = 사용자 설정 게임 (일반 커스텀 queueId 0, 토너먼트 코드 내전 3130 등 — gameType 이 CUSTOM_GAME)
+  const inf = r.data.info;
+  if (!(inf.gameType === 'CUSTOM_GAME' || inf.queueId === 0 || inf.queueId === 3130)) return { error: '내전(사용자 설정 게임)만 상세 분석을 지원합니다', status: 400 };
+  const detail = _mdSummarize(mid, r.data, r.tl);
+  // 타임라인을 못 받았으면 저장하지 않고 이번만 반환 (다음에 다시 시도)
+  if (detail.f) await fetch(ref, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(detail) }).catch(() => {});
+  return { detail, cached: false };
+}
+async function handleMatchDetail(url, env) {
+  const mid = _mdNormId(url.searchParams.get('id'));
+  if (!mid) return json({ ok: false, error: 'Match ID가 올바르지 않습니다' }, 400);
+  try {
+    const r = await _mdBuildStore(env, mid, null);
+    if (r.error) return json({ ok: false, error: r.error }, r.status || 500);
+    return new Response(JSON.stringify({ ok: true, cached: !!r.cached, detail: r.detail }), {
+      status: 200, headers: { ...CORS, 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': r.detail.f ? 'public, max-age=86400' : 'no-store' },
+    });
+  } catch (e) { return json({ ok: false, error: '서버 오류: ' + e.message }, 500); }
+}
+
+// 이미 저장된 경기(Match ID)는 건너뛰고 새로 찾은 경기만 추가
+async function _autoResultForMatch(cid, matchId, env, opts) {
+  const manual = !!(opts && opts.manual);
+  const markChecked = manual ? {} : { autoResultChecked: true };
+  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth=' + secret : '';
+  const key = env.RIOT_API_KEY || '';
+  const base = `${dbUrl}/communities/${cid}/matches/${matchId}`;
+  const patch = async (obj) => fetch(`${base}.json${authQ}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(obj) });
+
+  const mr = await fetch(`${base}.json${authQ}`);
+  const m = mr.ok ? await mr.json() : null;
+  if (!m) return { skip: 'no match' };
+  if (!manual && m.autoResultChecked) return { skip: 'already checked' };
+  if (m.jjong) { if (!manual) await patch(markChecked); return { skip: 'jjong', error: '쫑 처리된 내전입니다' }; }
+  // 이미 저장된 경기 (중복 저장 방지)
+  const normId = (x) => { const t = String(x || '').trim(); return /^\d+$/.test(t) ? 'KR_' + t : t.toUpperCase(); };
+  const existing = _arArr(m._resultMatches);
+  const existingCodes = new Set(existing.map(r => r && normId(r.customCode)).filter(Boolean));
+  let diag = null, startMsOut = null;
+  const noGames = async (note) => {
+    if (!manual) await patch({ autoResultChecked: true, autoResult: { at: Date.now(), games: 0, total: existingCodes.size, note: note || '', diag } });
+    return { ok: true, added: 0, total: existingCodes.size, note, diag, searchFrom: startMsOut };
+  };
+  const teams = _arTeams(m);
+  if (teams.length < 2) return noGames('팀 정보 없음');
+  const allMembers = _arArr(m._members);
+
+  // 소환사 계정 등록(메인 + 부계정)으로 멤버별 puuid 모으기
+  const pr = await fetch(`${dbUrl}/communities/${cid}/discord_profiles.json${authQ}`);
+  const profiles = pr.ok ? (await pr.json() || {}) : {};
+  const profByKey = {}, profByDid = {};
+  for (const [did, p] of Object.entries(profiles)) {
+    if (!p || !p.riotName) continue;
+    const ent = { did: p.discordId || did, p };
+    profByKey[_arKey(p.riotName, p.riotTag)] = ent;
+    profByDid[ent.did] = ent;
+  }
+  const profOf = (mem) => {
+    const full = allMembers.find(x => x.id === mem.id) || {};
+    const did = mem.discordId || full.discordId;
+    return (did && profByDid[did]) || profByKey[_arKey(mem.name, mem.tag)] || null;
+  };
+  teams.forEach(t => t.members.forEach(mem => {
+    const s = new Set();
+    if (mem.puuid) s.add(mem.puuid);
+    const ent = profOf(mem);
+    if (ent) {
+      if (ent.p.riotPuuid) s.add(ent.p.riotPuuid);
+      _arArr(ent.p.subAccounts).forEach(a => { if (a.riotPuuid) s.add(a.riotPuuid); });
+    }
+    mem._puus = s;
+    mem._key = _arKey(mem.name, mem.tag);
+    mem._prof = ent;
+  }));
+
+  // 4단계 진입 이후 경기만 (예약이 없는 예전 내전은 시작 시간, 그것도 없으면 최근 24시간)
+  let _base = m.stage4At || (m.autoResultAt ? m.autoResultAt - _AUTO_RESULT_DELAY_MS : 0);
+  if (!_base && m.time && m.time !== 'mobasi') { const t = Date.parse(String(m.time).length <= 16 ? m.time + ':00+09:00' : m.time); if (!isNaN(t)) _base = t; }
+  if (!_base) _base = Date.now() - 24 * 60 * 60 * 1000;
+  const startMs = _base - 30 * 60 * 1000;
+  startMsOut = startMs;
+  const startSec = Math.floor(startMs / 1000);
+  // 후보 경기 ID 모으기: 팀마다 최대 3명씩
+  //   ① Riot 최근 경기 목록  ② deeplol 커스텀 경기 목록 (Riot 목록에 내전이 안 나오는 경우 대비)
+  diag = { riotLists: 0, riotIds: 0, dlLists: 0, dlIds: 0, cands: 0, details: 0, detailFail: 0, notTen: 0, early: 0, noMatch: 0 };
+  const pick = [];
+  teams.forEach(t => { t.members.filter(x => x._puus.size || x._prof).slice(0, 3).forEach(x => pick.push(x)); });
+  if (!pick.length) return noGames('멤버 puuid 없음');
+  const DLH = { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': 'application/json', 'Referer': 'https://www.deeplol.gg/', 'Origin': 'https://www.deeplol.gg' };
+  const cnt = {};
+  const add = (id, who) => { id = normId(id); if (!id) return; (cnt[id] = cnt[id] || new Set()).add(who); };
+  await Promise.all(pick.map(async (x, xi) => {
+    const rp = [...x._puus][0];
+    if (rp) {
+      try {
+        const r = await fetch(`https://asia.api.riotgames.com/lol/match/v5/matches/by-puuid/${rp}/ids?startTime=${startSec}&count=30`, { headers: { 'X-Riot-Token': key } });
+        if (r.ok) { const ids = await r.json() || []; diag.riotLists++; diag.riotIds += ids.length; ids.forEach(id => add(id, xi)); }
+      } catch (e) {}
+    }
+    let dp = x._prof && x._prof.p.dlPuuid;
+    if (!dp) dp = await _dlPuuidByRiotId(env, x.name, x.tag).catch(() => null);
+    if (dp) {
+      try {
+        const r = await fetch(`https://b2c-api-cdn.deeplol.gg/match/matches?puu_id=${encodeURIComponent(dp)}&platform_id=KR&offset=0&count=20&queue_type=CUSTOM&champion_id=0&only_list=1&last_updated_at=1`, { headers: DLH });
+        if (r.ok) {
+          const j = await r.json();
+          const lst = (j && j.match_id_list) || [];
+          diag.dlLists++;
+          lst.forEach(it => {
+            const t = Number(it.match_creation_time || 0) * (Number(it.match_creation_time) > 1e12 ? 1 : 1000);
+            if (t && t < startMs) return;
+            diag.dlIds++;
+            add(it.match_id, xi);
+          });
+        }
+      } catch (e) {}
+    }
+  }));
+  const cands = Object.keys(cnt).sort((a, b) => cnt[b].size - cnt[a].size).filter(id => cnt[id].size >= 2).slice(0, 20);
+  diag.cands = cands.length;
+
+  // 경기 판정
+  const games = [];
+  for (const mid of cands) {
+    const r = await fetch(`https://asia.api.riotgames.com/lol/match/v5/matches/${encodeURIComponent(mid)}`, { headers: { 'X-Riot-Token': key } });
+    if (!r.ok) { diag.detailFail++; continue; }
+    diag.details++;
+    const data = await r.json();
+    const info = data && data.info;
+    const ps = (info && info.participants) || [];
+    if (ps.length !== 10) { diag.notTen++; continue; }
+    if ((info.gameCreation || 0) < startMs) { diag.early++; continue; }
+    if (ps.some(p => p.gameEndedInEarlySurrender)) continue;   // 다시하기 제외
+    const inTeam = (p, t) => t.members.some(x => x._puus.has(p.puuid) || x._key === _arKey(p.riotIdGameName, p.riotIdTagline));
+    const best = (side, exclude) => {
+      const sp = ps.filter(p => p.teamId === side);
+      let bt = null, bc = 0;
+      teams.forEach(t => {
+        if (t === exclude) return;
+        const c = sp.filter(p => inTeam(p, t)).length;
+        if (c > bc) { bc = c; bt = t; }
+      });
+      return bc >= 3 ? bt : null;
+    };
+    const blueT = best(100, null);
+    const redT = blueT ? best(200, blueT) : null;
+    if (!blueT || !redT) { diag.noMatch++; continue; }
+    games.push({ mid, data, blueT, redT, at: info.gameCreation || 0 });
+  }
+  games.sort((a, b) => a.at - b.at);
+  const found = games.length;
+  // 이미 저장된 경기는 빼고 새 경기만
+  const newGames = games.filter(g => !existingCodes.has(normId(g.mid)));
+  if (!newGames.length) return noGames(found ? '새 경기 없음' : '맞는 경기 없음');
+
+  // 결과 만들기 + 부계정 찾기
+  const ser = (t) => ({ id: t.id, captainId: t.captainId || null, captainCode: t.captainCode || null, color: t.color || null, name: t.name || null,
+    members: t.members.map(x => ({ id: x.id, name: x.name, puuid: x.puuid || '', tier: x.tier || '', mainLane: x.mainLane || '', subLane: x.subLane || null,
+      icon: x.icon || '1', bidPrice: x.bidPrice || null, tag: x.tag || '', tierFull: x.tierFull || '' })) });
+  const subAdds = [];
+  // 이미 다른 사람 계정으로 알려진 puuid (팀 멤버 전원 + 등록된 메인·부계정) → 부계정 후보에서 제외
+  const knownPuus = new Set();
+  teams.forEach(t => t.members.forEach(x => x._puus.forEach(p => knownPuus.add(p))));
+  Object.values(profiles || {}).forEach(p => {
+    if (p && p.riotPuuid) knownPuus.add(p.riotPuuid);
+    _arArr(p && p.subAccounts).forEach(a => { if (a.riotPuuid) knownPuus.add(a.riotPuuid); });
+  });
+  const knownNames = new Set(allMembers.map(x => _arKey(x.name, x.tag)));
+  const rmsNew = newGames.map((g, i) => {
+    const ps = g.data.info.participants;
+    // 부계정: 팀에서 맞지 않은 멤버 1명 ↔ 맞지 않은 참가자 1명일 때만
+    [[g.blueT, 100], [g.redT, 200]].forEach(([t, side]) => {
+      const sp = ps.filter(p => p.teamId === side);
+      const usedP = new Set(), usedM = new Set();
+      t.members.forEach(x => {
+        const p = sp.find(p => !usedP.has(p.puuid) && (x._puus.has(p.puuid) || x._key === _arKey(p.riotIdGameName, p.riotIdTagline)));
+        if (p) { usedP.add(p.puuid); usedM.add(x.id); }
+      });
+      // 불일치가 멤버 1명 ↔ 참가자 1명일 때만 등록 (그 참가자가 이미 다른 사람 계정이면 제외)
+      const um = t.members.filter(x => !usedM.has(x.id));
+      const up = sp.filter(p => !usedP.has(p.puuid));
+      if (um.length === 1 && up.length === 1) {
+        const x = um[0], p = up[0];
+        const known = knownPuus.has(p.puuid) || knownNames.has(_arKey(p.riotIdGameName, p.riotIdTagline));
+        if (!known && x._prof && p.puuid && p.puuid !== x._prof.p.riotPuuid) subAdds.push({ did: x._prof.did, p, matchId: g.mid });
+      }
+    });
+    const win = (g.data.info.teams || []).find(t => t.win);
+    return { g, blueWin: win ? win.teamId === 100 : null };
+  });
+  // 기존 결과에 합치기: 같은 두 팀의 빈 대진(Match ID 없음)이 있으면 그 자리에 채우고, 없으면 뒤에 추가
+  const merged = existing.map(r => ({ ...r }));
+  let nextId = merged.reduce((mx, r) => Math.max(mx, (r && r.id) || 0), 0) + 1;
+  let autoNo = merged.filter(r => r && r.auto).length;
+  rmsNew.forEach(({ g, blueWin }) => {
+    const slot = merged.find(r => r && !r.customCode && !r.gameData && r.teamA && r.teamB &&
+      ((r.teamA.id === g.blueT.id && r.teamB.id === g.redT.id) || (r.teamA.id === g.redT.id && r.teamB.id === g.blueT.id)));
+    if (slot) {
+      const blueIsA = slot.teamA.id === g.blueT.id;
+      const tA = blueIsA ? g.blueT : g.redT, tB = blueIsA ? g.redT : g.blueT;
+      Object.assign(slot, {
+        winner: blueWin == null ? null : ((blueWin === blueIsA) ? 'a' : 'b'),
+        customCode: g.mid, gameData: _arGameData(g.data, tA, tB, blueIsA),
+        fetching: false, saved: true, auto: true,
+      });
+      return;
+    }
+    autoNo++;
+    merged.push({
+      id: nextId++,
+      label: `${_arTeamName(g.blueT, allMembers)} vs ${_arTeamName(g.redT, allMembers)} (자동 기록 ${autoNo})`,
+      teamA: ser(g.blueT), teamB: ser(g.redT),
+      winner: blueWin == null ? null : (blueWin ? 'a' : 'b'), customCode: g.mid,
+      gameData: _arGameData(g.data, g.blueT, g.redT, true),
+      fetching: false, isExtra: false, extraId: null, saved: true, auto: true,
+    });
+  });
+
+  // 새 경기 상세 분석 요약본 미리 저장 (실패해도 결과 저장에는 영향 없음)
+  for (const g of newGames) { try { await _mdBuildStore(env, g.mid, g.data); } catch (e) {} }
+
+  // 부계정 목록에 추가 (메인 계정 외)
+  for (const s of subAdds) {
+    await fetch(`${dbUrl}/communities/${cid}/discord_profiles/${s.did}/subAccounts/${encodeURIComponent(s.p.puuid).replace(/[.#$\[\]]/g, '_')}.json${authQ}`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ riotName: s.p.riotIdGameName || '', riotTag: s.p.riotIdTagline || '', riotPuuid: s.p.puuid, addedAt: Date.now(), fromMatch: matchId, fromGame: s.matchId }),
+    }).catch(() => {});
+  }
+
+  const now = Date.now();
+  const added = rmsNew.length, total = existingCodes.size + added;
+  const info = { at: now, games: added, total, matchIds: newGames.map(g => g.mid), subAccounts: subAdds.length };
+  const w = await patch({
+    _resultMatches: merged,
+    status: '내전 종료',
+    _currentScreen: 'screen-5',
+    ...(manual ? { autoResultManual: info } : { autoResultChecked: true, autoResult: info }),
+    _version: (m._version || 0) + 1,
+    _updatedAt: now,
+  });
+  return { ok: w.ok, added, total, found, subAccounts: subAdds.length };
+}
 
 // ── Cron 알람 체크 ──
 async function runAlarmCheck(env) {
@@ -2051,6 +2623,7 @@ function checkPermission(session, dbPath, requireRole) {
     /^recruit_applies\/[^/]+\//,    // 외전 신청
     /^match_alarms\/[^/]+$/,        // 내전 알람 예약 (로그인 관리자)
     /^match_index\/[^/]+$/,         // 내전-커뮤니티 인덱스 (Cron 조회용)
+    /^auto_results\/[^/]+$/,        // 내전 결과 자동 저장 예약 (4단계 진입 시 1회)
     /^player_profiles\/[^/]+\/[^/]+\/profile$/, // 플레이어 자기소개/태그 (본인 저장)
   ];
   if (publicWrite.some(r => r.test(dbPath))) return true;
@@ -5302,12 +5875,16 @@ async function handleDiscordInteraction(request, env, ctx) {
       const getVal2 = (id) => comps.flatMap(r => r.components).find(c => c.custom_id === id)?.value || '';
       const riotName  = getVal2('riot_name').trim();
       const riotTag   = getVal2('riot_tag').trim();
-      const highTier  = getVal2('high_tier').trim();
+      // 티어: 공백 제거 후 형식 확인 (참가 시 티어 해석과 같은 규칙)
+      const highTier  = getVal2('high_tier').replace(/\s+/g, '').toLowerCase();
       // 존재하는 라이엇 계정인지 확인 (없는 계정은 등록 불가)
       const _regErr = (msg) => new Response(JSON.stringify({ type: 4, data: { content: msg, flags: 64 } }), { headers: { 'Content-Type': 'application/json' } });
       const _tagClean = riotTag.replace(/^#/, '').trim();
       if (!riotName || !_tagClean) return _regErr('❌ 소환사명과 태그를 입력해주세요.');
       if (!highTier) return _regErr('❌ 최고/임시 티어를 입력해주세요.');
+      if (!_isValidTierInput(highTier)) {
+        return _regErr(`❌ 티어를 제대로 적어주세요.\n입력한 값: \`${getVal2('high_tier').trim().slice(0, 30)}\`\n예) e1 혹은 d3 혹은 m300 과 같이 하나만 적어주세요.\n(아이언 i · 브론즈 b · 실버 s · 골드 g · 플래티넘 p · 에메랄드 e · 다이아 d 뒤에 1~4 / 마스터 m · 그랜드마스터 gm · 챌린저 c 뒤에 LP)`);
+      }
       let _regPuuid = null;
       try {
         const accRes = await fetch(
@@ -5359,6 +5936,15 @@ async function handleDiscordInteraction(request, env, ctx) {
           const profilePath = profileCid
             ? `${dbUrl}/communities/${profileCid}/discord_profiles/${discordUserId}.json${authQ}`
             : `${dbUrl}/discord_profiles/${discordUserId}.json${authQ}`;
+          // 자동 결과 저장으로 쌓인 부계정 목록은 유지 (새 메인 계정이 부계정에 있었으면 빼기)
+          try {
+            const _subRes = await fetch(profilePath.replace(/\.json/, '/subAccounts.json'));
+            const _subs = _subRes.ok ? await _subRes.json() : null;
+            if (_subs && typeof _subs === 'object') {
+              Object.keys(_subs).forEach(k => { if (_subs[k] && _subs[k].riotPuuid && _subs[k].riotPuuid === _regPuuid) delete _subs[k]; });
+              if (Object.keys(_subs).length) profile.subAccounts = _subs;
+            }
+          } catch (e) {}
           const saveRes = await fetch(profilePath, {
             method: 'PUT', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(profile)
@@ -6693,6 +7279,13 @@ function _forumPostComponents(cid, matchId, laneFixed) {
   ] }];
 }
 
+// 소환사 계정 등록의 최고/임시 티어 형식 확인
+//   i b s g p e d + 1~4 (예: e1, d3)  /  m gm c + LP 숫자(선택) (예: m300, gm500, c)
+function _isValidTierInput(v) {
+  const t = String(v || '').toLowerCase().replace(/\s+/g, '').replace(/\(임시\)/g, '');
+  return /^[ibsgped][1-4]$/.test(t) || /^(m|gm|c|chall)\d{0,4}$/.test(t);
+}
+
 // ── 포스트 관리 메뉴 (역할 제한) ──
 function _splitCidMatch(customId, prefix) {
   const inner = customId.slice(prefix.length);
@@ -6898,6 +7491,202 @@ function _forumPostContent(cid, matchId, matchName, matchTime, matchAdmin) {
 }
 
 // ── 내전 제목 수정 → 포럼 포스트 제목·원문 갱신 (DB에 저장된 현재 제목/시간/진행자 기준) ──
+// ── 출석 확인 (음성 채널) ──
+// people: [{name, tag, discordId?}] → 각자 GET /guilds/{서버}/voice-states/{유저} (5명씩 동시에)
+// 가장 많은 사람이 있는 음성 채널을 '내전 채널'로 보고, 다른 채널·음성 채널 없음·디스코드 미연결로 나눔
+async function _voiceCheck(cid, people, env) {
+  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth='+secret : '';
+  const bot = env.DISCORD_BOT_TOKEN;
+  if (!bot) return { ok:false, error:'BOT_TOKEN 없음', status:500 };
+  const [gRes, pRes] = await Promise.all([
+    fetch(`${dbUrl}/communities_info/${cid}/discordServerId.json${authQ}`),
+    fetch(`${dbUrl}/communities/${cid}/discord_profiles.json${authQ}`),
+  ]);
+  const guildId = gRes.ok ? await gRes.json() : null;
+  if (!guildId) return { ok:false, error:'커뮤니티 설정에 디스코드 서버 ID가 없습니다', status:400 };
+  const profiles = pRes.ok ? (await pRes.json() || {}) : {};
+  const byName = {};
+  for (const [did, p] of Object.entries(profiles)) {
+    if (p && p.riotName) byName[(p.riotName + '#' + (p.riotTag || '')).toLowerCase()] = p.discordId || did;
+  }
+  const H = { 'Authorization': 'Bot ' + bot };
+  const seen = {};
+  const list = [];
+  people.forEach(x => {
+    const key = ((x.name || '') + '#' + (x.tag || '')).toLowerCase();
+    if (seen[key]) return; seen[key] = 1;
+    list.push({ name: x.name || '?', tag: x.tag || '', discordId: x.discordId || byName[key] || null });
+  });
+  async function one(x) {
+    if (!x.discordId) { x.state = 'unlinked'; return; }
+    for (let t = 0; t < 3; t++) {
+      const r = await fetch(`https://discord.com/api/v10/guilds/${guildId}/voice-states/${x.discordId}`, { headers: H });
+      if (r.status === 429) {
+        let wait = 1; try { wait = (await r.json()).retry_after || 1; } catch (e) {}
+        await new Promise(res => setTimeout(res, Math.min(5, wait) * 1000));
+        continue;
+      }
+      if (r.status === 404) { x.state = 'none'; return; }          // 음성 채널에 없음
+      if (!r.ok) { x.state = 'error'; x.err = r.status; return; }
+      const v = await r.json();
+      if (v && v.channel_id) { x.state = 'in'; x.channelId = String(v.channel_id); x.mute = !!(v.self_mute || v.mute); x.deaf = !!(v.self_deaf || v.deaf); }
+      else x.state = 'none';
+      return;
+    }
+    x.state = 'error'; x.err = 429;
+  }
+  for (let i = 0; i < list.length; i += 5) await Promise.all(list.slice(i, i + 5).map(one));
+  // 가장 많은 사람이 있는 채널 = 내전 채널
+  const cnt = {};
+  list.forEach(x => { if (x.state === 'in') cnt[x.channelId] = (cnt[x.channelId] || 0) + 1; });
+  const mainId = Object.keys(cnt).sort((a, b) => cnt[b] - cnt[a])[0] || null;
+  // 채널 이름
+  const names = {};
+  if (Object.keys(cnt).length) {
+    const cr = await fetch(`https://discord.com/api/v10/guilds/${guildId}/channels`, { headers: H }).catch(() => null);
+    const chs = cr && cr.ok ? await cr.json() : [];
+    (chs || []).forEach(c => { names[c.id] = c.name; });
+  }
+  const pub = x => ({ name: x.name, tag: x.tag, channelId: x.channelId || null, channelName: x.channelId ? (names[x.channelId] || '알 수 없는 채널') : null, mute: x.mute || false, deaf: x.deaf || false });
+  return {
+    ok: true,
+    mainChannel: mainId ? { id: mainId, name: names[mainId] || '알 수 없는 채널', count: cnt[mainId], url: `https://discord.com/channels/${guildId}/${mainId}` } : null,
+    guildId: String(guildId),
+    inMain: list.filter(x => x.state === 'in' && x.channelId === mainId).map(pub),
+    otherChannel: list.filter(x => x.state === 'in' && x.channelId !== mainId).map(pub),
+    notInVoice: list.filter(x => x.state === 'none').map(pub),
+    unlinked: list.filter(x => x.state === 'unlinked').map(pub),
+    errors: list.filter(x => x.state === 'error').map(x => ({ ...pub(x), status: x.err })),
+    total: list.length,
+  };
+}
+
+// ── 내전 공유 링크: https://api.roonging.com/m/{matchId} ──
+// 카톡 등이 읽는 미리보기(OG): 제목 = 내전 제목, 설명 = 시작 시간 · 진행자 · 참여 인원, 이미지 = 딥롤 커넥트 서버 이미지(없으면 커뮤니티 배너)
+// 사람이 열면 바로 그 내전의 디스코드 포스트로 이동
+function _escAttr(v) {
+  return String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+function _shareTimeText(t) {
+  if (!t) return '';
+  if (t === 'mobasi') return '모바시 (모이면 바로 시작)';
+  const d = new Date(String(t).length <= 16 ? t + ':00+09:00' : t);
+  if (isNaN(d)) return String(t);
+  const k = new Date(d.getTime() + 9 * 3600 * 1000);
+  const W = ['일', '월', '화', '수', '목', '금', '토'];
+  return `${k.getUTCMonth() + 1}/${k.getUTCDate()}(${W[k.getUTCDay()]}) ${String(k.getUTCHours()).padStart(2, '0')}:${String(k.getUTCMinutes()).padStart(2, '0')}`;
+}
+// 공유 링크의 내전이 어느 커뮤니티 것인지 찾기
+// match_index(예약 시간이 있는 내전만 기록됨) → 링크의 c 값 → 전체 커뮤니티에서 직접 찾기, 찾으면 match_index 채워둠
+async function _shareFindCid(matchId, env, cidHint) {
+  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth=' + secret : '';
+  const has = async (cid) => {
+    if (!cid || typeof cid !== 'string' || /[.#$\[\]\/]/.test(cid)) return false;
+    const r = await fetch(`${dbUrl}/communities/${encodeURIComponent(cid)}/matches/${encodeURIComponent(matchId)}/name.json${authQ}`).catch(() => null);
+    const v = r && r.ok ? await r.json().catch(() => null) : null;
+    if (v != null) return true;
+    const r2 = await fetch(`${dbUrl}/communities/${encodeURIComponent(cid)}/matches/${encodeURIComponent(matchId)}/time.json${authQ}`).catch(() => null);
+    return !!(r2 && r2.ok && (await r2.json().catch(() => null)) != null);
+  };
+  const remember = (cid) => fetch(`${dbUrl}/match_index/${encodeURIComponent(matchId)}.json${authQ}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cid) }).catch(() => {});
+  const idxRes = await fetch(`${dbUrl}/match_index/${encodeURIComponent(matchId)}.json${authQ}`).catch(() => null);
+  const idx = idxRes && idxRes.ok ? await idxRes.json().catch(() => null) : null;
+  if (idx && await has(idx)) return idx;
+  if (cidHint && cidHint !== idx && await has(cidHint)) { await remember(cidHint); return cidHint; }
+  const lr = await fetch(`${dbUrl}/communities.json${authQ}${authQ ? '&' : '?'}shallow=true`).catch(() => null);
+  const all = lr && lr.ok ? await lr.json().catch(() => null) : null;
+  const ids = all ? Object.keys(all).filter(c => c !== idx && c !== cidHint) : [];
+  for (let i = 0; i < ids.length; i += 10) {
+    const chunk = ids.slice(i, i + 10);
+    const hit = await Promise.all(chunk.map(c => has(c).then(ok => ok ? c : null)));
+    const found = hit.find(Boolean);
+    if (found) { await remember(found); return found; }
+  }
+  return null;
+}
+async function handleMatchShare(matchId, env, cidHint) {
+  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth=' + secret : '';
+  const page = (title, desc, image, target) => new Response(`<!DOCTYPE html>
+<html lang="ko"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${_escAttr(title)}</title>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="룽잉닷컴">
+<meta property="og:title" content="${_escAttr(title)}">
+<meta property="og:description" content="${_escAttr(desc)}">
+<meta property="og:image" content="${_escAttr(image)}">
+<meta property="og:url" content="https://api.roonging.com/m/${encodeURIComponent(matchId)}">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="${_escAttr(title)}">
+<meta name="twitter:description" content="${_escAttr(desc)}">
+<meta name="twitter:image" content="${_escAttr(image)}">
+<meta http-equiv="refresh" content="0;url=${_escAttr(target)}">
+<style>body{margin:0;background:#0A1628;color:#cfd8e3;font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;text-align:center}a{color:#0AC8B9}</style>
+</head><body><div><div style="font-size:18px;font-weight:700;margin-bottom:8px">${_escAttr(title)}</div><div style="font-size:13px;opacity:.8">${_escAttr(desc)}</div>
+<p style="font-size:13px">디스코드로 이동합니다… <a href="${_escAttr(target)}">바로 가기</a></p></div>
+<script>location.replace(${JSON.stringify(target)});</script></body></html>`,
+    { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'public, max-age=60' } });
+
+  const fallbackImg = 'https://roonging.com/og-image-v2.png';
+  const cid = await _shareFindCid(matchId, env, cidHint);
+  if (!cid) return page('룽잉닷컴 내전', '내전 정보를 찾을 수 없습니다', fallbackImg, 'https://roonging.com');
+  const base = `${dbUrl}/communities/${cid}/matches/${encodeURIComponent(matchId)}`;
+  const [nm, tm, ad, mem, mx, jj, ci, hasBanner, dlSid] = await Promise.all([
+    fetch(`${base}/name.json${authQ}`).then(r => r.ok ? r.json() : null).catch(() => null),
+    fetch(`${base}/time.json${authQ}`).then(r => r.ok ? r.json() : null).catch(() => null),
+    fetch(`${base}/admin.json${authQ}`).then(r => r.ok ? r.json() : null).catch(() => null),
+    fetch(`${base}/_members.json${authQ}${authQ ? '&' : '?'}shallow=true`).then(r => r.ok ? r.json() : null).catch(() => null),
+    fetch(`${base}/maxMembers.json${authQ}`).then(r => r.ok ? r.json() : null).catch(() => null),
+    fetch(`${base}/jjong.json${authQ}`).then(r => r.ok ? r.json() : null).catch(() => null),
+    fetch(`${dbUrl}/communities_info/${cid}/name.json${authQ}`).then(r => r.ok ? r.json() : null).catch(() => null),
+    fetch(`${dbUrl}/communities_info/${cid}/bannerImage.json${authQ}${authQ ? '&' : '?'}shallow=true`).then(r => r.ok ? r.json() : null).catch(() => null),
+    fetch(`${dbUrl}/communities_info/${cid}/deeplolServerId.json${authQ}`).then(r => r.ok ? r.json() : null).catch(() => null),
+  ]);
+  if (!nm && !tm) return page('룽잉닷컴 내전', '삭제되었거나 없는 내전입니다', fallbackImg, 'https://roonging.com');
+  const count = mem ? Object.keys(mem).length : 0;
+  const parts = [];
+  const tt = _shareTimeText(tm);
+  if (tt) parts.push('⏰ ' + tt);
+  if (ad && ad !== '—') parts.push('👑 진행자 ' + ad);
+  parts.push('👥 참여 ' + count + (mx ? '/' + mx : '') + '명');
+  if (jj) parts.unshift('🛑 쫑 처리된 내전');
+  const title = (jj ? '[쫑] ' : '⚔️ ') + (nm || '내전') + (ci ? ' · ' + ci : '');
+  // 미리보기 이미지: 딥롤 커넥트 서버 이미지(커뮤니티 카드 배경과 같은 것) → 커뮤니티 배너 → 기본 이미지
+  let image = null;
+  if (dlSid) {
+    try {
+      const sr = await fetch(`https://b2c-api-cdn.deeplol.gg/tournament/server_info?server_id=${encodeURIComponent(dlSid)}`, {
+        headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                   'Accept': 'application/json', 'Referer': 'https://www.deeplol.gg/', 'Origin': 'https://www.deeplol.gg' },
+        cf: { cacheTtl: 3600, cacheEverything: true },
+      });
+      const sj = sr.ok ? await sr.json() : null;
+      if (sj && /^https?:\/\//.test(sj.profile_image_url || '')) image = sj.profile_image_url;
+    } catch (e) {}
+  }
+  if (!image) image = hasBanner ? `https://api.roonging.com/og-banner/${encodeURIComponent(cid)}.jpg` : fallbackImg;
+  let target = 'https://roonging.com';
+  try { const l = await _forumPostLink(cid, matchId, env); if (l && l.ok) target = l.url; } catch (e) {}
+  return page(title, parts.join(' · '), image, target);
+}
+// 커뮤니티 배너(설정에 data URL 로 저장) → 이미지 파일로 응답
+async function handleOgBanner(cid, env) {
+  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth=' + secret : '';
+  const r = await fetch(`${dbUrl}/communities_info/${cid}/bannerImage.json${authQ}`).catch(() => null);
+  const b = r && r.ok ? await r.json() : null;
+  if (typeof b === 'string' && /^https?:\/\//.test(b)) return Response.redirect(b, 302);
+  const m = typeof b === 'string' && b.match(/^data:(image\/[a-z+]+);base64,(.+)$/i);
+  if (!m) return Response.redirect('https://roonging.com/og-image-v2.png', 302);
+  const bin = atob(m[2]);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return new Response(bytes, { headers: { 'Content-Type': m[1], 'Cache-Control': 'public, max-age=3600' } });
+}
+
 // ── 내전 포스트 링크: https://discord.com/channels/{서버ID}/{포스트ID} ──
 async function _forumPostLink(cid, matchId, env) {
   const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;

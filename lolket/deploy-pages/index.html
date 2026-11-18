@@ -792,6 +792,17 @@ input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none !import
 .bc-apply:hover{background:rgba(10,200,185,.2);}
 .bc-foot{font-size:10px;color:var(--text-muted);margin-top:.6rem;}
 @media (max-width:600px){.bc-lane{grid-template-columns:30px 1fr 60px 1fr;gap:5px;font-size:11px;}.bc-tag{display:none;}}
+/* ── 결과 자동 저장 타이머 (4·5단계) ── */
+.ar-timer{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 12px;margin-bottom:.75rem;border-radius:4px;border:1px solid rgba(10,200,185,.3);background:rgba(10,200,185,.06);font-family:'IBM Plex Sans KR',sans-serif;font-size:12px;color:var(--text-white);}
+.ar-timer .ar-ico{font-size:14px;}
+.ar-timer .ar-text{flex:1;min-width:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.ar-timer .ar-btn{flex-shrink:0;padding:5px 12px;border-radius:3px;border:1px solid rgba(10,200,185,.5);background:rgba(10,200,185,.1);color:var(--blue-bright);font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;}
+.ar-timer .ar-btn:hover{background:rgba(10,200,185,.2);}
+.ar-timer .ar-btn:disabled{opacity:.5;cursor:default;}
+.ar-timer .ar-left{font-weight:700;color:var(--blue-bright);font-variant-numeric:tabular-nums;letter-spacing:.5px;}
+.ar-timer .ar-sub{color:var(--text-muted);font-size:11px;}
+.ar-timer.done{border-color:rgba(232,203,134,.35);background:rgba(232,203,134,.06);}
+.ar-timer.miss{border-color:var(--border-subtle);background:rgba(255,255,255,.02);}
 .cm-official-row{display:flex;align-items:center;gap:10px;padding:8px 0;}
 .cm-official-toggle{position:relative;width:36px;height:20px;flex-shrink:0;}
 .cm-official-toggle input{opacity:0;width:0;height:0;}
@@ -2798,6 +2809,30 @@ body:has(#screen-community.active){background-color:var(--rg-bg)!important;backg
 @media (max-width: 900px){
   #screen-community > div:first-child{grid-template-columns:minmax(0,1fr)!important}
 }
+
+/* ── Goo Morph 로고 (designbookmark goo-morph 이식) ── */
+.logo-morph{position:relative;display:inline-block;height:1.2em;line-height:1.2;white-space:nowrap;vertical-align:middle}
+.logo-morph.melting{filter:url(#lm-melt)}
+.logo-morph .lm-w{position:absolute;left:0;top:0;white-space:pre;will-change:filter,opacity}
+
+/* ── 게임 상세 분석 버튼 ── */
+.gd-wrap{margin-top:8px}
+.gd-btn{width:100%;display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:10px;border:1px solid var(--rg-line,#1A1F29);background:var(--rg-s2,#151A23);color:var(--rg-t1,#E9ECF1);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:background .2s,border-color .2s,transform .12s}
+.gd-btn:hover{background:var(--rg-s3,#1A202B);border-color:var(--rg-ring,#222A36)}
+.gd-btn:active{transform:scale(.99)}
+.gd-btn .gd-sub{color:var(--rg-t4,#7D8797);font-weight:500;font-size:11px}
+.gd-btn .gd-chev{margin-left:auto;color:var(--rg-t4,#7D8797);transition:transform .25s var(--rg-ease,ease)}
+.gd-btn.on .gd-chev{transform:rotate(180deg)}
+.gd-body{--rgmd-blue:#5BBCE4;--rgmd-red:#E45B5B;color:var(--rg-t1,#E9ECF1)}
+.gd-body .rgmd{margin-top:8px;border-top:0;padding-top:0}
+@media (max-width:768px){.gd-btn .gd-sub{display:none}}
+
+/* 레이팅 배치중 — 티어 확인 배지 (딥롤 연결) */
+.placing-badge{display:inline-flex;align-items:center;gap:4px;margin-top:4px;padding:2px 8px;border-radius:999px;border:1px solid rgba(255,148,85,.5);background:rgba(255,148,85,.1);color:#FF9455;font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;text-decoration:none;white-space:nowrap;cursor:pointer;transition:background .2s,border-color .2s,transform .12s}
+.placing-badge:hover{background:rgba(255,148,85,.2);border-color:rgba(255,148,85,.8)}
+.placing-badge:active{transform:scale(.97)}
+.placing-badge .pb-arrow{font-size:10px;opacity:.7;transition:transform .2s}
+.placing-badge:hover .pb-arrow{transform:translate(1px,-1px)}
 /* ── 모바일 ── */
 @media (max-width: 768px){
   .header-inner{padding:0 8px 0 16px}
@@ -3048,7 +3083,7 @@ body:has(#screen-0.active){background-color:var(--rg-bg)!important;background-im
 #screen-3-normal.aram-mode .aram-only { display:inline-block !important; }
 </style>
 </head>
-<body> <header class="header"> <div class="header-inner"> <div style="display:flex;align-items:center;gap:14px;"> <div class="logo" style="cursor:pointer;" onclick="goHome()"><div class="logo-diamond"></div>룽잉닷컴</div><span id="app-version" onclick="isMaster && openVersionModal()" style="font-family:'IBM Plex Sans KR',sans-serif;font-size:9px;color:var(--text-muted);letter-spacing:1px;opacity:.7;margin-left:2px;transition:all .15s;">v1.1.005</span> <button class="btn-back" id="btn-back" onclick="goToList()" style="display:none;">← 목록</button> <div class="community-indicator" id="community-indicator" onclick="goToList()" title="커뮤니티 홈" style="cursor:pointer;"> <div class="community-indicator-dot"></div> <span id="community-indicator-name"></span> </div> </div> <div class="stage-indicator hidden" id="stage-indicator"> <div class="stage-pip" id="pip-1"><div class="stage-pip-dot"></div>1. 내전 대기</div> <div class="stage-pip" id="pip-2"><div class="stage-pip-dot"></div>2. 종류 선택</div> <div class="stage-pip" id="pip-3"><div class="stage-pip-dot"></div>3. 팀 짜기</div> <div class="stage-pip" id="pip-4"><div class="stage-pip-dot"></div>4. 대진표</div> <div class="stage-pip" id="pip-5"><div class="stage-pip-dot"></div>5. 결과</div> </div> <div class="header-actions"><button type="button" class="hdr-link" onclick="window.open('/guide','_blank')" title="룽잉닷컴 가이드 페이지"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5V5a2 2 0 0 1 2-2h13v16H6.5a2.5 2.5 0 0 0 0 5H19"/></svg><span>가이드</span></button><button type="button" class="hdr-icon" onclick="openGuide()" aria-label="이용 가이드" title="이용 가이드"><svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.2a2.6 2.6 0 0 1 5 .8c0 1.7-2.5 2.3-2.5 3.8"/><path d="M12 17.2h.01"/></svg></button><div class="hdr-divider" aria-hidden="true"></div><div class="hdr-account" id="hdr-account"><button type="button" class="hdr-account-btn" id="hdr-account-btn" onclick="toggleAccountMenu(event)" aria-haspopup="menu" aria-expanded="false" aria-controls="hdr-account-menu"><span class="hdr-login-text">로그인</span><span class="role-badge user" id="role-badge"><span class="role-dot"></span><span id="role-label">일반 유저</span></span><span class="hdr-msg-dot" id="hdr-msg-dot" aria-hidden="true"></span><svg class="hdr-chev" aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button><div class="hdr-menu" id="hdr-account-menu" role="menu" aria-label="계정 메뉴"><button type="button" role="menuitem" class="hdr-item" id="btn-admin-login" onclick="closeAccountMenu();openLoginModal()"><span class="hdr-item-text"><span class="hdr-item-title">관리자 로그인</span><span class="hdr-item-sub">커뮤니티 내전 생성·관리</span></span></button><button type="button" role="menuitem" class="hdr-item" id="btn-master-login" onclick="closeAccountMenu();openMasterLoginModal()"><span class="hdr-item-text"><span class="hdr-item-title">마스터 로그인</span><span class="hdr-item-sub">전체 커뮤니티 운영</span></span></button><button type="button" role="menuitem" class="hdr-item admin-only" id="btn-msg" onclick="closeAccountMenu();toggleMsgPanel()" style="display:none;"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg><span class="hdr-item-title">메시지</span><span id="msg-badge" style="display:none;">0</span></button><button type="button" role="menuitem" class="hdr-item admin-only" id="btn-blacklist" onclick="closeAccountMenu();openBlacklist()" style="display:none;"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg><span class="hdr-item-title">블랙리스트</span></button><div class="patch-toggle-wrap master-only hdr-toggle" id="patch-toggle-wrap" style="display:none;"><span class="patch-toggle-label" id="patch-toggle-label">패치중</span><label class="patch-toggle"><input type="checkbox" id="patch-toggle-input" onchange="onPatchToggle(this.checked)" aria-label="패치중 모드"><span class="patch-toggle-slider"></span></label></div><div class="hdr-sep admin-only" style="display:none;" aria-hidden="true"></div><button type="button" role="menuitem" class="btn-auth" id="btn-auth" onclick="openLoginModal()" style="display:none;">로그아웃</button></div></div></div>
+<body> <header class="header"> <div class="header-inner"> <div style="display:flex;align-items:center;gap:14px;"> <div class="logo" style="cursor:pointer;" onclick="goHome()"><div class="logo-diamond"></div><span class="logo-morph" id="logo-morph" role="img" aria-label="룽잉닷컴"><span class="lm-w" id="lm-a" aria-hidden="true">룽잉닷컴</span><span class="lm-w" id="lm-b" aria-hidden="true"></span></span><svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="lm-melt" x="-30%" y="-60%" width="160%" height="220%"><feColorMatrix in="SourceGraphic" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 255 -140"/></filter></svg></div><span id="app-version" onclick="isMaster && openVersionModal()" style="font-family:'IBM Plex Sans KR',sans-serif;font-size:9px;color:var(--text-muted);letter-spacing:1px;opacity:.7;margin-left:2px;transition:all .15s;">v1.1.005</span> <button class="btn-back" id="btn-back" onclick="goToList()" style="display:none;">← 목록</button> <div class="community-indicator" id="community-indicator" onclick="goToList()" title="커뮤니티 홈" style="cursor:pointer;"> <div class="community-indicator-dot"></div> <span id="community-indicator-name"></span> </div> </div> <div class="stage-indicator hidden" id="stage-indicator"> <div class="stage-pip" id="pip-1"><div class="stage-pip-dot"></div>1. 내전 대기</div> <div class="stage-pip" id="pip-2"><div class="stage-pip-dot"></div>2. 종류 선택</div> <div class="stage-pip" id="pip-3"><div class="stage-pip-dot"></div>3. 팀 짜기</div> <div class="stage-pip" id="pip-4"><div class="stage-pip-dot"></div>4. 대진표</div> <div class="stage-pip" id="pip-5"><div class="stage-pip-dot"></div>5. 결과</div> </div> <div class="header-actions"><button type="button" class="hdr-link" onclick="window.open('/guide','_blank')" title="룽잉닷컴 가이드 페이지"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5V5a2 2 0 0 1 2-2h13v16H6.5a2.5 2.5 0 0 0 0 5H19"/></svg><span>가이드</span></button><button type="button" class="hdr-icon" onclick="openGuide()" aria-label="이용 가이드" title="이용 가이드"><svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.2a2.6 2.6 0 0 1 5 .8c0 1.7-2.5 2.3-2.5 3.8"/><path d="M12 17.2h.01"/></svg></button><div class="hdr-divider" aria-hidden="true"></div><div class="hdr-account" id="hdr-account"><button type="button" class="hdr-account-btn" id="hdr-account-btn" onclick="toggleAccountMenu(event)" aria-haspopup="menu" aria-expanded="false" aria-controls="hdr-account-menu"><span class="hdr-login-text">로그인</span><span class="role-badge user" id="role-badge"><span class="role-dot"></span><span id="role-label">일반 유저</span></span><span class="hdr-msg-dot" id="hdr-msg-dot" aria-hidden="true"></span><svg class="hdr-chev" aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button><div class="hdr-menu" id="hdr-account-menu" role="menu" aria-label="계정 메뉴"><button type="button" role="menuitem" class="hdr-item" id="btn-admin-login" onclick="closeAccountMenu();openLoginModal()"><span class="hdr-item-text"><span class="hdr-item-title">관리자 로그인</span><span class="hdr-item-sub">커뮤니티 내전 생성·관리</span></span></button><button type="button" role="menuitem" class="hdr-item" id="btn-master-login" onclick="closeAccountMenu();openMasterLoginModal()"><span class="hdr-item-text"><span class="hdr-item-title">마스터 로그인</span><span class="hdr-item-sub">전체 커뮤니티 운영</span></span></button><button type="button" role="menuitem" class="hdr-item admin-only" id="btn-msg" onclick="closeAccountMenu();toggleMsgPanel()" style="display:none;"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg><span class="hdr-item-title">메시지</span><span id="msg-badge" style="display:none;">0</span></button><button type="button" role="menuitem" class="hdr-item admin-only" id="btn-blacklist" onclick="closeAccountMenu();openBlacklist()" style="display:none;"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg><span class="hdr-item-title">블랙리스트</span></button><div class="patch-toggle-wrap master-only hdr-toggle" id="patch-toggle-wrap" style="display:none;"><span class="patch-toggle-label" id="patch-toggle-label">패치중</span><label class="patch-toggle"><input type="checkbox" id="patch-toggle-input" onchange="onPatchToggle(this.checked)" aria-label="패치중 모드"><span class="patch-toggle-slider"></span></label></div><div class="hdr-sep admin-only" style="display:none;" aria-hidden="true"></div><button type="button" role="menuitem" class="btn-auth" id="btn-auth" onclick="openLoginModal()" style="display:none;">로그아웃</button></div></div></div>
   <button class="mobile-menu-btn" id="mobile-menu-btn" onclick="openMobileDrawer()" aria-label="메뉴">
     <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
       <rect x="2" y="4" width="16" height="2" rx="1" fill="currentColor"/>
@@ -3432,7 +3467,7 @@ body:has(#screen-0.active){background-color:var(--rg-bg)!important;background-im
  예) 페이커#KR1 · Hide on bush#KR1
  </div> <div id="search-loading" style="display:none;justify-content:center;padding:1.5rem;"> <div class="spinner"></div> </div> <div id="search-result" style="display:none;"> <div class="search-result"> <div class="result-profile"> <div class="result-avatar" id="r-avatar">?</div> <div> <div class="result-name" id="r-name">—</div> <div class="result-tag" id="r-tag">—</div> </div> </div> <div class="result-tiers"> <div class="tier-row"> <span class="tier-row-label">SOLO/DUO</span> <span class="tier-row-val" id="r-solo">—</span> </div> <div class="tier-row"> <span class="tier-row-label">FLEX</span> <span class="tier-row-val" id="r-flex">—</span> </div> <div class="tier-row" id="r-main-lane-row" style="display:none;"> <span class="tier-row-label">커뮤니티 주라인</span> <span class="tier-row-val" id="r-main-lane" style="color:var(--blue-bright);">—</span> </div>
  <div class="tier-row"> <span class="tier-row-label">솔랭 판수</span> <span class="tier-row-val" id="r-solo-games" style="font-family:'IBM Plex Sans KR',sans-serif;">—</span> </div> <div class="tier-row" id="r-match-count-row"> <span class="tier-row-label">내전 판수</span> <span class="tier-row-val" id="r-match-count" style="font-family:'IBM Plex Sans KR',sans-serif;color:var(--blue-bright);">—</span> </div> <div class="tier-row"> <span class="tier-row-label">LEVEL</span> <span class="tier-row-val" id="r-level">—</span> </div> <div class="tier-row" id="r-prev-row" style="display:none;background:rgba(200,170,110,0.04);border-radius:2px;padding:3px 6px;margin-top:2px;"> <span class="tier-row-label" style="display:flex;align-items:center;gap:4px;"><span style="font-size:9px;">🏆</span>전 시즌 최고</span> <span class="tier-row-val" id="r-prev-season" style="font-size:11px;">—</span> </div> </div> <div style="padding:.6rem 1rem;border-top:1px solid var(--border-subtle);background:rgba(200,170,110,0.03);"> <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;"> <span style="font-size:10px;font-family:'IBM Plex Sans KR',sans-serif;font-weight:700;letter-spacing:1px;color:var(--gold);">✏ 티어 직접 설정</span> <button onclick="applyTierOverride('')" style="font-size:9px;font-family:'IBM Plex Sans KR',sans-serif;font-weight:700;color:var(--text-muted);background:transparent;border:1px solid var(--border-subtle);border-radius:2px;padding:1px 7px;cursor:pointer;letter-spacing:.5px;" id="r-tier-reset">API 값으로 초기화</button> </div> <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;" id="r-tier-btns"> <button class="tier-override-btn" data-tier="UNRANKED" onclick="applyTierOverride('UNRANKED')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-iron);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;letter-spacing:.3px;">UNRANK</button> <button class="tier-override-btn" data-tier="IRON" onclick="applyTierOverride('IRON')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-iron);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">IRON</button> <button class="tier-override-btn" data-tier="BRONZE" onclick="applyTierOverride('BRONZE')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-bronze);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">BRONZE</button> <button class="tier-override-btn" data-tier="SILVER" onclick="applyTierOverride('SILVER')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-silver);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">SILVER</button> <button class="tier-override-btn" data-tier="GOLD" onclick="applyTierOverride('GOLD')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-gold);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">GOLD</button> <button class="tier-override-btn" data-tier="PLATINUM" onclick="applyTierOverride('PLATINUM')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-plat);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">PLAT</button> <button class="tier-override-btn" data-tier="EMERALD" onclick="applyTierOverride('EMERALD')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-emerald);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">EMERALD</button> <button class="tier-override-btn" data-tier="DIAMOND" onclick="applyTierOverride('DIAMOND')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-diamond);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">DIAMOND</button> <button class="tier-override-btn" data-tier="MASTER" onclick="applyTierOverride('MASTER')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-master);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">MASTER</button> <button class="tier-override-btn" data-tier="GRANDMASTER" onclick="applyTierOverride('GRANDMASTER')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-grandmaster);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">GM</button> <button class="tier-override-btn" data-tier="CHALLENGER" onclick="applyTierOverride('CHALLENGER')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-challenger);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">CHALL</button> </div> </div> <div class="lane-select"> <div class="lane-select-label">주 포지션</div> <div class="lane-buttons" id="main-lanes"> <button class="lane-btn" data-lane="top" onclick="selectLane('main','top')">TOP</button> <button class="lane-btn" data-lane="jg" onclick="selectLane('main','jg')">JG</button> <button class="lane-btn" data-lane="mid" onclick="selectLane('main','mid')">MID</button> <button class="lane-btn" data-lane="bot" onclick="selectLane('main','bot')">BOT</button> <button class="lane-btn" data-lane="sup" onclick="selectLane('main','sup')">SUP</button> </div> <div class="lane-select-label" style="margin-top:4px;">보조 포지션</div> <div class="lane-buttons" id="sub-lanes"> <button class="lane-btn" data-lane="top" onclick="selectLane('sub','top')">TOP</button> <button class="lane-btn" data-lane="jg" onclick="selectLane('sub','jg')">JG</button> <button class="lane-btn" data-lane="mid" onclick="selectLane('sub','mid')">MID</button> <button class="lane-btn" data-lane="bot" onclick="selectLane('sub','bot')">BOT</button> <button class="lane-btn" data-lane="sup" onclick="selectLane('sub','sup')">SUP</button> </div> </div> <div style="padding:.75rem 1rem;border-top:1px solid var(--border-subtle);"> <button class="btn-add-member" id="btn-add" onclick="addMember()" disabled>멤버 추가</button> </div> </div> </div> </div> </div></div> <div class="next-wrap"> <div class="next-condition"> <div class="cond-item"> <div class="cond-dot" id="cond-count"></div> <span id="cond-count-text" style="font-size:12px;color:var(--text-muted);">인원 10의 배수</span> </div> <div class="cond-item"> <div class="cond-dot" id="cond-attend"></div> <span id="cond-attend-text" style="font-size:12px;color:var(--text-muted);">전원 출석</span> </div> </div> <button onclick="copyMatchLink()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(10,200,185,.4);background:rgba(10,200,185,.06);color:var(--blue-bright);font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="내전 상세 링크 복사">링크 복사</button>
-<button onclick="copyMemberMentions()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(100,150,255,.4);background:rgba(100,150,255,.06);color:#7EB2FF;font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="참여 멤버 @멘션 복사">@ 멘션 복사</button> <button id="btn-confirm-members" onclick="openConfirmMembersModal()" title="진행 인원만 남기고 나머지 멤버를 제외합니다 (10명 초과일 때)" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(232,203,134,.45);background:rgba(232,203,134,.08);color:#E8CB86;font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;">멤버 확정하기</button> <button id="btn-cut-members" onclick="openCutMembersModal()" title="멤버 확정으로 제외된 멤버" style="display:none;padding:7px 14px;border-radius:2px;border:1px solid rgba(255,148,85,.45);background:rgba(255,148,85,.08);color:#FF9455;font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;">잘린 멤버</button> <button id="btn-attend-all" onclick="toggleAttendAll()" style="padding:7px 16px;border-radius:2px;border:1px solid rgba(10,200,185,0.4);background:rgba(10,200,185,0.08);color:var(--blue-bright);font-family:'IBM Plex Sans KR',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;cursor:pointer;transition:all .15s;">전체 출석</button> <button id="btn-copy-post-link" onclick="copyForumPostLink()" title="이 내전의 디스코드 포스트 링크를 복사합니다" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(88,101,242,.45);background:rgba(88,101,242,.08);color:#A5B4FC;font-family:'IBM Plex Sans KR',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;cursor:pointer;transition:all .15s;">🔗 포스트 링크 복사</button> <button id="btn-match-delete" onclick="openMatchDeleteModal()" title="이 내전을 삭제합니다" style="padding:7px 14px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--text-muted);font-family:'IBM Plex Sans KR',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;cursor:pointer;transition:all .15s;" onmouseover="this.style.color='#E05050';this.style.borderColor='rgba(224,80,80,.5)'" onmouseout="this.style.color='var(--text-muted)';this.style.borderColor='var(--border-subtle)'">🗑 내전 삭제</button> <button id="btn-match-jjong" onclick="openJjongModal()" title="내전 모집을 중단하고 참여할 수 없는 내전으로 만듭니다" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(224,80,80,.5);background:rgba(224,80,80,.08);color:#E05050;font-family:'IBM Plex Sans KR',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;cursor:pointer;transition:all .15s;">🛑 내전 쫑</button> <button id="btn-match-promo" onclick="sendMatchPromo()" title="내전 멘션 채널에 역할을 멘션해 이 내전을 홍보합니다" style="display:none;padding:7px 14px;border-radius:2px;border:1px solid rgba(240,178,50,.45);background:rgba(240,178,50,.08);color:#F0B232;font-family:'IBM Plex Sans KR',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;cursor:pointer;transition:all .15s;">📣 내전 홍보</button> <button id="btn-discord-notify" onclick="sendDiscordNotify()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(114,137,218,0.4);background:rgba(114,137,218,0.08);color:#7289DA;font-family:'IBM Plex Sans KR',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;cursor:pointer;transition:all .15s;"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;margin-right:4px;"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>알림 전송</button> <button class="btn-next" id="btn-next" disabled onclick="goNextStage()">다음 단계 →</button> </div>
+<button onclick="copyMemberMentions()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(100,150,255,.4);background:rgba(100,150,255,.06);color:#7EB2FF;font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="참여 멤버 @멘션 복사">@ 멘션 복사</button> <button id="btn-confirm-members" onclick="openConfirmMembersModal()" title="진행 인원만 남기고 나머지 멤버를 제외합니다 (10명 초과일 때)" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(232,203,134,.45);background:rgba(232,203,134,.08);color:#E8CB86;font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;">멤버 확정하기</button> <button id="btn-cut-members" onclick="openCutMembersModal()" title="멤버 확정 때 진행 인원에서 빠진 대기 멤버 (3단계 선수 교체에서 넣을 수 있음)" style="display:none;padding:7px 14px;border-radius:2px;border:1px solid rgba(255,148,85,.45);background:rgba(255,148,85,.08);color:#FF9455;font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;">대기 멤버</button> <button id="btn-attend-all" onclick="toggleAttendAll()" style="padding:7px 16px;border-radius:2px;border:1px solid rgba(10,200,185,0.4);background:rgba(10,200,185,0.08);color:var(--blue-bright);font-family:'IBM Plex Sans KR',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;cursor:pointer;transition:all .15s;">전체 출석</button> <button id="btn-copy-post-link" onclick="copyForumPostLink()" title="이 내전의 디스코드 포스트 링크를 복사합니다" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(88,101,242,.45);background:rgba(88,101,242,.08);color:#A5B4FC;font-family:'IBM Plex Sans KR',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;cursor:pointer;transition:all .15s;">🔗 포스트 링크 복사</button> <button id="btn-match-delete" onclick="openMatchDeleteModal()" title="이 내전을 삭제합니다" style="padding:7px 14px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--text-muted);font-family:'IBM Plex Sans KR',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;cursor:pointer;transition:all .15s;" onmouseover="this.style.color='#E05050';this.style.borderColor='rgba(224,80,80,.5)'" onmouseout="this.style.color='var(--text-muted)';this.style.borderColor='var(--border-subtle)'">🗑 내전 삭제</button> <button id="btn-match-jjong" onclick="openJjongModal()" title="내전 모집을 중단하고 참여할 수 없는 내전으로 만듭니다" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(224,80,80,.5);background:rgba(224,80,80,.08);color:#E05050;font-family:'IBM Plex Sans KR',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;cursor:pointer;transition:all .15s;">🛑 내전 쫑</button> <button id="btn-match-promo" onclick="sendMatchPromo()" title="내전 멘션 채널에 역할을 멘션해 이 내전을 홍보합니다" style="display:none;padding:7px 14px;border-radius:2px;border:1px solid rgba(240,178,50,.45);background:rgba(240,178,50,.08);color:#F0B232;font-family:'IBM Plex Sans KR',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;cursor:pointer;transition:all .15s;">📣 내전 홍보</button> <button id="btn-discord-notify" onclick="sendDiscordNotify()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(114,137,218,0.4);background:rgba(114,137,218,0.08);color:#7289DA;font-family:'IBM Plex Sans KR',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;cursor:pointer;transition:all .15s;"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;margin-right:4px;"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>알림 전송</button> <button class="btn-next" id="btn-next" disabled onclick="goNextStage()">다음 단계 →</button> </div>
 </div>
 </div> <div class="modal-overlay" id="edit-time-modal" style="display:none;"> <div class="modal" style="max-width:400px;"> <div class="modal-title">내전 정보 수정</div> <div class="form-row"> <div class="form-label">내전 제목</div> <input class="form-input" type="text" id="et-name" maxlength="90" placeholder="예) 금요 정기 내전 시즌 1" onkeydown="if(event.key==='Enter')saveEditTime()"> </div> <div class="form-row"> <div class="form-label">시작 시간</div> <input class="form-input" type="datetime-local" id="et-time"> <label style="display:flex;align-items:center;gap:6px;margin-top:6px;font-size:12px;color:var(--text-muted);cursor:pointer;"><input type="checkbox" id="et-mobasi" onchange="_toggleMobasiInput('et')"> 모바시 (모두 모이면 바로 시작 · 시작 시간 없음)</label> </div> <div class="form-row"> <div class="form-label">진행자 (선택)</div> <div id="et-admin-btns" style="display:flex;flex-wrap:wrap;gap:6px;min-height:32px;padding:4px 0;"></div> </div> <div class="form-row" id="et-type-row" style="display:none;"> <div class="form-label">내전 종류 (선택)</div> <select class="form-input" id="et-type" style="cursor:pointer;font-family:'IBM Plex Sans KR',sans-serif;font-size:12px;"><option value="">없음</option></select> </div> <div class="modal-actions"> <button class="btn-secondary" onclick="closeEditTimeModal()">취소</button> <button class="btn-primary" id="btn-et-save" onclick="saveEditTime()">저장</button> </div> </div>
 </div> <div class="modal-overlay" id="em-modal" style="display:none;" data-id=""> <div class="modal" style="max-width:420px;"> <div class="modal-title">내전 정보 수정</div> <div class="form-row"> <div class="form-label">내전 이름</div> <input class="form-input" type="text" id="em-name"> </div> <div class="form-row"> <div class="form-label">시작 시간</div> <input class="form-input" type="datetime-local" id="em-time"> </div> <div class="form-row"> <div class="form-label">진행 관리자 (선택)</div> <input class="form-input" type="text" id="em-admin" placeholder="공란 가능"> </div> <div class="modal-actions"> <button class="btn-secondary" onclick="closeEditMatchModal()">취소</button> <button class="btn-secondary" onclick="saveEditMatch()">저장</button> <button class="btn-primary" onclick="(function(){saveEditMatch();setTimeout(()=>{const list=dbLoad();const snap=list.find(m=>m.name===document.getElementById('em-name').value.trim());if(snap)proceedToStage1(snap);},100)})()">진행하기 →</button> </div> </div>
@@ -3545,7 +3580,7 @@ body:has(#screen-0.active){background-color:var(--rg-bg)!important;background-im
     <button onclick="copyTeamText()" title="팀 정보 복사" style="padding:5px 10px;border-radius:2px;border:1px solid rgba(200,170,110,.4);background:rgba(200,170,110,.06);color:var(--gold);font-family:IBM Plex Sans KR,sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">팀정보</button>
     <button onclick="copyTeamMentions('captain')" title="팀장 멘션" style="padding:5px 10px;border-radius:2px;border:1px solid rgba(100,150,255,.4);background:rgba(100,150,255,.06);color:#7EB2FF;font-family:IBM Plex Sans KR,sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">@팀장</button>
     <button onclick="copyTeamMentions('members')" title="팀원 멘션" style="padding:5px 10px;border-radius:2px;border:1px solid rgba(100,150,255,.4);background:rgba(100,150,255,.06);color:#7EB2FF;font-family:IBM Plex Sans KR,sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">@팀원</button>
-    <button class="aram-hide" onclick="openAutoBalance()" title="내전 분석 랩 모델로 팀·라인 자동 배치" style="padding:5px 10px;border-radius:2px;border:1px solid rgba(232,203,134,.5);background:rgba(232,203,134,.08);color:#E8CB86;font-family:IBM Plex Sans KR,sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">자동밸런스</button>
+    <button onclick="openVoiceCheck()" title="참여 멤버가 디스코드 음성 채널에 들어와 있는지 확인" style="padding:5px 10px;border-radius:2px;border:1px solid rgba(88,101,242,.45);background:rgba(88,101,242,.08);color:#A5B4FC;font-family:IBM Plex Sans KR,sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">🎧 출석 확인</button> <button class="aram-hide" onclick="openAutoBalance()" title="내전 분석 랩 모델로 팀·라인 자동 배치" style="padding:5px 10px;border-radius:2px;border:1px solid rgba(232,203,134,.5);background:rgba(232,203,134,.08);color:#E8CB86;font-family:IBM Plex Sans KR,sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">자동밸런스</button>
     <button class="aram-hide" onclick="addTeamModal('normal')" style="padding:5px 10px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--text-muted);font-family:IBM Plex Sans KR,sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">+ 팀추가</button>
     <button class="aram-hide" onclick="openSwapModal()" title="선수 교체" style="padding:5px 10px;border-radius:2px;border:1px solid rgba(157,72,224,.4);background:rgba(157,72,224,.06);color:#B97EEA;font-family:IBM Plex Sans KR,sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">교체</button>
     <button class="aram-hide" onclick="openDraftOrderModal()" title="팀뽑기 순서" style="padding:5px 10px;border-radius:2px;border:1px solid rgba(200,170,110,.4);background:rgba(200,170,110,.06);color:var(--gold);font-family:IBM Plex Sans KR,sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">뽑기</button>
@@ -3571,6 +3606,7 @@ body:has(#screen-0.active){background-color:var(--rg-bg)!important;background-im
     <button onclick="copyTeamText()" title="팀 정보 복사" style="padding:5px 10px;border-radius:2px;border:1px solid rgba(200,170,110,.4);background:rgba(200,170,110,.06);color:var(--gold);font-family:IBM Plex Sans KR,sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">팀정보</button>
     <button onclick="copyTeamMentions('captain')" title="팀장 멘션" style="padding:5px 10px;border-radius:2px;border:1px solid rgba(100,150,255,.4);background:rgba(100,150,255,.06);color:#7EB2FF;font-family:IBM Plex Sans KR,sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">@팀장</button>
     <button onclick="copyTeamMentions('members')" title="팀원 멘션" style="padding:5px 10px;border-radius:2px;border:1px solid rgba(100,150,255,.4);background:rgba(100,150,255,.06);color:#7EB2FF;font-family:IBM Plex Sans KR,sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">@팀원</button>
+    <button onclick="openVoiceCheck()" title="참여 멤버가 디스코드 음성 채널에 들어와 있는지 확인" style="padding:5px 10px;border-radius:2px;border:1px solid rgba(88,101,242,.45);background:rgba(88,101,242,.08);color:#A5B4FC;font-family:IBM Plex Sans KR,sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">🎧 출석 확인</button> <button class="aram-hide" onclick="openAutoBalance()" title="내전 분석 랩 모델로 팀·라인 자동 배치" style="padding:5px 10px;border-radius:2px;border:1px solid rgba(232,203,134,.5);background:rgba(232,203,134,.08);color:#E8CB86;font-family:IBM Plex Sans KR,sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">자동밸런스</button>
     <button onclick="addTeamModal('auction')" style="padding:5px 10px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--text-muted);font-family:IBM Plex Sans KR,sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">+ 팀추가</button>
     <button onclick="openPointsModal()" title="포인트 설정" style="padding:5px 10px;border-radius:2px;border:1px solid rgba(200,170,110,.4);background:rgba(200,170,110,.06);color:var(--gold);font-family:IBM Plex Sans KR,sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">포인트</button>
     <button onclick="openSwapModal()" title="선수 교체" style="padding:5px 10px;border-radius:2px;border:1px solid rgba(157,72,224,.4);background:rgba(157,72,224,.06);color:#B97EEA;font-family:IBM Plex Sans KR,sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">교체</button>
@@ -3701,7 +3737,7 @@ body:has(#screen-0.active){background-color:var(--rg-bg)!important;background-im
   <button class="btn-secondary" onclick="goBackToStage2()" style="font-size:11px;padding:6px 12px;font-weight:700;">← 이전</button>
   <div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;flex:1;">
     <button onclick="copyMatchLink()" title="링크 복사" style="padding:5px 10px;border-radius:2px;border:1px solid rgba(10,200,185,.4);background:rgba(10,200,185,.06);color:var(--blue-bright);font-family:IBM Plex Sans KR,sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">링크</button>
-    <button onclick="openAutoBalance()" title="내전 분석 랩 모델로 팀·라인 자동 배치" style="padding:5px 10px;border-radius:2px;border:1px solid rgba(232,203,134,.5);background:rgba(232,203,134,.08);color:#E8CB86;font-family:IBM Plex Sans KR,sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">자동밸런스</button>
+    <button onclick="openVoiceCheck()" title="참여 멤버가 디스코드 음성 채널에 들어와 있는지 확인" style="padding:5px 10px;border-radius:2px;border:1px solid rgba(88,101,242,.45);background:rgba(88,101,242,.08);color:#A5B4FC;font-family:IBM Plex Sans KR,sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">🎧 출석 확인</button> <button onclick="openAutoBalance()" title="내전 분석 랩 모델로 팀·라인 자동 배치" style="padding:5px 10px;border-radius:2px;border:1px solid rgba(232,203,134,.5);background:rgba(232,203,134,.08);color:#E8CB86;font-family:IBM Plex Sans KR,sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">자동밸런스</button>
     <button onclick="copyLaneTeamText()" title="팀 정보 복사" style="padding:5px 10px;border-radius:2px;border:1px solid rgba(200,170,110,.4);background:rgba(200,170,110,.06);color:var(--gold);font-family:IBM Plex Sans KR,sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">팀정보</button>
     <button onclick="copyTeamBuilderImage()" title="이미지 복사" style="padding:5px 10px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--text-muted);font-family:IBM Plex Sans KR,sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">이미지</button>
     <button onclick="issueAnalysisCode()" title="대진 분석 코드 발급" style="padding:5px 10px;border-radius:2px;border:1px solid rgba(157,72,224,.4);background:rgba(157,72,224,.06);color:#B97EEA;font-family:IBM Plex Sans KR,sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">분석코드</button>
@@ -3728,7 +3764,7 @@ body:has(#screen-0.active){background-color:var(--rg-bg)!important;background-im
 </div>
 </div>
 
-<div id="screen-4" class="screen"> <div class="bracket-wrap"> <div class="bracket-topbar"> <div class="bracket-title">토너먼트 대진표</div> <div class="bracket-actions"> <button onclick="copyMatchLink()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(10,200,185,.4);background:rgba(10,200,185,.06);color:var(--blue-bright);font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="내전 상세 링크 복사">링크 복사</button> <button onclick="copyTeamText()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(200,170,110,.4);background:rgba(200,170,110,.06);color:var(--gold);font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="팀 정보 텍스트 복사">팀 정보 복사</button> <button class="btn-secondary" onclick="goBackToStage3()">← 이전 단계</button> <button class="btn-regen" onclick="generateBracket()">↺ 재추첨</button> <button class="btn-secondary" onclick="openExtraMatchModal()">+ 추가 대진</button> <button class="btn-copy-img" onclick="copyBracketImage()"> <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="1" y="3" width="8" height="9" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M4 3V2a1 1 0 011-1h5a1 1 0 011 1v7a1 1 0 01-1 1h-1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+<div id="screen-4" class="screen"> <div class="bracket-wrap"> <div class="ar-timer" style="display:none;"><span class="ar-text"></span><button type="button" class="ar-btn" onclick="manualAutoResult(this)" title="자동 저장과 같은 방법으로 지금 바로 Riot 기록에서 이 내전 게임을 찾아 저장합니다 (이미 저장된 경기는 건너뜀)">🔄 게임 결과 가져오기</button></div> <div class="bracket-topbar"> <div class="bracket-title">토너먼트 대진표</div> <div class="bracket-actions"> <button onclick="copyMatchLink()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(10,200,185,.4);background:rgba(10,200,185,.06);color:var(--blue-bright);font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="내전 상세 링크 복사">링크 복사</button> <button onclick="copyTeamText()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(200,170,110,.4);background:rgba(200,170,110,.06);color:var(--gold);font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="팀 정보 텍스트 복사">팀 정보 복사</button> <button class="btn-secondary" onclick="goBackToStage3()">← 이전 단계</button> <button class="btn-regen" onclick="generateBracket()">↺ 재추첨</button> <button class="btn-secondary" onclick="openExtraMatchModal()">+ 추가 대진</button> <button class="btn-copy-img" onclick="copyBracketImage()"> <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="1" y="3" width="8" height="9" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M4 3V2a1 1 0 011-1h5a1 1 0 011 1v7a1 1 0 01-1 1h-1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
  이미지 복사
  </button> <button class="btn-next" id="btn-stage4-next" onclick="goToStage5()">다음 단계 →</button> </div> </div> <div class="bracket-scroll"> <canvas id="bracket-canvas" style="cursor:pointer;" onclick="onBracketClick(event)"></canvas> </div> </div>
 </div>
@@ -3759,6 +3795,7 @@ body:has(#screen-0.active){background-color:var(--rg-bg)!important;background-im
   </div>
   <!-- 탭1: 기존 내전 결과 -->
   <div id="s5-panel-result">
+  <div class="ar-timer" style="display:none;"><span class="ar-text"></span><button type="button" class="ar-btn" onclick="manualAutoResult(this)" title="자동 저장과 같은 방법으로 지금 바로 Riot 기록에서 이 내전 게임을 찾아 저장합니다 (이미 저장된 경기는 건너뜀)">🔄 게임 결과 가져오기</button></div>
  <div class="results-topbar"> <div class="results-title">내전 결과 입력</div> <div style="display:flex;gap:8px;"> <button onclick="copyMatchLink()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(10,200,185,.4);background:rgba(10,200,185,.06);color:var(--blue-bright);font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="내전 상세 링크 복사">링크 복사</button> <button onclick="copyTeamText()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(200,170,110,.4);background:rgba(200,170,110,.06);color:var(--gold);font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="팀 정보 텍스트 복사">팀 정보 복사</button> <button id="btn-review-dm" onclick="sendReviewDM()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(157,72,224,.4);background:rgba(157,72,224,.06);color:#B97EEA;font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="내전 후기 DM 발송">후기 DM</button> <button class="btn-discord-share" id="btn-discord-share-result" onclick="shareResultToDiscord()" style="display:none;" title="Discord 채널에 내전 결과 전송">
   <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>
   Discord 전송
@@ -6457,6 +6494,14 @@ const _ratingVal = (function() {
   if (!r) return '<span class="member-score-unranked">배치중</span>';
   return '<span class="member-score-val" style="color:var(--gold);">⭐ ' + Math.round(r.current) + '</span>';
 })();
+// 레이팅 배치중(커뮤니티 레이팅 없음) → 관리자가 입력 티어를 확인할 수 있게 딥롤 바로가기 배지
+const _placingBadge = (function() {
+  var _key = (m.name || '').toLowerCase() + '#' + (m.tag || '').toLowerCase();
+  var _dpId = _communityPuuMap[_key];
+  if (_dpId && _communityRatings[_dpId]) return '';
+  var url = 'https://www.deeplol.gg/summoner/kr/' + encodeURIComponent(m.name || '') + '-' + encodeURIComponent(m.tag || '');
+  return '<a class="placing-badge" href="' + url + '" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="레이팅 배치중인 유저예요. 눌러서 딥롤에서 입력한 티어가 맞는지 확인하세요">🔎 배치중 · 티어 확인<span class="pb-arrow">↗</span></a>';
+})();
 const _scoreRow = `<div style="display:flex;align-items:center;gap:6px;margin-top:5px;padding-top:5px;border-top:1px solid rgba(255,255,255,.06);flex-wrap:nowrap;">
     <span style="font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;color:var(--text-muted);">레이팅</span>${_ratingVal}
     <span style="color:var(--border-subtle);font-size:9px;margin:0 1px;">|</span>
@@ -6476,6 +6521,7 @@ card.innerHTML=`
         <div style="display:flex;align-items:center;gap:4px;flex-wrap:nowrap;margin-top:2px;">
           <span class="tier-badge" style="color:${color};background:${color}18;border:1px solid ${color}44">${tierKo}${tierSuffix}</span>${m.prevSeasonHighest ? `<span style="font-size:9px;color:var(--text-muted);font-family:'IBM Plex Sans KR',sans-serif;font-weight:700;padding:1px 4px;border-radius:2px;background:rgba(200,170,110,0.06);border:1px solid var(--border-subtle);white-space:nowrap;" title="전 시즌 최고 티어">↑${m.prevSeasonHighest}</span>` : ''}
         </div>
+        ${_placingBadge}
         <div style="display:flex;align-items:center;gap:2px;flex-wrap:nowrap;margin-top:2px;">
           ${m.mainLane ? `<span class="lane-icon" title="주 라인">${LANE_KO[m.mainLane]||m.mainLane}</span>` : ''}${m.mainLane && _subLaneBadges(m.subLane) ? `<span class="lane-sep" style="font-size:8px;color:var(--text-muted);margin:0 1px;">/</span>` : ''}${_subLaneBadges(m.subLane)}
         </div>
@@ -6894,7 +6940,17 @@ generateBracket();
 showScreen('screen-4');
 match.status='내전 진행';
 document.getElementById('bar-status').textContent='내전 진행';
+// 결과 자동 저장 예약: 처음 4단계로 넘어갈 때 딱 한 번 (진입 시각 + 3시간)
+var _arNew = false;
+if (!match.autoResultAt) {
+  match.stage4At = Date.now();
+  match.autoResultAt = match.stage4At + 3 * 60 * 60 * 1000;
+  _arNew = true;
+}
 await saveCurrentMatch();
+if (_arNew) {
+  _workerWrite('auto_results/' + match.id, { cid: match.communityId || window._currentCommunityId, at: match.autoResultAt }).catch(function(){});
+}
 toast('4단계 대진표가 생성되었습니다', 'ok');
 }
 let dragMemberId=null;
@@ -7075,9 +7131,20 @@ filtered.length<normalPool.length
 ?`${filtered.length}/${normalPool.length}명`
 :normalPool.length+'명';
 }
+// 팀장 자동 지정: 빈 팀에 처음 넣은 멤버가 팀장 (팀 이름 = "팀장 이름 팀").
+// 팀장이 팀에서 빠지면 남은 멤버 중 가장 먼저 들어온 사람이 팀장, 팀이 비면 팀장 없음.
+// (관리자가 팀장 지정으로 바꾼 팀장은 그 사람이 팀에 있는 동안 유지) · 칼바람 내전은 팀장 없이 진행
+function _ensureNormalCaptains(){
+if (match && match.aramTeam) return;
+(teams || []).forEach(function(t){
+  if (!t.members || !t.members.length) { t.captainId = null; return; }
+  if (!t.members.some(function(m){ return m.id === t.captainId; })) t.captainId = t.members[0].id;
+});
+}
 function renderNormalTeams(){
 const grid=document.getElementById('n-teams-grid');
 if(!grid) return;
+_ensureNormalCaptains();
 grid.innerHTML='';
 teams.forEach(t =>{
 grid.appendChild(makeTeamPanel(t, 'normal'));
@@ -8243,7 +8310,7 @@ function makeTeamPanel(team, mode){
 const prefix=mode === 'normal'?'n':'a';
 const zoneId=`${prefix}-team-${team.id}`;
 const captain=team.captainId?members.find(m => m.id === team.captainId):null;
-const teamName=captain?captain.name+'팀':`팀 ${team.id}`;
+const teamName=captain?captain.name+' 팀':`팀 ${team.id}`;
 const div=document.createElement('div');
 div.className='team-panel';
 div.id=`panel-${prefix}-${team.id}`;
@@ -8580,7 +8647,7 @@ else{renderAuctionPool(); renderAuctionTeams(); checkAuctionConditions();}
 saveCurrentMatch();
 saveCaptainCodes();
 const captain=team.captainId?members.find(m => m.id === team.captainId):null;
-toast(`${captain ? captain.name + '팀' : '팀 ' + teamId} 삭제됨`, 'ok');
+toast(`${captain ? captain.name + ' 팀' : '팀 ' + teamId} 삭제됨`, 'ok');
 }
 let bidSelectedTeamId=null;
 function openBidModal(){
@@ -8606,7 +8673,7 @@ return nameA.localeCompare(nameB, 'ko');
 });
 eligible.forEach(t =>{
 const cap=t.captainId?members.find(m => m.id === t.captainId):null;
-const name=cap?cap.name+'팀':'팀 '+t.id;
+const name=cap?cap.name+' 팀':'팀 '+t.id;
 const ptsLabel=t.points !== null?`잔여 ${t.points}pt`:'포인트 미설정';
 const opt=document.createElement('div');
 opt.className='captain-option';
@@ -8742,7 +8809,7 @@ team.members.push(onSaleMember);
 const memberName=onSaleMember.name;
 const onSaleMemberTier = _formatMemberTier(onSaleMember);
 const cap=team.captainId?members.find(m => m.id === team.captainId):null;
-const teamName=cap?cap.name+'팀':'팀 '+team.id;
+const teamName=cap?cap.name+' 팀':'팀 '+team.id;
 onSaleMember=null;
 closeBidModal();
 renderOnSale();
@@ -9120,7 +9187,8 @@ async function goToStage5(){
 const pips=document.querySelectorAll('.stage-pip');
 pips[3].classList.remove('active'); pips[3].classList.add('done');
 pips[4].classList.add('active');
-initResultMatches();
+// 결과가 자동 저장된 내전이면 그 결과를 그대로 둠
+if (!(match.autoResult && resultMatches.some(function(r){ return r && r.auto; }))) initResultMatches();
 showScreen('screen-5');
 match.status='내전 종료';
 gaEvent('match_completed', { community_id: window._currentCommunityId });
@@ -9140,7 +9208,8 @@ if (!match.reviewDmSent) {
           matchId: match && match.id,
           matchName: match && match.name ? match.name : '',
           members: dcMembers.map(function(m){ return { puuid: m.puuid, discordId: m.discordId, name: m.name }; }),
-          token: _sessionToken
+          token: _sessionToken,
+          auto: true
         })
       });
       var j = await res.json();
@@ -9148,7 +9217,7 @@ if (!match.reviewDmSent) {
         var sent = j.results ? j.results.filter(function(r){ return r.ok; }).length : 0;
         match.reviewDmSent = true;
         await saveCurrentMatch();
-        toast('📝 ' + sent + '명에게 후기 DM 전송 완료', 'ok');
+        if (!j.skipped) toast('📝 ' + sent + '명에게 후기 DM 전송 완료', 'ok');
       }
     } catch(e) {
       console.warn('[reviewDM auto]', e.message);
@@ -9221,6 +9290,50 @@ const body=document.getElementById(`rm-body-${id}`);
 const icon=document.getElementById(`rm-icon-${id}`);
 if (body) body.classList.toggle('collapsed', !!_rmCollapsed[key]);
 if (icon) icon.style.transform=_rmCollapsed[key]?'rotate(-90deg)':'rotate(0deg)';
+}
+// ── 게임 상세 분석 (타임라인·라인전·성장·빌드) ──
+const _gdOpen = new Set();
+const _gdReg = {};
+function _gdKey(rm){ return String(rm.customCode || '').trim(); }
+function _gdBlock(rm, ns){
+  // 상세 분석 스크립트가 아직 안 읽혔어도 버튼은 그림 (누를 때 불러옴)
+  if (!rm || !rm.gameData || !/([A-Z]+\d*_\d+|^\d+$)/i.test(_gdKey(rm))) return '';
+  const k = ns + '-' + rm.id;
+  _gdReg[k] = rm;
+  const open = _gdOpen.has(k);
+  return '<div class="gd-wrap"><button type="button" class="gd-btn' + (open ? ' on' : '') + '" data-gd="' + k + '" onclick="toggleGameDetail(\'' + ns + '\',' + rm.id + ')">'
+    + '<span class="gd-ic">📊</span>상세 분석 <span class="gd-sub">타임라인 · 라인전 · 성장 · 빌드</span><span class="gd-chev">▾</span></button>'
+    + '<div class="gd-body" id="gd-body-' + k + '"' + (open ? '' : ' hidden') + '></div></div>';
+}
+function _gdSideNames(rm){
+  return function(D){
+    const nA = rm.teamA ? getTeamName(rm.teamA) : 'A팀', nB = rm.teamB ? getTeamName(rm.teamB) : 'B팀';
+    const aP = new Set(((rm.teamA && rm.teamA.members) || []).map(m => m && m.puuid).filter(Boolean));
+    const bP = new Set(((rm.teamB && rm.teamB.members) || []).map(m => m && m.puuid).filter(Boolean));
+    let a100 = 0, a200 = 0;
+    (D.p || []).forEach(p => { if (aP.has(p.puuid)) (p.team === 100 ? a100++ : a200++); if (bP.has(p.puuid)) (p.team === 200 ? a100++ : a200++); });
+    if (!a100 && !a200) return { 100: nA, 200: nB };
+    return a100 >= a200 ? { 100: nA, 200: nB } : { 100: nB, 200: nA };
+  };
+}
+function _gdMount(ns, rm){
+  const el = document.getElementById('gd-body-' + ns + '-' + rm.id);
+  if (!el || !window.RGMatchDetail) return;
+  RGMatchDetail.mount(el, _gdKey(rm), { sideNames: _gdSideNames(rm) });
+}
+function toggleGameDetail(ns, id){
+  const k = ns + '-' + id;
+  const rm = _gdReg[k];
+  if (!rm) return;
+  const el = document.getElementById('gd-body-' + k);
+  const btn = document.querySelector('[data-gd="' + k + '"]');
+  if (!el) return;
+  if (_gdOpen.has(k)) { _gdOpen.delete(k); el.hidden = true; el.innerHTML = ''; if (btn) btn.classList.remove('on'); return; }
+  _gdOpen.add(k); el.hidden = false; if (btn) btn.classList.add('on');
+  _gdMount(ns, rm);
+}
+function _gdRemount(ns){
+  Object.keys(_gdReg).forEach(k => { if (k.indexOf(ns + '-') === 0 && _gdOpen.has(k)) _gdMount(ns, _gdReg[k]); });
 }
 function renderResultMatches(){
 // 팀 요약 섹션 렌더링 (screen-5 상단)
@@ -9354,9 +9467,11 @@ onmouseover="this.style.background='rgba(10,200,185,0.16)'"
 onmouseout="this.style.background='rgba(10,200,185,0.08)'">대진 저장</button>`}
 </div> </div> </div>
 ${renderScoreboard(rm)}
+${_gdBlock(rm, 'gd')}
 </div>`;
 list.appendChild(card);
 });
+_gdRemount('gd');
 // + 대진 추가 버튼
 const addBtn = document.createElement('button');
 addBtn.className = 'btn-add-match';
@@ -10247,7 +10362,7 @@ function renderUvTeams() {
   });
   summary.innerHTML = '';
   uvTeams.forEach(function(t) {
-    var name = t.name || (t.captainId ? ((snapshot._members||[]).find(function(m){ return m.id===t.captainId; })||{name:'팀'}).name+'팀' : '팀');
+    var name = t.name || (t.captainId ? ((snapshot._members||[]).find(function(m){ return m.id===t.captainId; })||{name:'팀'}).name+' 팀' : '팀');
     var w = wins[t.id] || 0;
     var card = document.createElement('div');
     card.className = 'uv-team-card';
@@ -10954,7 +11069,7 @@ const header = document.createElement('div');
 header.style.cssText = 'display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:6px 10px;background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:3px;margin-bottom:4px;user-select:none;';
 header.innerHTML = '<span style="font-family:IBM Plex Sans KR,sans-serif;font-size:12px;color:var(--gold);letter-spacing:1.5px;font-weight:700;">'+rmLabel+'</span><span class="uv-toggle-icon" style="font-size:10px;color:var(--text-muted);transition:transform .2s;display:inline-block;">▼</span>';
 const body = document.createElement('div');
-body.innerHTML = renderScoreboard(rm);
+body.innerHTML = renderScoreboard(rm) + _gdBlock(rm, 'uvgd');
 header.addEventListener('click', function() {
   const open = body.style.display !== 'none';
   body.style.display = open ? 'none' : 'block';
@@ -10965,6 +11080,7 @@ wrap.appendChild(header);
 wrap.appendChild(body);
 boards.appendChild(wrap);
 });
+_gdRemount('uvgd');
 }
 let isMaster = false;
 // isMaster 변경 시 공지사항 버튼 업데이트는 renderNoticeList()에서 처리
@@ -12402,8 +12518,10 @@ let _swapInData = null;
 let _swapTierOverride = null;
 let _swapMainLane = null;
 let _swapSubLanes = new Set();
+let _swapPick = null; // 대기 멤버에서 고른 사람 { src:'cut'|'wait', m }
 
 function openSwapModal() {
+  _swapPick = null;
   _swapOutMember = null;
   _swapInData = null;
   _swapTierOverride = null;
@@ -12466,7 +12584,9 @@ function selectSwapOut(memberId) {
   document.getElementById('swap-in-result-wrap').style.display = 'none';
   document.getElementById('swap-search-in').value = '';
   document.getElementById('btn-swap-confirm').disabled = true;
+  _swapPick = null;
   renderSwapOutList();
+  renderSwapBench();
 }
 
 async function swapSearchNew() {
@@ -12499,8 +12619,9 @@ async function swapSearchNew() {
     document.getElementById('swap-tier-detail-wrap').style.display = 'none';
     document.getElementById('swap-tier-detail-input').value = '';
     // 포지션 — 교체 대상의 라인 기본값으로 설정
-    _swapMainLane = _swapOutMember?.mainLane || null;
-    _swapSubLanes = new Set(Array.isArray(_swapOutMember?.subLane) ? _swapOutMember.subLane : (_swapOutMember?.subLane ? [_swapOutMember.subLane] : []));
+    const _laneSrc = (_swapPick && _swapPick.m && _swapPick.m.mainLane) ? _swapPick.m : _swapOutMember;
+    _swapMainLane = _laneSrc?.mainLane || null;
+    _swapSubLanes = new Set(Array.isArray(_laneSrc?.subLane) ? _laneSrc.subLane : (_laneSrc?.subLane ? [_laneSrc.subLane] : []));
     _updateSwapLaneButtons();
     document.getElementById('swap-in-result-wrap').style.display = 'block';
     _updateSwapConfirmBtn();
@@ -12589,19 +12710,100 @@ function _updateSwapConfirmBtn() {
   document.getElementById('btn-swap-confirm').disabled = !ok;
 }
 
+// ── 선수 교체: 대기 멤버(멤버 확정 때 빠진 멤버) + 예비 대기자에서 고르기 ──
+function _swapBenchList() {
+  var out = [];
+  var key = function (m) { return String((m.name || m.riotName || '') + '#' + (m.tag || m.riotTag || '')).toLowerCase(); };
+  var inNow = {}; (members || []).forEach(function (m) { if (m) inNow[key(m)] = 1; });
+  ((match && Array.isArray(match.cutMembers)) ? match.cutMembers : []).forEach(function (m) { if (m && !inNow[key(m)]) out.push({ src: 'cut', m: m }); });
+  (typeof _waitlist !== 'undefined' && Array.isArray(_waitlist) ? _waitlist : []).forEach(function (m) { if (m && !inNow[key(m)]) out.push({ src: 'wait', m: m }); });
+  return out;
+}
+function renderSwapBench() {
+  var wrap = document.getElementById('swap-bench-wrap'), el = document.getElementById('swap-bench-list');
+  if (!wrap || !el) return;
+  var list = _swapBenchList();
+  wrap.style.display = list.length ? '' : 'none';
+  document.getElementById('swap-bench-count').textContent = list.length ? list.length + '명' : '';
+  el.innerHTML = list.map(function (x, i) {
+    var m = x.m, nm = m.name || m.riotName || '?', tg = m.tag || m.riotTag || '';
+    var tier = m.tier ? (TIER_KO[m.tier] || m.tier) : '';
+    var color = TIER_COLORS[m.tier] || 'var(--text-muted)';
+    var lane = m.mainLane ? (LANE_KO[m.mainLane] || m.mainLane) : '';
+    var sel = _swapPick && _swapPick.m === m;
+    var badge = x.src === 'cut'
+      ? '<span style="font-size:10px;color:#FF9455;margin-left:4px;">대기 멤버</span>'
+      : '<span style="font-size:10px;color:#FB923C;margin-left:4px;">예비 대기 ' + (m.waitNum || '') + '번</span>';
+    return '<div onclick="pickSwapBench(' + i + ')" style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:3px;cursor:pointer;border:1px solid ' + (sel ? 'rgba(255,148,85,.6)' : 'var(--border-subtle)') + ';background:' + (sel ? 'rgba(255,148,85,.08)' : 'transparent') + ';">' +
+      '<div style="flex:1;min-width:0;"><div style="font-size:12px;color:var(--text-white);font-weight:500;">' + _escHtml(nm) + '<span style="color:var(--text-muted);font-size:10px;margin-left:3px;">#' + _escHtml(tg) + '</span>' + badge + '</div>' +
+      (tier || lane ? '<div style="font-size:10px;font-weight:700;color:' + color + ';">' + tier + (lane ? ' · ' + lane : '') + '</div>' : '<div style="font-size:10px;color:var(--text-muted);">선택하면 소환사 정보를 불러옵니다</div>') + '</div>' +
+      (sel ? '<span style="color:#FF9455;font-size:14px;">✓</span>' : '') + '</div>';
+  }).join('');
+}
+function pickSwapBench(i) {
+  var x = _swapBenchList()[i]; if (!x || !_swapOutMember) return;
+  _swapPick = x;
+  var m = x.m, nm = m.name || m.riotName || '', tg = m.tag || m.riotTag || '';
+  document.getElementById('swap-search-in').value = nm + '#' + tg;
+  renderSwapBench();
+  if (!m.tier) { swapSearchNew(); return; }   // 티어 정보 없는 예비 대기자 → 소환사 검색으로 불러옴
+  // 저장돼 있던 정보 그대로 사용 (티어·라인은 아래에서 바꿀 수 있음)
+  _swapInData = { name: nm, tag: tg, icon: m.icon || 0, solo: m.tierFull || m.tier || 'UNRANKED', flex: '-', level: m.level || 0, puuid: m.puuid || null };
+  _swapTierOverride = null;
+  var color = TIER_COLORS[m.tier] || 'var(--text-muted)';
+  document.getElementById('swap-in-icon').src = 'https://ddragon.leagueoflegends.com/cdn/' + (window._ddVersion || '16.14.1') + '/img/profileicon/' + (m.icon || 0) + '.png';
+  document.getElementById('swap-in-name').textContent = nm;
+  document.getElementById('swap-in-tag').textContent = '#' + tg;
+  document.getElementById('swap-in-solo').style.color = color;
+  document.getElementById('swap-in-solo').textContent = m.tierFull || m.tier || 'UNRANKED';
+  document.getElementById('swap-in-flex').textContent = '-';
+  document.getElementById('swap-in-level').textContent = m.level || '-';
+  document.querySelectorAll('.swap-tier-btn').forEach(function (b) { b.style.background = 'transparent'; b.style.borderColor = 'var(--border-subtle)'; b.style.boxShadow = 'none'; });
+  document.getElementById('swap-tier-detail-wrap').style.display = 'none';
+  document.getElementById('swap-tier-detail-input').value = '';
+  _swapMainLane = m.mainLane || _swapOutMember.mainLane || null;
+  var sl = Array.isArray(m.subLane) ? m.subLane : (m.subLane ? [m.subLane] : []);
+  _swapSubLanes = new Set(sl.filter(function (l) { return l && l !== _swapMainLane; }));
+  _updateSwapLaneButtons();
+  document.getElementById('swap-in-result-wrap').style.display = 'block';
+  _updateSwapConfirmBtn();
+}
+// 교체로 들어간 사람을 대기 멤버 / 예비 대기자 목록에서 빼기
+async function _swapRemoveFromBench(pick) {
+  if (!pick) return;
+  if (pick.src === 'cut') {
+    if (Array.isArray(match.cutMembers)) match.cutMembers = match.cutMembers.filter(function (m) { return m !== pick.m; });
+    if (typeof _renderConfirmMembersBtns === 'function') _renderConfirmMembersBtns();
+  } else if (pick.src === 'wait' && typeof _waitlist !== 'undefined') {
+    var i = _waitlist.indexOf(pick.m);
+    if (i < 0) return;
+    _waitlist.splice(i, 1);
+    _waitlist.forEach(function (w, k) { w.waitNum = k + 1; });
+    try {
+      await window._fb.fbSet('communities/' + window._currentCommunityId + '/matches/' + match.id + '/_waitlist', _waitlist.length ? _waitlist : null);
+    } catch (e) { toast('예비 대기자 목록 저장 실패: ' + e.message, 'err'); }
+    if (typeof updateWaitlistBtn === 'function') try { updateWaitlistBtn(); } catch (e) {}
+    if (typeof renderWaitlistSection === 'function') try { renderWaitlistSection(); } catch (e) {}
+  }
+}
 function confirmSwap() {
   if (!_swapOutMember || !_swapInData) return;
   const detailVal = document.getElementById('swap-tier-detail-input')?.value.trim() || '';
-  const tierStr = _swapTierOverride || _swapInData.solo?.split(' ')[0] || 'UNRANKED';
-  const tierFull = _buildTierFull(_swapTierOverride, detailVal, _swapInData.solo || 'UNRANKED');
+  const _pickHasTier = _swapPick && _swapPick.m && _swapPick.m.tier && !_swapTierOverride;
+  const tierStr = _swapTierOverride || (_pickHasTier ? _swapPick.m.tier : null) || _swapInData.solo?.split(' ')[0] || 'UNRANKED';
+  const tierFull = _pickHasTier ? (_swapPick.m.tierFull || _swapPick.m.tier) : _buildTierFull(_swapTierOverride, detailVal, _swapInData.solo || 'UNRANKED');
   const oldId = _swapOutMember.id;
+  const pick = _swapPick && _swapInData && (_swapPick.m.name || _swapPick.m.riotName) === _swapInData.name ? _swapPick : null;
+  const pm = pick ? pick.m : {};
   const newMember = {
+    // 대기 멤버/예비 대기자에서 골랐으면 원래 정보(디스코드 ID 등)를 그대로 가져옴
+    ...(pick ? Object.fromEntries(Object.entries(pm).filter(([k]) => !['cutAt','cutConfirmCount','waitNum','registeredAt','riotName','riotTag'].includes(k))) : {}),
     id: oldId,
     name: _swapInData.name, tag: _swapInData.tag, icon: _swapInData.icon,
     tier: tierStr, tierFull,
     mainLane: _swapMainLane,
     subLane: _swapSubLanes.size === 1 ? [..._swapSubLanes][0] : [..._swapSubLanes],
-    level: _swapInData.level, puuid: _swapInData.puuid || null,
+    level: _swapInData.level, puuid: _swapInData.puuid || pm.puuid || null,
     present: _swapOutMember.present,
     bidPrice: _swapOutMember.bidPrice || null,
     bidTeamId: _swapOutMember.bidTeamId || null,
@@ -12619,11 +12821,13 @@ function confirmSwap() {
     if (tmIdx >= 0) t.members[tmIdx] = newMember;
   });
   if (onSaleMember && onSaleMember.id === oldId) onSaleMember = newMember;
+  if (pick) _swapRemoveFromBench(pick);
+  _swapPick = null;
   closeSwapModal();
   if (matchType === 'normal') { renderNormalPool(); renderNormalTeams(); checkNormalConditions(); }
   else { renderAuctionPool(); renderAuctionTeams(); renderFailZone(); checkAuctionConditions(); renderOnSale(); }
   saveCurrentMatch();
-  toast(`${_swapOutMember.name} → ${_swapInData.name} 교체 완료 ✓`, 'ok');
+  toast(`${_swapOutMember.name} → ${_swapInData.name} 교체 완료 ✓` + (pick ? (pick.src === 'cut' ? ' (대기 멤버에서)' : ' (예비 대기자에서)') : ''), 'ok');
 }
 // ═══════════════════════════════════════════
 let _liveUnsub = null;
@@ -14910,6 +15114,23 @@ if (remote.name)    { match.name    = remote.name; }
 if (remote.time)    { match.time    = remote.time; }
 if (remote.admin)   { match.admin   = remote.admin; }
 if (remote.jjong != null) { match.jjong = !!remote.jjong; match.jjongAt = remote.jjongAt || null; _updateJjongBtn(); }
+if (remote.autoResultChecked) match.autoResultChecked = true;
+if (remote.reviewDmSent) match.reviewDmSent = true;
+// 결과 자동 저장됨 → 4단계 화면을 보고 있던 관리자도 5단계 결과 화면으로
+if (remote.autoResult && !match.autoResult) {
+  match.autoResult = remote.autoResult;
+  if ((remote.autoResult.games || 0) > 0 && currentScreen === 'screen-4') {
+    try {
+      const _pips = document.querySelectorAll('.stage-pip');
+      if (_pips[3]) { _pips[3].classList.remove('active'); _pips[3].classList.add('done'); }
+      if (_pips[4]) _pips[4].classList.add('active');
+      showScreen('screen-5');
+      s5SwitchTab('result');
+      document.getElementById('bar-status').textContent = '내전 종료';
+    } catch (e) {}
+    toast('내전 결과 ' + remote.autoResult.games + '경기가 자동으로 저장되었습니다', 'ok');
+  }
+}
 // 화면 전환이 필요한 경우 (원격에서 다음 단계로 이동)
 const remoteScreen = remote._currentScreen;
 const screenOrder  = ['screen-1','screen-2-select','screen-3-normal','screen-3-auction','screen-4','screen-5'];
@@ -15148,6 +15369,7 @@ fetching: false,
 isExtra: rm.isExtra || false,
 extraId: rm.extraId || null,
 saved: rm.saved || false,
+auto: rm.auto || false,
 }));
 // 버전 선증가 후 저장 시도 — 충돌 시 롤백
 const versionToSave = _localVersion;
@@ -15210,7 +15432,7 @@ try {
 }
 }
 function restoreMatch(snapshot) {
-match = { id: snapshot.id, name: snapshot.name, time: snapshot.time, admin: snapshot.admin, status: snapshot.status, discordJoinable: snapshot.discordJoinable || false, discordLeaveDisabled: snapshot.discordLeaveDisabled || false, isAram: snapshot.isAram || false, maxMembers: snapshot.maxMembers || null, laneFixedRecruit: snapshot.laneFixedRecruit || false, laneRestrictOff: snapshot.laneRestrictOff || false, cutMembers: snapshot.cutMembers || null, tierLimit: snapshot.tierLimit || null, aramTeam: snapshot.aramTeam || false, jjong: snapshot.jjong || false, jjongAt: snapshot.jjongAt || null };
+match = { id: snapshot.id, name: snapshot.name, time: snapshot.time, admin: snapshot.admin, status: snapshot.status, discordJoinable: snapshot.discordJoinable || false, discordLeaveDisabled: snapshot.discordLeaveDisabled || false, isAram: snapshot.isAram || false, maxMembers: snapshot.maxMembers || null, laneFixedRecruit: snapshot.laneFixedRecruit || false, laneRestrictOff: snapshot.laneRestrictOff || false, cutMembers: snapshot.cutMembers || null, tierLimit: snapshot.tierLimit || null, aramTeam: snapshot.aramTeam || false, jjong: snapshot.jjong || false, jjongAt: snapshot.jjongAt || null, stage4At: snapshot.stage4At || null, autoResultAt: snapshot.autoResultAt || null, autoResultChecked: snapshot.autoResultChecked || false, autoResult: snapshot.autoResult || null, reviewDmSent: snapshot.reviewDmSent || false, reviewDmAt: snapshot.reviewDmAt || null };
 members = snapshot._members || [];
 // 내전 점수 로드
 if (typeof loadDoomScores === 'function') loadDoomScores();
@@ -15598,6 +15820,12 @@ setInterval(function() {
       }
       if (remote) _seenRemote = true;
       if (!remote || !match || match.id !== want) return;
+      // 결과 자동 저장 확인됨 (경기를 못 찾은 경우는 버전이 안 올라가서 여기서 따로 반영)
+      if (remote.autoResultChecked && !match.autoResultChecked) {
+        match.autoResultChecked = true;
+        if (remote.autoResult && !match.autoResult && !((remote.autoResult.games || 0) > 0)) match.autoResult = remote.autoResult;
+        try { _arTick(); } catch (e) {}
+      }
       var remoteVer = remote._version || 0, localVer = _localVersion || 0;
       var remoteAt = remote._updatedAt || 0, localAt = match._updatedAt || 0;
       if (remoteVer > localVer || (remoteVer === localVer && remoteAt > localAt && !_editLock)) _applyRemoteUpdate(remote);
@@ -17100,6 +17328,197 @@ document.addEventListener('input', function (e) {
 });
 window._cmSecAll = _cmSecAll;
 
+// ── 결과 자동 저장 타이머 (4·5단계) ──
+function _arFmt(ms) {
+  var t = Math.max(0, Math.floor(ms / 1000)), h = Math.floor(t / 3600), m = Math.floor(t % 3600 / 60), sec = t % 60;
+  return (h ? h + '시간 ' : '') + (h || m ? m + '분 ' : '') + sec + '초';
+}
+function _arTick() {
+  var els = document.querySelectorAll('.ar-timer');
+  if (!els.length) return;
+  var html = '', cls = '';
+  if (!match || !match.id) { els.forEach(function (el) { el.style.display = 'none'; }); return; }
+  if (match.autoResultAt) {
+    var at = match.autoResultAt, now = Date.now();
+    var when = new Date(at);
+    var hm = String(when.getHours()).padStart(2, '0') + ':' + String(when.getMinutes()).padStart(2, '0');
+    if (match.autoResult) {
+      var n = match.autoResult.games || 0, tot = match.autoResult.total || 0;
+      cls = n ? 'done' : 'miss';
+      html = n ? '<span class="ar-ico">✅</span>자동 저장(' + hm + ')으로 게임 결과 <b>' + n + '경기</b>를 추가했습니다' +
+                 (tot > n ? ' <span class="ar-sub">(전체 ' + tot + '경기)</span>' : '') +
+                 (match.autoResult.subAccounts ? ' <span class="ar-sub">(부계정 ' + match.autoResult.subAccounts + '개 등록)</span>' : '')
+               : (tot ? '<span class="ar-ico">✅</span>자동 저장(' + hm + ') 때 새로 찾은 경기는 없었습니다 <span class="ar-sub">(이미 저장된 ' + tot + '경기)</span>'
+                      : '<span class="ar-ico">🔍</span>자동 저장 시각(' + hm + ')에 이 내전과 맞는 게임을 찾지 못했습니다 <span class="ar-sub">· 결과를 직접 입력해 주세요</span>');
+    } else if (match.autoResultChecked) {
+      cls = 'miss';
+      html = '<span class="ar-ico">🔍</span>자동 저장을 이미 확인했습니다';
+    } else if (at > now) {
+      html = '<span class="ar-ico">⏱</span>게임 결과 자동 저장까지 <span class="ar-left">' + _arFmt(at - now) + '</span>' +
+             '<span class="ar-sub">' + hm + ' 예정 · 4단계 진입 3시간 뒤 Riot 기록에서 이 내전 게임을 찾아 5단계 결과로 저장</span>';
+    } else {
+      html = '<span class="ar-ico">⏳</span>게임 결과를 가져오는 중입니다 <span class="ar-sub">(' + hm + ' 예정 · 15분 안에 처리)</span>';
+    }
+  }
+  if (!html) html = '<span class="ar-ico">🎮</span><span class="ar-sub">자동 저장 예약이 없는 내전입니다 · 버튼으로 Riot 기록에서 이 내전 게임을 찾아 저장할 수 있습니다</span>';
+  els.forEach(function (el) {
+    el.className = 'ar-timer' + (cls ? ' ' + cls : '');
+    var t = el.querySelector('.ar-text');
+    if (t && t.innerHTML !== html) t.innerHTML = html;
+    el.style.display = '';
+  });
+}
+// 수동 '게임 결과 가져오기' — 자동 저장과 같은 판정, 이미 저장된 경기는 건너뛰고 새 경기만 추가 (예약된 자동 저장은 그대로 동작)
+async function manualAutoResult(btn) {
+  if (!match || !match.id) return toast('내전 정보가 없습니다', 'err');
+  var btns = document.querySelectorAll('.ar-timer .ar-btn');
+  btns.forEach(function (b) { b.disabled = true; b.textContent = '찾는 중…'; });
+  try {
+    // 화면에서 입력 중인 결과가 먼저 저장되도록
+    try { await saveCurrentMatch(); } catch (e) {}
+    var res = await fetch(RIOT_PROXY_URL + '/match-auto-result', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cid: window._currentCommunityId || match.communityId, matchId: match.id, token: _sessionToken }),
+    });
+    var r = null; try { r = await res.json(); } catch (e) {}
+    if (!r || !r.ok) { toast('게임 결과 가져오기 실패: ' + ((r && r.error) || ('HTTP ' + res.status)), 'err'); return; }
+    if (!r.added) {
+      var _d = r.diag || {}, _from = r.searchFrom ? new Date(r.searchFrom) : null;
+      var _info = (_from ? '검색 시작 ' + (_from.getMonth() + 1) + '/' + _from.getDate() + ' ' + String(_from.getHours()).padStart(2, '0') + ':' + String(_from.getMinutes()).padStart(2, '0') + ' · ' : '') +
+        'Riot 목록 ' + (_d.riotLists || 0) + '명/' + (_d.riotIds || 0) + '경기 · deeplol 목록 ' + (_d.dlLists || 0) + '명/' + (_d.dlIds || 0) + '경기 · 후보 ' + (_d.cands || 0) +
+        (_d.detailFail ? ' · 상세 실패 ' + _d.detailFail : '') + (_d.noMatch ? ' · 팀 불일치 ' + _d.noMatch : '') + (_d.notTen ? ' · 10인 아님 ' + _d.notTen : '');
+      console.log('[게임 결과 가져오기]', r);
+      toast((r.total ? '새로 찾은 경기가 없습니다 (이미 저장된 ' + r.total + '경기)' : '이 내전과 맞는 게임을 찾지 못했습니다') + (r.note === '멤버 puuid 없음' ? ' · 멤버 계정 정보 없음' : ' · ' + _info), 'err');
+      return;
+    }
+    toast('게임 결과 ' + r.added + '경기를 저장했습니다' + (r.total > r.added ? ' (전체 ' + r.total + '경기)' : ''), 'ok');
+    // 4단계에서 눌렀으면 5단계 결과 화면으로 (내용은 실시간 반영으로 들어옴)
+    if (currentScreen === 'screen-4') {
+      setTimeout(function () {
+        try {
+          var pips = document.querySelectorAll('.stage-pip');
+          if (pips[3]) { pips[3].classList.remove('active'); pips[3].classList.add('done'); }
+          if (pips[4]) pips[4].classList.add('active');
+          showScreen('screen-5'); s5SwitchTab('result');
+          match.status = '내전 종료';
+          document.getElementById('bar-status').textContent = '내전 종료';
+        } catch (e) {}
+      }, 800);
+    }
+  } catch (e) {
+    toast('게임 결과 가져오기 실패: ' + e.message, 'err');
+  } finally {
+    btns.forEach(function (b) { b.disabled = false; b.textContent = '🔄 게임 결과 가져오기'; });
+  }
+}
+window.manualAutoResult = manualAutoResult;
+setInterval(function () {
+  if (currentScreen === 'screen-4' || currentScreen === 'screen-5') _arTick();
+}, 1000);
+
+// ── 3단계 출석 확인 (디스코드 음성 채널) ──
+function _vcPeople() {
+  // 3단계에 있는 사람 = 팀에 들어간 사람 + 아직 팀에 안 들어간 사람
+  var arr = [];
+  if (matchType === 'lane' || matchType === 'auction') {
+    arr = (members || []).slice();   // 라인고정·경매: 팀에 들어간 사람 + 아직 경매 전/유찰 = 참여 멤버 전체
+  } else {
+    (teams || []).forEach(function (t) { (t.members || []).forEach(function (m) { arr.push(m); }); });
+    try { (normalPool || []).forEach(function (m) { arr.push(m); }); } catch (e) {}
+  }
+  if (!arr.length) arr = (members || []).slice();
+  return arr.filter(Boolean).map(function (m) {
+    var key = (m.name || '').toLowerCase() + '#' + (m.tag || '').toLowerCase();
+    var did = m.discordId || (typeof _discordLinkMap !== 'undefined' && _discordLinkMap && _discordLinkMap[key]) || null;
+    return { name: m.name, tag: m.tag || '', discordId: did };
+  });
+}
+function openVoiceCheck() {
+  if (!match || !match.id) return toast('내전 정보가 없습니다', 'err');
+  document.getElementById('voice-check-modal').style.display = 'flex';
+  runVoiceCheck();
+}
+function closeVoiceCheck() { document.getElementById('voice-check-modal').style.display = 'none'; }
+async function runVoiceCheck() {
+  var body = document.getElementById('vc-body'), rb = document.getElementById('vc-refresh');
+  var people = _vcPeople();
+  if (!people.length) { body.innerHTML = '<div style="font-size:12px;color:var(--text-muted);padding:1rem 0;">확인할 멤버가 없습니다</div>'; return; }
+  body.innerHTML = '<div style="font-size:12px;color:var(--text-muted);padding:1rem 0;">' + people.length + '명의 음성 채널을 확인하는 중…</div>';
+  if (rb) rb.disabled = true;
+  var t0 = Date.now();
+  try {
+    // 인원이 많으면(경매 40명 등) 서버 한 번에 다 못 돌려서 15명씩 나눠 확인 후 합침
+    var CH = 15, parts = [];
+    for (var i = 0; i < people.length; i += CH) {
+      if (people.length > CH) body.innerHTML = '<div style="font-size:12px;color:var(--text-muted);padding:1rem 0;">' + people.length + '명의 음성 채널을 확인하는 중… (' + Math.min(i + CH, people.length) + '/' + people.length + ')</div>';
+      var res = await fetch('https://api.roonging.com/match-voice-check', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cid: window._currentCommunityId || match.communityId, people: people.slice(i, i + CH) }),
+      });
+      var r = null; try { r = await res.json(); } catch (e) {}
+      if (!r || !r.ok) { body.innerHTML = '<div style="font-size:12px;color:#E05050;padding:1rem 0;">확인 실패: ' + _escHtml((r && r.error) || ('HTTP ' + res.status)) + '</div>'; return; }
+      parts.push(r);
+    }
+    _vcRender(_vcMerge(parts), Date.now() - t0);
+  } catch (e) {
+    body.innerHTML = '<div style="font-size:12px;color:#E05050;padding:1rem 0;">확인 실패: ' + _escHtml(e.message) + '</div>';
+  } finally { if (rb) rb.disabled = false; }
+}
+// 나눠서 받은 출석 결과 합치기 (가장 많은 인원이 있는 채널 = 내전 채널을 전체 기준으로 다시 계산)
+function _vcMerge(parts) {
+  if (parts.length === 1) return parts[0];
+  var inVoice = [], out = { ok: true, notInVoice: [], unlinked: [], errors: [], total: 0 }, guildId = null;
+  parts.forEach(function (r) {
+    inVoice = inVoice.concat(r.inMain || [], r.otherChannel || []);
+    out.notInVoice = out.notInVoice.concat(r.notInVoice || []);
+    out.unlinked = out.unlinked.concat(r.unlinked || []);
+    out.errors = out.errors.concat(r.errors || []);
+    out.total += r.total || 0;
+    if (!guildId && r.guildId) guildId = r.guildId;
+    if (!guildId && r.mainChannel && r.mainChannel.url) { var m = r.mainChannel.url.match(/channels\/(\d+)\//); if (m) guildId = m[1]; }
+  });
+  var cnt = {}, nm = {};
+  inVoice.forEach(function (x) { if (!x.channelId) return; cnt[x.channelId] = (cnt[x.channelId] || 0) + 1; if (x.channelName) nm[x.channelId] = x.channelName; });
+  var mainId = Object.keys(cnt).sort(function (a, b) { return cnt[b] - cnt[a]; })[0] || null;
+  out.mainChannel = mainId ? { id: mainId, name: nm[mainId] || '알 수 없는 채널', count: cnt[mainId], url: 'https://discord.com/channels/' + (guildId || '') + '/' + mainId } : null;
+  out.inMain = inVoice.filter(function (x) { return x.channelId === mainId; });
+  out.otherChannel = inVoice.filter(function (x) { return x.channelId !== mainId; });
+  return out;
+}
+function _vcRender(r, ms) {
+  var E = _escHtml;
+  var nm = function (x) { return '<b>' + E(x.name) + '</b><span style="opacity:.55">' + (x.tag ? '#' + E(x.tag) : '') + '</span>'; };
+  var chip = function (x, extra) {
+    return '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 10px;border:1px solid var(--border-subtle);border-radius:4px;font-size:12px;color:var(--text-white);">' +
+      '<span>' + nm(x) + '</span>' + (extra ? '<span style="font-size:11px;color:var(--text-muted);white-space:nowrap;">' + extra + '</span>' : '') + '</div>';
+  };
+  var sec = function (title, color, items, render) {
+    if (!items.length) return '';
+    return '<div style="margin:.75rem 0 .35rem;font-size:11px;font-weight:700;letter-spacing:1px;color:' + color + ';">' + title + ' · ' + items.length + '명</div>' +
+      '<div style="display:flex;flex-direction:column;gap:4px;">' + items.map(render).join('') + '</div>';
+  };
+  var absent = r.otherChannel.length + r.notInVoice.length + r.unlinked.length + (r.errors || []).length;
+  var head = r.mainChannel
+    ? '<div style="padding:10px 12px;border-radius:6px;background:rgba(10,200,185,.07);border:1px solid rgba(10,200,185,.25);font-size:12px;color:var(--text-white);line-height:1.6;">' +
+        '내전 채널: <a href="' + E(r.mainChannel.url) + '" target="_blank" style="color:var(--blue-bright);font-weight:700;">🔊 ' + E(r.mainChannel.name) + '</a> ' +
+        '<span style="color:var(--text-muted)">(가장 많은 인원이 있는 채널)</span><br>' +
+        '들어와 있음 <b style="color:var(--blue-bright)">' + r.inMain.length + '</b> / ' + r.total + '명' +
+        (absent ? ' · 확인 필요 <b style="color:#E05050">' + absent + '</b>명' : ' · <b style="color:var(--blue-bright)">전원 출석</b>') + '</div>'
+    : '<div style="padding:10px 12px;border-radius:6px;background:rgba(224,80,80,.07);border:1px solid rgba(224,80,80,.25);font-size:12px;color:var(--text-white);">음성 채널에 들어와 있는 참여 멤버가 없습니다.</div>';
+  // 다른 채널은 채널별로 묶어서
+  var others = r.otherChannel.slice().sort(function (a, b) { return (a.channelName || '').localeCompare(b.channelName || ''); });
+  document.getElementById('vc-body').innerHTML = head +
+    sec('🔀 다른 음성 채널에 있음', '#E8CB86', others, function (x) { return chip(x, '🔊 ' + E(x.channelName || '')); }) +
+    sec('🔇 음성 채널에 없음', '#E05050', r.notInVoice, function (x) { return chip(x, ''); }) +
+    sec('❔ 디스코드 계정 확인 불가', 'var(--text-muted)', r.unlinked, function (x) { return chip(x, '소환사 계정 등록 안 됨'); }) +
+    sec('⚠️ 확인 실패', 'var(--text-muted)', r.errors || [], function (x) { return chip(x, '오류 ' + E(String(x.status || ''))); }) +
+    sec('✅ 내전 채널에 있음', 'var(--blue-bright)', r.inMain, function (x) { return chip(x, (x.deaf ? '🔇 스피커 끔' : x.mute ? '🎙️ 마이크 끔' : '')); }) +
+    '<div style="font-size:10px;color:var(--text-muted);margin-top:.75rem;">확인 ' + (ms / 1000).toFixed(1) + '초 · 디스코드 연결은 소환사 계정 등록 기준</div>';
+}
+window.openVoiceCheck = openVoiceCheck;
+window.closeVoiceCheck = closeVoiceCheck;
+window.runVoiceCheck = runVoiceCheck;
+
 // ── 1단계 내전 삭제 ──
 function openMatchDeleteModal() {
   if (!match || !match.id) return toast('내전 정보가 없습니다', 'err');
@@ -17142,7 +17561,14 @@ async function copyForumPostLink() {
       });
       var r = null; try { r = await res.json(); } catch (e) {}
       if (!r || !r.ok) { toast((r && r.error) || ('링크를 가져오지 못했습니다 (HTTP ' + res.status + ')'), 'err'); return; }
-      url = r.url;
+      // 카톡 등에서 미리보기가 예쁘게 나오는 룽잉닷컴 공유 링크 (누르면 디스코드 포스트로 이동)
+      // 내전 정보가 바뀌면 v 값이 달라져서 카톡에 남은 예전 미리보기 대신 새로 읽힘
+      var _sig = [match.name || '', match.time || '', match.admin || '', (members || []).filter(Boolean).length, match.jjong ? 1 : 0].join('|');
+      var _h = 0; for (var _i = 0; _i < _sig.length; _i++) { _h = ((_h << 5) - _h + _sig.charCodeAt(_i)) | 0; }
+      var _cidShare = window._currentCommunityId || match.communityId || '';
+      url = 'https://api.roonging.com/m/' + encodeURIComponent(match.id) + '?v=' + (_h >>> 0).toString(36) + (_cidShare ? '&c=' + encodeURIComponent(_cidShare) : '');
+      // 예약 시간 없이 만든 내전은 match_index가 없어서 링크가 내전을 못 찾음 → 링크 복사할 때 채워둠
+      if (_cidShare && typeof _workerWrite === 'function') _workerWrite('match_index/' + match.id, _cidShare).catch(function(){});
     } catch (e) {
       toast('링크를 가져오지 못했습니다: ' + e.message, 'err'); return;
     } finally {
@@ -17158,7 +17584,7 @@ async function copyForumPostLink() {
     try { document.execCommand('copy'); } catch (e2) {}
     ta.remove();
   }
-  toast('디스코드 포스트 링크를 복사했습니다', 'ok');
+  toast('내전 공유 링크를 복사했습니다 (누르면 디스코드 포스트로 이동)', 'ok');
 }
 window.copyForumPostLink = copyForumPostLink;
 
@@ -18031,8 +18457,13 @@ window.addEventListener('fb-ready', function() {
       <!-- STEP 2: 새 선수 검색 + 상세 설정 -->
       <div id="swap-step2" style="display:none;display:none;">
         <div style="font-size:10px;letter-spacing:1.5px;color:var(--text-muted);font-family:'IBM Plex Sans KR',sans-serif;font-weight:700;margin-bottom:6px;">STEP 2 — 새 선수 정보 입력</div>
+        <div id="swap-bench-wrap" style="display:none;margin-bottom:10px;">
+          <div style="font-size:11px;color:#FF9455;font-weight:700;margin-bottom:5px;">대기 멤버에서 선택 <span id="swap-bench-count" style="color:var(--text-muted);font-weight:600;"></span></div>
+          <div id="swap-bench-list" style="display:flex;flex-direction:column;gap:4px;max-height:170px;overflow-y:auto;"></div>
+          <div style="font-size:10px;color:var(--text-muted);margin-top:6px;">또는 새 소환사를 직접 검색</div>
+        </div>
         <div style="display:flex;gap:6px;margin-bottom:8px;">
-          <input type="text" id="swap-search-in" placeholder="닉네임#태그" class="form-input" style="flex:1;font-size:12px;padding:7px 10px;" onkeydown="if(event.key==='Enter')swapSearchNew()">
+          <input type="text" id="swap-search-in" placeholder="닉네임#태그" class="form-input" style="flex:1;font-size:12px;padding:7px 10px;" oninput="_swapPick=null;renderSwapBench()" onkeydown="if(event.key==='Enter')swapSearchNew()">
           <button class="btn-primary" onclick="swapSearchNew()" style="white-space:nowrap;padding:8px 14px;font-size:12px;">검색</button>
         </div>
 
@@ -18620,7 +19051,7 @@ function openDraftOrderModal() {
     // captainId로 members 배열에서 팀장 찾기
     var captain = t.captainId ? members.find(function(m){ return m.id === t.captainId; }) : null;
     var captainName = captain ? (captain.name || captain.gameName || '팀장 미정') : '팀장 미정';
-    var teamName = captain ? (captain.name + '팀') : (t.name || ('팀 ' + t.id));
+    var teamName = captain ? (captain.name + ' 팀') : (t.name || ('팀 ' + t.id));
     return {
       teamName: teamName,
       teamColor: t.color || '#888',
@@ -22516,7 +22947,7 @@ function applyAutoBalance(ri) {
       return Object.assign({}, prev, { id: prev.id || ti + 1, members: order, captainId: keepCap ? prev.captainId : null });
     });
     renderNormalPool(); renderNormalTeams(); checkNormalConditions();
-    if (lostCaptain) toast('팀이 바뀐 팀장은 해제됐습니다. 팀장을 다시 지정하세요', 'err');
+    if (lostCaptain) toast('팀이 바뀐 팀장 대신 그 팀의 첫 번째 멤버가 팀장이 됐습니다', 'ok');
   }
   saveCurrentMatch();
   closeAutoBalance();
@@ -22864,7 +23295,7 @@ function _bcApply(si) {
       t.members.forEach(function (m, i) { if (hadLanes && o) m.balLane = o.lanes[i]; else delete m.balLane; });
     });
     renderNormalTeams(); checkNormalConditions();
-    if (lostCap) toast('팀이 바뀐 팀장은 해제됐습니다. 팀장을 다시 지정하세요', 'err');
+    if (lostCap) toast('팀이 바뀐 팀장 대신 그 팀의 첫 번째 멤버가 팀장이 됐습니다', 'ok');
   }
   try { saveCurrentMatch(); } catch (e) {}
   toast('개선안 적용: ' + names, 'ok');
@@ -23274,6 +23705,21 @@ var _DOOM_DEFAULT = [
   {tier:'PLATINUM', div:4, top:22,jg:20,mid:21,bot:19,sup:21},
   {tier:'GOLD',     div:1, top:20,jg:17,mid:18,bot:16,sup:19},
   {tier:'GOLD',     div:2, top:19,jg:14,mid:16,bot:13,sup:19},
+  // 골드3 ~ 아이언4 (처음엔 골드2와 같은 점수 = 예전 계산과 동일. 커뮤니티에서 수정)
+  {tier:'GOLD',     div:3, top:19,jg:14,mid:16,bot:13,sup:19},
+  {tier:'GOLD',     div:4, top:19,jg:14,mid:16,bot:13,sup:19},
+  {tier:'SILVER',   div:1, top:19,jg:14,mid:16,bot:13,sup:19},
+  {tier:'SILVER',   div:2, top:19,jg:14,mid:16,bot:13,sup:19},
+  {tier:'SILVER',   div:3, top:19,jg:14,mid:16,bot:13,sup:19},
+  {tier:'SILVER',   div:4, top:19,jg:14,mid:16,bot:13,sup:19},
+  {tier:'BRONZE',   div:1, top:19,jg:14,mid:16,bot:13,sup:19},
+  {tier:'BRONZE',   div:2, top:19,jg:14,mid:16,bot:13,sup:19},
+  {tier:'BRONZE',   div:3, top:19,jg:14,mid:16,bot:13,sup:19},
+  {tier:'BRONZE',   div:4, top:19,jg:14,mid:16,bot:13,sup:19},
+  {tier:'IRON',     div:1, top:19,jg:14,mid:16,bot:13,sup:19},
+  {tier:'IRON',     div:2, top:19,jg:14,mid:16,bot:13,sup:19},
+  {tier:'IRON',     div:3, top:19,jg:14,mid:16,bot:13,sup:19},
+  {tier:'IRON',     div:4, top:19,jg:14,mid:16,bot:13,sup:19},
 ];
 
 var _doomScores = null; // 로드 후 캐시
@@ -23383,6 +23829,7 @@ window.openDoomScoreEditor = async function openDoomScoreEditor(cid) {
   } catch(e) {
     _doomEditData = JSON.parse(JSON.stringify(_DOOM_DEFAULT));
   }
+  _doomEditData = _doomNormalize(_doomEditData);
   _renderDoomTable();
   document.getElementById('doom-score-modal').style.display = 'flex';
 }
@@ -23422,6 +23869,109 @@ function _renderDoomTable() {
     });
     tbody.appendChild(tr);
   });
+}
+
+// 저장된 점수표에 없는 구간(골드3 ~ 아이언4 등)을 채워서 기본 순서로 정렬
+// 빠진 구간은 그 커뮤니티의 골드2 점수(없으면 기본값)로 채움 → 예전 계산 결과와 동일
+function _doomRowKey(r) {
+  return r.tier === 'MASTER+' ? 'M:' + Number(r.minLp) + '-' + Number(r.maxLp) : String(r.tier).toUpperCase() + ':' + Number(r.div);
+}
+function _doomNormalize(table) {
+  var have = {};
+  (table || []).forEach(function (r) { if (r && r.tier) have[_doomRowKey(r)] = r; });
+  var gold2 = have['GOLD:2'] || _DOOM_DEFAULT.find(function (r) { return r.tier === 'GOLD' && r.div === 2; });
+  var BELOW = { GOLD: 1, SILVER: 1, BRONZE: 1, IRON: 1 };
+  var out = _DOOM_DEFAULT.map(function (d) {
+    var r = have[_doomRowKey(d)];
+    if (r) { delete have[_doomRowKey(d)]; return JSON.parse(JSON.stringify(r)); }
+    var base = (BELOW[d.tier] && gold2) ? gold2 : d;
+    var nr = JSON.parse(JSON.stringify(d));
+    ['top', 'jg', 'mid', 'bot', 'sup'].forEach(function (k) { nr[k] = base[k]; });
+    return nr;
+  });
+  // 기본에 없는 구간(커뮤니티가 따로 만든 마스터+ LP 구간 등)은 뒤에 그대로
+  Object.keys(have).forEach(function (k) { out.push(JSON.parse(JSON.stringify(have[k]))); });
+  return out;
+}
+
+// ── 내전 점수표 CSV 내보내기 / 불러오기 ──
+var _DOOM_CSV_HEAD = ['구간', 'tier', 'div', 'minLp', 'maxLp', 'top', 'jg', 'mid', 'bot', 'sup'];
+window.exportDoomCsv = function exportDoomCsv() {
+  if (!_doomEditData) return;
+  var lines = [_DOOM_CSV_HEAD.join(',')];
+  _doomEditData.forEach(function (r) {
+    var hi = r.tier === 'MASTER+';
+    lines.push([_doomRowLabel(r).replace(/,/g, ' '), r.tier, hi ? '' : r.div, hi ? r.minLp : '', hi ? r.maxLp : '',
+                r.top, r.jg, r.mid, r.bot, r.sup].join(','));
+  });
+  var blob = new Blob(['\ufeff' + lines.join('\r\n') + '\r\n'], { type: 'text/csv;charset=utf-8' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = '내전점수표_' + (_doomEditCid || 'community') + '.csv';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+  toast('내전 점수표를 CSV로 내보냈습니다', 'ok');
+};
+window.importDoomCsv = function importDoomCsv(input) {
+  var f = input && input.files && input.files[0];
+  if (!f) return;
+  var reader = new FileReader();
+  reader.onload = async function () {
+    input.value = '';
+    var res = _doomParseCsv(String(reader.result || ''));
+    if (res.error) return toast('CSV 불러오기 실패: ' + res.error, 'err');
+    _doomEditData = _doomNormalize(res.rows);
+    _renderDoomTable();
+    if (confirm(res.rows.length + '개 구간을 불러왔습니다. 바로 저장해서 적용할까요?\n(취소하면 표에만 반영되고, 저장 버튼을 눌러야 적용됩니다)')) {
+      saveDoomScores();
+    } else {
+      toast('CSV를 표에 불러왔습니다. 저장을 눌러야 적용됩니다', 'ok');
+    }
+  };
+  reader.onerror = function () { toast('파일을 읽지 못했습니다', 'err'); };
+  reader.readAsText(f, 'utf-8');
+};
+function _doomParseCsv(text) {
+  text = text.replace(/^\ufeff/, '');
+  var lines = text.split(/\r?\n/).map(function (l) { return l.trim(); }).filter(Boolean);
+  if (lines.length < 2) return { error: '내용이 없습니다' };
+  var split = function (l) { return l.split(',').map(function (c) { return c.trim().replace(/^"|"$/g, ''); }); };
+  var head = split(lines[0]).map(function (h) { return h.toLowerCase(); });
+  var idx = {};
+  ['tier', 'div', 'minlp', 'maxlp', 'top', 'jg', 'mid', 'bot', 'sup'].forEach(function (k) { idx[k] = head.indexOf(k); });
+  var miss = ['tier', 'top', 'jg', 'mid', 'bot', 'sup'].filter(function (k) { return idx[k] < 0; });
+  if (miss.length) return { error: '첫 줄에 ' + miss.join(', ') + ' 열이 없습니다 (내보내기한 CSV 형식으로 올려주세요)' };
+  var TIERS = { 'MASTER+': 1, DIAMOND: 1, EMERALD: 1, PLATINUM: 1, GOLD: 1, SILVER: 1, BRONZE: 1, IRON: 1 };
+  var rows = [], seen = {};
+  for (var i = 1; i < lines.length; i++) {
+    var c = split(lines[i]), n = i + 1;
+    var tier = String(c[idx.tier] || '').toUpperCase();
+    if (!tier) continue;
+    if (!TIERS[tier]) return { error: n + '번째 줄: 티어 "' + tier + '" 를 알 수 없습니다 (MASTER+, DIAMOND, EMERALD, PLATINUM, GOLD, SILVER, BRONZE, IRON)' };
+    var row = { tier: tier };
+    if (tier === 'MASTER+') {
+      var mn = parseInt(c[idx.minlp], 10), mx = parseInt(c[idx.maxlp], 10);
+      if (idx.minlp < 0 || idx.maxlp < 0 || isNaN(mn) || isNaN(mx) || mn > mx) return { error: n + '번째 줄: 마스터+ 구간은 minLp, maxLp 숫자가 필요합니다' };
+      row.minLp = mn; row.maxLp = mx;
+    } else {
+      var dv = parseInt(c[idx.div], 10);
+      if (idx.div < 0 || !(dv >= 1 && dv <= 4)) return { error: n + '번째 줄: div 는 1~4 숫자여야 합니다' };
+      row.div = dv;
+    }
+    var bad = null;
+    ['top', 'jg', 'mid', 'bot', 'sup'].forEach(function (k) {
+      var v = Number(c[idx[k]]);
+      if (c[idx[k]] === '' || isNaN(v) || v < 0 || v > 999) bad = bad || k;
+      row[k] = Math.round(v);
+    });
+    if (bad) return { error: n + '번째 줄: ' + bad + ' 점수가 0~999 숫자가 아닙니다' };
+    var key = _doomRowKey(row);
+    if (seen[key]) return { error: n + '번째 줄: 같은 구간이 두 번 있습니다 (' + _doomRowLabel(row) + ')' };
+    seen[key] = 1;
+    rows.push(row);
+  }
+  if (!rows.length) return { error: '불러올 구간이 없습니다' };
+  return { rows: rows };
 }
 
 window.resetDoomScores = function resetDoomScores() {
@@ -25112,7 +25662,17 @@ function _makeLaneMiniCard(m) {
     '</div></div>';
 }
 
+// 라인고정: 빈 팀에 처음 넣은 멤버가 팀장, 팀 이름 = "팀장 이름 팀". 팀장이 빠지면 남은 멤버(탑→서폿 순) 중 첫 번째, 비면 "팀 N"
+function _ensureLaneCaptains() {
+  (laneTeams || []).forEach(function(t) {
+    var inTeam = LANE_SLOTS.map(function(s){ return t.slots && t.slots[s]; }).filter(Boolean);
+    var cap = inTeam.find(function(m){ return m.id === t.captainId; });
+    if (!cap) { cap = inTeam[0] || null; t.captainId = cap ? cap.id : null; }
+    t.name = cap ? cap.name + ' 팀' : '팀 ' + t.id;
+  });
+}
 function renderLaneBuilder() {
+  _ensureLaneCaptains();
   var _lpState = filterState['lp'] || { lanes: new Set(), search: '', sort: '' };
   var q = _lpState.search || (document.getElementById('lp-search') ? document.getElementById('lp-search').value.toLowerCase() : '');
   var sortVal = _lpState.sort || (document.getElementById('lp-sort') ? document.getElementById('lp-sort').value : 'added');
@@ -25405,7 +25965,8 @@ function updateLaneConditions() {
 function convertLaneTeamsToTeams() {
   teams = laneTeams.map(function(t) {
     var mList = LANE_SLOTS.map(function(s){ return t.slots[s]; }).filter(Boolean);
-    return { id: t.id, name: t.name, members: mList, captainId: null };
+    var cap = mList.some(function(m){ return m.id === t.captainId; }) ? t.captainId : null;
+    return { id: t.id, name: t.name, members: mList, captainId: cap };
   });
 }
 
@@ -25499,6 +26060,8 @@ function copyLaneTeamText() {
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
       <div style="font-family:'IBM Plex Sans KR',sans-serif;font-size:18px;letter-spacing:2px;color:#A78BFA;">내전 점수 설정</div>
       <div style="display:flex;gap:8px;">
+        <button onclick="exportDoomCsv()" title="지금 표를 CSV 파일로 내려받기" style="padding:5px 12px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--text-muted);font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;cursor:pointer;">CSV 내보내기</button>
+        <label title="내보내기한 CSV 형식의 파일을 올리면 표에 적용" style="padding:5px 12px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--text-muted);font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;cursor:pointer;">CSV 불러오기<input type="file" accept=".csv,text/csv" style="display:none;" onchange="importDoomCsv(this)"></label>
         <button onclick="resetDoomScores()" style="padding:5px 12px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--text-muted);font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;cursor:pointer;">기본값 초기화</button>
         <button onclick="saveDoomScores()" style="padding:5px 14px;border-radius:2px;border:1px solid rgba(167,139,250,.5);background:rgba(167,139,250,.1);color:#A78BFA;font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;cursor:pointer;">저장</button>
         <button onclick="document.getElementById('doom-score-modal').style.display='none'" style="padding:5px 10px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--text-muted);font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;cursor:pointer;">✕</button>
@@ -27496,6 +28059,14 @@ function showLaneMismatchPopup(opts) {
     </div>
   </div>
 </div>
+<!-- 출석 확인 (음성 채널) 모달 -->
+<div class="modal-overlay" id="voice-check-modal" style="display:none;" onclick="if(event.target===this)closeVoiceCheck()">
+  <div class="modal" style="max-width:460px;max-height:88vh;display:flex;flex-direction:column;">
+    <div class="modal-title" style="display:flex;align-items:center;justify-content:space-between;gap:8px;">🎧 출석 확인 <button type="button" id="vc-refresh" onclick="runVoiceCheck()" style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:3px;border:1px solid var(--border-subtle);background:transparent;color:var(--text-muted);cursor:pointer;font-family:'IBM Plex Sans KR',sans-serif;">다시 확인</button></div>
+    <div id="vc-body" style="overflow-y:auto;flex:1;min-height:80px;"></div>
+    <div class="modal-actions"><button class="btn-secondary" onclick="closeVoiceCheck()">닫기</button></div>
+  </div>
+</div>
 <!-- 내전 삭제 확인 모달 (1단계) -->
 <div class="modal-overlay" id="match-delete-modal" style="display:none;" onclick="if(event.target===this)closeMatchDeleteModal()">
   <div class="modal" style="max-width:400px;">
@@ -27600,11 +28171,11 @@ function showLaneMismatchPopup(opts) {
     </div>
   </div>
 </div>
-<!-- 잘린 멤버 모달 -->
+<!-- 대기 멤버 모달 (멤버 확정 때 빠진 멤버) -->
 <div class="modal-overlay" id="cut-members-modal" style="display:none;" onclick="if(event.target===this)closeCutMembersModal()">
   <div class="modal" style="max-width:460px;">
     <div class="modal-title" style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-      <span>잘린 멤버 <span id="cut-members-count" style="font-size:13px;color:var(--text-muted);font-weight:600;"></span></span>
+      <span>대기 멤버 <span id="cut-members-count" style="font-size:13px;color:var(--text-muted);font-weight:600;"></span></span>
       <button onclick="copyCutMemberMentions()" style="padding:5px 12px;border-radius:999px;border:1px solid rgba(254,229,0,.5);background:rgba(254,229,0,.1);color:#FEE500;font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;cursor:pointer;">@카톡</button>
     </div>
     <div id="cut-members-list" style="display:flex;flex-direction:column;gap:6px;max-height:420px;overflow:auto;"></div>
@@ -27614,7 +28185,7 @@ function showLaneMismatchPopup(opts) {
   </div>
 </div>
 <script>
-// ═══ 멤버 확정하기 (진행 인원만 남기고 나머지 제외) ═══
+// ═══ 멤버 확정하기 (진행 인원만 남기고 나머지는 대기 멤버로) ═══
 var _CUT_LANES = [['top','탑'],['jg','정글'],['mid','미드'],['bot','원딜'],['sup','서폿']];
 var _CUT_LANE_KO = { top:'탑', jg:'정글', mid:'미드', bot:'원딜', sup:'서폿' };
 function _renderConfirmMembersBtns() {
@@ -27624,13 +28195,13 @@ function _renderConfirmMembersBtns() {
     b.disabled = !ok;
     b.style.opacity = ok ? '' : '.45';
     b.style.cursor = ok ? 'pointer' : 'not-allowed';
-    b.title = ok ? '진행 인원만 남기고 나머지 멤버를 제외합니다' : '멤버가 10명을 넘을 때만 사용할 수 있습니다';
+    b.title = ok ? '진행 인원만 남기고 나머지 멤버는 대기 멤버로 옮깁니다' : '멤버가 10명을 넘을 때만 사용할 수 있습니다';
   }
   var c = document.getElementById('btn-cut-members');
   if (c) {
     var n = (match && Array.isArray(match.cutMembers)) ? match.cutMembers.length : 0;
     c.style.display = n ? '' : 'none';
-    c.textContent = '잘린 멤버' + (n ? ' ' + n : '');
+    c.textContent = '대기 멤버' + (n ? ' ' + n : '');
   }
 }
 // 남길 멤버/제외할 멤버 계산 — 일반: 먼저 참여한 순 / 라인고정: 라인별로 먼저 참여한 순 (라인당 N÷5명)
@@ -27651,7 +28222,7 @@ function _computeMemberCut(n) {
 function _confirmCountError(n) {
   var total = (members || []).length;
   if (!n || n < 1) return '진행할 인원을 입력해주세요.';
-  if (n >= total) return '현재 멤버가 ' + total + '명이라 ' + n + '인으로 확정하면 제외될 멤버가 없습니다.';
+  if (n >= total) return '현재 멤버가 ' + total + '명이라 ' + n + '인으로 확정하면 대기 멤버로 옮길 사람이 없습니다.';
   if (match && match.laneFixedRecruit && n % 5 !== 0) return '라인고정 내전은 5의 배수로 입력해주세요. (라인당 인원 = 인원 ÷ 5)';
   return '';
 }
@@ -27660,7 +28231,7 @@ function openConfirmMembersModal() {
   document.getElementById('cm-confirm-desc').innerHTML =
     '현재 <b style="color:var(--text-white);">' + members.length + '명</b>이 모집되어 있습니다. ' +
     (match.laneFixedRecruit ? '라인고정 내전이라 <b style="color:var(--text-white);">라인별로 먼저 참여한 순</b>으로 남깁니다.' : '<b style="color:var(--text-white);">먼저 참여한 순</b>으로 남깁니다.') +
-    '<br>제외되는 멤버 중 디스코드로 참여한 사람에게는 DM으로 안내가 갑니다.';
+    '<br>나머지는 <b style="color:var(--text-white);">대기 멤버</b>로 저장돼 3단계 선수 교체에서 넣을 수 있고, 디스코드로 참여한 사람에게는 DM으로 안내가 갑니다.';
   var inp = document.getElementById('cm-confirm-count');
   inp.value = match.laneFixedRecruit ? '10' : '10';
   document.getElementById('cm-confirm-err').textContent = '';
@@ -27688,7 +28259,7 @@ function _previewConfirmMembers() {
   btn.disabled = !!err; btn.style.opacity = err ? '.5' : '';
   if (err) { pv.innerHTML = ''; return; }
   var r = _computeMemberCut(n);
-  var head = '<div style="font-size:12px;color:var(--text-muted);margin:2px 0 6px;">' + r.keep.length + '명 진행 · <b style="color:#FF9455;">' + r.cut.length + '명 제외</b>' +
+  var head = '<div style="font-size:12px;color:var(--text-muted);margin:2px 0 6px;">' + r.keep.length + '명 진행 · <b style="color:#FF9455;">' + r.cut.length + '명 대기 멤버</b>' +
     (r.perLane ? ' (라인당 ' + r.perLane + '명)' : '') + '</div>';
   pv.innerHTML = head + '<div style="display:flex;flex-direction:column;gap:6px;">' + r.cut.map(function(m){ return _cutCardHtml(m); }).join('') + '</div>';
 }
@@ -27701,8 +28272,8 @@ async function confirmMembersNow() {
   err = _confirmCountError(n);
   if (err) { document.getElementById('cm-confirm-err').textContent = err; return; }
   var r = _computeMemberCut(n);
-  if (!r.cut.length) { document.getElementById('cm-confirm-err').textContent = '제외될 멤버가 없습니다.'; return; }
-  if (!confirm(n + '인 내전으로 확정합니다.\n' + r.cut.length + '명이 제외되고, 디스코드 참여자에게는 DM이 발송됩니다. 진행할까요?')) return;
+  if (!r.cut.length) { document.getElementById('cm-confirm-err').textContent = '대기 멤버로 옮길 사람이 없습니다.'; return; }
+  if (!confirm(n + '인 내전으로 확정합니다.\n' + r.cut.length + '명은 대기 멤버로 옮겨지고(3단계 선수 교체에서 사용 가능), 디스코드 참여자에게는 DM이 발송됩니다. 진행할까요?')) return;
   var btn = document.getElementById('btn-cm-confirm');
   btn.disabled = true; btn.textContent = '확정 중...';
   try {
@@ -27730,26 +28301,26 @@ async function confirmMembersNow() {
         dmMsg = j && j.ok ? ' · DM ' + (j.sent || 0) + '/' + dcIds.length + '명 발송' : ' · DM 발송 실패';
       } catch (e) { dmMsg = ' · DM 발송 실패'; }
     }
-    toast(n + '인 확정 완료 — ' + cutRecords.length + '명 제외' + dmMsg, 'ok');
+    toast(n + '인 확정 완료 — ' + cutRecords.length + '명 대기 멤버로' + dmMsg, 'ok');
   } catch (e) {
     toast('멤버 확정 실패: ' + e.message, 'err');
   } finally {
     btn.disabled = false; btn.textContent = '확정하기';
   }
 }
-// ── 잘린 멤버 목록 + @카톡 멘션 복사 ──
+// ── 대기 멤버(멤버 확정 때 빠진 멤버) 목록 + @카톡 멘션 복사 ──
 function openCutMembersModal() {
   var list = (match && Array.isArray(match.cutMembers)) ? match.cutMembers : [];
   document.getElementById('cut-members-count').textContent = list.length + '명';
   document.getElementById('cut-members-list').innerHTML = list.length
     ? list.map(function(m){ return _cutCardHtml(m); }).join('')
-    : '<div style="padding:1rem;text-align:center;color:var(--text-muted);font-size:12px;">잘린 멤버가 없습니다</div>';
+    : '<div style="padding:1rem;text-align:center;color:var(--text-muted);font-size:12px;">대기 멤버가 없습니다</div>';
   document.getElementById('cut-members-modal').style.display = 'flex';
 }
 function closeCutMembersModal() { document.getElementById('cut-members-modal').style.display = 'none'; }
 function copyCutMemberMentions() {
   var list = (match && Array.isArray(match.cutMembers)) ? match.cutMembers : [];
-  if (!list.length) { toast('잘린 멤버가 없습니다', 'err'); return; }
+  if (!list.length) { toast('대기 멤버가 없습니다', 'err'); return; }
   var text = list.map(function(m){ return '@' + (m.name || ''); }).join(' ');
   var done = function(){ toast('@카톡 멘션 복사 완료: ' + list.length + '명', 'ok'); };
   navigator.clipboard.writeText(text).then(done).catch(function() {
@@ -28096,5 +28667,488 @@ function _attRenderModal() {
 }
 </script>
 <style>@keyframes attPulse{0%,100%{opacity:1}50%{opacity:.35}}</style>
+<script>
+/* Goo Morph 로고: 한 단어가 녹아서 다음 단어로. 원본 morph.js와 같은 타이밍(MELT 1.05s, HOLD 1.6s)·easing·threshold */
+(function(){
+  var box=document.getElementById('logo-morph'); if(!box) return;
+  var A=document.getElementById('lm-a'), B=document.getElementById('lm-b');
+  var WORDS=['룽잉닷컴','Roonging','룽 잉'];
+  var MELT=1.05, HOLD=1.6, BASE=64; // 원본 폰트 64px 기준 blur → 로고 크기에 맞게 비례
+  var cur=0,nxt=0,t=0,melting=false,hold=HOLD,last=performance.now();
+  A.textContent=WORDS[0];
+  function fit(){
+    var fs=parseFloat(getComputedStyle(box).fontSize)||0; if(fs<=0) return;
+    var probe=document.createElement('span'); probe.className='lm-w'; probe.style.visibility='hidden';
+    box.appendChild(probe); var w=0;
+    WORDS.forEach(function(x){probe.textContent=x; w=Math.max(w,probe.getBoundingClientRect().width);});
+    box.removeChild(probe); if(fs>0) box.style.width=(Math.ceil(w)/fs).toFixed(3)+'em';
+  }
+  fit(); addEventListener('resize',fit);
+  if(document.fonts&&document.fonts.ready) document.fonts.ready.then(fit);
+  function go(i){
+    if(melting||i===cur) return;
+    nxt=i;t=0;melting=true;
+    A.textContent=WORDS[cur]; B.textContent=WORDS[nxt];
+    box.classList.add('melting'); box.setAttribute('aria-label',WORDS[nxt]);
+  }
+  function look(el,f){
+    el.style.filter=f>=1?'none':'blur('+(Math.min(8/f-8,100)/BASE).toFixed(4)+'em)';
+    el.style.opacity=Math.pow(f,.4).toFixed(3);
+  }
+  function ease(x){return x*x*(3-2*x);}
+  function loop(now){
+    var dt=Math.min((now-last)/1000,1/30); last=now;
+    if(melting){
+      t+=dt/MELT;
+      if(t>=1){cur=nxt;melting=false;hold=HOLD;A.textContent=WORDS[cur];B.textContent='';box.classList.remove('melting');}
+    } else if((hold-=dt)<=0) go((cur+1)%WORDS.length);
+    if(melting){var f=ease(Math.max(0,Math.min(1,t)));look(A,1-f);look(B,f);}
+    else{look(A,1);B.style.opacity=0;}
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+})();
+</script>
+<script>
+/*RGMD-BEGIN*/
+/* ── 게임 상세 분석 (시간대별 분석 + 유저별 빌드) ─────────────────────────
+   RGMatchDetail.mount(el, 'KR_123', { focusPuuid, teamNames:{100:'',200:''}, sideOf:(detail)=>({100:'A팀 이름',200:'B팀 이름'}) })
+   데이터: api.roonging.com/match-detail?id=  (Firebase match_details 요약본) */
+(function () {
+  if (window.RGMatchDetail) return;
+  var API = 'https://api.roonging.com';
+  var DD = 'https://ddragon.leagueoflegends.com';
+  var cache = {}, ddCache = {}, latestVer = null;
+  var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]; }); };
+  var mmss = function (t) { t = Math.max(0, Math.round(t || 0)); return Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0'); };
+  var kfmt = function (n) { var a = Math.abs(n); return (n < 0 ? '-' : n > 0 ? '+' : '') + (a >= 1000 ? (a / 1000).toFixed(1) + 'k' : String(Math.round(a))); };
+  var signed = function (n) { return (n > 0 ? '+' : '') + Math.round(n); };
+  var CHAMP_FIX = { FiddleSticks: 'Fiddlesticks' };
+  var POS = ['TOP', 'JUNGLE', 'MIDDLE', 'BOTTOM', 'UTILITY'];
+  var POS_KO = { TOP: '탑', JUNGLE: '정글', MIDDLE: '미드', BOTTOM: '원딜', UTILITY: '서폿' };
+  var DRAGON_KO = { FIRE_DRAGON: '화염', WATER_DRAGON: '바다', AIR_DRAGON: '바람', EARTH_DRAGON: '대지', HEXTECH_DRAGON: '마법공학', CHEMTECH_DRAGON: '화학공학', ELDER_DRAGON: '장로' };
+  var MON_KO = { BARON_NASHOR: '바론', RIFTHERALD: '전령', HORDE: '공허 유충', ATAKHAN: '아타칸' };
+  var LANE_KO = { TOP_LANE: '탑', MID_LANE: '미드', BOT_LANE: '바텀' };
+  var TIER_KO = { OUTER_TURRET: '1차', INNER_TURRET: '2차', BASE_TURRET: '3차', NEXUS_TURRET: '쌍둥이' };
+  // 빌드에서 빼는 소모품·장신구
+  var SKIP_ITEMS = { 2003: 1, 2010: 1, 2031: 1, 2033: 1, 2055: 1, 2138: 1, 2139: 1, 2140: 1, 2150: 1, 2151: 1, 2152: 1, 3340: 1, 3363: 1, 3364: 1, 3330: 1, 3513: 1 };
+  var SKEY = ['', 'Q', 'W', 'E', 'R'];
+
+  function css() {
+    if (document.getElementById('rgmd-css')) return;
+    var st = document.createElement('style'); st.id = 'rgmd-css';
+    st.textContent = [
+      '.rgmd{--b:var(--rgmd-blue,#5B9CF0);--r:var(--rgmd-red,#E8566A);--mu:var(--rgmd-muted,rgba(232,236,241,.5));--ln:var(--rgmd-line,rgba(255,255,255,.08));--bg2:var(--rgmd-bg2,rgba(255,255,255,.035));font-family:inherit;font-size:12px;color:inherit;margin-top:10px;border-top:1px solid var(--ln);padding-top:10px;text-align:left}',
+      '.rgmd *{box-sizing:border-box}',
+      '.rgmd-tabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px}',
+      '.rgmd-tab{appearance:none;border:0;background:var(--bg2);color:var(--mu);font:inherit;font-size:12px;font-weight:600;padding:6px 12px;border-radius:999px;cursor:pointer;transition:background .2s,color .2s,transform .15s}',
+      '.rgmd-tab:hover{color:inherit}.rgmd-tab:active{transform:scale(.96)}',
+      '.rgmd-tab.on{background:rgba(255,255,255,.12);color:inherit}',
+      '.rgmd-pane{animation:rgmdIn .28s cubic-bezier(.2,.7,.2,1)}@keyframes rgmdIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}',
+      '.rgmd-load,.rgmd-err{padding:18px;text-align:center;color:var(--mu)}',
+      '.rgmd-sum{display:grid;grid-template-columns:1fr auto 1fr;gap:6px 10px;align-items:center;background:var(--bg2);border-radius:10px;padding:10px 12px;margin-bottom:10px}',
+      '.rgmd-sum .tn{font-weight:700;font-size:13px}.rgmd-sum .tn.b{color:var(--b)}.rgmd-sum .tn.r{color:var(--r);text-align:right}',
+      '.rgmd-sum .mid{color:var(--mu);font-size:11px;text-align:center}',
+      '.rgmd-sum .st{display:flex;gap:10px;flex-wrap:wrap;font-variant-numeric:tabular-nums}.rgmd-sum .st.r{justify-content:flex-end}',
+      '.rgmd-sum .st span{color:var(--mu)}.rgmd-sum .st b{color:inherit;font-weight:700;margin-left:3px}',
+      '.rgmd-chart{position:relative;background:var(--bg2);border-radius:10px;padding:8px 6px 4px}',
+      '.rgmd-chart svg{display:block;width:100%;height:auto;overflow:visible}',
+      '.rgmd-ct{font-size:11px;color:var(--mu);display:flex;justify-content:space-between;align-items:center;padding:0 6px 4px;gap:8px;flex-wrap:wrap}',
+      '.rgmd-tip{position:absolute;pointer-events:none;background:rgba(10,13,19,.94);border:1px solid var(--ln);border-radius:8px;padding:6px 8px;font-size:11px;white-space:nowrap;opacity:0;transition:opacity .12s;z-index:2;line-height:1.5}',
+      '.rgmd-tip.on{opacity:1}',
+      '.rgmd-chips{display:flex;gap:4px;flex-wrap:wrap}',
+      '.rgmd-chip{appearance:none;border:0;background:transparent;color:var(--mu);font:inherit;font-size:11px;padding:3px 8px;border-radius:999px;cursor:pointer}',
+      '.rgmd-chip.on{background:rgba(255,255,255,.1);color:inherit}',
+      '.rgmd-ev{margin-top:10px;max-height:300px;overflow-y:auto;display:flex;flex-direction:column;gap:2px;padding-right:2px}',
+      '.rgmd-evr{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:8px;border-left:2px solid transparent;background:var(--bg2)}',
+      '.rgmd-evr.b{border-left-color:var(--b)}.rgmd-evr.r{border-left-color:var(--r)}',
+      '.rgmd-evr .t{width:38px;flex:0 0 38px;color:var(--mu);font-variant-numeric:tabular-nums;font-size:11px}',
+      '.rgmd-evr .tx{flex:1;min-width:0;display:flex;align-items:center;gap:5px;flex-wrap:wrap}',
+      '.rgmd-evr .as{display:flex;gap:2px;margin-left:4px;opacity:.75}',
+      '.rgmd-ic{width:22px;height:22px;border-radius:5px;object-fit:cover;background:rgba(255,255,255,.06);flex:0 0 auto;vertical-align:middle}',
+      '.rgmd-ic.s{width:16px;height:16px;border-radius:4px}.rgmd-ic.l{width:30px;height:30px;border-radius:7px}',
+      '.rgmd-ic.dead{filter:grayscale(1) brightness(.75)}',
+      '.rgmd-sword{color:var(--mu);font-size:11px}',
+      '.rgmd-evr .kn{max-width:96px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+      '.rgmd-lane{display:grid;grid-template-columns:44px 1fr 1fr;gap:6px;align-items:stretch;margin-bottom:6px}',
+      '.rgmd-lane .ln{display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--mu);background:var(--bg2);border-radius:8px;font-size:11px}',
+      '.rgmd-lane .at{background:var(--bg2);border-radius:8px;padding:7px 9px}',
+      '.rgmd-lane .vs{display:flex;align-items:center;gap:6px;margin-bottom:5px;font-size:11px;min-width:0}',
+      '.rgmd-lane .vs .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:90px}',
+      '.rgmd-lane .vs .nm.b{color:var(--b)}.rgmd-lane .vs .nm.r{color:var(--r)}',
+      '.rgmd-mets{display:flex;gap:10px;flex-wrap:wrap;font-variant-numeric:tabular-nums;font-size:11px}',
+      '.rgmd-mets span{color:var(--mu)}.rgmd-mets b.up{color:var(--b)}.rgmd-mets b.dn{color:var(--r)}.rgmd-mets b{font-weight:700;margin-left:3px}',
+      '.rgmd-lhead{display:grid;grid-template-columns:44px 1fr 1fr;gap:6px;color:var(--mu);font-size:11px;margin-bottom:4px}.rgmd-lhead div{padding-left:9px}',
+      '.rgmd-note{color:var(--mu);font-size:11px;margin-top:6px}',
+      '.rgmd-leg{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px}',
+      '.rgmd-lg{appearance:none;border:1px solid transparent;background:var(--bg2);color:inherit;font:inherit;font-size:11px;display:flex;align-items:center;gap:5px;padding:3px 8px 3px 3px;border-radius:999px;cursor:pointer;transition:opacity .2s,border-color .2s}',
+      '.rgmd-lg i{width:8px;height:8px;border-radius:50%;display:inline-block}',
+      '.rgmd-lg.dim{opacity:.4}.rgmd-lg.on{border-color:rgba(255,255,255,.25)}',
+      '.rgmd-pl{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:10px}',
+      '.rgmd-pl .sep{width:1px;height:24px;background:var(--ln);margin:0 4px}',
+      '.rgmd-pb{appearance:none;border:2px solid transparent;background:none;padding:0;border-radius:9px;cursor:pointer;line-height:0;transition:transform .15s,border-color .15s,opacity .15s;opacity:.55}',
+      '.rgmd-pb:hover{opacity:.9}.rgmd-pb.on{opacity:1;transform:translateY(-1px)}.rgmd-pb.on.b{border-color:var(--b)}.rgmd-pb.on.r{border-color:var(--r)}',
+      '.rgmd-sec{background:var(--bg2);border-radius:10px;padding:10px 12px;margin-bottom:8px}',
+      '.rgmd-sec h5{margin:0 0 8px;font-size:11px;font-weight:700;color:var(--mu);letter-spacing:.02em}',
+      '.rgmd-who{display:flex;align-items:center;gap:8px;margin-bottom:8px}.rgmd-who .n{font-weight:700;font-size:13px}.rgmd-who .s{color:var(--mu);font-size:11px}',
+      '.rgmd-runes{display:flex;gap:14px;flex-wrap:wrap;align-items:center}',
+      '.rgmd-runes .g{display:flex;gap:4px;align-items:center}',
+      '.rgmd-rk{width:34px;height:34px;border-radius:50%;background:rgba(0,0,0,.35)}.rgmd-rn{width:24px;height:24px;border-radius:50%;background:rgba(0,0,0,.35)}',
+      '.rgmd-sk{overflow-x:auto}',
+      '.rgmd-sk table{border-collapse:separate;border-spacing:2px;font-size:10px;font-variant-numeric:tabular-nums}',
+      '.rgmd-sk td{width:20px;height:20px;text-align:center;border-radius:4px;background:rgba(255,255,255,.04);color:transparent}',
+      '.rgmd-sk td.k{background:none;color:var(--mu);font-weight:700;font-size:11px;width:16px}',
+      '.rgmd-sk td.on{background:rgba(91,156,240,.35);color:#fff;font-weight:700}.rgmd-sk tr.R td.on{background:rgba(232,203,134,.45)}',
+      '.rgmd-ord{margin-top:6px;font-size:11px;color:var(--mu)}.rgmd-ord b{color:inherit}',
+      '.rgmd-bd{display:flex;flex-wrap:wrap;align-items:flex-start;gap:4px 2px}',
+      '.rgmd-bg{display:flex;flex-direction:column;align-items:center;gap:3px}',
+      '.rgmd-bg .its{display:flex;gap:2px;background:rgba(255,255,255,.04);padding:3px;border-radius:7px}',
+      '.rgmd-bg .tm{font-size:10px;color:var(--mu);font-variant-numeric:tabular-nums}',
+      '.rgmd-arw{color:var(--mu);font-size:10px;align-self:center;margin-top:-14px;padding:0 1px}',
+      '.rgmd-lane .mt{display:none;font-size:10px;font-weight:700;color:var(--mu);margin-bottom:3px}',
+      '@media (max-width:600px){.rgmd-lane{grid-template-columns:34px 1fr}.rgmd-lane .ln{grid-row:span 2}.rgmd-lhead{display:none}.rgmd-lane .mt{display:block}.rgmd-sum{grid-template-columns:1fr 1fr}.rgmd-sum .mid,.rgmd-sum .sp{display:none}.rgmd-sum .st{gap:4px 8px}.rgmd-evr .kn{max-width:64px}}',
+      '@media (prefers-reduced-motion:reduce){.rgmd-pane{animation:none}}'
+    ].join('\n');
+    document.head.appendChild(st);
+  }
+
+  // ── Data Dragon ───────────────────────────────
+  function getLatest() {
+    if (!latestVer) latestVer = fetch(DD + '/api/versions.json').then(function (r) { return r.json(); }).then(function (a) { return a[0]; }).catch(function () { return '15.1.1'; });
+    return latestVer;
+  }
+  function ddJson(ver, file) {
+    var k = ver + '/' + file;
+    if (!ddCache[k]) {
+      ddCache[k] = fetch(DD + '/cdn/' + ver + '/data/ko_KR/' + file).then(function (r) { if (!r.ok) throw 0; return r.json(); })
+        .catch(function () { return getLatest().then(function (lv) { return fetch(DD + '/cdn/' + lv + '/data/ko_KR/' + file).then(function (r) { return r.json(); }); }); })
+        .catch(function () { return null; });
+    }
+    return ddCache[k];
+  }
+  function champImg(ver, name) { var n = CHAMP_FIX[name] || name; return DD + '/cdn/' + ver + '/img/champion/' + encodeURIComponent(n) + '.png'; }
+  function itemImg(ver, id) { return DD + '/cdn/' + ver + '/img/item/' + id + '.png'; }
+  function cimg(D, i, cls) {
+    var p = D.p[i]; if (!p) return '';
+    return '<img class="rgmd-ic ' + (cls || '') + '" src="' + champImg(D.ddVer, p.champ) + '" alt="" title="' + esc(p.name + ' · ' + p.champ) + '" loading="lazy" onerror="this.style.opacity=\'.15\'">';
+  }
+
+  // ── 공통 ───────────────────────────────────
+  function teamOfIdx(D, i) { return D.p[i] ? D.p[i].team : 0; }
+  function teamCls(t) { return t === 100 ? 'b' : t === 200 ? 'r' : ''; }
+  function frameVal(D, key, minute, i) { var f = D.f && D.f[key]; if (!f || !f[minute]) return null; var row = f[minute]; return row[i] == null ? 0 : row[i]; }
+  function teamGold(D, minute, team) { var s = 0; D.p.forEach(function (p, i) { if (p.team === team) s += frameVal(D, 'g', minute, i) || 0; }); return s; }
+
+  // 눈금 4칸이 깔끔하게 떨어지는 최대값
+  function niceMax(v) {
+    var raw = Math.max(1, v) / 4, p = Math.pow(10, Math.floor(Math.log10(raw))), f = raw / p;
+    var step = (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * p;
+    return step * 4;
+  }
+  // ── SVG 라인 차트 (공용) ─────────────────────
+  function lineChart(opts) {
+    // opts: series:[{pts:[], color, width, dim, fill}], n (frame count), yMin, yMax, h, zero, markers:[{x(min), label, color}], fmtY
+    var W = Math.round(Math.max(320, Math.min(1400, opts.w || 600))), H = opts.h || 170, L = 40, R = 8, T = 10, B = opts.markers ? 26 : 18;
+    var n = Math.max(2, opts.n), yMin = opts.yMin, yMax = opts.yMax; if (yMax === yMin) yMax = yMin + 1;
+    var X = function (m) { return L + (W - L - R) * (m / (n - 1)); };
+    var Y = function (v) { return T + (H - T - B) * (1 - (v - yMin) / (yMax - yMin)); };
+    var g = '';
+    // 가로 눈금
+    var ticks = 4;
+    for (var i = 0; i <= ticks; i++) {
+      var v = yMin + (yMax - yMin) * i / ticks, y = Y(v);
+      g += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + y.toFixed(1) + '" y2="' + y.toFixed(1) + '" stroke="currentColor" stroke-opacity=".07"/>';
+      g += '<text x="' + (L - 6) + '" y="' + (y + 3).toFixed(1) + '" text-anchor="end" font-size="10" fill="currentColor" fill-opacity=".45">' + opts.fmtY(v) + '</text>';
+    }
+    // 세로 눈금 (5분 간격)
+    for (var m = 0; m < n; m += 5) {
+      g += '<text x="' + X(m).toFixed(1) + '" y="' + (H - B + 12) + '" text-anchor="middle" font-size="10" fill="currentColor" fill-opacity=".45">' + m + '</text>';
+    }
+    if (opts.zero) g += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + Y(0).toFixed(1) + '" y2="' + Y(0).toFixed(1) + '" stroke="currentColor" stroke-opacity=".25"/>';
+    (opts.series || []).forEach(function (s) {
+      var d = s.pts.map(function (v, m) { return (m ? 'L' : 'M') + X(m).toFixed(1) + ' ' + Y(v).toFixed(1); }).join('');
+      if (s.fill) g += s.fill(X, Y, d);
+      g += '<path d="' + d + '" fill="none" stroke="' + s.color + '" stroke-width="' + (s.width || 1.6) + '" stroke-linejoin="round" stroke-linecap="round" opacity="' + (s.dim ? .18 : 1) + '" style="transition:opacity .2s"' + (s.key != null ? ' data-k="' + s.key + '"' : '') + '/>';
+    });
+    (opts.markers || []).forEach(function (mk) {
+      var x = X(mk.x), y = H - 6;
+      g += '<g><title>' + esc(mk.title || '') + '</title><circle cx="' + x.toFixed(1) + '" cy="' + y + '" r="5.5" style="fill:' + mk.color + '" fill-opacity=".9"/><text x="' + x.toFixed(1) + '" y="' + (y + 3) + '" text-anchor="middle" font-size="7.5" font-weight="700" fill="#0A0D13">' + esc(mk.label) + '</text></g>';
+    });
+    g += '<line class="rgmd-guide" x1="0" x2="0" y1="' + T + '" y2="' + (H - B) + '" stroke="currentColor" stroke-opacity=".35" stroke-dasharray="3 3" style="display:none"/>';
+    return { svg: '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="xMidYMid meet">' + g + '</svg>', X: X, Y: Y, W: W, L: L, R: R, n: n };
+  }
+  function hookHover(wrap, ch, tipHtml) {
+    var svg = wrap.querySelector('svg'), tip = wrap.querySelector('.rgmd-tip'), guide = svg.querySelector('.rgmd-guide');
+    function move(ev) {
+      var rc = svg.getBoundingClientRect(); var sx = (ev.clientX - rc.left) / rc.width * ch.W;
+      var m = Math.round((sx - ch.L) / (ch.W - ch.L - ch.R) * (ch.n - 1)); m = Math.max(0, Math.min(ch.n - 1, m));
+      var x = ch.X(m); guide.setAttribute('x1', x); guide.setAttribute('x2', x); guide.style.display = '';
+      tip.innerHTML = tipHtml(m); tip.classList.add('on');
+      var wr = wrap.getBoundingClientRect(); var px = rc.left - wr.left + x / ch.W * rc.width;
+      var tw = tip.offsetWidth; var left = px + 12; if (left + tw > wr.width) left = px - tw - 12;
+      tip.style.left = Math.max(0, left) + 'px'; tip.style.top = '8px';
+    }
+    function out() { tip.classList.remove('on'); guide.style.display = 'none'; }
+    svg.addEventListener('pointermove', move); svg.addEventListener('pointerdown', move); svg.addEventListener('pointerleave', out);
+  }
+
+  // ── 탭 1: 타임라인 (골드 차이 + 오브젝트·킬) ─────
+  function evText(D, e, names) {
+    var tn = function (t) { return '<b style="color:var(--' + (t === 100 ? 'b' : 'r') + ')">' + esc(names[t] || '') + '</b>'; };
+    if (e.ty === 'kill') {
+      var as = (e.as || []).map(function (i) { return cimg(D, i, 's'); }).join('');
+      var nm2 = function (i) { return '<span class="kn">' + esc(D.p[i] ? D.p[i].name : '') + '</span>'; };
+      return (e.k >= 0 ? cimg(D, e.k) + nm2(e.k) : '<span class="rgmd-sword">처형</span>') + '<span class="rgmd-sword">⚔</span>' + cimg(D, e.v, 'dead') + nm2(e.v) + (as ? '<span class="as">' + as + '</span>' : '');
+    }
+    if (e.ty === 'mon') {
+      var nm = e.m === 'DRAGON' ? (DRAGON_KO[e.sub] || '') + ' 드래곤' : (MON_KO[e.m] || e.m);
+      return (e.k >= 0 ? cimg(D, e.k, 's') : '') + tn(e.team) + ' <span>' + esc(nm) + ' 처치</span>';
+    }
+    if (e.ty === 'bld') {
+      var b = e.b === 'inhib' ? (LANE_KO[e.lane] || '') + ' 억제기' : (LANE_KO[e.lane] || '') + ' ' + (TIER_KO[e.tier] || '') + ' 포탑';
+      return (e.k >= 0 ? cimg(D, e.k, 's') : '') + tn(e.team) + ' <span>' + esc(b.trim()) + ' 파괴</span>';
+    }
+    return '';
+  }
+  function evTeam(D, e) { return e.ty === 'kill' ? (e.k >= 0 ? teamOfIdx(D, e.k) : (teamOfIdx(D, e.v) === 100 ? 200 : 100)) : e.team; }
+  function paneTimeline(D, el, names) {
+    var t1 = D.teams && D.teams[100] || { obj: {} }, t2 = D.teams && D.teams[200] || { obj: {} };
+    var last = D.f ? D.f.g.length - 1 : 0;
+    var g1 = D.f ? teamGold(D, last, 100) : D.p.filter(function (p) { return p.team === 100; }).reduce(function (s, p) { return s + p.gold; }, 0);
+    var g2 = D.f ? teamGold(D, last, 200) : D.p.filter(function (p) { return p.team === 200; }).reduce(function (s, p) { return s + p.gold; }, 0);
+    var stat = function (o, g) { o = o || {}; return '<span>킬<b>' + (o.kills || 0) + '</b></span><span>골드<b>' + (g / 1000).toFixed(1) + 'k</b></span><span>포탑<b>' + (o.tower || 0) + '</b></span><span>드래곤<b>' + (o.dragon || 0) + '</b></span><span>바론<b>' + (o.baron || 0) + '</b></span>' + (o.horde ? '<span>유충<b>' + o.horde + '</b></span>' : ''); };
+    var h = '<div class="rgmd-sum"><div class="tn b">' + esc(names[100]) + (t1.win ? ' · 승' : '') + '</div><div class="mid">' + mmss(D.dur) + '</div><div class="tn r">' + (t2.win ? '승 · ' : '') + esc(names[200]) + '</div>'
+      + '<div class="st">' + stat(t1.obj, g1) + '</div><div class="sp"></div><div class="st r">' + stat(t2.obj, g2) + '</div></div>';
+    if (!D.f) { el.innerHTML = h + '<div class="rgmd-note">이 게임은 타임라인 정보를 받지 못했습니다.</div>'; return; }
+    var n = D.f.g.length;
+    var diff = []; for (var m = 0; m < n; m++) diff.push(teamGold(D, m, 100) - teamGold(D, m, 200));
+    var mx = niceMax(Math.max(1000, Math.max.apply(null, diff.map(Math.abs))));
+    var markers = (D.ev || []).filter(function (e) { return e.ty === 'mon' || (e.ty === 'bld' && e.b === 'inhib'); }).map(function (e) {
+      var lab = e.ty === 'bld' ? '억' : e.m === 'DRAGON' ? (e.sub === 'ELDER_DRAGON' ? '장' : '용') : e.m === 'BARON_NASHOR' ? '바' : e.m === 'RIFTHERALD' ? '전' : e.m === 'HORDE' ? '유' : e.m === 'ATAKHAN' ? '아' : '?';
+      return { x: Math.min(n - 1, e.t / 60), label: lab, color: e.team === 100 ? 'var(--b)' : 'var(--r)', title: mmss(e.t) + ' ' + evText(D, e, names).replace(/<[^>]+>/g, '').trim() };
+    });
+    var ch = lineChart({
+      n: n, yMin: -mx, yMax: mx, zero: true, h: 190, w: el.clientWidth - 12, markers: markers, fmtY: function (v) { return v === 0 ? '0' : (Math.abs(v) / 1000).toFixed(1) + 'k'; },
+      series: [{
+        pts: diff, color: 'currentColor', width: 1.6,
+        fill: function (X, Y, d) {
+          var z = Y(0).toFixed(1), x0 = X(0).toFixed(1), x1 = X(n - 1).toFixed(1);
+          var area = d + 'L' + x1 + ' ' + z + 'L' + x0 + ' ' + z + 'Z';
+          var id = 'rgmdc' + Math.random().toString(36).slice(2, 8);
+          return '<defs><clipPath id="' + id + 'a"><rect x="0" y="0" width="2000" height="' + z + '"/></clipPath><clipPath id="' + id + 'b"><rect x="0" y="' + z + '" width="2000" height="400"/></clipPath></defs>'
+            + '<path d="' + area + '" style="fill:var(--b)" fill-opacity=".28" clip-path="url(#' + id + 'a)"/><path d="' + area + '" style="fill:var(--r)" fill-opacity=".28" clip-path="url(#' + id + 'b)"/>';
+        }
+      }]
+    });
+    h += '<div class="rgmd-chart"><div class="rgmd-ct"><span>팀 골드 차이 (위: ' + esc(names[100]) + ' 우세 · 아래: ' + esc(names[200]) + ' 우세)</span><span>분</span></div>' + ch.svg + '<div class="rgmd-tip"></div></div>';
+    h += '<div class="rgmd-ct" style="margin-top:10px;padding:0"><div class="rgmd-chips" data-f>'
+      + '<button class="rgmd-chip on" data-v="all">전체</button><button class="rgmd-chip" data-v="kill">킬</button><button class="rgmd-chip" data-v="obj">오브젝트</button></div></div>';
+    h += '<div class="rgmd-ev"></div>';
+    el.innerHTML = h;
+    hookHover(el.querySelector('.rgmd-chart'), ch, function (m) {
+      var d = diff[m]; var lead = d > 0 ? names[100] : d < 0 ? names[200] : '';
+      var evs = (D.ev || []).filter(function (e) { return e.t > (m - 1) * 60 && e.t <= m * 60; });
+      var kills = { 100: 0, 200: 0 }; evs.forEach(function (e) { if (e.ty === 'kill') kills[evTeam(D, e)]++; });
+      return '<b>' + m + '분</b><br>' + (d ? esc(lead) + ' <b>' + kfmt(Math.abs(d)).replace('+', '') + '</b> 우세' : '동률')
+        + ((kills[100] || kills[200]) ? '<br><span style="opacity:.6">이 구간 킬 ' + kills[100] + ' : ' + kills[200] + '</span>' : '');
+    });
+    var list = el.querySelector('.rgmd-ev');
+    function fill(f) {
+      var evs = (D.ev || []).filter(function (e) { return f === 'all' || (f === 'kill' ? e.ty === 'kill' : e.ty !== 'kill'); });
+      list.innerHTML = evs.length ? evs.map(function (e) {
+        return '<div class="rgmd-evr ' + teamCls(evTeam(D, e)) + '"><span class="t">' + mmss(e.t) + '</span><span class="tx">' + evText(D, e, names) + '</span></div>';
+      }).join('') : '<div class="rgmd-note">기록이 없습니다.</div>';
+    }
+    fill('all');
+    el.querySelector('[data-f]').addEventListener('click', function (ev) {
+      var b = ev.target.closest('.rgmd-chip'); if (!b) return;
+      this.querySelectorAll('.rgmd-chip').forEach(function (x) { x.classList.toggle('on', x === b); }); fill(b.dataset.v);
+    });
+  }
+
+  // ── 탭 2: 라인전 (10·15분) ───────────────────
+  function lanePairs(D) {
+    return POS.map(function (pos) {
+      var a = -1, b = -1;
+      D.p.forEach(function (p, i) { if (p.pos === pos) { if (p.team === 100 && a < 0) a = i; if (p.team === 200 && b < 0) b = i; } });
+      return { pos: pos, a: a, b: b };
+    }).filter(function (x) { return x.a >= 0 && x.b >= 0; });
+  }
+  function paneLane(D, el, names) {
+    if (!D.f) { el.innerHTML = '<div class="rgmd-note">이 게임은 타임라인 정보를 받지 못했습니다.</div>'; return; }
+    var n = D.f.g.length, pairs = lanePairs(D);
+    if (!pairs.length) { el.innerHTML = '<div class="rgmd-note">라인 정보가 없어 맞라이너를 찾지 못했습니다.</div>'; return; }
+    var cell = function (pr, m) {
+      if (m >= n) return '<div class="rgmd-note" style="margin:0">' + m + '분 전에 게임이 끝났습니다.</div>';
+      var v = function (k, i) { return frameVal(D, k, m, i) || 0; };
+      var dc = v('cs', pr.a) - v('cs', pr.b), dg = v('g', pr.a) - v('g', pr.b), dx = v('xp', pr.a) - v('xp', pr.b);
+      var c = function (d) { return d > 0 ? 'up' : d < 0 ? 'dn' : ''; };
+      return '<div class="rgmd-mets"><span>CS ' + v('cs', pr.a) + ':' + v('cs', pr.b) + '<b class="' + c(dc) + '">' + signed(dc) + '</b></span>'
+        + '<span>골드<b class="' + c(dg) + '">' + kfmt(dg) + '</b></span><span>경험치<b class="' + c(dx) + '">' + signed(dx) + '</b></span>'
+        + '<span>레벨 ' + v('lv', pr.a) + ':' + v('lv', pr.b) + '</span></div>';
+    };
+    var h = '<div class="rgmd-lhead"><div></div><div>10분</div><div class="h15">15분</div></div>';
+    pairs.forEach(function (pr) {
+      var vs = '<div class="vs">' + cimg(D, pr.a, 's') + '<span class="nm b">' + esc(D.p[pr.a].name) + '</span><span class="rgmd-sword">vs</span>' + cimg(D, pr.b, 's') + '<span class="nm r">' + esc(D.p[pr.b].name) + '</span></div>';
+      h += '<div class="rgmd-lane"><div class="ln">' + POS_KO[pr.pos] + '</div><div class="at"><span class="mt">10분</span>' + vs + cell(pr, 10) + '</div><div class="at at15"><span class="mt">15분</span>' + vs + cell(pr, 15) + '</div></div>';
+    });
+    h += '<div class="rgmd-note">숫자는 <b style="color:var(--b)">' + esc(names[100]) + '</b> 기준 차이입니다.</div>';
+    el.innerHTML = h;
+  }
+
+  // ── 탭 3: 개인 성장 그래프 ────────────────────
+  var BLUE_SH = ['#5B9CF0', '#7FB6FF', '#3D7BD9', '#9CC7FF', '#2F64B8'], RED_SH = ['#E8566A', '#FF8A96', '#C93A50', '#FFB0B8', '#A82A40'];
+  function paneGrowth(D, el, names, st) {
+    if (!D.f) { el.innerHTML = '<div class="rgmd-note">이 게임은 타임라인 정보를 받지 못했습니다.</div>'; return; }
+    var n = D.f.g.length, metric = st.metric || 'g';
+    var order = D.p.map(function (p, i) { return i; }).sort(function (a, b) { return (D.p[a].team - D.p[b].team) || (POS.indexOf(D.p[a].pos) - POS.indexOf(D.p[b].pos)); });
+    var colors = {}; var bi = 0, ri = 0;
+    order.forEach(function (i) { colors[i] = D.p[i].team === 100 ? BLUE_SH[bi++ % 5] : RED_SH[ri++ % 5]; });
+    var sel = st.sel; // 강조된 선수 (없으면 전체)
+    var mx = 1; order.forEach(function (i) { for (var m = 0; m < n; m++) mx = Math.max(mx, frameVal(D, metric, m, i) || 0); });
+    var lab = { g: '골드', cs: 'CS', xp: '경험치' }[metric];
+    var ch = lineChart({
+      n: n, yMin: 0, yMax: niceMax(mx), h: 200, w: el.clientWidth - 12, fmtY: function (v) { return metric === 'cs' ? Math.round(v) : (v / 1000).toFixed(v >= 10000 ? 0 : 1) + 'k'; },
+      series: order.map(function (i) {
+        var pts = []; for (var m = 0; m < n; m++) pts.push(frameVal(D, metric, m, i) || 0);
+        return { pts: pts, color: colors[i], width: sel === i ? 2.6 : 1.5, dim: sel != null && sel !== i, key: i };
+      })
+    });
+    var h = '<div class="rgmd-chart"><div class="rgmd-ct"><div class="rgmd-chips" data-m>'
+      + ['g', 'cs', 'xp'].map(function (k) { return '<button class="rgmd-chip' + (k === metric ? ' on' : '') + '" data-v="' + k + '">' + { g: '골드', cs: 'CS', xp: '경험치' }[k] + '</button>'; }).join('')
+      + '</div><span>분</span></div>' + ch.svg + '<div class="rgmd-tip"></div></div>';
+    h += '<div class="rgmd-leg">' + order.map(function (i) {
+      return '<button class="rgmd-lg' + (sel === i ? ' on' : '') + (sel != null && sel !== i ? ' dim' : '') + '" data-i="' + i + '">' + cimg(D, i, 's') + '<i style="background:' + colors[i] + '"></i>' + esc(D.p[i].name) + '</button>';
+    }).join('') + '</div><div class="rgmd-note">이름을 누르면 그 선수만 강조됩니다.</div>';
+    el.innerHTML = h;
+    hookHover(el.querySelector('.rgmd-chart'), ch, function (m) {
+      var rows = order.slice().sort(function (a, b) { return (frameVal(D, metric, m, b) || 0) - (frameVal(D, metric, m, a) || 0); });
+      if (sel != null) rows = [sel];
+      return '<b>' + m + '분 ' + lab + '</b>' + rows.slice(0, 10).map(function (i) {
+        var v = frameVal(D, metric, m, i) || 0;
+        return '<br><span style="color:' + colors[i] + '">●</span> ' + esc(D.p[i].name) + ' <b>' + (metric === 'cs' ? v : v.toLocaleString()) + '</b>';
+      }).join('');
+    });
+    el.querySelector('[data-m]').addEventListener('click', function (ev) { var b = ev.target.closest('.rgmd-chip'); if (!b) return; st.metric = b.dataset.v; paneGrowth(D, el, names, st); });
+    el.querySelector('.rgmd-leg').addEventListener('click', function (ev) { var b = ev.target.closest('.rgmd-lg'); if (!b) return; var i = +b.dataset.i; st.sel = st.sel === i ? null : i; paneGrowth(D, el, names, st); });
+  }
+
+  // ── 탭 4: 빌드 ───────────────────────────────
+  function skillOrderText(sk) {
+    if (!sk) return '';
+    var cnt = { 1: 0, 2: 0, 3: 0 }, maxAt = {};
+    sk.split('').forEach(function (c, i) { c = +c; if (c >= 1 && c <= 3) { cnt[c]++; if (cnt[c] === 5 && !maxAt[c]) maxAt[c] = i + 1; } });
+    var keys = [1, 2, 3].sort(function (a, b) { return (maxAt[a] || 99) - (maxAt[b] || 99) || cnt[b] - cnt[a]; });
+    return keys.map(function (k) { return SKEY[k]; }).join(' → ');
+  }
+  function paneBuild(D, el, names, st) {
+    var cur = st.p != null ? st.p : 0;
+    var p = D.p[cur]; var ver = D.ddVer;
+    var picker = '<div class="rgmd-pl">' + [100, 200].map(function (t) {
+      return D.p.map(function (x, i) { return i; }).filter(function (i) { return D.p[i].team === t; })
+        .sort(function (a, b) { return POS.indexOf(D.p[a].pos) - POS.indexOf(D.p[b].pos); })
+        .map(function (i) { return '<button class="rgmd-pb ' + teamCls(t) + (i === cur ? ' on' : '') + '" data-i="' + i + '">' + cimg(D, i, 'l') + '</button>'; }).join('');
+    }).join('<span class="sep"></span>') + '</div>';
+    var who = '<div class="rgmd-who">' + cimg(D, cur, 'l') + '<div><div class="n" style="color:var(--' + teamCls(p.team) + ')">' + esc(p.name) + (p.tag ? '<span class="s"> #' + esc(p.tag) + '</span>' : '') + '</div><div class="s">' + esc(p.champ) + ' · ' + (POS_KO[p.pos] || '-') + ' · ' + p.k + '/' + p.d + '/' + p.a + ' · CS ' + p.cs + ' · 레벨 ' + p.lv + '</div></div></div>';
+    var runes = '<div class="rgmd-sec"><h5>룬 · 소환사 주문</h5><div class="rgmd-runes" data-runes><span class="rgmd-note" style="margin:0">불러오는 중…</span></div></div>';
+    // 스킬
+    var sk = p.skills || '';
+    var skHtml;
+    if (sk) {
+      var rows = [1, 2, 3, 4].map(function (s) {
+        var tds = ''; for (var lv = 0; lv < Math.max(18, sk.length); lv++) { var on = +sk[lv] === s; tds += '<td class="' + (on ? 'on' : '') + '">' + (on ? lv + 1 : '') + '</td>'; }
+        return '<tr class="' + SKEY[s] + '"><td class="k">' + SKEY[s] + '</td>' + tds + '</tr>';
+      }).join('');
+      skHtml = '<div class="rgmd-sk"><table>' + rows + '</table></div><div class="rgmd-ord">마스터 순서 <b>' + skillOrderText(sk) + '</b></div>';
+    } else skHtml = '<div class="rgmd-note" style="margin:0">스킬 기록이 없습니다.</div>';
+    // 아이템 구매 순서 (같은 분에 산 것끼리 묶음)
+    var buys = (p.build || []).filter(function (b) { return !SKIP_ITEMS[b[1]]; });
+    var groups = []; buys.forEach(function (b) { var m = Math.floor(b[0] / 60); var g = groups[groups.length - 1]; if (g && g.m === m) g.items.push(b[1]); else groups.push({ m: m, items: [b[1]] }); });
+    var it = function (id) { return '<img class="rgmd-ic" data-item="' + id + '" src="' + itemImg(ver, id) + '" alt="" loading="lazy" onerror="this.style.visibility=\'hidden\'">'; };
+    var bdHtml = groups.length ? '<div class="rgmd-bd">' + groups.map(function (g, gi) {
+      return (gi ? '<span class="rgmd-arw">›</span>' : '') + '<div class="rgmd-bg"><div class="its">' + g.items.map(it).join('') + '</div><span class="tm">' + g.m + '분</span></div>';
+    }).join('') + '</div>' : '<div class="rgmd-note" style="margin:0">구매 기록이 없습니다.</div>';
+    var fin = '<div class="rgmd-bd">' + (p.items || []).map(function (id) { return id ? it(id) : '<span class="rgmd-ic" style="display:inline-block"></span>'; }).join('') + '</div>';
+    el.innerHTML = picker + who + runes
+      + '<div class="rgmd-sec"><h5>스킬 찍은 순서</h5>' + skHtml + '</div>'
+      + '<div class="rgmd-sec"><h5>아이템 구매 순서</h5>' + bdHtml + '</div>'
+      + '<div class="rgmd-sec"><h5>최종 아이템</h5>' + fin + '</div>';
+    el.querySelector('.rgmd-pl').addEventListener('click', function (ev) { var b = ev.target.closest('.rgmd-pb'); if (!b) return; st.p = +b.dataset.i; paneBuild(D, el, names, st); });
+    // 룬·주문·아이템 이름
+    Promise.all([ddJson(ver, 'runesReforged.json'), ddJson(ver, 'summoner.json')]).then(function (r) {
+      var box = el.querySelector('[data-runes]'); if (!box) return;
+      var trees = r[0] || [], perks = {}, styles = {};
+      trees.forEach(function (t) { styles[t.id] = t; (t.slots || []).forEach(function (s) { (s.runes || []).forEach(function (x) { perks[x.id] = x; }); }); });
+      var spells = {}; var sd = (r[1] && r[1].data) || {}; Object.keys(sd).forEach(function (k) { spells[sd[k].key] = sd[k]; });
+      var rimg = function (o, cls) { return o ? '<img class="' + cls + '" src="' + DD + '/cdn/img/' + o.icon + '" title="' + esc(o.name) + '" alt="">' : ''; };
+      var ru = p.rune || {}, pk = ru.perks || [];
+      var spellsHtml = (p.spells || []).map(function (id) { var s = spells[String(id)]; return s ? '<img class="rgmd-ic l" src="' + DD + '/cdn/' + ver + '/img/spell/' + s.image.full + '" title="' + esc(s.name) + '" alt="">' : ''; }).join('');
+      var main = '<div class="g">' + rimg(perks[pk[0]], 'rgmd-rk') + pk.slice(1, 4).map(function (id) { return rimg(perks[id], 'rgmd-rn'); }).join('') + '</div>';
+      var sub = '<div class="g">' + rimg(styles[ru.s], 'rgmd-rn') + pk.slice(4, 6).map(function (id) { return rimg(perks[id], 'rgmd-rn'); }).join('') + '</div>';
+      var nm = perks[pk[0]] ? '<span class="rgmd-note" style="margin:0">' + esc(perks[pk[0]].name) + (styles[ru.s] ? ' · 보조 ' + esc(styles[ru.s].name) : '') + '</span>' : '';
+      box.innerHTML = (pk.length ? main + sub : '<span class="rgmd-note" style="margin:0">룬 정보 없음</span>') + '<div class="g">' + spellsHtml + '</div>' + nm;
+    });
+    ddJson(ver, 'item.json').then(function (j) {
+      var d = j && j.data; if (!d) return;
+      el.querySelectorAll('img[data-item]').forEach(function (im) { var x = d[im.dataset.item]; if (x) im.title = x.name; });
+    });
+  }
+
+  // ── 마운트 ───────────────────────────────────
+  function load(id) {
+    if (!cache[id]) {
+      cache[id] = fetch(API + '/match-detail?id=' + encodeURIComponent(id)).then(function (r) { return r.json(); }).then(function (j) {
+        if (!j || !j.ok) throw new Error((j && j.error) || '상세 정보를 불러오지 못했습니다');
+        return j.detail;
+      });
+      cache[id].catch(function () { delete cache[id]; });
+    }
+    return cache[id];
+  }
+  function normId(x) { var t = String(x || '').trim(); var m = t.match(/([A-Z]+\d*_\d+)/i); if (m) return m[1].toUpperCase(); return /^\d+$/.test(t) ? 'KR_' + t : ''; }
+  function mount(el, matchId, opts) {
+    opts = opts || {}; css();
+    var id = normId(matchId);
+    el.classList.add('rgmd');
+    if (!id) { el.innerHTML = '<div class="rgmd-err">Match ID가 없어 상세 분석을 볼 수 없습니다.</div>'; return; }
+    el.innerHTML = '<div class="rgmd-load">상세 분석 불러오는 중…</div>';
+    load(id).then(function (D) {
+      D.p = D.p || []; D.ev = (D.ev || []).slice().sort(function (a, b) { return a.t - b.t; }); D.teams = D.teams || {};
+      D.ddVer = D.ddVer || '15.1.1';
+      var names = { 100: '블루팀', 200: '레드팀' };
+      if (opts.sideNames) { var sn = opts.sideNames(D) || {}; if (sn[100]) names[100] = sn[100]; if (sn[200]) names[200] = sn[200]; }
+      var focus = -1; if (opts.focusPuuid) focus = D.p.findIndex(function (p) { return p.puuid === opts.focusPuuid; });
+      if (focus < 0 && opts.focusName && opts.focusName.name) {
+        var fn = String(opts.focusName.name).trim().toLowerCase(), ft = String(opts.focusName.tag || '').trim().toLowerCase();
+        focus = D.p.findIndex(function (p) { return String(p.name).trim().toLowerCase() === fn && (!ft || String(p.tag).trim().toLowerCase() === ft); });
+        if (focus < 0) focus = D.p.findIndex(function (p) { return String(p.name).trim().toLowerCase() === fn; });
+      }
+      var st = { build: { p: focus >= 0 ? focus : 0 }, growth: { metric: 'g', sel: focus >= 0 ? focus : null } };
+      var TABS = [['tl', '타임라인'], ['lane', '라인전'], ['grow', '성장 그래프'], ['build', '빌드']];
+      el.innerHTML = '<div class="rgmd-tabs">' + TABS.map(function (t, i) { return '<button class="rgmd-tab' + (i === (opts.tab || 0) ? ' on' : '') + '" data-t="' + t[0] + '">' + t[1] + '</button>'; }).join('') + '</div><div class="rgmd-pane"></div>';
+      var pane = el.querySelector('.rgmd-pane');
+      function show(t) {
+        pane.style.animation = 'none'; void pane.offsetWidth; pane.style.animation = '';
+        try {
+          if (t === 'tl') paneTimeline(D, pane, names);
+          else if (t === 'lane') paneLane(D, pane, names);
+          else if (t === 'grow') paneGrowth(D, pane, names, st.growth);
+          else paneBuild(D, pane, names, st.build);
+        } catch (e) { pane.innerHTML = '<div class="rgmd-err">표시 중 오류: ' + esc(e.message) + '</div>'; }
+      }
+      el.querySelector('.rgmd-tabs').addEventListener('click', function (ev) {
+        var b = ev.target.closest('.rgmd-tab'); if (!b) return;
+        this.querySelectorAll('.rgmd-tab').forEach(function (x) { x.classList.toggle('on', x === b); }); show(b.dataset.t);
+      });
+      show(TABS[opts.tab || 0][0]);
+    }).catch(function (e) {
+      el.innerHTML = '<div class="rgmd-err">' + esc(e.message || e) + '</div>';
+    });
+  }
+  window.RGMatchDetail = { mount: mount, load: load, normId: normId };
+})();
+/*RGMD-END*/
+
+</script>
 </body>
 </html>
