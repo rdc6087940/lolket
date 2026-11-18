@@ -2833,6 +2833,11 @@ body:has(#screen-community.active){background-color:var(--rg-bg)!important;backg
 .placing-badge:active{transform:scale(.97)}
 .placing-badge .pb-arrow{font-size:10px;opacity:.7;transition:transform .2s}
 .placing-badge:hover .pb-arrow{transform:translate(1px,-1px)}
+
+/* 경매 현황 플로팅은 관전 화면(screen-v)이 열려 있을 때만 */
+body:not(:has(#screen-v.active)) #uv-float-btn,
+body:not(:has(#screen-v.active)) #uv-auction-panel,
+body:not(:has(#screen-v.active)) #uv-log-panel{display:none!important}
 /* ── 모바일 ── */
 @media (max-width: 768px){
   .header-inner{padding:0 8px 0 16px}
@@ -3036,6 +3041,16 @@ body:has(#screen-0.active){background-color:var(--rg-bg)!important;background-im
 <style>@keyframes s0DelSpin{to{transform:rotate(360deg)}}
 /* 목록 재갱신 시 카드 등장 애니메이션 끔 (깜빡임 방지) */
 #list-grid.s0-no-anim .list-card{animation:none!important}
+/* 내전 목록 카드: 단계별 은은한 색 */
+#screen-0 .list-card[data-s0-stage]{--s0-tint:transparent;--s0-ring:#1C222D}
+#screen-0 .list-card[data-s0-stage="1"]{--s0-tint:rgba(91,200,245,.035);--s0-ring:rgba(91,200,245,.12)}
+#screen-0 .list-card[data-s0-stage="2"]{--s0-tint:rgba(91,200,245,.06);--s0-ring:rgba(91,200,245,.17)}
+#screen-0 .list-card[data-s0-stage="3"]{--s0-tint:rgba(91,200,245,.085);--s0-ring:rgba(91,200,245,.23)}
+#screen-0 .list-card[data-s0-stage="4"]{--s0-tint:rgba(91,200,245,.115);--s0-ring:rgba(91,200,245,.30)}
+#screen-0 .list-card[data-s0-stage="jjong"]{--s0-tint:rgba(255,90,95,.09);--s0-ring:rgba(255,90,95,.32)}
+#screen-0 .list-card[data-s0-stage]:not([data-s0-stage="done"]){background:linear-gradient(var(--s0-tint),var(--s0-tint)),var(--rg-s1)!important;box-shadow:0 0 0 1px var(--s0-ring)!important}
+#screen-0 .list-card[data-s0-stage]:not([data-s0-stage="done"]):hover{background:linear-gradient(var(--s0-tint),var(--s0-tint)),var(--rg-s2)!important;box-shadow:0 18px 40px -18px rgba(0,0,0,.9),0 0 0 1px var(--s0-ring)!important}
+
 .s0-side-card{background:var(--rg-s1,#11151D);border:1px solid var(--rg-line,#1A1F29);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px}
 .s0-side-card+.s0-side-card{margin-top:14px}
 .s0-side-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
@@ -3505,8 +3520,8 @@ body:has(#screen-0.active){background-color:var(--rg-bg)!important;background-im
 <div class="modal-overlay" id="add-team-modal" style="display:none;"> <div class="modal modal-add-team"> <div class="modal-title">팀 추가</div> <div style="font-size:12px;color:var(--text-muted);margin-bottom:1rem;line-height:1.6;">
  팀장을 지정하면 팀 이름이 팀장 닉네임으로 설정됩니다.<br>
  팀장은 나중에 대기칸에서 드래그해 팀에 추가한 뒤 지정할 수 있습니다.
- </div> <div class="form-row"> <div class="form-label">팀장 선택 (선택사항)</div> <input type="text" id="captain-search" class="form-input" placeholder="닉네임 검색..." oninput="filterCaptainList('captain-list','captain-search')" style="margin-bottom:6px;font-size:12px;padding:6px 10px;"> <div class="captain-list" id="captain-list"></div> </div> <div class="modal-actions"> <button class="btn-secondary" onclick="closeAddTeamModal()">취소</button> <button class="btn-primary" onclick="confirmAddTeam()">팀 생성</button> </div> </div>
-</div> <div class="modal-overlay" id="set-captain-modal" style="display:none;"> <div class="modal modal-sm"> <div class="modal-title">팀장 지정</div> <input type="text" id="set-captain-search" class="form-input" placeholder="닉네임 검색..." oninput="filterCaptainList('set-captain-list','set-captain-search')" style="margin-bottom:8px;font-size:12px;padding:6px 10px;"> <div class="captain-list" id="set-captain-list"></div> <div class="modal-actions"> <button class="btn-secondary" onclick="document.getElementById('set-captain-modal').style.display='none'">취소</button> </div> </div>
+ </div> <div class="form-row"> <div class="form-label">팀장 선택 (선택사항)</div> <input type="text" id="captain-search" class="form-input" placeholder="닉네임 검색..." oninput="filterCaptainList('captain-list','captain-search')" style="margin-bottom:6px;font-size:12px;padding:6px 10px;"> <select class="sort-select cap-sort" data-list="captain-list" onchange="sortCaptainList('captain-list', this.value)" style="width:100%;margin-bottom:6px;padding:5px 8px;font-size:11px;"><option value="default">기본 순서</option><option value="tier-desc">티어 높은 순</option><option value="tier-asc">티어 낮은 순</option></select> <div class="captain-list" id="captain-list"></div> </div> <div class="modal-actions"> <button class="btn-secondary" onclick="closeAddTeamModal()">취소</button> <button class="btn-primary" onclick="confirmAddTeam()">팀 생성</button> </div> </div>
+</div> <div class="modal-overlay" id="set-captain-modal" style="display:none;"> <div class="modal modal-sm"> <div class="modal-title">팀장 지정</div> <input type="text" id="set-captain-search" class="form-input" placeholder="닉네임 검색..." oninput="filterCaptainList('set-captain-list','set-captain-search')" style="margin-bottom:8px;font-size:12px;padding:6px 10px;"> <select class="sort-select cap-sort" data-list="set-captain-list" onchange="sortCaptainList('set-captain-list', this.value)" style="width:100%;margin-bottom:6px;padding:5px 8px;font-size:11px;"><option value="default">기본 순서</option><option value="tier-desc">티어 높은 순</option><option value="tier-asc">티어 낮은 순</option></select> <div class="captain-list" id="set-captain-list"></div> <div class="modal-actions"> <button class="btn-secondary" onclick="document.getElementById('set-captain-modal').style.display='none'">취소</button> </div> </div>
 </div> <div class="modal-overlay" id="points-modal" style="display:none;"> <div class="modal" style="max-width:400px;"> <div class="modal-title">팀장 포인트 설정</div> <div class="points-form" id="points-form"></div> <div id="points-auto-notice" style="display:none;margin:8px 0;padding:8px;background:rgba(200,170,110,.08);border:1px solid rgba(200,170,110,.3);border-radius:3px;font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;color:var(--gold);line-height:1.6;"></div>
 <div class="modal-actions" style="flex-wrap:wrap;gap:6px;">
   <button onclick="calcAutoPoints()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(10,200,185,.4);background:rgba(10,200,185,.06);color:var(--blue-bright);font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">잔여포인트 자동계산</button>
@@ -3581,7 +3596,7 @@ body:has(#screen-0.active){background-color:var(--rg-bg)!important;background-im
     <button onclick="copyTeamMentions('captain')" title="팀장 멘션" style="padding:5px 10px;border-radius:2px;border:1px solid rgba(100,150,255,.4);background:rgba(100,150,255,.06);color:#7EB2FF;font-family:IBM Plex Sans KR,sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">@팀장</button>
     <button onclick="copyTeamMentions('members')" title="팀원 멘션" style="padding:5px 10px;border-radius:2px;border:1px solid rgba(100,150,255,.4);background:rgba(100,150,255,.06);color:#7EB2FF;font-family:IBM Plex Sans KR,sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">@팀원</button>
     <button onclick="openVoiceCheck()" title="참여 멤버가 디스코드 음성 채널에 들어와 있는지 확인" style="padding:5px 10px;border-radius:2px;border:1px solid rgba(88,101,242,.45);background:rgba(88,101,242,.08);color:#A5B4FC;font-family:IBM Plex Sans KR,sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">🎧 출석 확인</button> <button class="aram-hide" onclick="openAutoBalance()" title="내전 분석 랩 모델로 팀·라인 자동 배치" style="padding:5px 10px;border-radius:2px;border:1px solid rgba(232,203,134,.5);background:rgba(232,203,134,.08);color:#E8CB86;font-family:IBM Plex Sans KR,sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">자동밸런스</button>
-    <button class="aram-hide" onclick="addTeamModal('normal')" style="padding:5px 10px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--text-muted);font-family:IBM Plex Sans KR,sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">+ 팀추가</button>
+    <button class="aram-hide" onclick="autoCreateTeams('normal')" title="참여 인원 ÷ 5(올림)만큼 팀장 없는 빈 팀을 만듭니다. 이미 있는 팀은 그대로 두고 모자란 만큼만 추가" style="padding:5px 10px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--text-muted);font-family:IBM Plex Sans KR,sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">팀 생성(자동)</button>
     <button class="aram-hide" onclick="openSwapModal()" title="선수 교체" style="padding:5px 10px;border-radius:2px;border:1px solid rgba(157,72,224,.4);background:rgba(157,72,224,.06);color:#B97EEA;font-family:IBM Plex Sans KR,sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">교체</button>
     <button class="aram-hide" onclick="openDraftOrderModal()" title="팀뽑기 순서" style="padding:5px 10px;border-radius:2px;border:1px solid rgba(200,170,110,.4);background:rgba(200,170,110,.06);color:var(--gold);font-family:IBM Plex Sans KR,sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">뽑기</button>
     <button class="aram-hide" onclick="openHyperFearlessBan()" title="챔피언 추첨" style="padding:5px 10px;border-radius:2px;border:1px solid rgba(10,200,185,.4);background:rgba(10,200,185,.06);color:var(--blue-bright);font-family:IBM Plex Sans KR,sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">추첨</button>
@@ -3607,7 +3622,7 @@ body:has(#screen-0.active){background-color:var(--rg-bg)!important;background-im
     <button onclick="copyTeamMentions('captain')" title="팀장 멘션" style="padding:5px 10px;border-radius:2px;border:1px solid rgba(100,150,255,.4);background:rgba(100,150,255,.06);color:#7EB2FF;font-family:IBM Plex Sans KR,sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">@팀장</button>
     <button onclick="copyTeamMentions('members')" title="팀원 멘션" style="padding:5px 10px;border-radius:2px;border:1px solid rgba(100,150,255,.4);background:rgba(100,150,255,.06);color:#7EB2FF;font-family:IBM Plex Sans KR,sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">@팀원</button>
     <button onclick="openVoiceCheck()" title="참여 멤버가 디스코드 음성 채널에 들어와 있는지 확인" style="padding:5px 10px;border-radius:2px;border:1px solid rgba(88,101,242,.45);background:rgba(88,101,242,.08);color:#A5B4FC;font-family:IBM Plex Sans KR,sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">🎧 출석 확인</button> <button class="aram-hide" onclick="openAutoBalance()" title="내전 분석 랩 모델로 팀·라인 자동 배치" style="padding:5px 10px;border-radius:2px;border:1px solid rgba(232,203,134,.5);background:rgba(232,203,134,.08);color:#E8CB86;font-family:IBM Plex Sans KR,sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">자동밸런스</button>
-    <button onclick="addTeamModal('auction')" style="padding:5px 10px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--text-muted);font-family:IBM Plex Sans KR,sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">+ 팀추가</button>
+    <button onclick="autoCreateTeams('auction')" title="참여 인원 ÷ 5(올림)만큼 팀장 없는 빈 팀을 만듭니다. 이미 있는 팀은 그대로 두고 모자란 만큼만 추가" style="padding:5px 10px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--text-muted);font-family:IBM Plex Sans KR,sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">팀 생성(자동)</button>
     <button onclick="openPointsModal()" title="포인트 설정" style="padding:5px 10px;border-radius:2px;border:1px solid rgba(200,170,110,.4);background:rgba(200,170,110,.06);color:var(--gold);font-family:IBM Plex Sans KR,sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">포인트</button>
     <button onclick="openSwapModal()" title="선수 교체" style="padding:5px 10px;border-radius:2px;border:1px solid rgba(157,72,224,.4);background:rgba(157,72,224,.06);color:#B97EEA;font-family:IBM Plex Sans KR,sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">교체</button>
     <button onclick="openDraftOrderModal()" title="팀뽑기 순서" style="padding:5px 10px;border-radius:2px;border:1px solid rgba(200,170,110,.4);background:rgba(200,170,110,.06);color:var(--gold);font-family:IBM Plex Sans KR,sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">뽑기</button>
@@ -3674,8 +3689,8 @@ body:has(#screen-0.active){background-color:var(--rg-bg)!important;background-im
 <div class="modal-overlay" id="add-team-modal" style="display:none;"> <div class="modal modal-add-team"> <div class="modal-title">팀 추가</div> <div style="font-size:12px;color:var(--text-muted);margin-bottom:1rem;line-height:1.6;">
  팀장을 지정하면 팀 이름이 팀장 닉네임으로 설정됩니다.<br>
  팀장은 나중에 대기칸에서 드래그해 팀에 추가한 뒤 지정할 수 있습니다.
- </div> <div class="form-row"> <div class="form-label">팀장 선택 (선택사항)</div> <input type="text" id="captain-search" class="form-input" placeholder="닉네임 검색..." oninput="filterCaptainList('captain-list','captain-search')" style="margin-bottom:6px;font-size:12px;padding:6px 10px;"> <div class="captain-list" id="captain-list"></div> </div> <div class="modal-actions"> <button class="btn-secondary" onclick="closeAddTeamModal()">취소</button> <button class="btn-primary" onclick="confirmAddTeam()">팀 생성</button> </div> </div>
-</div> <div class="modal-overlay" id="set-captain-modal" style="display:none;"> <div class="modal modal-sm"> <div class="modal-title">팀장 지정</div> <input type="text" id="set-captain-search" class="form-input" placeholder="닉네임 검색..." oninput="filterCaptainList('set-captain-list','set-captain-search')" style="margin-bottom:8px;font-size:12px;padding:6px 10px;"> <div class="captain-list" id="set-captain-list"></div> <div class="modal-actions"> <button class="btn-secondary" onclick="document.getElementById('set-captain-modal').style.display='none'">취소</button> </div> </div>
+ </div> <div class="form-row"> <div class="form-label">팀장 선택 (선택사항)</div> <input type="text" id="captain-search" class="form-input" placeholder="닉네임 검색..." oninput="filterCaptainList('captain-list','captain-search')" style="margin-bottom:6px;font-size:12px;padding:6px 10px;"> <select class="sort-select cap-sort" data-list="captain-list" onchange="sortCaptainList('captain-list', this.value)" style="width:100%;margin-bottom:6px;padding:5px 8px;font-size:11px;"><option value="default">기본 순서</option><option value="tier-desc">티어 높은 순</option><option value="tier-asc">티어 낮은 순</option></select> <div class="captain-list" id="captain-list"></div> </div> <div class="modal-actions"> <button class="btn-secondary" onclick="closeAddTeamModal()">취소</button> <button class="btn-primary" onclick="confirmAddTeam()">팀 생성</button> </div> </div>
+</div> <div class="modal-overlay" id="set-captain-modal" style="display:none;"> <div class="modal modal-sm"> <div class="modal-title">팀장 지정</div> <input type="text" id="set-captain-search" class="form-input" placeholder="닉네임 검색..." oninput="filterCaptainList('set-captain-list','set-captain-search')" style="margin-bottom:8px;font-size:12px;padding:6px 10px;"> <select class="sort-select cap-sort" data-list="set-captain-list" onchange="sortCaptainList('set-captain-list', this.value)" style="width:100%;margin-bottom:6px;padding:5px 8px;font-size:11px;"><option value="default">기본 순서</option><option value="tier-desc">티어 높은 순</option><option value="tier-asc">티어 낮은 순</option></select> <div class="captain-list" id="set-captain-list"></div> <div class="modal-actions"> <button class="btn-secondary" onclick="document.getElementById('set-captain-modal').style.display='none'">취소</button> </div> </div>
 </div> <div class="modal-overlay" id="points-modal" style="display:none;"> <div class="modal" style="max-width:400px;"> <div class="modal-title">팀장 포인트 설정</div> <div class="points-form" id="points-form"></div> <div id="points-auto-notice" style="display:none;margin:8px 0;padding:8px;background:rgba(200,170,110,.08);border:1px solid rgba(200,170,110,.3);border-radius:3px;font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;color:var(--gold);line-height:1.6;"></div>
 <div class="modal-actions" style="flex-wrap:wrap;gap:6px;">
   <button onclick="calcAutoPoints()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(10,200,185,.4);background:rgba(10,200,185,.06);color:var(--blue-bright);font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;">잔여포인트 자동계산</button>
@@ -6664,6 +6679,12 @@ async function showScreen(id){
 document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
 document.getElementById(id).classList.add('active');
 currentScreen = id;
+// 경매 현황 플로팅 버튼·패널은 비회원 관전 화면(경매 내전)에서만 — 다른 화면으로 가면 숨김
+if (id !== 'screen-v') {
+  ['uv-float-btn','uv-auction-panel','uv-log-panel'].forEach(function(x){ var el = document.getElementById(x); if (el) el.style.display = 'none'; });
+  if (typeof _uvApVisible !== 'undefined') _uvApVisible = false;
+  if (typeof _uvLogVisible !== 'undefined') _uvLogVisible = false;
+}
 }
 async function goBackToStage1(){
 if (!confirm('1단계로 돌아가면 내전 종류 선택이 초기화됩니다. 계속할까요?')) return;
@@ -8503,6 +8524,23 @@ ${bidBadge}
  <div class="mini-meta"> <span class="mini-tier" style="color:${color};background:${color}18">${(()=>{const tf=m.tierFull||'';const isHT=['MASTER','GRANDMASTER','CHALLENGER'].includes(m.tier);const lp=tf.match(/(\d+)LP/);const detail=tf&&tf!==m.tier?tf.replace(m.tier,'').trim():'';const suffix=isHT?(lp?` ${lp[1]}LP`:(detail?` ${detail}`:'')):(detail?` ${detail}`:'');return (TIER_KO[m.tier]||m.tier)+suffix;})()} </span> </div><div style="display:flex;align-items:center;gap:2px;margin-top:1px;">${m.mainLane ? `<span class="mini-lane">${LANE_KO[m.mainLane]||m.mainLane}</span>` : ''}${_subLaneText(m.subLane)?`<span style="color:var(--border-subtle);font-size:8px;margin:0 1px;">/</span><span class="mini-lane sub">${_subLaneText(m.subLane)}</span>`:''}</div> ${_miniScoreHtml} ${_champRowHtml}</div>`;
 return div;
 }
+// 팀장 선택 팝업 정렬 (기본 / 티어 높은 순 / 티어 낮은 순) — 마지막 선택 기억
+var _capSortMode = 'default';
+function sortCaptainList(listId, mode) {
+  _capSortMode = mode || 'default';
+  document.querySelectorAll('select.cap-sort').forEach(function (s) { s.value = _capSortMode; });
+  var list = document.getElementById(listId); if (!list) return;
+  var items = Array.prototype.slice.call(list.querySelectorAll('.captain-option'));
+  items.forEach(function (el, i) { if (el.dataset.ord == null) el.dataset.ord = i; });
+  items.sort(function (a, b) {
+    if (_capSortMode === 'default' || !a._m || !b._m) return a.dataset.ord - b.dataset.ord;
+    var td = tierRank(a._m.tier) - tierRank(b._m.tier);
+    var d = td !== 0 ? td : tierDetailRank(a._m) - tierDetailRank(b._m);
+    if (d === 0) return a.dataset.ord - b.dataset.ord;
+    return _capSortMode === 'tier-desc' ? -d : d;
+  });
+  items.forEach(function (el) { list.appendChild(el); });
+}
 function filterCaptainList(listId, searchId) {
   const q = (document.getElementById(searchId)?.value || '').toLowerCase();
   const items = document.getElementById(listId)?.querySelectorAll('.captain-option');
@@ -8511,6 +8549,22 @@ function filterCaptainList(listId, searchId) {
     const name = (el.dataset.name || '').toLowerCase();
     el.style.display = (!q || name.includes(q)) ? '' : 'none';
   });
+}
+// 팀 생성(자동): 참여 인원 ÷ 5 (올림)만큼 팀장 없는 빈 팀 — 이미 있는 팀은 두고 모자란 만큼만 추가
+function autoCreateTeams(mode){
+  const need = Math.ceil((members || []).length / 5);
+  if (!need) return toast('참여 멤버가 없습니다', 'err');
+  const add = need - teams.length;
+  if (add <= 0) return toast('이미 ' + teams.length + '팀이 있습니다 (참여 ' + members.length + '명 기준 ' + need + '팀)', 'ok');
+  for (let i = 0; i < add; i++) {
+    const _ccode = Math.random().toString(36).slice(2,6).toUpperCase();
+    teams.push({ id: nextTeamId++, captainId: null, members: [], points: 1000, captainCode: _ccode });
+  }
+  if (mode === 'normal'){ renderNormalPool(); renderNormalTeams(); checkNormalConditions(); }
+  else { renderAuctionPool(); renderAuctionTeams(); checkAuctionConditions(); }
+  saveCurrentMatch();
+  saveCaptainCodes();
+  toast('빈 팀 ' + add + '개 생성 — 총 ' + teams.length + '팀 (참여 ' + members.length + '명)', 'ok');
 }
 async function addTeamModal(mode){
 addTeamMode=mode;
@@ -8530,6 +8584,7 @@ const opt=document.createElement('div');
 opt.className='captain-option';
 opt.setAttribute('data-id', m.id);
 opt.setAttribute('data-name', m.name);
+opt._m=m;
 opt.innerHTML=`
 <div class="mini-avatar" style="width:32px;height:32px;"> <img src="https://ddragon.leagueoflegends.com/cdn/${window._ddVersion||'16.14.1'}/img/profileicon/${m.icon}.png"
 onerror="this.style.display=&quot;none&quot;"> </div> <div style="flex:1;min-width:0;"> <div class="mini-name" style="font-size:13px;color:var(--text-white);">${m.name}</div> <div style="font-size:11px;color:${color};font-family:'IBM Plex Sans KR',sans-serif;">${TIER_KO[m.tier]||m.tier}${m.mainLane ? ' · '+(LANE_KO[m.mainLane]||m.mainLane) : ''}</div> </div>`;
@@ -8541,6 +8596,7 @@ addTeamCaptainId=m.id;
 list.appendChild(opt);
 });
 }
+sortCaptainList('captain-list', _capSortMode);
 document.getElementById('add-team-modal').style.display='flex';
 }
 function closeAddTeamModal(){
@@ -8578,6 +8634,7 @@ const color=TIER_COLORS[m.tier] || '#5B6474';
 const opt=document.createElement('div');
 opt.className=`captain-option${m.id === team.captainId ? ' picked' : ''}`;
 opt.setAttribute('data-name', m.name);
+opt._m=m;
 opt.innerHTML=`
 <div class="mini-avatar" style="width:32px;height:32px;"> <img src="https://ddragon.leagueoflegends.com/cdn/${window._ddVersion||'16.14.1'}/img/profileicon/${m.icon}.png"
 onerror="this.style.display=&quot;none&quot;"> </div> <div style="flex:1;"> <div class="mini-name" style="font-size:13px;color:var(--text-white);">${m.name}</div> <div style="font-size:11px;color:${color};font-family:'IBM Plex Sans KR',sans-serif;">${TIER_KO[m.tier]||m.tier}</div> </div>
@@ -8593,6 +8650,7 @@ toast(`${m.name}이(가) 팀장으로 지정되었습니다`, 'ok');
 };
 list.appendChild(opt);
 });
+sortCaptainList('set-captain-list', _capSortMode);
 document.getElementById('set-captain-modal').style.display='flex';
 }
 function openPointsModal(){
@@ -10517,7 +10575,7 @@ if (typeof loadDoomScores === 'function') loadDoomScores();
   if (typeof _uvApUpdate === 'function') _uvApUpdate(snapshot);
   // 경매 내전일 때만 플로팅 버튼 표시
   var _apBtn = document.getElementById('uv-float-btn');
-  if (_apBtn) _apBtn.style.display = (snapshot._matchType === 'auction') ? 'flex' : 'none';
+  if (_apBtn) _apBtn.style.display = (snapshot._matchType === 'auction' && currentScreen === 'screen-v') ? 'flex' : 'none';
   // 선출 순서 플로팅 패널 (비회원 실시간 반영)
   _uvUpdateAuctionOrderPanel(snapshot);
   // 이미 화면이 열려있으면 현재 탭 유지하며 갱신, 처음 진입이면 기본 탭
@@ -10554,6 +10612,9 @@ if (isFirstOpen) {
     const _uvTabsEl = document.getElementById('uv-tabs');
     if (_uvTabsEl) { _uvTabsEl.style.animation = 'none'; void _uvTabsEl.offsetWidth; _uvTabsEl.style.animation = ''; }
     showScreenRaw('screen-v');
+    // 처음 들어올 때도 경매 내전이면 경매 현황 버튼 표시
+    var _apBtn2 = document.getElementById('uv-float-btn');
+    if (_apBtn2) _apBtn2.style.display = (snapshot._matchType === 'auction') ? 'flex' : 'none';
     // 패치노트 로드
     if (typeof loadDDVersion === 'function') {
       if (Object.keys(_patchData).length > 0) {
@@ -15615,6 +15676,11 @@ document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
 const el = document.getElementById(id);
 if (el) el.classList.add('active');
 currentScreen = id;
+if (id !== 'screen-v') {
+  ['uv-float-btn','uv-auction-panel','uv-log-panel'].forEach(function(x){ var e = document.getElementById(x); if (e) e.style.display = 'none'; });
+  if (typeof _uvApVisible !== 'undefined') _uvApVisible = false;
+  if (typeof _uvLogVisible !== 'undefined') _uvLogVisible = false;
+}
 }
 function openNewMatchFlow() {
 document.getElementById('m-name').value = '';
@@ -15713,6 +15779,16 @@ const mCat = m.categoryId ? _matchCategories.find(c => c.id === m.categoryId) : 
 const catBadge = mCat ? `<span class="cat-badge" style="color:${_escHtml(mCat.color)};border-color:${_escHtml(mCat.color)};margin-left:6px;">${_escHtml(mCat.name)}</span>` : '';
 const card = document.createElement('div');
 card.className = 'list-card ' + statusCls;
+// 단계별 은은한 카드 색: 쫑=빨강 / 종료=기존 / 1~4단계=점점 진해지는 하늘색
+(function(){
+  var sc = String(m._currentScreen || '');
+  var st = m.jjong ? 'jjong'
+    : (displayStatus === '내전 종료' || sc === 'screen-5') ? 'done'
+    : sc.indexOf('screen-4') === 0 ? '4'
+    : sc.indexOf('screen-3') === 0 ? '3'
+    : sc.indexOf('screen-2') === 0 ? '2' : '1';
+  card.setAttribute('data-s0-stage', st);
+})();
 // 자신의 커뮤니티 내전인지 확인
 const isOwnMatch = isMaster || (isAdmin && m.communityId === window._currentCommunityId);
 const catMenuBtn = isOwnMatch
@@ -17386,12 +17462,13 @@ async function manualAutoResult(btn) {
       var _d = r.diag || {}, _from = r.searchFrom ? new Date(r.searchFrom) : null;
       var _info = (_from ? '검색 시작 ' + (_from.getMonth() + 1) + '/' + _from.getDate() + ' ' + String(_from.getHours()).padStart(2, '0') + ':' + String(_from.getMinutes()).padStart(2, '0') + ' · ' : '') +
         'Riot 목록 ' + (_d.riotLists || 0) + '명/' + (_d.riotIds || 0) + '경기 · deeplol 목록 ' + (_d.dlLists || 0) + '명/' + (_d.dlIds || 0) + '경기 · 후보 ' + (_d.cands || 0) +
-        (_d.detailFail ? ' · 상세 실패 ' + _d.detailFail : '') + (_d.noMatch ? ' · 팀 불일치 ' + _d.noMatch : '') + (_d.notTen ? ' · 10인 아님 ' + _d.notTen : '');
+        (_d.detailFail ? ' · 상세 실패 ' + _d.detailFail : '') + (_d.budgetCut ? ' · 미확인 ' + _d.budgetCut + '(다시 눌러주세요)' : '') + (_d.noMatch ? ' · 팀 불일치 ' + _d.noMatch : '') + (_d.notTen ? ' · 10인 아님 ' + _d.notTen : '');
       console.log('[게임 결과 가져오기]', r);
       toast((r.total ? '새로 찾은 경기가 없습니다 (이미 저장된 ' + r.total + '경기)' : '이 내전과 맞는 게임을 찾지 못했습니다') + (r.note === '멤버 puuid 없음' ? ' · 멤버 계정 정보 없음' : ' · ' + _info), 'err');
       return;
     }
-    toast('게임 결과 ' + r.added + '경기를 저장했습니다' + (r.total > r.added ? ' (전체 ' + r.total + '경기)' : ''), 'ok');
+    var _cut = r.diag && r.diag.budgetCut;
+    toast('게임 결과 ' + r.added + '경기를 저장했습니다' + (r.total > r.added ? ' (전체 ' + r.total + '경기)' : '') + (_cut ? ' · 인원이 많아 일부 경기는 아직 확인 못 했어요. 한 번 더 누르면 나머지를 찾아요' : ''), 'ok');
     // 4단계에서 눌렀으면 5단계 결과 화면으로 (내용은 실시간 반영으로 들어옴)
     if (currentScreen === 'screen-4') {
       setTimeout(function () {
@@ -21332,8 +21409,8 @@ function _uvApUpdate(snapshot) {
   var btn = document.getElementById('uv-float-btn');
   // 경매 내전일 때만 플로팅 버튼 표시
   var _snap = window._uvSnapshot || window._lastSnapshot || {};
-  var _mt = _snap._matchType || _snap.matchType || (typeof matchType !== 'undefined' && matchType) || '';
-  if (btn) btn.style.display = (_mt === 'auction') ? 'flex' : 'none';
+  var _mt = snapshot._matchType || _snap._matchType || _snap.matchType || '';
+  if (btn) btn.style.display = (_mt === 'auction' && typeof currentScreen !== 'undefined' && currentScreen === 'screen-v') ? 'flex' : 'none';
 
   // 현재 매물
   var onSale = snapshot._onSaleMember;
@@ -22883,6 +22960,25 @@ function _balRenderFixed() {
 }
 function _balToggleFix(id) { if (_balFixed[id]) delete _balFixed[id]; else _balFixed[id] = 1; _balRenderFixed(); }
 
+// 자동 밸런스 추천: 닉네임 옆 티어 표시 (티어 색 · 디비전 / 마스터 이상은 LP)
+function _balTierPill(m) {
+  var tier = String(m.tier || 'UNRANKED').toUpperCase();
+  var color = (typeof TIER_COLORS !== 'undefined' && TIER_COLORS[tier]) || '#5B6474';
+  var full = (typeof TIER_KO !== 'undefined' && TIER_KO[tier]) || tier;
+  // 칸이 좁아 닉네임이 가려지지 않게 짧은 이름 (전체 이름은 마우스 올리면)
+  var ko = { IRON:'아이언', BRONZE:'브론즈', SILVER:'실버', GOLD:'골드', PLATINUM:'플레', EMERALD:'에메', DIAMOND:'다이아', MASTER:'마스터', GRANDMASTER:'그마', CHALLENGER:'챌린저', UNRANKED:'언랭' }[tier] || full;
+  var tf = String(m.tierFull || '').toUpperCase().replace(/\(임시\)/g, '').trim();
+  var rest = tf.indexOf(tier) === 0 ? tf.slice(tier.length).trim() : tf.replace(/^[A-Z]+\s*/, '').trim();
+  var suf = '';
+  if (['MASTER','GRANDMASTER','CHALLENGER'].indexOf(tier) >= 0) {
+    var lp = rest.match(/(\d+)\s*LP/) || rest.match(/^(\d+)/);
+    if (lp) suf = ' ' + parseInt(lp[1], 10) + 'LP';
+  } else if (tier !== 'UNRANKED') {
+    var d = rest.match(/^(IV|III|II|I|[1-4])\b/);
+    if (d) suf = ' ' + ({ I: 1, II: 2, III: 3, IV: 4 }[d[1]] || d[1]);
+  }
+  return '<span title="' + full + suf + '" style="flex-shrink:0;font-size:10px;font-weight:700;line-height:1.5;padding:0 6px;border-radius:999px;color:' + color + ';background:' + color + '1F;border:1px solid ' + color + '55;white-space:nowrap;">' + ko + suf + '</span>';
+}
 function runAutoBalance() {
   if (!_balModel) return toast('밸런스 모델을 불러오지 못했습니다', 'err');
   var st = _balState(), k = st.people.length / 5;
@@ -22910,7 +23006,7 @@ function runAutoBalance() {
       var rows = _BAL_LANES.map(function (l) {
         var i = t.lanes.indexOf(l), m = t.members[i];
         var main = _balNormLane(m.mainLane), tag = l === main ? '<span style="color:var(--text-muted)">주</span>' : (_balSubLanes(m).indexOf(l) >= 0 ? '<span style="color:#E8CB86">부</span>' : '<span style="color:#E05050">기타</span>');
-        return '<div style="display:flex;gap:6px;font-size:12px;padding:2px 0;"><span style="width:30px;color:var(--text-muted)">' + _BAL_KO[l] + '</span><span style="flex:1;color:var(--text-white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + (_balFixed[m.id] ? '📌 ' : '') + _balEsc(m.name) + '</span>' + tag + '</div>';
+        return '<div style="display:flex;gap:6px;font-size:12px;padding:2px 0;"><span style="width:30px;color:var(--text-muted)">' + _BAL_KO[l] + '</span><span style="flex:1;min-width:0;color:var(--text-white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + (_balFixed[m.id] ? '📌 ' : '') + _balEsc(m.name) + '</span>' + _balTierPill(m) + tag + '</div>';
       }).join('');
       return '<div style="flex:1;min-width:160px;background:var(--bg-dark);border:1px solid var(--border-subtle);border-radius:4px;padding:6px 8px;"><div style="font-size:11px;font-weight:700;color:var(--gold);margin-bottom:4px;">팀 ' + (ti + 1) + ' <span style="color:var(--text-muted);font-weight:400;">전력 ' + t.score.toFixed(2) + '</span></div>' + rows + '</div>';
     }).join('');
@@ -28668,28 +28764,34 @@ function _attRenderModal() {
 </script>
 <style>@keyframes attPulse{0%,100%{opacity:1}50%{opacity:.35}}</style>
 <script>
-/* Goo Morph 로고: 한 단어가 녹아서 다음 단어로. 원본 morph.js와 같은 타이밍(MELT 1.05s, HOLD 1.6s)·easing·threshold */
+/* Goo Morph 로고: 한 단어가 녹아서 다음 단어로. 원본 morph.js와 같은 타이밍(MELT 1.05s, HOLD 1.6s)·easing·threshold
+   홈: 룽잉닷컴 → Roonging / 커뮤니티 안: 룽잉닷컴 → Roonging → [커뮤니티명] */
 (function(){
   var box=document.getElementById('logo-morph'); if(!box) return;
   var A=document.getElementById('lm-a'), B=document.getElementById('lm-b');
-  var WORDS=['룽잉닷컴','Roonging','룽 잉'];
+  var BASE_WORDS=['룽잉닷컴','Roonging'];
   var MELT=1.05, HOLD=1.6, BASE=64; // 원본 폰트 64px 기준 blur → 로고 크기에 맞게 비례
-  var cur=0,nxt=0,t=0,melting=false,hold=HOLD,last=performance.now();
-  A.textContent=WORDS[0];
+  var curText=BASE_WORDS[0],nxtText='',t=0,melting=false,hold=HOLD,last=performance.now(),key='';
+  function words(){
+    var ind=document.getElementById('community-indicator'), nm=document.getElementById('community-indicator-name');
+    var cname=(ind&&ind.classList.contains('visible')&&nm)?String(nm.textContent||'').trim():'';
+    return cname?BASE_WORDS.concat([cname]):BASE_WORDS.slice();
+  }
+  A.textContent=curText;
   function fit(){
     var fs=parseFloat(getComputedStyle(box).fontSize)||0; if(fs<=0) return;
     var probe=document.createElement('span'); probe.className='lm-w'; probe.style.visibility='hidden';
     box.appendChild(probe); var w=0;
-    WORDS.forEach(function(x){probe.textContent=x; w=Math.max(w,probe.getBoundingClientRect().width);});
-    box.removeChild(probe); if(fs>0) box.style.width=(Math.ceil(w)/fs).toFixed(3)+'em';
+    words().forEach(function(x){probe.textContent=x; w=Math.max(w,probe.getBoundingClientRect().width);});
+    box.removeChild(probe); box.style.width=(Math.ceil(w)/fs).toFixed(3)+'em';
   }
   fit(); addEventListener('resize',fit);
   if(document.fonts&&document.fonts.ready) document.fonts.ready.then(fit);
-  function go(i){
-    if(melting||i===cur) return;
-    nxt=i;t=0;melting=true;
-    A.textContent=WORDS[cur]; B.textContent=WORDS[nxt];
-    box.classList.add('melting'); box.setAttribute('aria-label',WORDS[nxt]);
+  function go(text){
+    if(melting||text===curText) return;
+    nxtText=text;t=0;melting=true;
+    A.textContent=curText; B.textContent=nxtText;
+    box.classList.add('melting'); box.setAttribute('aria-label',nxtText);
   }
   function look(el,f){
     el.style.filter=f>=1?'none':'blur('+(Math.min(8/f-8,100)/BASE).toFixed(4)+'em)';
@@ -28698,10 +28800,15 @@ function _attRenderModal() {
   function ease(x){return x*x*(3-2*x);}
   function loop(now){
     var dt=Math.min((now-last)/1000,1/30); last=now;
+    var list=words(), k=list.join('|');
+    if(k!==key){ key=k; fit(); if(!melting && list.indexOf(curText)<0){ hold=HOLD; go(list[0]); } }
     if(melting){
       t+=dt/MELT;
-      if(t>=1){cur=nxt;melting=false;hold=HOLD;A.textContent=WORDS[cur];B.textContent='';box.classList.remove('melting');}
-    } else if((hold-=dt)<=0) go((cur+1)%WORDS.length);
+      if(t>=1){curText=nxtText;melting=false;hold=HOLD;A.textContent=curText;B.textContent='';box.classList.remove('melting');}
+    } else if((hold-=dt)<=0){
+      var i=list.indexOf(curText);
+      go(list[(i+1)%list.length]);
+    }
     if(melting){var f=ease(Math.max(0,Math.min(1,t)));look(A,1-f);look(B,f);}
     else{look(A,1);B.style.opacity=0;}
     requestAnimationFrame(loop);

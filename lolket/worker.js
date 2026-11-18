@@ -192,8 +192,26 @@ function _verifySessionToken(token) {
 }
 
 
-export default {
+const _WORKER = {
+  // 4xx/5xx 응답 진단 로그: 어떤 경로·요청이 에러를 내는지 Workers Logs 에서 확인용
+  // (Cron 실행은 HTTP 응답이 없어서 4xx 그래프에 잡히지 않음 → 4xx 는 전부 외부에서 들어온 요청)
   async fetch(request, env, ctx) {
+    let res;
+    try { res = await _WORKER._fetch(request, env, ctx); }
+    catch (e) { console.error('[5xx] 예외', request.method, new URL(request.url).pathname, e && e.message); throw e; }
+    try {
+      if (res && res.status >= 400) {
+        const u = new URL(request.url);
+        const cf = request.cf || {};
+        console.warn('[' + res.status + ']', request.method, u.host + u.pathname, (u.search || '').slice(0, 120),
+          '| ua=' + String(request.headers.get('User-Agent') || '-').slice(0, 120),
+          '| ref=' + String(request.headers.get('Referer') || request.headers.get('Origin') || '-').slice(0, 80),
+          '| ' + (cf.country || '?') + ' asn=' + (cf.asn || '?'));
+      }
+    } catch (e) {}
+    return res;
+  },
+  async _fetch(request, env, ctx) {
     _setSignKey(env);
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
     const url  = new URL(request.url);
@@ -1184,6 +1202,7 @@ export default {
     }
   },
 };
+export default _WORKER;
 
 // ══════════════════════════════════════════════════
 // 내전 결과 자동 저장
@@ -1205,12 +1224,13 @@ async function runAutoResultCheck(env) {
   const all = await res.json();
   if (!all) return;
   const now = Date.now();
-  const due = Object.entries(all).filter(([, it]) => it && it.cid && (it.at || 0) <= now).slice(0, 3);
+  // 15분마다 1개씩만 (알람 체크와 같은 실행에서 호출 50개 제한을 나눠 쓰므로) — 나머지는 다음 실행에
+  const due = Object.entries(all).filter(([, it]) => it && it.cid && (it.at || 0) <= now).sort((a, b) => (a[1].at || 0) - (b[1].at || 0)).slice(0, 1);
   for (const [matchId, it] of due) {
     // 먼저 '확인함' 처리 (예약 삭제) → 실패해도 다시 검사하지 않음
     await fetch(`${dbUrl}/auto_results/${matchId}.json${authQ}`, { method: 'DELETE' }).catch(() => {});
     try {
-      const r = await _autoResultForMatch(it.cid, matchId, env);
+      const r = await _autoResultForMatch(it.cid, matchId, env, { budget: 34 });
       console.log('[auto-result]', matchId, JSON.stringify(r));
     } catch (e) {
       console.error('[auto-result] error', matchId, e.message);
@@ -1484,14 +1504,18 @@ async function handleMatchDetail(url, env) {
 // 이미 저장된 경기(Match ID)는 건너뛰고 새로 찾은 경기만 추가
 async function _autoResultForMatch(cid, matchId, env, opts) {
   const manual = !!(opts && opts.manual);
+  // 워커 1회 실행당 외부 호출 50개 제한 → 직접 세면서 예산 안에서만 호출 (40인 내전 등 대인원 대비)
+  const B = { used: 0, max: (opts && opts.budget) || 46 };
+  const left = () => B.max - B.used;
+  const sf = (u, o) => { if (B.used >= B.max) return Promise.reject(new Error('호출 한도')); B.used++; return fetch(u, o); };
   const markChecked = manual ? {} : { autoResultChecked: true };
   const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
   const authQ = secret ? '?auth=' + secret : '';
   const key = env.RIOT_API_KEY || '';
   const base = `${dbUrl}/communities/${cid}/matches/${matchId}`;
-  const patch = async (obj) => fetch(`${base}.json${authQ}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(obj) });
+  const patch = async (obj) => sf(`${base}.json${authQ}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(obj) });
 
-  const mr = await fetch(`${base}.json${authQ}`);
+  const mr = await sf(`${base}.json${authQ}`);
   const m = mr.ok ? await mr.json() : null;
   if (!m) return { skip: 'no match' };
   if (!manual && m.autoResultChecked) return { skip: 'already checked' };
@@ -1503,6 +1527,7 @@ async function _autoResultForMatch(cid, matchId, env, opts) {
   let diag = null, startMsOut = null;
   const noGames = async (note) => {
     if (!manual) await patch({ autoResultChecked: true, autoResult: { at: Date.now(), games: 0, total: existingCodes.size, note: note || '', diag } });
+    if (diag) diag.calls = B.used;
     return { ok: true, added: 0, total: existingCodes.size, note, diag, searchFrom: startMsOut };
   };
   const teams = _arTeams(m);
@@ -1510,7 +1535,7 @@ async function _autoResultForMatch(cid, matchId, env, opts) {
   const allMembers = _arArr(m._members);
 
   // 소환사 계정 등록(메인 + 부계정)으로 멤버별 puuid 모으기
-  const pr = await fetch(`${dbUrl}/communities/${cid}/discord_profiles.json${authQ}`);
+  const pr = await sf(`${dbUrl}/communities/${cid}/discord_profiles.json${authQ}`);
   const profiles = pr.ok ? (await pr.json() || {}) : {};
   const profByKey = {}, profByDid = {};
   for (const [did, p] of Object.entries(profiles)) {
@@ -1541,32 +1566,50 @@ async function _autoResultForMatch(cid, matchId, env, opts) {
   let _base = m.stage4At || (m.autoResultAt ? m.autoResultAt - _AUTO_RESULT_DELAY_MS : 0);
   if (!_base && m.time && m.time !== 'mobasi') { const t = Date.parse(String(m.time).length <= 16 ? m.time + ':00+09:00' : m.time); if (!isNaN(t)) _base = t; }
   if (!_base) _base = Date.now() - 24 * 60 * 60 * 1000;
-  const startMs = _base - 30 * 60 * 1000;
+  let startMs = _base - 30 * 60 * 1000;
+  // 수동으로 가져올 때는 최근 24시간 이내 게임만
+  if (manual) startMs = Math.max(startMs, Date.now() - 24 * 60 * 60 * 1000);
   startMsOut = startMs;
   const startSec = Math.floor(startMs / 1000);
-  // 후보 경기 ID 모으기: 팀마다 최대 3명씩
-  //   ① Riot 최근 경기 목록  ② deeplol 커스텀 경기 목록 (Riot 목록에 내전이 안 나오는 경우 대비)
-  diag = { riotLists: 0, riotIds: 0, dlLists: 0, dlIds: 0, cands: 0, details: 0, detailFail: 0, notTen: 0, early: 0, noMatch: 0 };
+  // 후보 경기 ID 모으기: 팀이 많으면 팀당 인원을 줄임 (2팀 3명, 그 이상 2명)
+  //   ① Riot 최근 경기 목록  ② deeplol 커스텀 경기 목록 (Riot 목록에 내전이 안 나오는 경우 대비, 남는 예산으로)
+  diag = { riotLists: 0, riotIds: 0, dlLists: 0, dlIds: 0, cands: 0, details: 0, detailFail: 0, notTen: 0, early: 0, noMatch: 0, calls: 0 };
   const pick = [];
-  teams.forEach(t => { t.members.filter(x => x._puus.size || x._prof).slice(0, 3).forEach(x => pick.push(x)); });
+  const perTeam = teams.length <= 2 ? 3 : 2;
+  // 팀마다 1명씩 돌아가며 순서 정함 → 예산이 모자라 중간에 끊겨도 모든 팀이 최소 1명씩 확인됨
+  //   (경기마다 양 팀 1명씩이면 '2명 이상이 본 경기' 조건을 채움)
+  const perTeamList = teams.map(t => {
+    const ok = t.members.filter(x => x._puus.size || x._prof);
+    ok.sort((a, b) => (b._puus.size ? 1 : 0) - (a._puus.size ? 1 : 0));   // Riot puuid 있는 사람 먼저
+    return ok.slice(0, perTeam);
+  });
+  for (let k = 0; k < perTeam; k++) perTeamList.forEach(l => { if (l[k]) pick.push(l[k]); });
+  // 경기 상세 조회·저장용으로 남겨둘 호출 수
+  const RESERVE = Math.min(20, Math.max(8, teams.length * 2)) + 3;
   if (!pick.length) return noGames('멤버 puuid 없음');
   const DLH = { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                 'Accept': 'application/json', 'Referer': 'https://www.deeplol.gg/', 'Origin': 'https://www.deeplol.gg' };
   const cnt = {};
   const add = (id, who) => { id = normId(id); if (!id) return; (cnt[id] = cnt[id] || new Set()).add(who); };
+  // ① Riot 목록
   await Promise.all(pick.map(async (x, xi) => {
     const rp = [...x._puus][0];
-    if (rp) {
+    if (rp && left() > RESERVE) {
       try {
-        const r = await fetch(`https://asia.api.riotgames.com/lol/match/v5/matches/by-puuid/${rp}/ids?startTime=${startSec}&count=30`, { headers: { 'X-Riot-Token': key } });
+        const r = await sf(`https://asia.api.riotgames.com/lol/match/v5/matches/by-puuid/${rp}/ids?startTime=${startSec}&count=30`, { headers: { 'X-Riot-Token': key } });
         if (r.ok) { const ids = await r.json() || []; diag.riotLists++; diag.riotIds += ids.length; ids.forEach(id => add(id, xi)); }
       } catch (e) {}
     }
+  }));
+  // ② deeplol 목록: 남는 예산으로 한 명씩
+  for (let xi = 0; xi < pick.length; xi++) {
+    const x = pick[xi];
     let dp = x._prof && x._prof.p.dlPuuid;
-    if (!dp) dp = await _dlPuuidByRiotId(env, x.name, x.tag).catch(() => null);
+    if (left() - (dp ? 1 : 2) < RESERVE) break;
+    if (!dp) { B.used++; dp = await _dlPuuidByRiotId(env, x.name, x.tag).catch(() => null); }
     if (dp) {
       try {
-        const r = await fetch(`https://b2c-api-cdn.deeplol.gg/match/matches?puu_id=${encodeURIComponent(dp)}&platform_id=KR&offset=0&count=20&queue_type=CUSTOM&champion_id=0&only_list=1&last_updated_at=1`, { headers: DLH });
+        const r = await sf(`https://b2c-api-cdn.deeplol.gg/match/matches?puu_id=${encodeURIComponent(dp)}&platform_id=KR&offset=0&count=20&queue_type=CUSTOM&champion_id=0&only_list=1&last_updated_at=1`, { headers: DLH });
         if (r.ok) {
           const j = await r.json();
           const lst = (j && j.match_id_list) || [];
@@ -1580,14 +1623,16 @@ async function _autoResultForMatch(cid, matchId, env, opts) {
         }
       } catch (e) {}
     }
-  }));
-  const cands = Object.keys(cnt).sort((a, b) => cnt[b].size - cnt[a].size).filter(id => cnt[id].size >= 2).slice(0, 20);
+  }
+  // 이미 저장된 경기는 상세 조회 생략 (다시 눌러도 남은 경기부터 확인)
+  const cands = Object.keys(cnt).sort((a, b) => cnt[b].size - cnt[a].size).filter(id => cnt[id].size >= 2 && !existingCodes.has(id)).slice(0, 20);
   diag.cands = cands.length;
 
   // 경기 판정
   const games = [];
   for (const mid of cands) {
-    const r = await fetch(`https://asia.api.riotgames.com/lol/match/v5/matches/${encodeURIComponent(mid)}`, { headers: { 'X-Riot-Token': key } });
+    if (left() <= 3) { diag.budgetCut = (diag.budgetCut || 0) + 1; continue; }   // 저장할 호출은 남겨둠
+    const r = await sf(`https://asia.api.riotgames.com/lol/match/v5/matches/${encodeURIComponent(mid)}`, { headers: { 'X-Riot-Token': key } });
     if (!r.ok) { diag.detailFail++; continue; }
     diag.details++;
     const data = await r.json();
@@ -1681,12 +1726,10 @@ async function _autoResultForMatch(cid, matchId, env, opts) {
     });
   });
 
-  // 새 경기 상세 분석 요약본 미리 저장 (실패해도 결과 저장에는 영향 없음)
-  for (const g of newGames) { try { await _mdBuildStore(env, g.mid, g.data); } catch (e) {} }
-
-  // 부계정 목록에 추가 (메인 계정 외)
+  // 부계정 목록에 추가 (메인 계정 외) — 결과 저장 1번은 남겨둠
   for (const s of subAdds) {
-    await fetch(`${dbUrl}/communities/${cid}/discord_profiles/${s.did}/subAccounts/${encodeURIComponent(s.p.puuid).replace(/[.#$\[\]]/g, '_')}.json${authQ}`, {
+    if (left() <= 1) break;
+    await sf(`${dbUrl}/communities/${cid}/discord_profiles/${s.did}/subAccounts/${encodeURIComponent(s.p.puuid).replace(/[.#$\[\]]/g, '_')}.json${authQ}`, {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ riotName: s.p.riotIdGameName || '', riotTag: s.p.riotIdTagline || '', riotPuuid: s.p.puuid, addedAt: Date.now(), fromMatch: matchId, fromGame: s.matchId }),
     }).catch(() => {});
@@ -1703,7 +1746,9 @@ async function _autoResultForMatch(cid, matchId, env, opts) {
     _version: (m._version || 0) + 1,
     _updatedAt: now,
   });
-  return { ok: w.ok, added, total, found, subAccounts: subAdds.length };
+  // 새 경기 상세 분석 요약본 미리 저장 — 남는 예산으로만 (못 하면 처음 열 때 만들어짐)
+  for (const g of newGames) { if (left() < 4) break; B.used += 3; try { await _mdBuildStore(env, g.mid, g.data); } catch (e) {} }
+  return { ok: w.ok, added, total, found, subAccounts: subAdds.length, diag: Object.assign(diag || {}, { calls: B.used }) };
 }
 
 // ── Cron 알람 체크 ──
