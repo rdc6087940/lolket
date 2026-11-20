@@ -891,6 +891,18 @@ tr.has-bg-effect td {
 /* PWA 설치 버튼 */
 #btn-pwa-install{display:none;align-items:center;gap:5px;padding:4px 10px;border-radius:3px;border:1px solid rgba(200,170,110,.4);background:rgba(200,170,110,.08);color:var(--gold);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;letter-spacing:.5px;cursor:pointer;white-space:nowrap;transition:all .15s}
 #btn-pwa-install:hover{background:rgba(200,170,110,.18)}
+
+/* 본계정-부계정 계층 */
+.sub-toggle{margin-left:6px;padding:1px 7px;border-radius:999px;border:1px solid rgba(167,139,250,.4);background:rgba(167,139,250,.08);color:#A78BFA;font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;cursor:pointer;vertical-align:middle;transition:background .2s,border-color .2s}
+.sub-toggle:hover{background:rgba(167,139,250,.16);border-color:rgba(167,139,250,.7)}
+.sub-toggle .sub-chev{display:inline-block;transition:transform .2s}
+.sub-toggle.on .sub-chev{transform:rotate(180deg)}
+.sub-badge{margin-left:6px;padding:0 6px;border-radius:999px;background:rgba(167,139,250,.12);color:#A78BFA;font-size:10px;font-weight:700;vertical-align:middle}
+.sub-branch{color:#A78BFA;font-weight:700}
+#stats-body tr.sub-row{background:rgba(167,139,250,.035)}
+#stats-body tr.sub-row td:nth-child(2){padding-left:28px!important}
+#stats-body tr.sub-row[hidden],.mc-sub[hidden]{display:none!important}
+.mc.mc-sub{margin-left:18px;border-left:2px solid rgba(167,139,250,.45)!important}
 </style>
 <link rel="manifest" href="/stats-manifest.json">
 <meta name="theme-color" content="#0c1117">
@@ -1321,6 +1333,10 @@ body > div[style*="position: fixed"][style*="inset: 0"] > div,body > div[style*=
         <span style="font-family:'IBM Plex Sans KR',sans-serif;font-size:15px;letter-spacing:2px;color:#A78BFA;">임시티어 관리</span>
         <span id="temp-tier-count" style="font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;color:#F59E0B;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.25);padding:1px 8px;border-radius:10px;"></span>
       </div>
+<button onclick="ttCopyDiscord()" title="디스코드에 붙여넣을 수 있는 텍스트로 복사" style="padding:5px 12px;border-radius:4px;border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--muted);font-size:11px;font-family:'IBM Plex Sans KR',sans-serif;font-weight:700;cursor:pointer;white-space:nowrap;color:#A5B4FC;border-color:rgba(88,101,242,.45);background:rgba(88,101,242,.08);">📋 디스코드용 복사</button>
+      <button onclick="ttExportCsv()" title="임시티어 명단을 CSV 파일로 내보내기" style="padding:5px 12px;border-radius:4px;border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--muted);font-size:11px;font-family:'IBM Plex Sans KR',sans-serif;font-weight:700;cursor:pointer;white-space:nowrap;">⬇ CSV 내보내기</button>
+      <button onclick="ttImportCsvPick()" title="CSV 파일을 불러와 임시티어 저장 (관리자)" style="padding:5px 12px;border-radius:4px;border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--muted);font-size:11px;font-family:'IBM Plex Sans KR',sans-serif;font-weight:700;cursor:pointer;white-space:nowrap;color:#A78BFA;border-color:rgba(167,139,250,.4);background:rgba(167,139,250,.08);">⬆ CSV 불러오기</button>
+      <input type="file" id="tt-csv-file" accept=".csv,text/csv" style="display:none" onchange="ttImportCsvFile(this)">
       <button onclick="loadTempTierTab()" style="display:flex;align-items:center;gap:5px;padding:5px 12px;border-radius:4px;border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--muted);font-size:11px;font-family:'IBM Plex Sans KR',sans-serif;font-weight:700;letter-spacing:.5px;cursor:pointer;transition:all .15s;" onmouseover="this.style.borderColor='rgba(167,139,250,.4)';this.style.color='#A78BFA';" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)';">
         <span style="font-size:12px;">↻</span> 새로고침
       </button>
@@ -1946,6 +1962,7 @@ async function loadData(){
     loadAllWeeklyEmojis();
     loadAllPeakTiers();
     loadAllTempTiers();
+    loadSubAccounts();
     // 시즌 로드
     loadSeasons();
     var _sfb = document.getElementById('season-filter-bar');
@@ -1961,7 +1978,18 @@ async function loadData(){
 function applyAll(){
   // 시즌 모드면 시즌 데이터 기준으로 필터/정렬
   let data = (_currentSeason && _seasonFilteredData) ? _seasonFilteredData.slice() : allData.slice();
-  if(searchQuery){const q=searchQuery.toLowerCase();data=data.filter(m=>(m.riot_name+'#'+m.riot_tag).toLowerCase().includes(q));}
+  // 부계정은 본계정 아래로만 (순위·인원 수에서 빠짐). 본계정이 목록에 없으면 그대로 둠
+  (function(){
+    var basePuu = new Set(data.map(function(m){ return m.puu_id; }));
+    var subsOf = {};
+    data = data.filter(function(m){
+      var mp = _subMainOf[m.puu_id];
+      if (mp && basePuu.has(mp)) { (subsOf[mp] = subsOf[mp] || []).push(m); return false; }
+      return true;
+    });
+    data.forEach(function(m){ m._subRows = subsOf[m.puu_id] || null; });
+  })();
+  if(searchQuery){const q=searchQuery.toLowerCase();const hit=x=>(x.riot_name+'#'+x.riot_tag).toLowerCase().includes(q);data=data.filter(m=>hit(m)||(m._subRows||[]).some(hit));}
   if(filterPos!=='ALL') data=data.filter(m=>normalizePos(m.most_position)===filterPos);
   if(filterTier!=='ALL') data=data.filter(m=>m.tier&&m.tier.toUpperCase().startsWith(filterTier));
   const gn=gamesMin!==''?parseInt(gamesMin):null;
@@ -1992,21 +2020,47 @@ function applyAll(){
   renderPage();
 }
 
-function renderPage(){
-  const total=filteredData.length;
-  const pages=Math.ceil(total/PER_PAGE);
-  if(currentPage>pages) currentPage=1;
-  const start=(currentPage-1)*PER_PAGE;
-  const slice=filteredData.slice(start,start+PER_PAGE);
-
-  if(!slice.length){
-    document.getElementById('stats-body').innerHTML='<tr><td colspan="13"><div class="state" style="color:var(--muted);">검색 결과가 없습니다</div></td></tr>';
-    document.getElementById('pagination').style.display='none';
-    return;
-  }
-
-  document.getElementById('stats-body').innerHTML=slice.map((m,i)=>{
-    const rank=start+i+1;
+// ── 본계정-부계정 계층 (5단계 게임 결과로 찾은 부계정, 디스코드 소환사 계정 등록 기준) ──
+var _subMainOf = {};          // 부계정 deeplol puu_id → 본계정 puu_id
+var _subOpen = new Set();     // 펼친 본계정 puu_id
+async function loadSubAccounts() {
+  if (!COMMUNITY_ID) return;
+  try {
+    var r = await fetch(WORKER_URL + '/sub-accounts?cid=' + encodeURIComponent(COMMUNITY_ID));
+    var j = await r.json();
+    if (!j || !j.ok) return;
+    var key = function (n, t) { return (String(n || '').trim() + '#' + String(t || '').trim()).toLowerCase(); };
+    var byKey = {}, byPuu = {};
+    allData.forEach(function (m) { if (m.riot_name) byKey[key(m.riot_name, m.riot_tag)] = m; if (m.puu_id) byPuu[m.puu_id] = m; });
+    var map = {};
+    (j.list || []).forEach(function (e) {
+      var main = (e.dlPuuid && byPuu[e.dlPuuid]) || byKey[key(e.name, e.tag)];
+      if (!main) return;
+      (e.subs || []).forEach(function (sa) {
+        var row = byKey[key(sa.name, sa.tag)];
+        if (row && row.puu_id && row.puu_id !== main.puu_id) map[row.puu_id] = main.puu_id;
+      });
+    });
+    _subMainOf = map;
+    if (Object.keys(map).length) applyAll();
+  } catch (e) { console.warn('[sub-accounts]', e); }
+}
+function _subToggleHtml(m) {
+  var n = (m._subRows || []).length;
+  if (!n) return '';
+  var open = _subOpen.has(m.puu_id);
+  return '<button type="button" class="sub-toggle' + (open ? ' on' : '') + '" onclick="event.stopPropagation();toggleSubRows(\'' + m.puu_id + '\')" title="5단계 게임 결과로 찾은 부계정">부계정 ' + n + ' <span class="sub-chev">▾</span></button>';
+}
+function toggleSubRows(puu) {
+  var open = !_subOpen.has(puu);
+  if (open) _subOpen.add(puu); else _subOpen.delete(puu);
+  document.querySelectorAll('[data-sub-of="' + puu + '"]').forEach(function (el) { el.hidden = !open; });
+  document.querySelectorAll('.sub-toggle').forEach(function (b) {
+    if ((b.getAttribute('onclick') || '').indexOf("'" + puu + "'") >= 0) b.classList.toggle('on', open);
+  });
+}
+window.toggleSubRows = toggleSubRows;
+function _statsRowHtml(m, rank, subOf){
     const normPos=normalizePos(m.most_position);
     const posS=POS_SHORT[normPos]||(m.most_position||'—').toUpperCase().slice(0,3);
     const posC=POS_COLOR[normPos]||'#5B6474';
@@ -2024,9 +2078,9 @@ function renderPage(){
     const pctS=t?pct.toFixed(1)+'%':'—';
     const wp=t?(w/t*100).toFixed(1):0;
     const lp=t?(l/t*100).toFixed(1):0;
-    return `<tr data-puu="${m.puu_id}" class="${_rowEffects[m.puu_id] ? 'effect-'+_rowEffects[m.puu_id] : ''}">
-      <td class="col-rank">${rank}</td>
-      <td><span class="s-name" onclick="copyNickname('${esc(m.riot_name)}','${esc(m.riot_tag)}')" style="cursor:pointer;" title="클릭하여 복사">${esc(m.riot_name)}</span> <span class="s-tag">#${esc(m.riot_tag)}</span>${_weeklyEmojis&&_weeklyEmojis[m.puu_id]?' '+_weeklyEmojis[m.puu_id].map(function(e){return '<span title="'+e.label+'" style="font-size:12px;cursor:default;">'+e.emoji+'</span>';}).join(''):''}${renderAchBadge(m.puu_id)}</td>
+    return `<tr data-puu="${m.puu_id}" class="${_rowEffects[m.puu_id] ? 'effect-'+_rowEffects[m.puu_id] : ''}${subOf ? ' sub-row' : ''}"${subOf ? ' data-sub-of="'+subOf+'"' + (_subOpen.has(subOf) ? '' : ' hidden') : ''}>
+      <td class="col-rank">${subOf ? '<span class="sub-branch">└</span>' : rank}</td>
+      <td><span class="s-name" onclick="copyNickname('${esc(m.riot_name)}','${esc(m.riot_tag)}')" style="cursor:pointer;" title="클릭하여 복사">${esc(m.riot_name)}</span> <span class="s-tag">#${esc(m.riot_tag)}</span>${subOf ? '<span class="sub-badge">부계정</span>' : _subToggleHtml(m)}${_weeklyEmojis&&_weeklyEmojis[m.puu_id]?' '+_weeklyEmojis[m.puu_id].map(function(e){return '<span title="'+e.label+'" style="font-size:12px;cursor:default;">'+e.emoji+'</span>';}).join(''):''}${renderAchBadge(m.puu_id)}</td>
       <td><span class="pos-txt" style="color:${posC}">${posS}</span></td>
       <td>${(function(){
         var lp = undefined;
@@ -2062,6 +2116,23 @@ function renderPage(){
         </div>
       </td>
     </tr>`;
+}
+function renderPage(){
+  const total=filteredData.length;
+  const pages=Math.ceil(total/PER_PAGE);
+  if(currentPage>pages) currentPage=1;
+  const start=(currentPage-1)*PER_PAGE;
+  const slice=filteredData.slice(start,start+PER_PAGE);
+
+  if(!slice.length){
+    document.getElementById('stats-body').innerHTML='<tr><td colspan="13"><div class="state" style="color:var(--muted);">검색 결과가 없습니다</div></td></tr>';
+    document.getElementById('pagination').style.display='none';
+    return;
+  }
+
+  document.getElementById('stats-body').innerHTML=slice.map((m,i)=>{
+    // 본계정 다음에 부계정 행 (접어두고 토글)
+    return _statsRowHtml(m, start+i+1, null) + (m._subRows || []).map(function(x){ return _statsRowHtml(x, '', m.puu_id); }).join('');
   }).join('');
 
   renderPagination(pages);
@@ -2071,8 +2142,15 @@ function renderPage(){
 function renderMobileCards(slice, start) {
   var el = document.getElementById('mobile-card-list');
   if (!el) return;
-  el.innerHTML = slice.map(function(m, i) {
-    var rank = start + i + 1;
+  // 본계정 카드 다음에 부계정 카드 (접어두고 토글)
+  var _flat = [];
+  slice.forEach(function (m, i) {
+    _flat.push({ m: m, rank: start + i + 1 });
+    (m._subRows || []).forEach(function (x) { _flat.push({ m: Object.assign(Object.create(x), { __subOf: m.puu_id }), rank: '' }); });
+  });
+  el.innerHTML = _flat.map(function(it) {
+    var m = it.m;
+    var rank = it.rank;
     var normPos = normalizePos(m.most_position);
     var posS = POS_SHORT[normPos] || (m.most_position||'—').toUpperCase().slice(0,3);
     var posC = POS_COLOR[normPos] || '#5B6474';
@@ -2091,12 +2169,14 @@ function renderMobileCards(slice, start) {
     var tempTier = _tempTiers && m.puu_id && _tempTiers[m.puu_id] ? _tempTiers[m.puu_id].tier : null;
     var tempHtml = tempTier ? '<span style="font-family:IBM Plex Sans KR,sans-serif;font-size:10px;color:#F59E0B;background:rgba(245,158,11,.1);padding:1px 5px;border-radius:2px;">임시 '+esc(tempTier)+'</span>' : '';
 
-    return '<div class="mc" data-puu="'+esc(m.puu_id)+'">' +
+    var subOf = m.__subOf || null;
+    return '<div class="mc' + (subOf ? ' mc-sub' : '') + '" data-puu="'+esc(m.puu_id)+'"' + (subOf ? ' data-sub-of="' + esc(subOf) + '"' + (_subOpen.has(subOf) ? '' : ' hidden') : '') + '>' +
       '<div class="mc-top">' +
-        '<span class="mc-rank">'+rank+'</span>' +
+        '<span class="mc-rank">'+(subOf ? '<span class="sub-branch">└</span>' : rank)+'</span>' +
         '<div style="flex:1;min-width:0;">' +
           '<span class="mc-name">'+esc(m.riot_name)+'</span>' +
           '<span class="mc-tag"> #'+esc(m.riot_tag)+'</span>' +
+          (subOf ? '<span class="sub-badge">부계정</span>' : _subToggleHtml(m)) +
         (_weeklyEmojis && _weeklyEmojis[m.puu_id] ? _weeklyEmojis[m.puu_id].map(function(e){ return '<span title="'+e.label+'" style="font-size:12px;margin-left:2px;cursor:default;">'+e.emoji+'</span>'; }).join('') : '') +
         renderAchBadge(m.puu_id) +
         '</div>' +
@@ -13042,6 +13122,195 @@ function _syncMobileMenu() {
   window.RGMatchDetail = { mount: mount, load: load, normId: normId };
 })();
 /*RGMD-END*/
+</script>
+<script>
+/* ── 임시티어 명단: CSV 내보내기 / 불러오기 · 디스코드용 텍스트 복사 ── */
+(function(){
+  var LABEL = {}; TIER_OPTIONS.forEach(function(t){ LABEL[t.value] = t.label; });
+  var ROMAN = { '1':'I','2':'II','3':'III','4':'IV' };
+  var KO = { '챌린저':'CHALLENGER','챌':'CHALLENGER','그랜드마스터':'GRANDMASTER','그마':'GRANDMASTER','마스터':'MASTER','다이아':'DIAMOND','다이아몬드':'DIAMOND','에메':'EMERALD','에메랄드':'EMERALD',
+    '플래':'PLATINUM','플레':'PLATINUM','플래티넘':'PLATINUM','골드':'GOLD','실버':'SILVER','브론즈':'BRONZE','아이언':'IRON' };
+  var LETTER = { C:'CHALLENGER', GM:'GRANDMASTER', M:'MASTER', D:'DIAMOND', E:'EMERALD', P:'PLATINUM', G:'GOLD', S:'SILVER', B:'BRONZE', I:'IRON' };
+  function ttTierStr(tt){ return tt ? (typeof tt === 'object' ? (tt.tier || '') : String(tt)) : ''; }
+  // "DIAMOND II" / "다이아 2" / "D2" / "diamond 2" / "마스터" → TIER_OPTIONS 값
+  function normTier(v){
+    var t = String(v || '').trim(); if (!t) return '';
+    var up = t.toUpperCase().replace(/\s+/g, ' ');
+    if (LABEL[up]) return up;
+    var m = t.match(/^(챌린저|챌|그랜드마스터|그마|마스터|다이아몬드|다이아|에메랄드|에메|플래티넘|플래|플레|골드|실버|브론즈|아이언)\s*([1-4]|IV|III|II|I)?$/i);
+    var base = null, div = null;
+    if (m) { base = KO[m[1]]; div = m[2]; }
+    else if ((m = up.match(/^(CHALLENGER|GRANDMASTER|MASTER|DIAMOND|EMERALD|PLATINUM|GOLD|SILVER|BRONZE|IRON)\s*([1-4]|IV|III|II|I)?$/))) { base = m[1]; div = m[2]; }
+    else if ((m = up.match(/^(GM|C|M|D|E|P|G|S|B|I)\s*([1-4])$/)) || (m = up.match(/^(GM|C|M)$/))) { base = LETTER[m[1]]; div = m[2]; }
+    if (!base) return null;
+    if (['CHALLENGER','GRANDMASTER','MASTER'].indexOf(base) >= 0) return base;
+    if (!div) return null;
+    var r = ROMAN[div] || String(div).toUpperCase();
+    var val = base + ' ' + r;
+    return LABEL[val] ? val : null;
+  }
+  function rows(){
+    var byPuu = {}; (allData || []).forEach(function(m){ if (m.puu_id) byPuu[m.puu_id] = m; });
+    var order = TIER_OPTIONS.map(function(t){ return t.value; });
+    return Object.keys(_tempTiers || {}).map(function(puu){
+      var tt = _tempTiers[puu], m = byPuu[puu] || {};
+      var tier = ttTierStr(tt), lp = tt && typeof tt === 'object' && tt.lp != null ? tt.lp : '';
+      return { puu: puu, name: m.riot_name || '', tag: m.riot_tag || '', tier: tier, lp: lp, at: (tt && typeof tt === 'object' && tt.assignedAt) || '', cur: m.tier || '' };
+    }).filter(function(r){ return r.tier; }).sort(function(a, b){
+      var d = order.indexOf(a.tier) - order.indexOf(b.tier); if (d) return d;
+      if (a.lp !== '' || b.lp !== '') return (+b.lp || 0) - (+a.lp || 0);
+      return (a.name || '').localeCompare(b.name || '');
+    });
+  }
+  var csvCell = function(v){ v = String(v == null ? '' : v); return /[",\n\r]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+  window.ttExportCsv = function(){
+    var list = rows();
+    if (!list.length) return alert('내보낼 임시티어가 없습니다.');
+    var head = ['닉네임','태그','임시티어','LP','부여일','현재티어','puu_id'];
+    var lines = [head.join(',')].concat(list.map(function(r){ return [r.name, r.tag, r.tier, r.lp, r.at, r.cur, r.puu].map(csvCell).join(','); }));
+    var blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    var d = new Date(); a.download = '임시티어_' + (COMMUNITY_ID || 'community') + '_' + d.getFullYear() + String(d.getMonth()+1).padStart(2,'0') + String(d.getDate()).padStart(2,'0') + '.csv';
+    document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 500);
+  };
+  function parseCsv(text){
+    text = String(text || '').replace(/^﻿/, '');
+    var out = [], row = [], cell = '', q = false;
+    for (var i = 0; i < text.length; i++) {
+      var ch = text[i];
+      if (q) { if (ch === '"') { if (text[i+1] === '"') { cell += '"'; i++; } else q = false; } else cell += ch; }
+      else if (ch === '"') q = true;
+      else if (ch === ',') { row.push(cell); cell = ''; }
+      else if (ch === '\n' || ch === '\r') { if (ch === '\r' && text[i+1] === '\n') i++; row.push(cell); out.push(row); row = []; cell = ''; }
+      else cell += ch;
+    }
+    if (cell !== '' || row.length) { row.push(cell); out.push(row); }
+    return out.filter(function(r){ return r.some(function(c){ return String(c).trim() !== ''; }); });
+  }
+  window.ttImportCsvPick = function(){
+    if (!isStatsAdmin()) return alert('관리자 로그인 후 불러올 수 있습니다.');
+    var f = document.getElementById('tt-csv-file'); f.value = ''; f.click();
+  };
+  window.ttImportCsvFile = async function(input){
+    var file = input.files && input.files[0]; if (!file) return;
+    var text = await file.text();
+    var data = parseCsv(text);
+    if (data.length < 2) return alert('CSV에 내용이 없습니다.');
+    var head = data[0].map(function(h){ return String(h).trim().toLowerCase(); });
+    var col = function(){ for (var i = 0; i < arguments.length; i++) { var k = head.indexOf(arguments[i]); if (k >= 0) return k; } return -1; };
+    var cName = col('닉네임','소환사','name','riot_name'), cTag = col('태그','tag','riot_tag'), cTier = col('임시티어','임시 티어','tier','temp_tier');
+    var cLp = col('lp'), cAt = col('부여일','assignedat','date'), cPuu = col('puu_id','puuid','puu');
+    if (cTier < 0 || (cName < 0 && cPuu < 0)) return alert('CSV 머리줄에 "닉네임"(또는 puu_id)과 "임시티어" 열이 있어야 합니다.\n내보내기한 파일 형식을 그대로 쓰면 돼요.');
+    var byPuu = {}, byKey = {};
+    (allData || []).forEach(function(m){ if (m.puu_id) { byPuu[m.puu_id] = m; byKey[(String(m.riot_name||'').trim() + '#' + String(m.riot_tag||'').trim()).toLowerCase()] = m; } });
+    var today = new Date().toISOString().slice(0, 10);
+    var ok = [], bad = [];
+    data.slice(1).forEach(function(r, i){
+      var g = function(c){ return c >= 0 ? String(r[c] == null ? '' : r[c]).trim() : ''; };
+      var name = g(cName), tag = g(cTag);
+      if (name.indexOf('#') > 0 && !tag) { tag = name.slice(name.indexOf('#') + 1); name = name.slice(0, name.indexOf('#')); }
+      var m = (g(cPuu) && byPuu[g(cPuu)]) || byKey[(name + '#' + tag).toLowerCase()];
+      var who = name ? name + (tag ? '#' + tag : '') : g(cPuu).slice(0, 10);
+      if (!m) { bad.push((i + 2) + '행 ' + who + ': 전적 목록에 없는 소환사'); return; }
+      var rawTier = g(cTier);
+      if (!rawTier) { ok.push({ puu: m.puu_id, who: who, del: true }); return; }
+      var tier = normTier(rawTier);
+      if (!tier) { bad.push((i + 2) + '행 ' + who + ': 티어 "' + rawTier + '"를 알 수 없음'); return; }
+      var lp = null;
+      if (LP_TIERS.indexOf(parseTier(tier).tier) >= 0) { var n = parseInt(g(cLp), 10); lp = isNaN(n) ? 0 : n; }
+      var at = g(cAt); if (!/^\d{4}-\d{2}-\d{2}$/.test(at)) at = (_tempTiers[m.puu_id] && _tempTiers[m.puu_id].assignedAt) || today;
+      ok.push({ puu: m.puu_id, who: who, data: { tier: tier, lp: lp, assignedAt: at } });
+    });
+    // 바뀌는 것만
+    var changes = ok.filter(function(x){
+      var cur = _tempTiers[x.puu];
+      if (x.del) return !!cur;
+      if (!cur) return true;
+      var ct = ttTierStr(cur), clp = typeof cur === 'object' ? cur.lp : null, cat = typeof cur === 'object' ? cur.assignedAt : '';
+      return ct !== x.data.tier || (clp == null ? null : +clp) !== (x.data.lp == null ? null : +x.data.lp) || (cat || '') !== x.data.assignedAt;
+    });
+    var inCsv = {}; ok.forEach(function(x){ inCsv[x.puu] = 1; });
+    var notIn = Object.keys(_tempTiers || {}).filter(function(p){ return !inCsv[p]; });
+    var adds = changes.filter(function(x){ return !x.del && !_tempTiers[x.puu]; }).length;
+    var upd = changes.filter(function(x){ return !x.del && _tempTiers[x.puu]; }).length;
+    var dels = changes.filter(function(x){ return x.del; }).length;
+    var msg = 'CSV ' + (data.length - 1) + '줄을 읽었어요.\n\n· 새로 부여 ' + adds + '명\n· 변경 ' + upd + '명\n· 삭제(임시티어 칸이 빈 줄) ' + dels + '명\n· 그대로 ' + (ok.length - changes.length) + '명' +
+      (bad.length ? '\n· 건너뜀 ' + bad.length + '명\n  ' + bad.slice(0, 8).join('\n  ') + (bad.length > 8 ? '\n  …' : '') : '');
+    var delOthers = false;
+    if (notIn.length) delOthers = confirm(msg + '\n\nCSV에 없는 기존 임시티어 ' + notIn.length + '명이 있어요.\n이 사람들의 임시티어도 삭제할까요?\n(확인 = 삭제 · 취소 = 그대로 둠)');
+    var jobs = changes.slice();
+    if (delOthers) notIn.forEach(function(p){ jobs.push({ puu: p, del: true }); });
+    if (!jobs.length) return alert(msg + '\n\n바뀌는 내용이 없습니다.');
+    if (!confirm((notIn.length ? '' : msg + '\n\n') + '총 ' + jobs.length + '명의 임시티어를 저장할까요?')) return;
+    var done = 0, fail = [];
+    var countEl = document.getElementById('temp-tier-count');
+    async function one(x){
+      try {
+        var res = await fetch(WORKER_URL + '/temp-tier-write', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ communityId: COMMUNITY_ID, puuId: x.puu, tier: x.del ? null : x.data, token: _statsMasterToken || _statsAdminToken, adminId: _statsAdminId, adminPw: _statsAdminPw }) });
+        var j = await res.json();
+        if (!j.ok) throw new Error(j.error || '저장 실패');
+        if (x.del) { delete _tempTiers[x.puu]; } else { _tempTiers[x.puu] = x.data; }
+        var m = (allData || []).find(function(a){ return a.puu_id === x.puu; });
+        if (m) { if (x.del) { delete m._tempTier; delete m._tempLp; } else { m._tempTier = x.data.tier; m._tempLp = x.data.lp; } }
+      } catch (e) { fail.push((x.who || x.puu.slice(0, 8)) + ': ' + e.message); }
+      done++; if (countEl) countEl.textContent = '저장 중 ' + done + '/' + jobs.length;
+    }
+    for (var i = 0; i < jobs.length; i += 5) await Promise.all(jobs.slice(i, i + 5).map(one));
+    try { _ttInvalidateCache(); } catch (e) {}
+    try { renderPage(); } catch (e) {}
+    try { loadTempTierTab(); } catch (e) {}
+    alert('임시티어 ' + (jobs.length - fail.length) + '명 저장 완료' + (fail.length ? '\n실패 ' + fail.length + '명:\n' + fail.slice(0, 8).join('\n') : ''));
+  };
+  // 디스코드용 텍스트 (디스코드 메시지 2000자 제한 → 넘으면 나눠서)
+  function tierText(r){
+    var lab = LABEL[r.tier] || r.tier;
+    return lab + (r.lp !== '' && r.lp != null && LP_TIERS.indexOf(parseTier(r.tier).tier) >= 0 ? ' ' + r.lp + 'LP' : '');
+  }
+  window.ttCopyDiscord = function(){
+    var list = rows();
+    if (!list.length) return alert('복사할 임시티어가 없습니다.');
+    var d = new Date();
+    var head = '**📋 임시티어 명단** (' + list.length + '명 · ' + (d.getMonth()+1) + '/' + d.getDate() + ' 기준)';
+    var body = list.map(function(r){
+      var who = r.name ? r.name + (r.tag ? '#' + r.tag : '') : r.puu.slice(0, 8);
+      return '• `' + who.replace(/`/g, "'") + '` — **' + tierText(r) + '**' + (r.at ? ' · ' + r.at.slice(5).replace('-', '/') + ' 부여' : '');
+    });
+    var parts = [], cur = head;
+    body.forEach(function(line){ if ((cur + '\n' + line).length > 1900) { parts.push(cur); cur = line; } else cur += '\n' + line; });
+    parts.push(cur);
+    if (parts.length === 1) {
+      var t = parts[0];
+      (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(function(){ ttToast('디스코드용 텍스트를 복사했어요 (' + list.length + '명)'); }, function(){ ttShowParts(parts); });
+    } else ttShowParts(parts);
+  };
+  function ttToast(msg){
+    var el = document.createElement('div'); el.textContent = msg;
+    el.style.cssText = 'position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:99999;background:#151A23;color:#E9ECF1;border:1px solid rgba(88,101,242,.5);border-radius:10px;padding:10px 16px;font:600 13px "IBM Plex Sans KR",sans-serif;box-shadow:0 12px 30px -10px rgba(0,0,0,.8)';
+    document.body.appendChild(el); setTimeout(function(){ el.style.transition = 'opacity .3s'; el.style.opacity = '0'; setTimeout(function(){ el.remove(); }, 300); }, 1800);
+  }
+  function ttShowParts(parts){
+    var ov = document.createElement('div');
+    ov.style.cssText = 'position:fixed;inset:0;z-index:99998;background:rgba(5,8,14,.7);display:flex;align-items:center;justify-content:center;padding:16px;font-family:"IBM Plex Sans KR",sans-serif';
+    ov.innerHTML = '<div style="background:#10141B;border:1px solid #2A3241;border-radius:14px;padding:18px;width:min(560px,100%);max-height:88vh;overflow:auto;color:#E9ECF1;display:flex;flex-direction:column;gap:12px">' +
+      '<div style="font-size:16px;font-weight:700;color:#A5B4FC">디스코드용 복사</div>' +
+      '<div style="font-size:12px;color:#8B95A7">' + (parts.length > 1 ? '디스코드 메시지는 2000자까지라 ' + parts.length + '개로 나눴어요. 순서대로 복사해서 붙여넣어 주세요.' : '자동 복사가 안 돼서 아래 내용을 직접 복사해 주세요.') + '</div>' +
+      parts.map(function(t, i){ return '<div style="display:flex;flex-direction:column;gap:6px"><div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:12px">' + (i+1) + '/' + parts.length + '</b>' +
+        '<button data-i="' + i + '" style="padding:5px 12px;border-radius:6px;border:1px solid rgba(88,101,242,.5);background:rgba(88,101,242,.12);color:#A5B4FC;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer">복사</button></div>' +
+        '<textarea readonly style="width:100%;min-height:120px;background:#0A0D13;color:#E9ECF1;border:1px solid #2A3241;border-radius:8px;padding:8px;font:12px ui-monospace,monospace">' + escHtml(t) + '</textarea></div>'; }).join('') +
+      '<div style="display:flex;justify-content:flex-end"><button data-close style="padding:7px 16px;border-radius:6px;border:1px solid #2A3241;background:transparent;color:#E9ECF1;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer">닫기</button></div></div>';
+    ov.addEventListener('click', function(e){
+      if (e.target === ov || e.target.hasAttribute('data-close')) { ov.remove(); return; }
+      var b = e.target.closest('button[data-i]'); if (!b) return;
+      var t = parts[+b.dataset.i], ta = b.closest('div').parentNode.querySelector('textarea');
+      var mark = function(){ b.textContent = '복사됨 ✓'; };
+      if (navigator.clipboard) navigator.clipboard.writeText(t).then(mark, function(){ ta.select(); document.execCommand('copy'); mark(); });
+      else { ta.select(); document.execCommand('copy'); mark(); }
+    });
+    document.body.appendChild(ov);
+  }
+  window._ttNormTier = normTier; window._ttParseCsv = parseCsv;
+})();
 </script>
 </body>
 </html>

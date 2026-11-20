@@ -250,6 +250,12 @@ const _WORKER = {
       const matchCheckRes = await fetch(`${dbUrlV}/communities/${cid}/matches/${matchId}.json${authQV}`);
       const matchCheck = matchCheckRes.ok ? await matchCheckRes.json() : null;
       if (!matchCheck) return json({ok:false,error:'존재하지 않는 내전'},403);
+      // 이미 포스트가 연결된 내전이면 새로 만들지 않음 (디스코드에서 그 포스트가 지워진 경우만 다시 만듦)
+      const _oldFt = matchCheck.discordForumThread;
+      if (_oldFt && _oldFt.threadId && env.DISCORD_BOT_TOKEN) {
+        const _chk = await fetch(`https://discord.com/api/v10/channels/${_oldFt.threadId}`, { headers: { 'Authorization': 'Bot ' + env.DISCORD_BOT_TOKEN } }).catch(() => null);
+        if (!_chk || _chk.status !== 404) return json({ ok:true, skipped:'이미 포럼 포스트가 있는 내전입니다', threadId: _oldFt.threadId });
+      }
       const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
       const authQ = secret ? '?auth='+secret : '';
       // 커뮤니티 설정에서 포럼 채널 ID 조회
@@ -465,6 +471,40 @@ const _WORKER = {
         if (r.skip) return json({ ok:false, error: r.error || r.skip }, 400);
         return json(r);
       } catch (e) { return json({ ok:false, error: e.message }, 500); }
+    }
+    // 4단계 진입 → 팀 정보를 '디스코드 내전 기록 채널'에 올림 (이미 올린 메시지가 있으면 수정)
+    if (path === '/match-team-post' && request.method === 'POST') {
+      let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
+      const { cid, matchId, text, data, token } = body || {};
+      if (!cid || !matchId || (!text && !data)) return json({ok:false,error:'필수 파라미터 없음'},400);
+      const session = getSession(token);
+      if (!session || (session.role !== 'master' && session.role !== 'admin')) return json({ok:false,error:'관리자 로그인이 필요합니다'},403);
+      try { return json(await _postTeamInfo(cid, matchId, data && typeof data === 'object' ? data : String(text), env)); }
+      catch (e) { return json({ ok:false, error: e.message }, 500); }
+    }
+    // 5단계 결과 저장(버튼·직접 입력·내전 종료) 후 → 포럼 포스트 결과 카드 댓글 달기/수정
+    if (path === '/match-result-card' && request.method === 'POST') {
+      let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
+      const { cid, matchId } = body || {};
+      if (!cid || !matchId) return json({ok:false,error:'필수 파라미터 없음'},400);
+      try { return json(await _postResultCard(cid, matchId, env, {})); }
+      catch (e) { return json({ ok:false, error: e.message }, 500); }
+    }
+    // 본계정-부계정 목록 (전적 페이지 계층 표시용, 디스코드 ID 등은 빼고 소환사 정보만)
+    if (path === '/sub-accounts' && request.method === 'GET') {
+      const cid = url.searchParams.get('cid') || '';
+      if (!/^[A-Za-z0-9_-]+$/.test(cid)) return json({ ok:false, error:'cid 없음' }, 400);
+      const authQ = env.FB_DB_SECRET ? '?auth=' + env.FB_DB_SECRET : '';
+      const r = await fetch(`${env.FB_DATABASE_URL}/communities/${cid}/discord_profiles.json${authQ}`).catch(() => null);
+      const all = r && r.ok ? (await r.json().catch(() => null) || {}) : {};
+      const list = [];
+      for (const p of Object.values(all)) {
+        if (!p || !p.riotName || !p.subAccounts) continue;
+        const subs = Object.values(p.subAccounts).filter(a => a && a.riotName).map(a => ({ name: a.riotName, tag: a.riotTag || '', riotPuuid: a.riotPuuid || '' }));
+        if (!subs.length) continue;
+        list.push({ name: p.riotName, tag: p.riotTag || '', riotPuuid: p.riotPuuid || '', dlPuuid: p.dlPuuid || '', subs });
+      }
+      return new Response(JSON.stringify({ ok: true, list }), { status: 200, headers: { ...CORS, 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'public, max-age=60' } });
     }
     // 게임 상세 분석 (타임라인·빌드 요약본)
     if (path === '/match-detail' && request.method === 'GET') return handleMatchDetail(url, env);
@@ -1230,7 +1270,7 @@ async function runAutoResultCheck(env) {
     // 먼저 '확인함' 처리 (예약 삭제) → 실패해도 다시 검사하지 않음
     await fetch(`${dbUrl}/auto_results/${matchId}.json${authQ}`, { method: 'DELETE' }).catch(() => {});
     try {
-      const r = await _autoResultForMatch(it.cid, matchId, env, { budget: 34 });
+      const r = await _autoResultForMatch(it.cid, matchId, env, { budget: 28 });
       console.log('[auto-result]', matchId, JSON.stringify(r));
     } catch (e) {
       console.error('[auto-result] error', matchId, e.message);
@@ -1339,7 +1379,7 @@ function _arGameData(data, teamA, teamB, blueIsA) {
     });
     return result.sort((a, b) => (POS_ORDER[a.pos] ?? 9) - (POS_ORDER[b.pos] ?? 9));
   };
-  return { duration, ddVer, teamA: buildTeam(teamA, teamAId), teamB: buildTeam(teamB, teamBId) };
+  return { duration, ddVer, startedAt: info.gameStartTimestamp || info.gameCreation || null, teamA: buildTeam(teamA, teamAId), teamB: buildTeam(teamB, teamBId) };
 }
 
 // opts.manual = 웹의 '게임 결과 가져오기' 버튼 (확인함 처리 안 함 → 예약된 스케줄러는 나중에 그대로 동작)
@@ -1505,7 +1545,12 @@ async function handleMatchDetail(url, env) {
 async function _autoResultForMatch(cid, matchId, env, opts) {
   const manual = !!(opts && opts.manual);
   // 워커 1회 실행당 외부 호출 50개 제한 → 직접 세면서 예산 안에서만 호출 (40인 내전 등 대인원 대비)
-  const B = { used: 0, max: (opts && opts.budget) || 46 };
+  const B = { used: 0, max: (opts && opts.budget) || 40 };
+  const CARD_RESERVE = 6;   // 결과 카드 댓글 달기/수정용 (경기 찾기 다음에 추가로 씀)
+  const postCard = async (mm) => {
+    B.max += CARD_RESERVE;
+    try { return await _postResultCard(cid, matchId, env, { sf, left, match: mm }); } catch (e) { console.error('[result-card]', e.message); return { ok: false, error: e.message }; }
+  };
   const left = () => B.max - B.used;
   const sf = (u, o) => { if (B.used >= B.max) return Promise.reject(new Error('호출 한도')); B.used++; return fetch(u, o); };
   const markChecked = manual ? {} : { autoResultChecked: true };
@@ -1524,11 +1569,13 @@ async function _autoResultForMatch(cid, matchId, env, opts) {
   const normId = (x) => { const t = String(x || '').trim(); return /^\d+$/.test(t) ? 'KR_' + t : t.toUpperCase(); };
   const existing = _arArr(m._resultMatches);
   const existingCodes = new Set(existing.map(r => r && normId(r.customCode)).filter(Boolean));
-  let diag = null, startMsOut = null;
+  let diag = null, startMsOut = null, diagCard = null;
   const noGames = async (note) => {
+    // 새 경기가 없어도 이미 저장된 결과가 있으면 결과 카드 확인 (내용이 같으면 그대로, 다르면 수정)
+    if (existing.some(r => r && (r.winner === 'a' || r.winner === 'b'))) diagCard = await postCard(m);
     if (!manual) await patch({ autoResultChecked: true, autoResult: { at: Date.now(), games: 0, total: existingCodes.size, note: note || '', diag } });
     if (diag) diag.calls = B.used;
-    return { ok: true, added: 0, total: existingCodes.size, note, diag, searchFrom: startMsOut };
+    return { ok: true, added: 0, total: existingCodes.size, note, diag, searchFrom: startMsOut, card: diagCard };
   };
   const teams = _arTeams(m);
   if (teams.length < 2) return noGames('팀 정보 없음');
@@ -1754,9 +1801,303 @@ async function _autoResultForMatch(cid, matchId, env, opts) {
     _version: (m._version || 0) + 1,
     _updatedAt: now,
   });
+  // 포럼 포스트에 결과 카드 댓글 달기/수정
+  const card = w.ok ? await postCard({ ...m, _resultMatches: merged, status: '내전 종료' }) : null;
   // 새 경기 상세 분석 요약본 미리 저장 — 남는 예산으로만 (못 하면 처음 열 때 만들어짐)
   for (const g of newGames) { if (left() < 4) break; B.used += 3; try { await _mdBuildStore(env, g.mid, g.data); } catch (e) {} }
-  return { ok: w.ok, added, total, found, subAccounts: subAdds.length, diag: Object.assign(diag || {}, { calls: B.used }) };
+  return { ok: w.ok, added, total, found, subAccounts: subAdds.length, card, diag: Object.assign(diag || {}, { calls: B.used }) };
+}
+
+// ═══════════════════════════════════════════════════════════════
+// 내전 결과 카드 (포럼 포스트 댓글, 임베드)
+//   팀끼리 붙은 대진마다 카드 1장: 진행자 · 실제 첫 게임 시작 시간 · 스코어 · 양 팀 라인별 명단
+//   discordForumThread.resultMsgIds / resultHash 로 이미 단 댓글을 찾아 내용이 다를 때만 수정
+// ═══════════════════════════════════════════════════════════════
+const _RC_LANE = { TOP: ['🛡️', '탑'], JUNGLE: ['🌲', '정글'], MIDDLE: ['🔮', '미드'], BOTTOM: ['🏹', '원딜'], UTILITY: ['💉', '서폿'] };
+const _RC_POS_OF_LANE = { top: 'TOP', jg: 'JUNGLE', mid: 'MIDDLE', bot: 'BOTTOM', sup: 'UTILITY' };
+const _RC_LANE_SHORT = { top: 'TOP', jg: 'JG', mid: 'MID', bot: 'AD', sup: 'SUP' };
+const _RC_TIER = { IRON: 'I', BRONZE: 'B', SILVER: 'S', GOLD: 'G', PLATINUM: 'P', EMERALD: 'E', DIAMOND: 'D', MASTER: 'M', GRANDMASTER: 'GM', CHALLENGER: 'C', UNRANKED: 'U' };
+const _rcArr = (v) => Array.isArray(v) ? v.filter(Boolean) : (v && typeof v === 'object' ? Object.values(v).filter(Boolean) : []);
+function _rcTeamName(team) {
+  if (!team) return '?';
+  const mem = _rcArr(team.members);
+  const cap = (team.captainId != null && mem.find(x => String(x.id) === String(team.captainId))) || null;
+  if (cap && cap.name) return `${cap.name} 팀`;
+  if (team.name) return team.name;
+  return mem[0] && mem[0].name ? `${mem[0].name} 팀` : `팀 ${team.id || ''}`.trim();
+}
+function _rcTeamKey(team) {
+  if (!team) return '?';
+  if (team.captainId != null) return 'c' + team.captainId;
+  if (team.id != null) return 't' + team.id;
+  return 'n' + _rcTeamName(team);
+}
+// 팀 명단: 마지막 게임에서 실제로 선 라인 기준 (없으면 주라인)
+function _rcRoster(team, gameSide) {
+  const mem = _rcArr(team && team.members);
+  const posByName = {};
+  _rcArr(gameSide).forEach(p => { if (p && p.name && p.pos) posByName[String(p.name).trim().toLowerCase()] = p.pos; });
+  const ORDER = ['TOP', 'JUNGLE', 'MIDDLE', 'BOTTOM', 'UTILITY'];
+  const rows = mem.map((m, i) => {
+    const pos = posByName[String(m.name || '').trim().toLowerCase()] || _RC_POS_OF_LANE[m.mainLane] || '';
+    const tier = String(m.tier || (m.tierFull || '').split(' ')[0] || 'UNRANKED').toUpperCase();
+    const lanes = [m.mainLane].concat(Array.isArray(m.subLane) ? m.subLane : (m.subLane ? [m.subLane] : []))
+      .filter(Boolean).map(l => _RC_LANE_SHORT[l] || '').filter(Boolean);
+    const L = _RC_LANE[pos] || ['▫️', '-'];
+    return { o: ORDER.indexOf(pos) < 0 ? 9 : ORDER.indexOf(pos), i,
+      line: `${L[0]} ${L[1]}: ${m.name || '?'}${m.tag ? '#' + m.tag : ''} ${_RC_TIER[tier] || ''}${lanes.length ? ' ' + [...new Set(lanes)].join('/') : ''}`.replace(/\s+$/, '') };
+  });
+  rows.sort((a, b) => a.o - b.o || a.i - b.i);
+  return rows.map(r => r.line).join('\n').slice(0, 1020) || '—';
+}
+// 결과 카드 내용 만들기 (게임 시작 시간이 없는 대진은 startOf 로 채움)
+function _rcBuild(m, startOf) {
+  const rms = _rcArr(m._resultMatches).filter(rm => rm && rm.teamA && rm.teamB && (rm.winner === 'a' || rm.winner === 'b'));
+  if (!rms.length) return [];
+  const pairs = new Map();
+  rms.forEach(rm => {
+    const ka = _rcTeamKey(rm.teamA), kb = _rcTeamKey(rm.teamB);
+    const key = [ka, kb].sort().join('|');
+    if (!pairs.has(key)) pairs.set(key, { first: ka <= kb ? rm.teamA : rm.teamB, second: ka <= kb ? rm.teamB : rm.teamA, kFirst: ka <= kb ? ka : kb, games: [] });
+    pairs.get(key).games.push(rm);
+  });
+  const multi = pairs.size > 1;
+  const embeds = [];
+  pairs.forEach(pr => {
+    let w1 = 0, w2 = 0, starts = [], autoN = 0;
+    let last = null, lastSide1 = null, lastSide2 = null;
+    pr.games.forEach(rm => {
+      const aIsFirst = _rcTeamKey(rm.teamA) === pr.kFirst;
+      const winFirst = (rm.winner === 'a') === aIsFirst;
+      if (winFirst) w1++; else w2++;
+      if (rm.auto) autoN++;
+      const st = rm.gameData && rm.gameData.startedAt;
+      if (st) starts.push(+st);
+      if (rm.gameData) { last = rm; lastSide1 = aIsFirst ? rm.gameData.teamA : rm.gameData.teamB; lastSide2 = aIsFirst ? rm.gameData.teamB : rm.gameData.teamA; }
+    });
+    let start = starts.length ? Math.min(...starts) : null;
+    if (!start && startOf) start = startOf(pr.games) || null;
+    const n1 = _rcTeamName(pr.first), n2 = _rcTeamName(pr.second);
+    const done = String(m.status || '') === '내전 종료';
+    const status = w1 === w2 ? `무승부 ${w1}:${w2}` : `${w1 > w2 ? n1 : n2} ${Math.max(w1, w2)}:${Math.min(w1, w2)} 승`;
+    const desc = [
+      `진행자: **${String(m.admin || '').split(',').map(x => x.trim()).filter(Boolean).join(', ') || '—'}**`,
+      start ? `시작 시간: **<t:${Math.floor(start / 1000)}:f>**` : null,
+      `상태: **${done ? '종료' : '진행 중'}: ${status}**`,
+    ].filter(Boolean).join('\n');
+    const mark = (wins, other) => wins > other ? ' 🏆 승' : wins < other ? ' 패' : ' 무';
+    const games = pr.games.length;
+    const how = autoN === games ? '자동 저장' : autoN ? '자동·수동 저장' : '수동 저장';
+    embeds.push({
+      title: `⚔️ ${m.name || '내전'}${multi ? ` · ${n1} vs ${n2}` : ''}`.slice(0, 250),
+      description: desc,
+      color: w1 === w2 ? 0x7D8797 : 0x2BD9C5,
+      // 이긴 팀을 왼쪽(🟦)에
+      fields: (w2 > w1 ? [[n2, w2, w1, pr.second, lastSide2], [n1, w1, w2, pr.first, lastSide1]] : [[n1, w1, w2, pr.first, lastSide1], [n2, w2, w1, pr.second, lastSide2]])
+        .map(([n, a, b, t, side], i) => ({ name: `${i ? '🟥' : '🟦'} ${n}${mark(a, b)}`.slice(0, 250), value: _rcRoster(t, side), inline: true })),
+      footer: { text: `${games}경기 · ${how} · 룽잉닷컴 5단계에서 결과를 수정할 수 있어요` },
+    });
+  });
+  return embeds;
+}
+// 결과 카드 달기/수정. opts.sf = 호출 수 세는 fetch (자동 수집 예산), opts.match = 이미 읽은 내전 데이터
+async function _postResultCard(cid, matchId, env, opts) {
+  opts = opts || {};
+  const f = opts.sf || fetch;
+  const dbUrl = env.FB_DATABASE_URL, authQ = env.FB_DB_SECRET ? '?auth=' + env.FB_DB_SECRET : '';
+  const botToken = env.DISCORD_BOT_TOKEN;
+  if (!botToken || !cid || !matchId) return { ok: false, error: 'no bot' };
+  const base = `${dbUrl}/communities/${cid}/matches/${matchId}`;
+  let m = opts.match;
+  if (!m) { const r = await f(`${base}.json${authQ}`); m = r.ok ? await r.json() : null; }
+  if (!m) return { ok: false, error: '내전 없음' };
+  let ft = m.discordForumThread || null;
+  if (!ft) { const ftR = await f(`${base}/discordForumThread.json${authQ}`); ft = ftR.ok ? await ftR.json() : null; }
+  if (!ft || !ft.threadId) return { ok: false, error: '포럼 포스트 없음' };
+  // 시작 시간이 없는 옛 결과: 상세 분석 요약본 → Riot 경기 정보 순으로 한 번만 찾아봄
+  const startCache = {};
+  const startOf = (games) => startCache[games.map(g => g.customCode).join(',')] || null;
+  const needStart = [];
+  (function () {
+    const rms = _rcArr(m._resultMatches).filter(rm => rm && (rm.winner === 'a' || rm.winner === 'b'));
+    const pairs = {};
+    rms.forEach(rm => { const k = [_rcTeamKey(rm.teamA), _rcTeamKey(rm.teamB)].sort().join('|'); (pairs[k] = pairs[k] || []).push(rm); });
+    Object.values(pairs).forEach(g => { if (!g.some(rm => rm.gameData && rm.gameData.startedAt)) { const code = g.map(x => x.customCode).filter(Boolean)[0]; if (code) needStart.push({ g, code }); } });
+  })();
+  const left = opts.left || (() => 99);
+  for (const it of needStart.slice(0, 3)) {
+    if (left() < 6) break;   // 댓글 달기에 쓸 호출은 남겨둠
+    let st = null;
+    try {
+      const md = await f(`${dbUrl}/match_details/${encodeURIComponent(it.code)}/created.json${authQ}`);
+      st = md.ok ? await md.json() : null;
+      if (!st && env.RIOT_API_KEY) {
+        const rr = await f(`https://asia.api.riotgames.com/lol/match/v5/matches/${encodeURIComponent(it.code)}`, { headers: { 'X-Riot-Token': env.RIOT_API_KEY } });
+        const d = rr.ok ? await rr.json() : null;
+        st = d && d.info ? (d.info.gameStartTimestamp || d.info.gameCreation) : null;
+      }
+    } catch (e) {}
+    if (st) startCache[it.g.map(g => g.customCode).join(',')] = st;
+  }
+  const embeds = _rcBuild(m, startOf);
+  if (!embeds.length) return { ok: true, skipped: '결과 없음' };
+  const msgs = [];
+  for (let i = 0; i < embeds.length; i += 10) msgs.push({ content: i === 0 ? '🏁 **내전 결과**' : '', embeds: embeds.slice(i, i + 10), allowed_mentions: { parse: [] } });
+  const hash = _simpleHash(JSON.stringify(msgs));
+  const ids = _rcArr(ft.resultMsgIds).map(String);
+  if (ids.length && ft.resultHash === hash && ids.length === msgs.length) return { ok: true, same: true };
+  // 중간에 호출 한도가 끝나면 댓글 ID 를 못 남겨 중복 댓글이 생기므로, 모자라면 아예 다음 기회로
+  if (left() < msgs.length + Math.max(0, ids.length - msgs.length) + 2) return { ok: false, error: '호출 한도 (다음 저장 때 다시 시도)' };
+  const H = { 'Content-Type': 'application/json', 'Authorization': 'Bot ' + botToken };
+  await f(`https://discord.com/api/v10/channels/${ft.threadId}`, { method: 'PATCH', headers: H, body: JSON.stringify({ archived: false }) }).catch(() => {});
+  const out = [];
+  for (let i = 0; i < msgs.length; i++) {
+    let id = ids[i];
+    if (id) {
+      const r = await f(`https://discord.com/api/v10/channels/${ft.threadId}/messages/${id}`, { method: 'PATCH', headers: H, body: JSON.stringify(msgs[i]) }).catch(() => null);
+      if (r && r.ok) { out.push(id); continue; }
+      if (r && r.status !== 404) { console.error('[result-card] PATCH', r.status, (await r.text()).slice(0, 200)); out.push(id); continue; }
+    }
+    const r = await f(`https://discord.com/api/v10/channels/${ft.threadId}/messages`, { method: 'POST', headers: H, body: JSON.stringify(msgs[i]) }).catch(() => null);
+    if (r && r.ok) { const d = await r.json(); if (d && d.id) out.push(String(d.id)); }
+    else if (r) console.error('[result-card] POST', r.status, (await r.text()).slice(0, 200));
+  }
+  // 대진이 줄어서 남는 옛 카드 댓글은 삭제
+  for (const id of ids.slice(msgs.length)) await f(`https://discord.com/api/v10/channels/${ft.threadId}/messages/${id}`, { method: 'DELETE', headers: H }).catch(() => {});
+  await f(`${base}/discordForumThread.json${authQ}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ resultMsgIds: out, resultHash: hash }) }).catch(() => {});
+  return { ok: true, posted: out.length };
+}
+
+// ── 4단계 팀 정보 → 디스코드 내전 기록 채널 (communities_info.discordChannelId) ──
+//   matches/{id}/discordTeamPost = { channelId, msgIds[], hash } 로 올린 메시지를 기억 → 다시 4단계로 오면 수정
+function _splitDiscordText(text, max) {
+  max = max || 1990;
+  const out = [];
+  let cur = '';
+  // 팀 단위(구분선 ━ 또는 빈 줄)로 나누고, 그래도 길면 줄 단위로
+  const blocks = text.split(/\n(?=━)|\n(?=\n)/);
+  const push = (piece) => {
+    if ((cur ? cur.length + 1 : 0) + piece.length <= max) { cur = cur ? cur + '\n' + piece : piece; return; }
+    if (cur) { out.push(cur); cur = ''; }
+    if (piece.length <= max) { cur = piece; return; }
+    piece.split('\n').forEach(line => {
+      line = line.slice(0, max);
+      if ((cur ? cur.length + 1 : 0) + line.length > max) { out.push(cur); cur = ''; }
+      cur = cur ? cur + '\n' + line : line;
+    });
+  };
+  blocks.forEach(push);
+  if (cur) out.push(cur);
+  return out;
+}
+// 디스코드용 팀 정보 메시지: 제목(큰 글씨) + 팀마다 색 띠 카드, 명단은 색이 들어간 고정폭 블록(ansi)
+const _TP_ESC = '\u001b[';
+const _TP_TIER_ANSI = { IRON: '0;30', BRONZE: '0;31', SILVER: '0;37', GOLD: '0;33', PLATINUM: '0;36', EMERALD: '0;32', DIAMOND: '0;34', MASTER: '0;35', GRANDMASTER: '1;31', CHALLENGER: '1;33', UNRANKED: '0;30' };
+const _TP_TEAM = [['🔵', 0x3B82F6], ['🔴', 0xEF4444], ['🟢', 0x22C55E], ['🟡', 0xEAB308], ['🟣', 0xA855F7], ['🟠', 0xF97316]];
+function _tpW(str) {   // 고정폭 글꼴에서 한글·전각은 2칸
+  let w = 0;
+  for (const ch of String(str)) { const c = ch.codePointAt(0); w += ((c >= 0x1100 && c <= 0x115F) || (c >= 0x2E80 && c <= 0xA4CF) || (c >= 0xAC00 && c <= 0xD7AF) || (c >= 0xF900 && c <= 0xFAFF) || (c >= 0xFE30 && c <= 0xFE4F) || (c >= 0xFF01 && c <= 0xFF60) || (c >= 0xFFE0 && c <= 0xFFE6)) ? 2 : 1; }
+  return w;
+}
+const _tpPad = (s, w) => String(s) + ' '.repeat(Math.max(0, w - _tpW(s)));
+const _tpC = (code, s) => `${_TP_ESC}${code}m${s}${_TP_ESC}0m`;
+function _tpClip(s, n) { s = String(s || ''); let out = ''; for (const ch of s) { if (_tpW(out + ch) > n) return out + '…'; out += ch; } return out; }
+function _teamPostMessages(d) {
+  const teams = (Array.isArray(d.teams) ? d.teams : []).slice(0, 40);
+  const people = teams.reduce((n, t) => n + (d.lane ? (t.slots || []).filter(x => x && x.m).length : (t.members || []).length), 0);
+  const head = [
+    `## ⚔️ ${_tpClip(d.name || '내전', 60)}`,
+    `-# ${[d.admin ? '🎙️ 진행자 ' + _tpClip(d.admin, 40) : '', d.type || '', `${teams.length}팀 · ${people}명`].filter(Boolean).join('  ·  ')}`,
+  ].join('\n');
+  // 색 코드 블록(ansi): 라인 = 밝은 회색, 티어 = 티어색 굵게, 닉네임#태그 = 흰색 굵게, 칸 맞춤
+  const TIER_C = { IRON: '1;30', BRONZE: '1;31', SILVER: '1;37', GOLD: '1;33', PLATINUM: '1;36', EMERALD: '1;32', DIAMOND: '1;34', MASTER: '1;35', GRANDMASTER: '1;31', CHALLENGER: '1;33', UNRANKED: '1;30' };
+  const clean = (x) => String(x || '').replace(/[`\u001b]/g, '');
+  const nameOf = (m) => _tpClip(clean(m.name) + (m.tag ? '#' + clean(m.tag) : ''), 24);
+  const tierC = (m) => TIER_C[m.tk] || '1;37';
+  const crown = (m) => m.cap ? ' 👑' : '';
+  const embeds = teams.map((t, ti) => {
+    const [emo, color] = _TP_TEAM[ti % _TP_TEAM.length];
+    let lines;
+    if (d.lane) {
+      const rows = (t.slots || []).map(sl => sl || {});
+      const lw = Math.max(4, ...rows.map(r => _tpW(r.lane || '-')));
+      const tw = Math.max(2, ...rows.filter(r => r.m).map(r => _tpW(clean(r.m.tier))));
+      lines = rows.map(r => {
+        const lane = _tpC('0;37', _tpPad(r.lane || '-', lw));
+        if (!r.m) return `${lane}  ${_tpC('0;30', '미배치')}`;
+        return `${lane}  ${_tpC(tierC(r.m), _tpPad(clean(r.m.tier), tw))}  ${_tpC('1;37', nameOf(r.m))}${crown(r.m)}`;
+      });
+    } else {
+      const rows = t.members || [];
+      const tw = Math.max(2, ...rows.map(m => _tpW(clean(m.tier))));
+      const nw = Math.max(0, ...rows.map(m => _tpW(nameOf(m))));
+      const mw = Math.max(0, ...rows.map(m => _tpW('주 ' + clean(m.main))));
+      lines = rows.map(m => `${_tpC(tierC(m), _tpPad(clean(m.tier), tw))}  ${_tpC('1;37', _tpPad(nameOf(m), nw))}  ${_tpC('0;37', _tpPad('주 ' + clean(m.main), mw) + '  부 ' + clean(m.sub))}${crown(m)}`);
+    }
+    return { title: `${emo} ${_tpClip(t.name, 40)}`, color, description: ('```ansi\n' + lines.join('\n') + '\n```').slice(0, 4000) };
+  });
+  // 메시지 1개당 카드 10장 · 글자 합계 6000자 제한
+  const msgs = [];
+  let cur = [], size = head.length;
+  const flush = () => { msgs.push({ content: msgs.length ? '' : head, embeds: cur, allowed_mentions: { parse: [] } }); cur = []; size = 0; };
+  embeds.forEach(e => {
+    const n = e.title.length + e.description.length;
+    if (cur.length && (cur.length >= 10 || size + n > 5800)) flush();
+    cur.push(e); size += n;
+  });
+  if (cur.length || !msgs.length) flush();
+  return msgs.slice(0, 10);
+}
+async function _postTeamInfo(cid, matchId, text, env) {
+  const dbUrl = env.FB_DATABASE_URL, authQ = env.FB_DB_SECRET ? '?auth=' + env.FB_DB_SECRET : '';
+  const botToken = env.DISCORD_BOT_TOKEN;
+  if (!botToken) return { ok: false, error: 'BOT_TOKEN 없음' };
+  const base = `${dbUrl}/communities/${cid}/matches/${matchId}`;
+  const [chR, mR, tpR] = await Promise.all([
+    fetch(`${dbUrl}/communities_info/${cid}/discordChannelId.json${authQ}`),
+    fetch(`${base}/name.json${authQ}`),
+    fetch(`${base}/discordTeamPost.json${authQ}`),
+  ]);
+  const channelId = chR.ok ? await chR.json() : null;
+  if (!channelId) return { ok: true, skipped: '내전 기록 채널 ID 없음' };
+  if (!(mR.ok && await mR.json())) return { ok: false, error: '존재하지 않는 내전' };
+  const old = (tpR.ok ? await tpR.json() : null) || {};
+  // data(객체) → 꾸민 메시지, text(문자열) → 예전처럼 글자 그대로
+  const chunks = typeof text === 'object'
+    ? _teamPostMessages(text)
+    : _splitDiscordText(String(text).slice(0, 20000)).slice(0, 10).map(c => ({ content: c, allowed_mentions: { parse: [] } }));
+  const hash = _simpleHash(String(channelId) + '|' + JSON.stringify(chunks));
+  const sameCh = old.channelId && String(old.channelId) === String(channelId);
+  let ids = sameCh ? _rcArr(old.msgIds).map(String) : [];
+  if (sameCh && old.hash === hash && ids.length === chunks.length) return { ok: true, skipped: '변경 없음' };
+  const H = { 'Content-Type': 'application/json', 'Authorization': 'Bot ' + botToken };
+  // 채널이 바뀌었으면 예전 채널의 메시지는 지움
+  if (!sameCh && old.channelId) {
+    for (const id of _rcArr(old.msgIds)) await fetch(`https://discord.com/api/v10/channels/${old.channelId}/messages/${id}`, { method: 'DELETE', headers: H }).catch(() => {});
+  }
+  const edited = ids.length > 0;
+  const out = [];
+  let err = '';
+  for (let i = 0; i < chunks.length; i++) {
+    const body = JSON.stringify(Object.assign({ embeds: [] }, chunks[i]));
+    const id = ids[i];
+    if (id) {
+      const r = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages/${id}`, { method: 'PATCH', headers: H, body }).catch(() => null);
+      if (r && r.ok) { out.push(id); continue; }
+      if (r && r.status !== 404) { err = 'Discord ' + r.status; out.push(id); continue; }
+    }
+    const r = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages`, { method: 'POST', headers: H, body }).catch(() => null);
+    if (r && r.ok) { const d = await r.json(); if (d && d.id) out.push(String(d.id)); }
+    else err = r ? ('Discord ' + r.status + ': ' + (await r.text()).slice(0, 150)) : '전송 실패';
+  }
+  // 팀 정보가 짧아져 남는 예전 메시지는 삭제
+  for (const id of ids.slice(chunks.length)) await fetch(`https://discord.com/api/v10/channels/${channelId}/messages/${id}`, { method: 'DELETE', headers: H }).catch(() => {});
+  await fetch(`${base}/discordTeamPost.json${authQ}`, {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ channelId: String(channelId), msgIds: out, hash: err ? '' : hash, at: Date.now() }),
+  }).catch(() => {});
+  if (!out.length) return { ok: false, error: err || '전송 실패' };
+  return { ok: true, edited, messages: out.length, error: err || undefined };
 }
 
 // ── Cron 알람 체크 ──
@@ -2428,9 +2769,10 @@ async function handleDbWrite(request, env, ctx) {
     const httpMethod = isMatchRoot ? 'PATCH' : 'PUT';
     // discordForumThread(포럼 포스트/참가자 현황 댓글 정보)는 서버만 관리 → 웹 스냅샷의 오래된 값으로 덮어쓰지 않음
     let writeData = data;
-    if (isMatchRoot && data && typeof data === 'object' && !Array.isArray(data) && ('discordForumThread' in data || 'fullNotified' in data || 'attendanceCall' in data)) {
+    if (isMatchRoot && data && typeof data === 'object' && !Array.isArray(data) && ('discordForumThread' in data || 'discordTeamPost' in data || 'fullNotified' in data || 'attendanceCall' in data)) {
       writeData = Object.assign({}, data);
       delete writeData.discordForumThread;
+      delete writeData.discordTeamPost; // 4단계 팀 정보 메시지 정보도 서버만 관리
       delete writeData.attendanceCall; // 출석 현황도 서버(디스코드 버튼)만 관리
       delete writeData.fullNotified; // 인원 마감 알림 여부도 서버만 관리
     }
@@ -2607,14 +2949,15 @@ async function handleDbDelete(request, env, ctx) {
   }
 
   try {
+    // DB 삭제를 먼저 함 — 포스트 검색이 호출 한도(50회)를 다 써도 내전 삭제는 되도록
+    const res = await fetch(`${dbUrl}/${dbPath}.json${authQ}`, { method: 'DELETE' });
+    if (!res.ok) return json({ ok: false, error: 'DB 삭제 실패: ' + res.status }, 500);
     // 저장된 스레드 ID가 없으면 포럼 채널에서 이 내전의 포스트를 찾아봄 (버튼 custom_id에 matchId가 들어 있음)
     if (_matchDelM && !_threadIds.size && env.DISCORD_BOT_TOKEN) {
       const found = await _findForumThreadForMatch(env, _matchDelM[1], _matchDelM[2]).catch(e => { console.log('[matchDelete] 포스트 검색 오류', e.message); return null; });
       console.log('[matchDelete] 포럼 채널 검색 결과:', found || '못 찾음');
       if (found) _threadIds.add(found);
     }
-    const res = await fetch(`${dbUrl}/${dbPath}.json${authQ}`, { method: 'DELETE' });
-    if (!res.ok) return json({ ok: false, error: 'DB 삭제 실패: ' + res.status }, 500);
     // 디스코드 포럼 포스트(스레드) 삭제 — 결과를 응답에 담아 웹에서 확인 가능
     let forumPost = 'none';
     if (_threadIds.size && env.DISCORD_BOT_TOKEN) {
@@ -7149,7 +7492,8 @@ async function _findForumThreadForMatch(env, cid, matchId) {
   threads = threads.concat((ar && ar.threads) || []);
   threads.sort((x, y) => (y.id.length - x.id.length) || (y.id > x.id ? 1 : -1)); // 최신 먼저
   const needle = `__${matchId}`;
-  for (const t of threads.slice(0, 60)) {
+  // 포스트마다 원문 1회 조회 → 호출 한도(50회) 안에서 최신 34개까지만
+  for (const t of threads.slice(0, 34)) {
     try {
       const mRes = await fetch(`https://discord.com/api/v10/channels/${t.id}/messages/${t.id}`, H);
       if (!mRes.ok) { console.log('[matchDelete] 포스트 원문 조회 실패', t.id, mRes.status, mRes.status === 403 ? '(메시지 기록 보기 권한 필요)' : ''); continue; }
@@ -8089,6 +8433,12 @@ const _FORUM_LANE_KO = { top:'탑', jg:'정글', mid:'미드', bot:'원딜', sup
   TOP:'탑', JUNGLE:'정글', MIDDLE:'미드', MID:'미드', BOTTOM:'원딜', BOT:'원딜', ADC:'원딜', SUPPORT:'서폿', UTILITY:'서폿' };
 function _forumLaneKo(l) { return l ? (_FORUM_LANE_KO[l] || String(l)) : ''; }
 function _buildForumMembersContent(members, maxMembers, laneFixed) {
+  let content = _buildForumMembersContent.__lines(members, maxMembers, laneFixed, false).join('\n');
+  if (content.length > 2000) content = content.slice(0, 1990) + '\n…';
+  return content;
+}
+// compact=true: 부라인 빼고 짧게 (인원이 아주 많을 때)
+_buildForumMembersContent.__lines = function (members, maxMembers, laneFixed, compact) {
   const _cap = (laneFixed && maxMembers) ? Math.floor(parseInt(maxMembers) / 5) : 0;
   const lines = [`👥 **참가 인원: ${members.length}${maxMembers ? '/' + maxMembers : ''}명**`];
   if (laneFixed) {
@@ -8114,12 +8464,50 @@ function _buildForumMembersContent(members, maxMembers, laneFixed) {
         .concat(Array.isArray(m.subLanes) ? m.subLanes : [])
         .map(_forumLaneKo).filter(Boolean);
       const sub = [...new Set(subArr)].filter(x => x !== main).join(', ') || '—';
-      lines.push(`${i + 1}. **${nameTag}** · ${tier} · 주: ${main} · 부: ${sub}`);
+      lines.push(compact ? `${i + 1}. **${nameTag}** · ${tier} · ${main}` : `${i + 1}. **${nameTag}** · ${tier} · 주: ${main} · 부: ${sub}`);
     });
   }
-  let content = lines.join('\n');
-  if (content.length > 2000) content = content.slice(0, 1990) + '\n…';
-  return content;
+  return lines;
+};
+// 참가자 현황 댓글 (2000자 제한 대응): 첫 줄(👥 참가 인원)은 본문, 명단은 임베드로
+//   임베드 설명 1개 4096자 · 메시지당 임베드 10개 · 합계 6000자 → 40명 넘어도 한 댓글에 다 들어감
+//   그래도 넘치면(약 100명 이상) 부라인을 빼고 줄여서 다시, 그래도 넘치면 마지막에만 …
+function _buildForumMembersPayload(members, maxMembers, laneFixed) {
+  const full = _buildForumMembersContent.__lines(members, maxMembers, laneFixed, false);
+  const pack = (lines) => {
+    const head = lines[0];
+    const body = lines.slice(1);
+    while (body.length && body[0] === '') body.shift();
+    const embeds = [];
+    let cur = '';
+    body.forEach(line => {
+      const add = (cur ? cur + '\n' : '') + line;
+      if (add.length > 3900) { if (cur) embeds.push(cur); cur = line; }
+      else cur = add;
+    });
+    if (cur) embeds.push(cur);
+    return { head, embeds };
+  };
+  let p = pack(full);
+  let total = p.embeds.reduce((a, d) => a + d.length, 0);
+  if (total > 5800 || p.embeds.length > 10) {
+    p = pack(_buildForumMembersContent.__lines(members, maxMembers, laneFixed, true));
+    total = p.embeds.reduce((a, d) => a + d.length, 0);
+  }
+  if (total > 5800 || p.embeds.length > 10) {
+    const keep = []; let used = 0;
+    for (const d of p.embeds) {
+      if (keep.length >= 10) break;
+      const room = 5780 - used;
+      if (d.length <= room) { keep.push(d); used += d.length; continue; }
+      if (room > 100) { const cut = d.slice(0, room); keep.push(cut.slice(0, cut.lastIndexOf('\n') > 0 ? cut.lastIndexOf('\n') : room) + '\n…'); }
+      else if (keep.length) keep[keep.length - 1] += '\n…';
+      break;
+    }
+    p.embeds = keep;
+  }
+  const embeds = p.embeds.map(d => ({ description: d, color: 0x2BD9C5 }));
+  return { content: p.head || '👥', embeds: embeds.length ? embeds : [] };
 }
 function _simpleHash(str) {
   let h = 5381;
@@ -8242,8 +8630,8 @@ async function updateForumPostMembers(cid, matchId, env) {
     const maxMembers = maxRes.ok ? await maxRes.json() : null;
     const members = (Array.isArray(rawMembers) ? rawMembers : Object.values(rawMembers || {})).filter(Boolean);
 
-    const content = _buildForumMembersContent(members, maxMembers, laneFixed);
-    const hash = _simpleHash(content);
+    const payload = _buildForumMembersPayload(members, maxMembers, laneFixed);
+    const hash = _simpleHash(JSON.stringify(payload));
 
     let membersMsgId = forumThread.membersMsgId || null;
     if (membersMsgId && forumThread.membersHash === hash) return; // 변경 없음
@@ -8273,7 +8661,7 @@ async function updateForumPostMembers(cid, matchId, env) {
       const patchRes = await fetch(`https://discord.com/api/v10/channels/${forumThread.threadId}/messages/${membersMsgId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bot ' + botToken },
-        body: JSON.stringify({ content }),
+        body: JSON.stringify(payload),
       });
       if (patchRes.ok) { await saveThreadMeta(membersMsgId); return; }
       if (patchRes.status !== 404) { console.error('[updateForumPostMembers] PATCH', patchRes.status, (await patchRes.text()).slice(0, 200)); return; }
@@ -8282,7 +8670,7 @@ async function updateForumPostMembers(cid, matchId, env) {
     const postRes = await fetch(`https://discord.com/api/v10/channels/${forumThread.threadId}/messages`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bot ' + botToken },
-      body: JSON.stringify({ content }),
+      body: JSON.stringify(payload),
     });
     if (postRes.ok) {
       const postData = await postRes.json();
