@@ -1148,6 +1148,58 @@ body > div[style*="position: fixed"][style*="inset: 0"] > div,body > div[style*=
     url('/poro-header-bg-m.webp') 62% 70%/auto 175% no-repeat #0A0D13 !important}
 }
 @media(prefers-reduced-motion:reduce){.page-header::before,.page-header::after{animation:none}}
+
+/* ── 유저 상세: AI 분석 탭 (내전 분석 랩) ── */
+#dm-lab{overflow-y:auto;max-height:560px;padding:.85rem 1rem 1rem;font-family:'IBM Plex Sans KR',sans-serif}
+.lab-empty{padding:2.2rem 1rem;text-align:center;color:var(--muted);font-size:12px;line-height:1.7;display:flex;flex-direction:column;align-items:center;gap:8px}
+.lab-h{display:flex;align-items:baseline;gap:8px;margin:1.1rem 0 .5rem;font-size:12px;font-weight:700;color:var(--white);letter-spacing:.5px}
+.lab-h em{font-style:normal;font-size:10px;color:var(--muted);font-weight:500;letter-spacing:0}
+.lab-sum{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.lab-sum>div{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:8px;padding:.6rem .5rem;text-align:center;min-width:0}
+.lab-sum b{display:block;font-size:17px;color:var(--white);font-weight:800;line-height:1.2}
+.lab-sum b small{font-size:11px;font-weight:600;margin-left:1px}
+.lab-sum span{display:block;font-size:10px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lab-roles,.lab-parts{display:flex;flex-direction:column;gap:3px}
+.lab-role,.lab-part{display:grid;grid-template-columns:44px 1fr 62px 128px;align-items:center;gap:8px;padding:5px 8px;border-radius:6px;font-size:11px}
+.lab-part{grid-template-columns:108px 1fr 46px;padding:3px 8px}
+.lab-role{cursor:pointer;border:1px solid transparent;transition:background .15s,border-color .15s}
+.lab-role:hover{background:rgba(255,255,255,.03)}
+.lab-role.on{background:rgba(43,217,197,.06);border-color:rgba(43,217,197,.25)}
+.lab-rk{font-weight:700;color:var(--white)}
+.lab-bar{position:relative;height:6px;background:rgba(255,255,255,.05);border-radius:3px;overflow:hidden}
+.lab-bar::after{content:'';position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:rgba(255,255,255,.18)}
+.lab-bar i{position:absolute;top:0;bottom:0;border-radius:3px;transition:width .4s}
+.lab-rv{font-weight:700;color:var(--gold);text-align:right;white-space:nowrap}
+.lab-rm{font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lab-pl{color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lab-pv{font-weight:700;text-align:right;font-variant-numeric:tabular-nums}
+.lab-note{font-size:10px;color:var(--muted);line-height:1.6;margin-top:.4rem}
+.lab-champs{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:5px}
+.lab-ch{display:flex;align-items:center;gap:7px;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:7px;padding:5px 7px;min-width:0}
+.lab-ch img{width:28px;height:28px;border-radius:6px;flex-shrink:0}
+.lab-cn{flex:1;min-width:0;font-size:11px;font-weight:700;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lab-cn small,.lab-cs small{display:block;font-size:9px;color:var(--muted);font-weight:500}
+.lab-cs{text-align:right;font-size:12px;white-space:nowrap}
+.lab-2col{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.lab-2col .lab-h{margin-top:1.1rem}
+.lab-li{display:flex;align-items:center;gap:8px;padding:4px 8px;border-radius:6px;font-size:11px;background:rgba(255,255,255,.02);margin-bottom:3px}
+.lab-li span{flex:1;min-width:0;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lab-li em{font-style:normal;color:var(--muted);font-size:10px;white-space:nowrap}
+.lab-li b{width:34px;text-align:right}
+.lab-recent{display:flex;flex-direction:column;gap:3px}
+.lab-rc{display:grid;grid-template-columns:24px 40px 34px 1fr 24px;align-items:center;gap:8px;padding:4px 8px;border-radius:6px;font-size:11px;color:var(--sub);border-left:2px solid var(--muted);background:rgba(255,255,255,.02)}
+.lab-rc img{width:22px;height:22px;border-radius:5px}
+.lab-rc b{color:var(--white);font-weight:700}
+.lab-rc em{font-style:normal;font-weight:700;text-align:right}
+.lab-rc.w{border-left-color:var(--blue)}.lab-rc.w em{color:var(--blue)}
+.lab-rc.l{border-left-color:var(--red)}.lab-rc.l em{color:var(--red)}
+.lab-foot{margin-top:1.1rem;padding-top:.6rem;border-top:1px solid var(--border);font-size:10px;color:var(--muted);text-align:right}
+@media (max-width:640px){
+  .lab-sum{grid-template-columns:repeat(2,1fr)}
+  .lab-role{grid-template-columns:38px 1fr 58px}.lab-rm{display:none}
+  .lab-part{grid-template-columns:92px 1fr 42px}
+  .lab-2col{grid-template-columns:1fr;gap:0}
+}
 </style>
 </head>
 <body>
@@ -2751,6 +2803,8 @@ async function _cachedFetch(key, ttlSec, fetchFn) {
     <div style="display:flex;gap:4px;padding:.5rem 1rem 0;border-bottom:1px solid var(--border);">
       <button id="dm-tab-analysis" onclick="switchDetailTab('analysis')"
         style="padding:4px 10px;border-radius:2px 2px 0 0;border:1px solid var(--border);border-bottom:2px solid var(--blue);background:rgba(10,200,185,.08);color:var(--blue);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:.5px;">분석</button>
+      <button id="dm-tab-lab" onclick="switchDetailTab('lab')"
+        style="padding:4px 10px;border-radius:2px 2px 0 0;border:1px solid var(--border);border-bottom:none;background:transparent;color:var(--muted);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:.5px;">AI 분석</button>
       <button id="dm-tab-rating-log" onclick="switchDetailTab('rating-log')"
         style="padding:4px 10px;border-radius:2px 2px 0 0;border:1px solid var(--border);border-bottom:none;background:transparent;color:var(--muted);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:.5px;display:none;">레이팅 로그</button>
       <button id="dm-tab-weekly" onclick="switchDetailTab('weekly')"
@@ -2769,6 +2823,7 @@ async function _cachedFetch(key, ttlSec, fetchFn) {
     <div id="dm-content">
       <div class="dm-loading"><div class="spinner"></div> 분석 중...</div>
     </div>
+    <div id="dm-lab" style="display:none;"></div>
     <div id="dm-rating-log" style="display:none;overflow-y:auto;max-height:500px;padding:.5rem 0;">
       <div style="padding:2rem;text-align:center;color:var(--muted);font-family:'IBM Plex Sans KR',sans-serif;font-size:12px;">로딩 중...</div>
     </div>
@@ -2787,6 +2842,237 @@ async function _cachedFetch(key, ttlSec, fetchFn) {
   </div>
 </div>
 
+<script>
+/* RGLAB:START — 내전 분석 랩 학습 결과 (GitHub model/latest.json + players.json) 공용 로더 */
+(function () {
+  if (window.RGLab) return;
+  var BASE = 'https://raw.githubusercontent.com/rdc6087940/lolket/main/model/';
+  var ROLE = { top: 'TOP', jg: 'JUNGLE', mid: 'MIDDLE', bot: 'BOTTOM', sup: 'UTILITY' };
+  var ROLE_KO = { TOP: '탑', JUNGLE: '정글', MIDDLE: '미드', BOTTOM: '원딜', UTILITY: '서폿' };
+  var ROLES = ['TOP', 'JUNGLE', 'MIDDLE', 'BOTTOM', 'UTILITY'];
+  // 점수 구성 항목 (값 = 그 항목이 전력 점수에 더한 양, +면 강점 / -면 약점)
+  var LABEL = {
+    tier: '티어', elo: '내전 Elo', role_elo: '라인 Elo', wr: '내전 승률', games: '내전 경험', role_wr: '라인 승률',
+    role_share: '라인 숙련도', form: '최근 폼', ai: 'AI 점수', lane_ai: '라인전 AI 점수', kda: 'KDA', kp: '킬 관여',
+    cspm: '분당 CS', dpm: '분당 딜량', gpm: '분당 골드', dtpm: '탱킹', vision: '와드 활용', dmg_share: '팀 내 딜 비중',
+    gold_share: '팀 내 골드 비중', early_death: '초반 데스', solo_kill: '솔로킬', obj: '오브젝트 관여',
+    gd10: '10분 골드 차이', gd15: '15분 골드 차이', csd15: '15분 CS 차이', xpd15: '15분 경험치 차이',
+    laning_adv: '라인전 우위', plates: '포탑 방패', vspm: '시야 점수', ccpm: 'CC 기여', dead_pct: '죽어 있던 시간',
+    champ_games: '챔피언 숙련', champ_wr: '챔피언 승률', duo: '팀원 궁합', lane_vs: '맞라인 상대전적',
+  };
+  // 값이 클수록 좋은 항목은 +1, 작을수록 좋은 항목은 -1.
+  // 학습 가중치 부호가 이 방향과 반대인 항목은 다른 항목과 겹치는 부분을 덜어내는 '보정' 이라 강점·약점에서 뺌
+  var GOOD_DIR = { early_death: -1, dead_pct: -1 };
+  var _p = null, _champ = {};
+  function norm(name, tag) { return (String(name || '').trim() + '#' + String(tag || '').trim()).toLowerCase(); }
+  function load() {
+    if (_p) return _p;
+    var bust = Math.floor(Date.now() / 300000); // 5분 단위로 새 버전 확인
+    _p = fetch(BASE + 'latest.json?t=' + bust).then(function (r) { if (!r.ok) throw new Error('latest ' + r.status); return r.json(); })
+      .then(function (model) {
+        return fetch(BASE + 'players.json?v=' + encodeURIComponent(model.version || bust)).then(function (r) {
+          if (!r.ok) throw new Error('players ' + r.status); return r.json();
+        }).then(function (pj) {
+          var players = (pj && pj.players) || {};
+          var byPuuid = {}, byName = {};
+          Object.keys(players).forEach(function (k) {
+            var p = players[k]; p.key = k;
+            if (p.puuid) byPuuid[p.puuid] = p;
+            var nm = k.split('#')[0];
+            (byName[nm] = byName[nm] || []).push(p);
+          });
+          return { model: model, players: players, byPuuid: byPuuid, byName: byName, _pct: {} };
+        });
+      })
+      .catch(function (e) { console.warn('[RGLab] 불러오기 실패', e && e.message); _p = null; return null; });
+    return _p;
+  }
+  // m: { name, tag, puuid(deeplol) } → 선수 데이터 (닉네임#태그 → deeplol puuid → 태그 없이 이름 하나뿐일 때)
+  function find(d, m) {
+    if (!d || !m) return null;
+    var p = d.players[norm(m.name, m.tag)];
+    if (p) return p;
+    var ids = [m.puuid, m.puu_id, m._dpId, m.dlPuuid].filter(Boolean);
+    for (var i = 0; i < ids.length; i++) if (d.byPuuid[ids[i]]) return d.byPuuid[ids[i]];
+    if (!m.tag) { var arr = d.byName[String(m.name || '').trim().toLowerCase()]; if (arr && arr.length === 1) return arr[0]; }
+    return null;
+  }
+  function score(p, role) { return p && p.roles && p.roles[role] ? p.roles[role].score : 0; }
+  function sig(x) { return 1 / (1 + Math.exp(-x)); }
+  // A팀 승률 (진영 모르면 bias 0) — latest.json how_to_use 그대로
+  function teamProb(d, A, B, side) {
+    var sA = 0, sB = 0, hitA = 0, hitB = 0;
+    A.forEach(function (x) { if (x.p) { sA += score(x.p, x.role); hitA++; } });
+    B.forEach(function (x) { if (x.p) { sB += score(x.p, x.role); hitB++; } });
+    var sb = (d && d.model && d.model.side_bias) || 0;
+    var bias = side === 'blue' ? sb : side === 'red' ? -sb : 0;
+    var n = (d && d.model && d.model.players_per_team) || 5;
+    return { pA: sig(bias + (sA - sB) / n), sumA: sA, sumB: sB, hitA: hitA, hitB: hitB };
+  }
+  // 1:1 라인 맞대결 체감 승률 (팀 수식에서 그 라인 차이만 반영)
+  function laneProb(d, a, b, role) {
+    var n = (d && d.model && d.model.players_per_team) || 5;
+    return sig((score(a, role) - score(b, role)) / n);
+  }
+  function weights(d) {
+    if (!d || !d.model || !d.model.formula) return {};
+    if (d._w) return d._w;
+    var w = {}; (d.model.formula.features || []).forEach(function (f) { w[f.name] = f.weight; });
+    return (d._w = w);
+  }
+  // 강점(+)·약점(-) n개씩 + 전체(adj: 보정 항목 여부)
+  function parts(d, p, role, n) {
+    var r = p && p.roles && p.roles[role]; if (!r || !r.parts) return { plus: [], minus: [], all: [] };
+    var W = weights(d);
+    var all = Object.keys(r.parts).map(function (k) {
+      var dir = GOOD_DIR[k] || 1, wt = W[k];
+      return { k: k, label: LABEL[k] || k, v: r.parts[k], adj: wt != null && wt * dir < 0 };
+    });
+    var arr = all.filter(function (x) { return !x.adj && Math.abs(x.v) >= 0.005; });
+    var plus = arr.filter(function (x) { return x.v > 0; }).sort(function (a, b) { return b.v - a.v; }).slice(0, n || 3);
+    var minus = arr.filter(function (x) { return x.v < 0; }).sort(function (a, b) { return a.v - b.v; }).slice(0, n || 3);
+    return { plus: plus, minus: minus, all: all };
+  }
+  // 같은 라인 선수들(내전 10판 이상) 중 위치 → 상위 %
+  function pct(d, role, s) {
+    if (!d) return null;
+    var arr = d._pct[role];
+    if (!arr) {
+      arr = [];
+      Object.keys(d.players).forEach(function (k) { var p = d.players[k]; if ((p.custom_games || 0) >= 10 && p.roles && p.roles[role]) arr.push(p.roles[role].score); });
+      arr.sort(function (a, b) { return a - b; });
+      d._pct[role] = arr;
+    }
+    if (!arr.length) return null;
+    var lo = 0, hi = arr.length;
+    while (lo < hi) { var mid = (lo + hi) >> 1; if (arr[mid] <= s) lo = mid + 1; else hi = mid; }
+    return Math.max(1, Math.round((1 - lo / arr.length) * 100));
+  }
+  // 챔피언 영문 ID → 한글 이름 / 숫자 키 (Data Dragon)
+  function champInfo(ver) {
+    ver = ver || '16.14.1';
+    if (_champ[ver]) return _champ[ver];
+    _champ[ver] = fetch('https://ddragon.leagueoflegends.com/cdn/' + ver + '/data/ko_KR/champion.json').then(function (r) { return r.json(); })
+      .then(function (j) { var ko = {}, key = {}, byKey = {}, lower = {}; Object.values(j.data || {}).forEach(function (c) { ko[c.id] = c.name; key[c.id] = String(c.key); byKey[String(c.key)] = c.id; lower[c.id.toLowerCase()] = c.id; }); return { ver: ver, ko: ko, key: key, byKey: byKey, lower: lower }; })
+      .catch(function () { return { ver: ver, ko: {}, key: {}, byKey: {}, lower: {} }; });
+    return _champ[ver];
+  }
+  function wr(g, w) { return g > 0 ? Math.round(w / g * 100) : 0; }
+  window.RGLab = { BASE: BASE, ROLE: ROLE, ROLE_KO: ROLE_KO, ROLES: ROLES, LABEL: LABEL, load: load, find: find, norm: norm,
+    score: score, teamProb: teamProb, laneProb: laneProb, parts: parts, pct: pct, champInfo: champInfo, wr: wr };
+})();
+/* RGLAB:END */
+
+// ══════════════════════════════════════════
+// 유저 상세 — AI 분석 탭 (내전 분석 랩 학습 데이터)
+// ══════════════════════════════════════════
+var _labRoleSel = null, _labRoleFor = null;
+function _labEsc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function _labH(t, sub) {
+  return '<div class="lab-h"><span>' + t + '</span>' + (sub ? '<em>' + sub + '</em>' : '') + '</div>';
+}
+function _labWrC(w) { return w >= 60 ? 'var(--blue)' : w < 45 ? 'var(--red)' : 'var(--sub)'; }
+async function renderLabTab(member) {
+  var el = document.getElementById('dm-lab');
+  if (!el || !member) return;
+  el.innerHTML = '<div class="lab-empty"><div class="spinner"></div> 내전 AI 학습 데이터 불러오는 중...</div>';
+  var D = window.RGLab ? await RGLab.load() : null;
+  if (_currentMember !== member) return; // 그 사이 다른 유저를 열었으면 중단
+  if (!D) { el.innerHTML = '<div class="lab-empty">내전 AI 학습 데이터를 불러오지 못했어요. 잠시 후 다시 열어주세요.</div>'; return; }
+  var p = RGLab.find(D, { name: member.riot_name, tag: member.riot_tag, puuid: member.puu_id });
+  if (!p) { el.innerHTML = '<div class="lab-empty">내전 AI 학습 명단에 없는 유저예요.<br><span style="font-size:10px;">롤하냥 커뮤니티 내전(10명 전원 멤버) 기록이 있는 사람만 학습돼요.</span></div>'; return; }
+  var CI = await RGLab.champInfo(typeof DD_VER !== 'undefined' ? DD_VER : null);
+  if (_currentMember !== member) return;
+  var M = D.model || {}, R = RGLab.ROLES, KO = RGLab.ROLE_KO;
+  var g = p.custom_games || 0, w = p.custom_wins || 0;
+  if (_labRoleFor !== p.key || !p.roles[_labRoleSel]) { _labRoleSel = p.main_role; _labRoleFor = p.key; }
+  var ver = String(M.version || '');
+  var verTxt = ver.length >= 8 ? ver.slice(0, 4) + '.' + ver.slice(4, 6) + '.' + ver.slice(6, 8) : ver;
+  var h = '';
+  // 요약
+  h += '<div class="lab-sum">' +
+    '<div><b>' + Math.round(p.custom_elo || 0) + '</b><span>내전 Elo</span></div>' +
+    '<div><b>' + g + '<small>판</small></b><span>' + w + '승 ' + (g - w) + '패 · ' + RGLab.wr(g, w) + '%</span></div>' +
+    '<div><b>' + (KO[p.main_role] || '-') + '</b><span>주 라인</span></div>' +
+    '<div><b style="color:var(--gold);">' + (KO[p.best_role] || '-') + '</b><span>전력 최고 라인</span></div>' +
+    '</div>';
+  // 라인별 전력
+  h += _labH('라인별 내전 전력', '같은 라인 선수(내전 10판+) 중 위치');
+  h += '<div class="lab-roles">';
+  R.forEach(function (r) {
+    var x = p.roles[r] || {}, s = x.score || 0, pc = RGLab.pct(D, r, s);
+    var width = Math.min(50, Math.abs(s) / 3 * 50);
+    h += '<div class="lab-role' + (r === _labRoleSel ? ' on' : '') + '" onclick="_labRoleSel=\'' + r + '\';renderLabTab(_currentMember)">' +
+      '<span class="lab-rk">' + KO[r] + '</span>' +
+      '<span class="lab-bar"><i style="' + (s >= 0 ? 'left:50%;width:' + width + '%;background:var(--blue)' : 'right:50%;width:' + width + '%;background:var(--red)') + '"></i></span>' +
+      '<span class="lab-rv">' + (pc != null ? '상위 ' + pc + '%' : (s >= 0 ? '+' : '') + s.toFixed(2)) + '</span>' +
+      '<span class="lab-rm">' + (x.role_wr != null ? '승률 ' + Math.round(x.role_wr * 100) + '%' : '') + (x.role_share != null ? ' · 비중 ' + Math.round(x.role_share * 100) + '%' : '') + '</span>' +
+      '</div>';
+  });
+  h += '</div>';
+  // 점수 구성
+  var pr = RGLab.parts(D, p, _labRoleSel, 99);
+  var main = pr.all.filter(function (x) { return !x.adj && Math.abs(x.v) >= 0.005; }).sort(function (a, b) { return b.v - a.v; });
+  var adj = pr.all.filter(function (x) { return x.adj && Math.abs(x.v) >= 0.005; });
+  var mx = Math.max.apply(null, main.map(function (x) { return Math.abs(x.v); }).concat([0.1]));
+  h += _labH('점수 구성 · ' + KO[_labRoleSel], '라인을 누르면 바뀌어요 · 초록 = 강점, 빨강 = 약점');
+  h += '<div class="lab-parts">';
+  main.forEach(function (x) {
+    var wd = Math.abs(x.v) / mx * 50;
+    h += '<div class="lab-part"><span class="lab-pl">' + _labEsc(x.label) + '</span><span class="lab-bar"><i style="' + (x.v >= 0 ? 'left:50%;width:' + wd + '%;background:var(--blue)' : 'right:50%;width:' + wd + '%;background:var(--red)') + '"></i></span><span class="lab-pv" style="color:' + (x.v >= 0 ? 'var(--blue)' : 'var(--red)') + ';">' + (x.v >= 0 ? '+' : '') + x.v.toFixed(2) + '</span></div>';
+  });
+  h += '</div>';
+  if (adj.length) h += '<div class="lab-note">보정 항목(다른 항목과 겹치는 부분을 덜어내는 값): ' + adj.map(function (x) { return _labEsc(x.label) + ' ' + (x.v >= 0 ? '+' : '') + x.v.toFixed(2); }).join(' · ') + '</div>';
+  // 챔피언
+  var hasExtra = p.champs || p.duo || p.vs || p.recent;
+  if (p.champs && p.champs.length) {
+    h += _labH('내전 챔피언', '전체 내전 기록');
+    h += '<div class="lab-champs">';
+    p.champs.forEach(function (c) {
+      var id = CI.lower[String(c[0]).toLowerCase()] || c[0], wr = RGLab.wr(c[1], c[2]);
+      var kda = c[4] > 0 ? ((c[3] + c[5]) / c[4]).toFixed(2) : 'Perfect';
+      h += '<div class="lab-ch"><img src="https://ddragon.leagueoflegends.com/cdn/' + CI.ver + '/img/champion/' + encodeURIComponent(id) + '.png" loading="lazy" onerror="this.style.visibility=\'hidden\'">' +
+        '<div class="lab-cn">' + _labEsc(CI.ko[id] || c[0]) + '<small>' + (KO[c[6]] || '') + '</small></div>' +
+        '<div class="lab-cs"><b style="color:' + _labWrC(wr) + ';">' + wr + '%</b><small>' + c[1] + '판 · KDA ' + kda + '</small></div></div>';
+    });
+    h += '</div>';
+  }
+  // 궁합 · 상대전적
+  function pname(k) { var q = D.players[k]; return q ? q.name : k; }
+  function list(arr, emptyTxt) {
+    if (!arr || !arr.length) return '<div class="lab-note">' + emptyTxt + '</div>';
+    return arr.map(function (x) {
+      var wr = RGLab.wr(x[1], x[2]);
+      return '<div class="lab-li"><span>' + _labEsc(x.nm || pname(x[0])) + '</span><em>' + x[2] + '승 ' + (x[1] - x[2]) + '패</em><b style="color:' + _labWrC(wr) + ';">' + wr + '%</b></div>';
+    }).join('');
+  }
+  if (p.duo || p.vs || p.vs_champ) {
+    h += '<div class="lab-2col">';
+    h += '<div>' + _labH('팀원 궁합', '같은 팀 3판 이상') + list(p.duo, '기록 없음') + '</div>';
+    h += '<div>' + _labH('맞라인 상대전적', '같은 라인 상대 2판 이상') + list(p.vs, '기록 없음') + '</div>';
+    h += '</div>';
+    if (p.vs_champ && p.vs_champ.length) {
+      h += _labH('맞라인 상대 챔피언', '이 챔피언을 상대했을 때');
+      h += '<div class="lab-2col"><div>' + list(p.vs_champ.slice(0, 5).map(function (x) { var id = CI.lower[String(x[0]).toLowerCase()] || x[0]; var y = x.slice(); y.nm = CI.ko[id] || x[0]; return y; }), '') + '</div><div>' +
+        list(p.vs_champ.slice(5, 10).map(function (x) { var id = CI.lower[String(x[0]).toLowerCase()] || x[0]; var y = x.slice(); y.nm = CI.ko[id] || x[0]; return y; }), '') + '</div></div>';
+    }
+  }
+  if (p.recent && p.recent.length) {
+    h += _labH('최근 내전', '학습에 쓰인 최근 경기');
+    h += '<div class="lab-recent">';
+    p.recent.forEach(function (r) {
+      var id = CI.lower[String(r[2]).toLowerCase()] || r[2], dt = new Date(r[0]);
+      h += '<div class="lab-rc ' + (r[3] ? 'w' : 'l') + '"><img src="https://ddragon.leagueoflegends.com/cdn/' + CI.ver + '/img/champion/' + encodeURIComponent(id) + '.png" loading="lazy" onerror="this.style.visibility=\'hidden\'">' +
+        '<span>' + (dt.getMonth() + 1) + '/' + dt.getDate() + '</span><span>' + (KO[r[1]] || '') + '</span><b>' + r[4] + '/' + r[5] + '/' + r[6] + '</b><em>' + (r[3] ? '승' : '패') + '</em></div>';
+    });
+    h += '</div>';
+  }
+  if (!hasExtra) h += '<div class="lab-note" style="margin-top:.8rem;">챔피언 · 궁합 · 상대전적은 내전 분석 랩에서 다음에 내보내기(cycle → publish) 하면 표시돼요.</div>';
+  h += '<div class="lab-foot">내전 ' + (M.games || 0).toLocaleString() + '판 학습 · ' + verTxt + ' 기준' + (M.metrics && M.metrics.holdout_linear ? ' · 승부 예측 검증 정확도 ' + Math.round(M.metrics.holdout_linear.acc * 100) + '%' : '') + '</div>';
+  el.innerHTML = h;
+}
+window.renderLabTab = renderLabTab;
+</script>
 <script>
 // ══════════════════════════════════════════
 // 유저 상세 분석
@@ -5222,10 +5508,13 @@ function switchDetailTab(tab) {
   var nicknameEl     = document.getElementById('dm-nickname');
   var heatmapEl      = document.getElementById('dm-heatmap');
   var achEl          = document.getElementById('dm-achievements');
+  var labTab         = document.getElementById('dm-tab-lab');
+  var labEl          = document.getElementById('dm-lab');
   if (!analysisTab) return;
 
   var heatmapTab = document.getElementById('dm-tab-heatmap');
-  [analysisTab, logTab, weeklyTab, commTab, memoTab, nicknameTab, heatmapTab, achTab].forEach(function(t) {
+  if (labEl) labEl.style.display = 'none';
+  [analysisTab, labTab, logTab, weeklyTab, commTab, memoTab, nicknameTab, heatmapTab, achTab].forEach(function(t) {
     if (t) { t.style.borderBottom='none'; t.style.background='transparent'; t.style.color='var(--muted)'; }
   });
   if (contentEl)   contentEl.style.display  = 'none';
@@ -5242,6 +5531,13 @@ function switchDetailTab(tab) {
     analysisTab.style.background   = 'rgba(10,200,185,.08)';
     analysisTab.style.color        = 'var(--blue)';
     if (contentEl) contentEl.style.display = '';
+  } else if (tab === 'lab') {
+    if (labTab) {
+      labTab.style.borderBottom = '2px solid #F4C84A';
+      labTab.style.background   = 'rgba(244,200,74,.08)';
+      labTab.style.color        = '#F4C84A';
+    }
+    if (labEl) { labEl.style.display = ''; renderLabTab(_currentMember); }
   } else if (tab === 'rating-log') {
     if (!document.body.classList.contains('admin-unlocked')) {
       // 비관리자 접근 차단 — 분석 탭 유지

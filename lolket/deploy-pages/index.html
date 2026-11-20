@@ -3935,7 +3935,7 @@ body:has(#screen-0.active){background-color:var(--rg-bg)!important;background-im
 </div>
 </div>
 
-<div id="screen-4" class="screen"> <div class="bracket-wrap"> <div class="ar-timer" style="display:none;"><span class="ar-text"></span><button type="button" class="ar-btn" onclick="manualAutoResult(this)" title="자동 저장과 같은 방법으로 지금 바로 Riot 기록에서 이 내전 게임을 찾아 저장합니다 (이미 저장된 경기는 건너뜀)">🔄 게임 결과 가져오기</button></div> <div class="bracket-topbar"> <div class="bracket-title">토너먼트 대진표</div> <div class="bracket-actions"> <button onclick="copyMatchLink()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(10,200,185,.4);background:rgba(10,200,185,.06);color:var(--blue-bright);font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="내전 상세 링크 복사">링크 복사</button> <button onclick="copyTeamText()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(200,170,110,.4);background:rgba(200,170,110,.06);color:var(--gold);font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="팀 정보 텍스트 복사">팀 정보 복사</button> <button class="btn-secondary" onclick="goBackToStage3()">← 이전 단계</button> <button class="btn-regen" onclick="generateBracket()">↺ 재추첨</button> <button class="btn-secondary" onclick="openExtraMatchModal()">+ 추가 대진</button> <button class="btn-copy-img" onclick="copyBracketImage()"> <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="1" y="3" width="8" height="9" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M4 3V2a1 1 0 011-1h5a1 1 0 011 1v7a1 1 0 01-1 1h-1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+<div id="screen-4" class="screen"> <div class="bracket-wrap"> <div class="ar-timer" style="display:none;"><span class="ar-text"></span><button type="button" class="ar-btn" onclick="manualAutoResult(this)" title="자동 저장과 같은 방법으로 지금 바로 Riot 기록에서 이 내전 게임을 찾아 저장합니다 (이미 저장된 경기는 건너뜀)">🔄 게임 결과 가져오기</button></div> <div class="bracket-topbar"> <div class="bracket-title">토너먼트 대진표</div> <div class="bracket-actions"> <button onclick="copyMatchLink()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(10,200,185,.4);background:rgba(10,200,185,.06);color:var(--blue-bright);font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="내전 상세 링크 복사">링크 복사</button> <button onclick="copyTeamText()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(200,170,110,.4);background:rgba(200,170,110,.06);color:var(--gold);font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="팀 정보 텍스트 복사">팀 정보 복사</button> <button onclick="issueAnalysisCode()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(157,72,224,.4);background:rgba(157,72,224,.06);color:#B97EEA;font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="대진 분석 코드 발급">분석코드</button> <button class="btn-secondary" onclick="goBackToStage3()">← 이전 단계</button> <button class="btn-regen" onclick="generateBracket()">↺ 재추첨</button> <button class="btn-secondary" onclick="openExtraMatchModal()">+ 추가 대진</button> <button class="btn-copy-img" onclick="copyBracketImage()"> <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="1" y="3" width="8" height="9" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M4 3V2a1 1 0 011-1h5a1 1 0 011 1v7a1 1 0 01-1 1h-1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
  이미지 복사
  </button> <button class="btn-next" id="btn-stage4-next" onclick="goToStage5()">다음 단계 →</button> </div> </div> <div class="bracket-scroll"> <canvas id="bracket-canvas" style="cursor:pointer;" onclick="onBracketClick(event)"></canvas> </div> </div>
 </div>
@@ -3967,7 +3967,7 @@ body:has(#screen-0.active){background-color:var(--rg-bg)!important;background-im
   <!-- 탭1: 기존 내전 결과 -->
   <div id="s5-panel-result">
   <div class="ar-timer" style="display:none;"><span class="ar-text"></span><button type="button" class="ar-btn" onclick="manualAutoResult(this)" title="자동 저장과 같은 방법으로 지금 바로 Riot 기록에서 이 내전 게임을 찾아 저장합니다 (이미 저장된 경기는 건너뜀)">🔄 게임 결과 가져오기</button></div>
- <div class="results-topbar"> <div class="results-title">내전 결과 입력</div> <div style="display:flex;gap:8px;"> <button onclick="copyMatchLink()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(10,200,185,.4);background:rgba(10,200,185,.06);color:var(--blue-bright);font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="내전 상세 링크 복사">링크 복사</button> <button onclick="copyTeamText()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(200,170,110,.4);background:rgba(200,170,110,.06);color:var(--gold);font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="팀 정보 텍스트 복사">팀 정보 복사</button> <button id="btn-review-dm" onclick="sendReviewDM()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(157,72,224,.4);background:rgba(157,72,224,.06);color:#B97EEA;font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="내전 후기 DM 발송">후기 DM</button> <button class="btn-discord-share" id="btn-discord-share-result" onclick="shareResultToDiscord()" style="display:none;" title="Discord 채널에 내전 결과 전송">
+ <div class="results-topbar"> <div class="results-title">내전 결과 입력</div> <div style="display:flex;gap:8px;"> <button onclick="copyMatchLink()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(10,200,185,.4);background:rgba(10,200,185,.06);color:var(--blue-bright);font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="내전 상세 링크 복사">링크 복사</button> <button onclick="copyTeamText()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(200,170,110,.4);background:rgba(200,170,110,.06);color:var(--gold);font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="팀 정보 텍스트 복사">팀 정보 복사</button> <button onclick="issueAnalysisCode()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(157,72,224,.4);background:rgba(157,72,224,.06);color:#B97EEA;font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="대진 분석 코드 발급">분석코드</button> <button id="btn-review-dm" onclick="sendReviewDM()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(157,72,224,.4);background:rgba(157,72,224,.06);color:#B97EEA;font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="내전 후기 DM 발송">후기 DM</button> <button class="btn-discord-share" id="btn-discord-share-result" onclick="shareResultToDiscord()" style="display:none;" title="Discord 채널에 내전 결과 전송">
   <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>
   Discord 전송
 </button> <button class="btn-secondary" onclick="addResultMatch()">+ 대진 추가</button> <button class="dev-send-btn admin-only" id="btn-dev-api-send" onclick="openDevApiSendModal()" style="display:none;" title="등록된 외부 API로 내전 데이터 전송">API 전송</button> </div> </div> <div class="match-list" id="result-match-list"></div> </div>
@@ -4216,13 +4216,15 @@ body:has(#screen-0.active){background-color:var(--rg-bg)!important;background-im
 
       <!-- 결과 -->
       <div id="uva-result" style="display:none;">
+        <div id="uva-lab"></div>
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:.9rem;">
-          <span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:rgba(10,200,185,.15);border:1px solid rgba(10,200,185,.4);font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;color:var(--blue-bright);">3</span>
+          <span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:rgba(10,200,185,.15);border:1px solid rgba(10,200,185,.4);font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;color:var(--blue-bright);">4</span>
           <span style="font-family:'IBM Plex Sans KR',sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;color:var(--text-white);text-transform:uppercase;">멤버별 모스트 챔피언</span>
+          <span style="font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;color:var(--text-muted);font-weight:600;">솔랭 + 내전 · 노란 숫자 = 내전 판수</span>
         </div>
         <div id="uva-champ-cards" style="margin-bottom:1.5rem;"></div>
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:.9rem;">
-          <span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:rgba(10,200,185,.15);border:1px solid rgba(10,200,185,.4);font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;color:var(--blue-bright);">4</span>
+          <span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:rgba(10,200,185,.15);border:1px solid rgba(10,200,185,.4);font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;color:var(--blue-bright);">5</span>
           <span style="font-family:'IBM Plex Sans KR',sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;color:var(--text-white);text-transform:uppercase;">밴 추천</span>
           <span style="font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;color:var(--text-muted);font-weight:600;">상대팀 기준 · 최대 10개</span>
         </div>
@@ -7152,7 +7154,9 @@ function _teamPostData() {
   } else {
     [].concat(teams).sort(function (a, b) { return a.id - b.id; }).forEach(function (t, ti) {
       var mem = Array.isArray(t.members) ? t.members : Object.values(t.members || {});
-      out.teams.push({ name: (ti + 1) + '팀', members: mem.filter(Boolean).map(function (m) { return row(m, t.captainId); }) });
+      // 팀장이 있으면 '팀장명 팀' (getTeamName), 없으면 기존처럼 N팀
+      var _tn = t.captainId ? getTeamName(t) : '';
+      out.teams.push({ name: (_tn && _tn !== '?') ? _tn : (ti + 1) + '팀', members: mem.filter(Boolean).map(function (m) { return row(m, t.captainId); }) });
     });
   }
   return out;
@@ -27307,6 +27311,127 @@ function showLaneMismatchPopup(opts) {
 })();
 </script>
 
+<script>
+/* RGLAB:START — 내전 분석 랩 학습 결과 (GitHub model/latest.json + players.json) 공용 로더 */
+(function () {
+  if (window.RGLab) return;
+  var BASE = 'https://raw.githubusercontent.com/rdc6087940/lolket/main/model/';
+  var ROLE = { top: 'TOP', jg: 'JUNGLE', mid: 'MIDDLE', bot: 'BOTTOM', sup: 'UTILITY' };
+  var ROLE_KO = { TOP: '탑', JUNGLE: '정글', MIDDLE: '미드', BOTTOM: '원딜', UTILITY: '서폿' };
+  var ROLES = ['TOP', 'JUNGLE', 'MIDDLE', 'BOTTOM', 'UTILITY'];
+  // 점수 구성 항목 (값 = 그 항목이 전력 점수에 더한 양, +면 강점 / -면 약점)
+  var LABEL = {
+    tier: '티어', elo: '내전 Elo', role_elo: '라인 Elo', wr: '내전 승률', games: '내전 경험', role_wr: '라인 승률',
+    role_share: '라인 숙련도', form: '최근 폼', ai: 'AI 점수', lane_ai: '라인전 AI 점수', kda: 'KDA', kp: '킬 관여',
+    cspm: '분당 CS', dpm: '분당 딜량', gpm: '분당 골드', dtpm: '탱킹', vision: '와드 활용', dmg_share: '팀 내 딜 비중',
+    gold_share: '팀 내 골드 비중', early_death: '초반 데스', solo_kill: '솔로킬', obj: '오브젝트 관여',
+    gd10: '10분 골드 차이', gd15: '15분 골드 차이', csd15: '15분 CS 차이', xpd15: '15분 경험치 차이',
+    laning_adv: '라인전 우위', plates: '포탑 방패', vspm: '시야 점수', ccpm: 'CC 기여', dead_pct: '죽어 있던 시간',
+    champ_games: '챔피언 숙련', champ_wr: '챔피언 승률', duo: '팀원 궁합', lane_vs: '맞라인 상대전적',
+  };
+  // 값이 클수록 좋은 항목은 +1, 작을수록 좋은 항목은 -1.
+  // 학습 가중치 부호가 이 방향과 반대인 항목은 다른 항목과 겹치는 부분을 덜어내는 '보정' 이라 강점·약점에서 뺌
+  var GOOD_DIR = { early_death: -1, dead_pct: -1 };
+  var _p = null, _champ = {};
+  function norm(name, tag) { return (String(name || '').trim() + '#' + String(tag || '').trim()).toLowerCase(); }
+  function load() {
+    if (_p) return _p;
+    var bust = Math.floor(Date.now() / 300000); // 5분 단위로 새 버전 확인
+    _p = fetch(BASE + 'latest.json?t=' + bust).then(function (r) { if (!r.ok) throw new Error('latest ' + r.status); return r.json(); })
+      .then(function (model) {
+        return fetch(BASE + 'players.json?v=' + encodeURIComponent(model.version || bust)).then(function (r) {
+          if (!r.ok) throw new Error('players ' + r.status); return r.json();
+        }).then(function (pj) {
+          var players = (pj && pj.players) || {};
+          var byPuuid = {}, byName = {};
+          Object.keys(players).forEach(function (k) {
+            var p = players[k]; p.key = k;
+            if (p.puuid) byPuuid[p.puuid] = p;
+            var nm = k.split('#')[0];
+            (byName[nm] = byName[nm] || []).push(p);
+          });
+          return { model: model, players: players, byPuuid: byPuuid, byName: byName, _pct: {} };
+        });
+      })
+      .catch(function (e) { console.warn('[RGLab] 불러오기 실패', e && e.message); _p = null; return null; });
+    return _p;
+  }
+  // m: { name, tag, puuid(deeplol) } → 선수 데이터 (닉네임#태그 → deeplol puuid → 태그 없이 이름 하나뿐일 때)
+  function find(d, m) {
+    if (!d || !m) return null;
+    var p = d.players[norm(m.name, m.tag)];
+    if (p) return p;
+    var ids = [m.puuid, m.puu_id, m._dpId, m.dlPuuid].filter(Boolean);
+    for (var i = 0; i < ids.length; i++) if (d.byPuuid[ids[i]]) return d.byPuuid[ids[i]];
+    if (!m.tag) { var arr = d.byName[String(m.name || '').trim().toLowerCase()]; if (arr && arr.length === 1) return arr[0]; }
+    return null;
+  }
+  function score(p, role) { return p && p.roles && p.roles[role] ? p.roles[role].score : 0; }
+  function sig(x) { return 1 / (1 + Math.exp(-x)); }
+  // A팀 승률 (진영 모르면 bias 0) — latest.json how_to_use 그대로
+  function teamProb(d, A, B, side) {
+    var sA = 0, sB = 0, hitA = 0, hitB = 0;
+    A.forEach(function (x) { if (x.p) { sA += score(x.p, x.role); hitA++; } });
+    B.forEach(function (x) { if (x.p) { sB += score(x.p, x.role); hitB++; } });
+    var sb = (d && d.model && d.model.side_bias) || 0;
+    var bias = side === 'blue' ? sb : side === 'red' ? -sb : 0;
+    var n = (d && d.model && d.model.players_per_team) || 5;
+    return { pA: sig(bias + (sA - sB) / n), sumA: sA, sumB: sB, hitA: hitA, hitB: hitB };
+  }
+  // 1:1 라인 맞대결 체감 승률 (팀 수식에서 그 라인 차이만 반영)
+  function laneProb(d, a, b, role) {
+    var n = (d && d.model && d.model.players_per_team) || 5;
+    return sig((score(a, role) - score(b, role)) / n);
+  }
+  function weights(d) {
+    if (!d || !d.model || !d.model.formula) return {};
+    if (d._w) return d._w;
+    var w = {}; (d.model.formula.features || []).forEach(function (f) { w[f.name] = f.weight; });
+    return (d._w = w);
+  }
+  // 강점(+)·약점(-) n개씩 + 전체(adj: 보정 항목 여부)
+  function parts(d, p, role, n) {
+    var r = p && p.roles && p.roles[role]; if (!r || !r.parts) return { plus: [], minus: [], all: [] };
+    var W = weights(d);
+    var all = Object.keys(r.parts).map(function (k) {
+      var dir = GOOD_DIR[k] || 1, wt = W[k];
+      return { k: k, label: LABEL[k] || k, v: r.parts[k], adj: wt != null && wt * dir < 0 };
+    });
+    var arr = all.filter(function (x) { return !x.adj && Math.abs(x.v) >= 0.005; });
+    var plus = arr.filter(function (x) { return x.v > 0; }).sort(function (a, b) { return b.v - a.v; }).slice(0, n || 3);
+    var minus = arr.filter(function (x) { return x.v < 0; }).sort(function (a, b) { return a.v - b.v; }).slice(0, n || 3);
+    return { plus: plus, minus: minus, all: all };
+  }
+  // 같은 라인 선수들(내전 10판 이상) 중 위치 → 상위 %
+  function pct(d, role, s) {
+    if (!d) return null;
+    var arr = d._pct[role];
+    if (!arr) {
+      arr = [];
+      Object.keys(d.players).forEach(function (k) { var p = d.players[k]; if ((p.custom_games || 0) >= 10 && p.roles && p.roles[role]) arr.push(p.roles[role].score); });
+      arr.sort(function (a, b) { return a - b; });
+      d._pct[role] = arr;
+    }
+    if (!arr.length) return null;
+    var lo = 0, hi = arr.length;
+    while (lo < hi) { var mid = (lo + hi) >> 1; if (arr[mid] <= s) lo = mid + 1; else hi = mid; }
+    return Math.max(1, Math.round((1 - lo / arr.length) * 100));
+  }
+  // 챔피언 영문 ID → 한글 이름 / 숫자 키 (Data Dragon)
+  function champInfo(ver) {
+    ver = ver || '16.14.1';
+    if (_champ[ver]) return _champ[ver];
+    _champ[ver] = fetch('https://ddragon.leagueoflegends.com/cdn/' + ver + '/data/ko_KR/champion.json').then(function (r) { return r.json(); })
+      .then(function (j) { var ko = {}, key = {}, byKey = {}, lower = {}; Object.values(j.data || {}).forEach(function (c) { ko[c.id] = c.name; key[c.id] = String(c.key); byKey[String(c.key)] = c.id; lower[c.id.toLowerCase()] = c.id; }); return { ver: ver, ko: ko, key: key, byKey: byKey, lower: lower }; })
+      .catch(function () { return { ver: ver, ko: {}, key: {}, byKey: {}, lower: {} }; });
+    return _champ[ver];
+  }
+  function wr(g, w) { return g > 0 ? Math.round(w / g * 100) : 0; }
+  window.RGLab = { BASE: BASE, ROLE: ROLE, ROLE_KO: ROLE_KO, ROLES: ROLES, LABEL: LABEL, load: load, find: find, norm: norm,
+    score: score, teamProb: teamProb, laneProb: laneProb, parts: parts, pct: pct, champInfo: champInfo, wr: wr };
+})();
+/* RGLAB:END */
+</script>
 <!-- ══════════════════════════════════════════════
      대진 분석 탭 로직
      ══════════════════════════════════════════════ -->
@@ -27324,6 +27449,204 @@ function showLaneMismatchPopup(opts) {
   var _uvaMyLanes = {};       // { lane: memberId }
   var _uvaEnemyLanes = {};
   var _uvaChampData = {};     // { puuid: [champStat...] }
+
+  // ══ 내전 분석 랩 학습 데이터 (RGLab) ═══════════════════════════════
+  var _uvaLab = null;                      // RGLab.load() 결과
+  var _UVA_LAB_ROLE = { top: 'TOP', jg: 'JUNGLE', mid: 'MIDDLE', bot: 'BOTTOM', sup: 'UTILITY' };
+  var _UVA_ROLE_LANE = { TOP: 'top', JUNGLE: 'jg', MIDDLE: 'mid', BOTTOM: 'bot', UTILITY: 'sup' };
+  var _UVA_F = "font-family:'IBM Plex Sans KR',sans-serif;";
+
+  // 챔피언 수: 솔랭(deeplol) + 내전(랩) 합산 텍스트
+  function _cTxt(c) {
+    var t = c.games + '판 ' + (c.games > 0 ? Math.round(c.wins / c.games * 100) : 0) + '%';
+    if (c.cg) t += ' (내전 ' + c.cg + '판 ' + Math.round(c.cw / c.cg * 100) + '%)';
+    return t;
+  }
+
+  // 랩 선수 연결 + 내전 챔피언 기록을 라인별 챔피언 목록에 합침
+  function _uvaMergeLab(allMembers, champI) {
+    allMembers.forEach(function (m) {
+      var p = window.RGLab && _uvaLab ? RGLab.find(_uvaLab, m) : null;
+      m._lab = p || null;
+      if (!p || !p.champs || !p.champs.length) return;
+      var kid = m._dpId || m.puu_id || m.puuid;
+      if (!kid) { kid = 'lab:' + p.key; m._labKid = kid; }
+      // 경매 카드 캐시와 같은 배열을 쓰므로 복사해서 합침 (캐시 숫자는 그대로)
+      var src = _uvaChampData[kid], byLane = {};
+      LANE_KEYS.forEach(function (l) { byLane[l] = (src && !Array.isArray(src) && src[l] || []).map(function (c) { return Object.assign({}, c); }); });
+      _uvaChampData[kid] = byLane;
+      // 솔랭 수치 보관
+      LANE_KEYS.forEach(function (l) { (byLane[l] = byLane[l] || []).forEach(function (c) { if (c.sg == null) { c.sg = c.games; c.sw = c.wins; } }); });
+      p.champs.forEach(function (row) {
+        var lane = _UVA_ROLE_LANE[row[6]]; if (!lane) return;
+        var id = champI.key[row[0]] || champI.key[champI.lower[String(row[0]).toLowerCase()]];
+        if (!id) return;
+        var arr = byLane[lane];
+        var c = arr.find(function (x) { return String(x.champion_id) === String(id); });
+        if (!c) { c = { champion_id: +id, games: 0, wins: 0, sg: 0, sw: 0 }; arr.push(c); }
+        c.cg = (c.cg || 0) + row[1]; c.cw = (c.cw || 0) + row[2];
+      });
+      LANE_KEYS.forEach(function (l) {
+        byLane[l].forEach(function (c) { c.games = (c.sg || 0) + (c.cg || 0); c.wins = (c.sw || 0) + (c.cw || 0); });
+        byLane[l].sort(function (a, b) { return b.games - a.games; });
+      });
+    });
+  }
+
+  // 라인 격차: 두 선수 모두 학습 데이터가 있으면 내전 전력 점수 차이(×100), 아니면 솔랭 티어 점수 차이
+  function _uvaLaneGap(myM, enM, lane) {
+    if (myM && enM && myM._lab && enM._lab) {
+      var role = _UVA_LAB_ROLE[lane];
+      var d = RGLab.score(myM._lab, role) - RGLab.score(enM._lab, role);
+      return { gap: Math.round(d * 100), lab: true, diff: d };
+    }
+    return { gap: _getTierScore(myM) - _getTierScore(enM), lab: false };
+  }
+
+  function _uvaPctTxt(p, role) {
+    var s = RGLab.score(p, role), pc = RGLab.pct(_uvaLab, role, s);
+    return pc != null ? '상위 ' + pc + '%' : (s >= 0 ? '+' : '') + s.toFixed(2);
+  }
+
+  function _uvaRenderLab(myTeam, enemyTeam) {
+    var el = document.getElementById('uva-lab');
+    if (!el) return;
+    if (!_uvaLab) {
+      el.innerHTML = '<div style="' + _UVA_F + 'font-size:11px;color:var(--text-muted);padding:.6rem .75rem;border:1px dashed var(--border-subtle);border-radius:3px;margin-bottom:1.5rem;">내전 AI 학습 데이터를 불러오지 못해 솔랭 기록으로만 분석했어요.</div>';
+      return;
+    }
+    var D = _uvaLab, M = D.model || {};
+    function memberAt(team, lanes, lane) {
+      var id = String(lanes[lane] || '');
+      return id ? (team.members || []).find(function (x) { return String(x.id || x.name) === id; }) : null;
+    }
+    var A = [], B = [], rows = [];
+    LANE_KEYS.forEach(function (lane) {
+      var role = _UVA_LAB_ROLE[lane];
+      var a = memberAt(myTeam, _uvaMyLanes, lane), b = memberAt(enemyTeam, _uvaEnemyLanes, lane);
+      A.push({ p: a && a._lab, role: role }); B.push({ p: b && b._lab, role: role });
+      rows.push({ lane: lane, role: role, a: a, b: b });
+    });
+    var tp = RGLab.teamProb(D, A, B, null);
+    var pa = Math.round(tp.pA * 100), pb = 100 - pa;
+    var hold = M.metrics && M.metrics.holdout_linear;
+    var esc = _esc;
+    var html = '';
+
+    // ① 승률 예측
+    html += _uvaSecHead('3', 'AI 승부 예측', '내전 ' + (M.games || 0).toLocaleString() + '판 학습' + (hold ? ' · 검증 정확도 ' + Math.round(hold.acc * 100) + '%' : ''));
+    html += '<div style="background:var(--bg-panel);border:1px solid var(--border-subtle);border-radius:4px;padding:.85rem 1rem;margin-bottom:1rem;">';
+    html += '<div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:.45rem;">';
+    html += '<div><div style="' + _UVA_F + 'font-size:10px;font-weight:700;color:var(--blue-bright);letter-spacing:1px;">우리팀 · ' + esc(myTeam.name || '') + '</div><div style="' + _UVA_F + 'font-size:26px;font-weight:800;color:' + (pa >= pb ? 'var(--blue-bright)' : 'var(--text-white)') + ';line-height:1.1;">' + pa + '%</div></div>';
+    html += '<div style="text-align:right;"><div style="' + _UVA_F + 'font-size:10px;font-weight:700;color:#E05050;letter-spacing:1px;">상대팀 · ' + esc(enemyTeam.name || '') + '</div><div style="' + _UVA_F + 'font-size:26px;font-weight:800;color:' + (pb > pa ? '#E05050' : 'var(--text-white)') + ';line-height:1.1;">' + pb + '%</div></div>';
+    html += '</div>';
+    html += '<div style="display:flex;height:8px;border-radius:4px;overflow:hidden;background:var(--bg-dark);"><div style="width:' + pa + '%;background:var(--blue-bright);transition:width .6s;"></div><div style="flex:1;background:#E05050;opacity:.85;"></div></div>';
+    var miss = (5 - tp.hitA) + (5 - tp.hitB);
+    html += '<div style="' + _UVA_F + 'font-size:10px;color:var(--text-muted);margin-top:.5rem;line-height:1.5;">진영(블루/레드)은 모른다고 보고 계산했어요.' + (miss ? ' 학습 데이터가 없는 ' + miss + '명은 평균 선수로 계산했어요.' : '') + '</div>';
+    html += '</div>';
+
+    // ② 라인별 맞대결
+    html += _uvaSecHead('', '라인별 맞대결', '내전 전력 점수 · 라인 승률 · 상대전적');
+    html += '<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:1rem;">';
+    rows.forEach(function (r) {
+      var pa1 = r.a && r.a._lab, pb1 = r.b && r.b._lab;
+      var lp = pa1 && pb1 ? Math.round(RGLab.laneProb(D, pa1, pb1, r.role) * 100) : null;
+      var h2h = '';
+      if (pa1 && pb1 && pa1.vs) { var v = pa1.vs.find(function (x) { return x[0] === pb1.key; }); if (v) h2h = '상대전적 ' + v[2] + '승 ' + (v[1] - v[2]) + '패'; }
+      html += '<div style="background:var(--bg-panel);border:1px solid var(--border-subtle);border-radius:3px;padding:.5rem .6rem;">';
+      html += '<div style="display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;">';
+      html += _uvaSide(r.a, pa1, r.role, false);
+      html += '<div style="text-align:center;min-width:58px;"><div style="' + _UVA_F + 'font-size:9px;font-weight:700;color:var(--text-muted);letter-spacing:1px;">' + LANE_KO_A[r.lane] + '</div>' +
+        (lp != null ? '<div style="' + _UVA_F + 'font-size:13px;font-weight:800;color:' + (lp > 52 ? 'var(--blue-bright)' : lp < 48 ? '#E05050' : 'var(--text-white)') + ';">' + lp + ' : ' + (100 - lp) + '</div>' : '<div style="' + _UVA_F + 'font-size:11px;color:var(--text-muted);">—</div>') +
+        (h2h ? '<div style="' + _UVA_F + 'font-size:9px;color:#F4C84A;white-space:nowrap;">' + h2h + '</div>' : '') + '</div>';
+      html += _uvaSide(r.b, pb1, r.role, true);
+      html += '</div></div>';
+    });
+    html += '</div>';
+
+    // ③ 팀 궁합 (같은 팀에서 3판 이상 같이 한 짝)
+    var chemA = _uvaChem(myTeam), chemB = _uvaChem(enemyTeam);
+    if (chemA.length || chemB.length) {
+      html += _uvaSecHead('', '팀 궁합', '같은 팀으로 3판 이상 함께한 기록');
+      html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1rem;">';
+      [[chemA, 'var(--blue-bright)'], [chemB, '#E05050']].forEach(function (x) {
+        html += '<div style="display:flex;flex-direction:column;gap:4px;min-width:0;">';
+        if (!x[0].length) html += '<div style="' + _UVA_F + 'font-size:10px;color:var(--text-muted);padding:.3rem;">기록 없음</div>';
+        x[0].slice(0, 5).forEach(function (c) {
+          var w = Math.round(c.w / c.g * 100);
+          html += '<div style="display:flex;align-items:center;gap:6px;background:var(--bg-panel);border:1px solid var(--border-subtle);border-left:2px solid ' + x[1] + ';border-radius:3px;padding:.35rem .5rem;' + _UVA_F + 'font-size:10px;">' +
+            '<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-white);font-weight:700;">' + esc(c.n1) + ' + ' + esc(c.n2) + '</span>' +
+            '<span style="color:var(--text-muted);white-space:nowrap;">' + c.g + '판</span><span style="font-weight:800;white-space:nowrap;color:' + (w >= 60 ? '#0AC8B9' : w < 45 ? '#E05050' : '#c8d0e0') + ';">' + w + '%</span></div>';
+        });
+        html += '</div>';
+      });
+      html += '</div>';
+    }
+
+    // ④ 선수별 강점·약점
+    html += _uvaSecHead('', '선수별 강점 · 약점', '이번 라인 기준, 전력 점수에 가장 크게 더하고 뺀 항목');
+    html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1.5rem;">';
+    [[rows.map(function (r) { return r.a; }), false], [rows.map(function (r) { return r.b; }), true]].forEach(function (side) {
+      html += '<div style="display:flex;flex-direction:column;gap:5px;min-width:0;">';
+      side[0].forEach(function (m, i) {
+        if (!m) return;
+        var role = _UVA_LAB_ROLE[LANE_KEYS[i]], p = m._lab;
+        html += '<div style="background:var(--bg-panel);border:1px solid var(--border-subtle);border-radius:3px;padding:.45rem .55rem;">';
+        html += '<div style="' + _UVA_F + 'font-size:10px;font-weight:700;color:var(--text-white);margin-bottom:.3rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><span style="color:' + (side[1] ? '#E05050' : 'var(--blue-bright)') + ';margin-right:4px;">' + LANE_KO_A[LANE_KEYS[i]] + '</span>' + esc(m.name || '') + '</div>';
+        if (!p) html += '<div style="' + _UVA_F + 'font-size:10px;color:var(--text-muted);">학습 데이터 없음</div>';
+        else {
+          var pr = RGLab.parts(D, p, role, 3);
+          html += '<div style="display:flex;flex-wrap:wrap;gap:3px;">';
+          pr.plus.forEach(function (x) { html += _uvaChip(x.label, '#0AC8B9', 'rgba(10,200,185,.1)'); });
+          pr.minus.forEach(function (x) { html += _uvaChip(x.label, '#E05050', 'rgba(224,80,80,.1)'); });
+          html += '</div>';
+        }
+        html += '</div>';
+      });
+      html += '</div>';
+    });
+    html += '</div>';
+    el.innerHTML = html;
+  }
+
+  function _uvaSecHead(num, title, sub) {
+    return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:.6rem;flex-wrap:wrap;">' +
+      (num ? '<span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:rgba(10,200,185,.15);border:1px solid rgba(10,200,185,.4);' + _UVA_F + 'font-size:11px;font-weight:700;color:var(--blue-bright);">' + num + '</span>' : '<span style="width:20px;"></span>') +
+      '<span style="' + _UVA_F + 'font-size:12px;font-weight:700;letter-spacing:2px;color:var(--text-white);">' + title + '</span>' +
+      (sub ? '<span style="' + _UVA_F + 'font-size:10px;color:var(--text-muted);font-weight:600;">' + sub + '</span>' : '') + '</div>';
+  }
+  function _uvaChip(t, c, bg) {
+    return '<span style="' + _UVA_F + 'font-size:9px;font-weight:700;color:' + c + ';background:' + bg + ';border:1px solid ' + c + '55;border-radius:10px;padding:1px 7px;white-space:nowrap;">' + _esc(t) + '</span>';
+  }
+  function _uvaSide(m, p, role, right) {
+    var al = right ? 'right' : 'left';
+    if (!m) return '<div></div>';
+    var h = '<div style="min-width:0;text-align:' + al + ';">';
+    h += '<div style="' + _UVA_F + 'font-size:11px;font-weight:700;color:var(--text-white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + _esc(m.name || '') + '</div>';
+    if (!p) return h + '<div style="' + _UVA_F + 'font-size:9px;color:var(--text-muted);">학습 데이터 없음</div></div>';
+    var r = (p.roles && p.roles[role]) || {};
+    var rs = r.role_share != null ? Math.round(r.role_share * 100) : null;
+    h += '<div style="' + _UVA_F + 'font-size:10px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' +
+      '<b style="color:#F4C84A;">' + _uvaPctTxt(p, role) + '</b> · Elo ' + Math.round(p.custom_elo || 0) + '</div>';
+    h += '<div style="' + _UVA_F + 'font-size:9px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' +
+      '내전 ' + (p.custom_games || 0) + '판' + (r.role_wr != null ? ' · 라인 승률 ' + Math.round(r.role_wr * 100) + '%' : '') + (rs != null ? ' · 비중 ' + rs + '%' : '') + '</div>';
+    return h + '</div>';
+  }
+  // 팀 안에서 랩 duo 기록으로 짝 찾기
+  function _uvaChem(team) {
+    var ms = (team.members || []).filter(function (m) { return m._lab; });
+    var out = [], seen = {};
+    ms.forEach(function (m) {
+      (m._lab.duo || []).forEach(function (d) {
+        var o = ms.find(function (x) { return x._lab.key === d[0]; });
+        if (!o) return;
+        var k = [m._lab.key, o._lab.key].sort().join('|');
+        if (seen[k]) return; seen[k] = 1;
+        out.push({ n1: m.name, n2: o.name, g: d[1], w: d[2] });
+      });
+    });
+    return out.sort(function (a, b) { return Math.abs(b.w / b.g - .5) - Math.abs(a.w / a.g - .5) || b.g - a.g; });
+  }
 
   // ── 분석 코드 Firebase 저장 헬퍼 ───────────────
   async function _saveCodeToFirebase(code, matchId) {
@@ -27741,6 +28064,8 @@ function showLaneMismatchPopup(opts) {
     document.getElementById('uva-step-lanes').style.display = 'none';
     document.getElementById('uva-loading').style.display = 'block';
     document.getElementById('uva-result').style.display = 'none';
+    // 내전 AI 학습 데이터 (GitHub) — 솔랭 조회와 동시에 받음
+    var _labP = window.RGLab ? RGLab.load() : Promise.resolve(null);
 
     var snap = window._uvSnapshot;
     var teams = snap && snap._teams || [];
@@ -27833,8 +28158,17 @@ function showLaneMismatchPopup(opts) {
       } catch(e) { console.warn('[uva] champ map load failed', e); }
     }
 
+    // 내전 AI 학습 데이터 합치기 (선수 연결 · 내전 챔피언 기록)
+    _uvaSetProgress(total * 2, total * 2, '내전 기록 합치는 중…');
+    try {
+      _uvaLab = await _labP;
+      var _champI = window.RGLab ? await RGLab.champInfo(window._ddVersion) : null;
+      if (_uvaLab && _champI) _uvaMergeLab(allMembers, _champI);
+    } catch (e) { console.warn('[uva] lab merge', e); _uvaLab = null; }
+
     document.getElementById('uva-loading').style.display = 'none';
     document.getElementById('uva-result').style.display = 'block';
+    _uvaRenderLab(myTeam, enemyTeam);
     _uvaRenderChampCards(myTeam, enemyTeam);
     _uvaRenderBanPick(myTeam, enemyTeam);
   };
@@ -27929,8 +28263,8 @@ function showLaneMismatchPopup(opts) {
       var myM = myMId ? (myTeam.members || []).find(function(x){ return String(x.id||x.name) === myMId; }) : null;
       var enM = enMId ? (enemyTeam.members || []).find(function(x){ return String(x.id||x.name) === enMId; }) : null;
       if (myM && enM) {
-        var ms = _getTierScore(myM), es = _getTierScore(enM);
-        laneGapMap[lane] = { myScore: ms, enemyScore: es, gap: ms - es }; // gap > 0 → 우리팀 우세
+        var _g = _uvaLaneGap(myM, enM, lane); // 둘 다 내전 학습 데이터가 있으면 내전 전력 차이, 아니면 솔랭 티어 차이
+        laneGapMap[lane] = { gap: _g.gap }; // gap > 0 → 우리팀 우세
       }
     });
 
@@ -27986,7 +28320,7 @@ function showLaneMismatchPopup(opts) {
   }
 
   function _uvaMemberChampRow(m, lane, cm, ddv, isEnemy, advBg) {
-    var _mpuuid = m._dpId || m.puu_id || m.puuid;
+    var _mpuuid = m._dpId || m.puu_id || m.puuid || m._labKid;
     // 라인별 챔피언 데이터 사용: _uvaChampData[puuid] = { top:[...], jg:[...], ... }
     var _laneData = _mpuuid && _uvaChampData[_mpuuid];
     var champs = (_laneData && lane && _laneData[lane]) || [];
@@ -28030,6 +28364,7 @@ function showLaneMismatchPopup(opts) {
         html += '</div>';
         html += '<div style="font-family:\'IBM Plex Sans KR\',sans-serif;font-size:8px;color:#c8d0e0;font-weight:700;max-width:38px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center;">'+_esc(cname)+'</div>';
         html += '<div style="font-family:\'IBM Plex Sans KR\',sans-serif;font-size:8px;color:var(--text-muted);">'+c.games+'판</div>';
+        if (c.cg) html += '<div title="내전 '+c.cg+'판 '+Math.round(c.cw/c.cg*100)+'%" style="font-family:\'IBM Plex Sans KR\',sans-serif;font-size:7px;font-weight:700;color:#F4C84A;white-space:nowrap;">내전 '+c.cg+'</div>';
         html += '<div style="font-family:\'IBM Plex Sans KR\',sans-serif;font-size:8px;color:'+wrColor+';font-weight:700;">'+wr+'%</div>';
         html += '</div>';
       });
@@ -28127,7 +28462,7 @@ function showLaneMismatchPopup(opts) {
     }
 
     function _getChamps(m, lane) {
-      var _kid = m._dpId || m.puu_id || m.puuid;
+      var _kid = m._dpId || m.puu_id || m.puuid || m._labKid;
       if (!_kid || !_uvaChampData[_kid]) return [];
       var stored = _uvaChampData[_kid];
       // 이전 버전 flat 배열로 저장된 경우 무시 (byLane 객체 구조만 사용)
@@ -28179,7 +28514,7 @@ function showLaneMismatchPopup(opts) {
         var wr1 = c1.games > 0 ? Math.round(c1.wins / c1.games * 100) : 0;
         recs.push({
           champName: cname1,
-          reason: laneLabel + ' ' + _esc(enemyM.name||'') + ' 원챔 · ' + c1.games + '판 ' + wr1 + '%',
+          reason: laneLabel + ' ' + _esc(enemyM.name||'') + ' 원챔 · ' + _cTxt(c1),
           score: 20000 + c1.games,
           priority: 1, isTwo: false
         });
@@ -28190,13 +28525,13 @@ function showLaneMismatchPopup(opts) {
         var wr2b = c2.games > 0 ? Math.round(c2.wins / c2.games * 100) : 0;
         recs.push({
           champName: cn1,
-          reason: laneLabel + ' ' + _esc(enemyM.name||'') + ' 투챔(1) · ' + c1.games + '판 ' + wr1b + '%',
+          reason: laneLabel + ' ' + _esc(enemyM.name||'') + ' 투챔(1) · ' + _cTxt(c1),
           score: 19500 + c1.games,
           priority: 1, isTwo: true
         });
         recs.push({
           champName: cn2,
-          reason: laneLabel + ' ' + _esc(enemyM.name||'') + ' 투챔(2) · ' + c2.games + '판 ' + wr2b + '%',
+          reason: laneLabel + ' ' + _esc(enemyM.name||'') + ' 투챔(2) · ' + _cTxt(c2),
           score: 19400 + c2.games,
           priority: 1, isTwo: true
         });
@@ -28212,9 +28547,8 @@ function showLaneMismatchPopup(opts) {
       var myM    = _getMember(myTeam, myMemberId);
       var enemyM = _getMember(enemyTeam, enemyMemberId);
       if (!myM || !enemyM) return;
-      var myScore    = _getTierScore(myM);
-      var enemyScore = _getTierScore(enemyM);
-      laneGaps.push({ lane: lane, myM: myM, enemyM: enemyM, myScore: myScore, enemyScore: enemyScore, gap: enemyScore - myScore });
+      var _g2 = _uvaLaneGap(myM, enemyM, lane);
+      laneGaps.push({ lane: lane, myM: myM, enemyM: enemyM, gap: -_g2.gap, lab: _g2.lab });
     });
     // 격차 절댓값 내림차순 정렬
     laneGaps.sort(function(a, b) { return Math.abs(b.gap) - Math.abs(a.gap); });
@@ -28233,7 +28567,7 @@ function showLaneMismatchPopup(opts) {
         // 수비밴: 상대가 강함 → 상대 주력픽 밴
         recs.push({
           champName: cname,
-          reason: laneLabel + ' ' + _esc(lg.enemyM.name||'') + ' 수비밴 · 티어차 ' + lg.gap + ' · ' + c1.games + '판 ' + wr + '%',
+          reason: laneLabel + ' ' + _esc(lg.enemyM.name||'') + ' 수비밴 · ' + (lg.lab ? '내전 전력차 ' + (lg.gap / 100).toFixed(2) : '티어차 ' + lg.gap) + ' · ' + _cTxt(c1),
           score: 15000 + gapBonus,
           priority: 2, isTwo: false
         });
@@ -28241,7 +28575,7 @@ function showLaneMismatchPopup(opts) {
         // 공격밴: 우리가 강함 → 상대 주력픽 제거로 격차 극대화
         recs.push({
           champName: cname,
-          reason: laneLabel + ' ' + _esc(lg.enemyM.name||'') + ' 공격밴 · 우위 ' + Math.abs(lg.gap) + ' · ' + c1.games + '판 ' + wr + '%',
+          reason: laneLabel + ' ' + _esc(lg.enemyM.name||'') + ' 공격밴 · ' + (lg.lab ? '내전 전력 우위 ' + (Math.abs(lg.gap) / 100).toFixed(2) : '우위 ' + Math.abs(lg.gap)) + ' · ' + _cTxt(c1),
           score: 12000 + gapBonus,
           priority: 3, isTwo: false
         });
@@ -28255,8 +28589,13 @@ function showLaneMismatchPopup(opts) {
       var mid2 = _uvaEnemyLanes[lane];
       if (mid2) enemyMemberLaneMap[String(mid2)] = lane;
     });
+    // 내전 학습 데이터가 있으면 이번 라인 내전 전력 순, 없으면 솔랭 티어 순
+    var _enStr = function (m) {
+      var ln = enemyMemberLaneMap[String(m.id || m.name)];
+      return m._lab && ln ? 1000 + RGLab.score(m._lab, _UVA_LAB_ROLE[ln]) * 100 : _getTierScore(m) / 10;
+    };
     var enemyByTier = (enemyTeam.members || []).slice().sort(function(a, b) {
-      return _getTierScore(b) - _getTierScore(a);
+      return _enStr(b) - _enStr(a);
     });
     enemyByTier.forEach(function(m, idx) {
       var memberLane = enemyMemberLaneMap[String(m.id || m.name)] || null;
@@ -28272,7 +28611,7 @@ function showLaneMismatchPopup(opts) {
         if (m.soloDivision) tierDisplay += ' ' + m.soloDivision;
         recs.push({
           champName: cname,
-          reason: _esc(m.name||'') + ' (' + tierDisplay + ') · ' + c.games + '판 ' + wr + '%',
+          reason: _esc(m.name||'') + ' (' + tierDisplay + ') · ' + _cTxt(c),
           score: 5000 + tierScore * 10 - idx * 100 - cidx * 30,
           priority: 4, isTwo: false
         });

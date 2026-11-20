@@ -51,6 +51,8 @@ def export(db, report, P, hist, state, run_id, out_dir="output", log=print):
             s += c
         return s, parts
 
+    extra = _custom_extras(db, accounts)
+
     players = {}
     for a in accounts:
         pr = profiles[a["puuid"]]
@@ -68,6 +70,9 @@ def export(db, report, P, hist, state, run_id, out_dir="output", log=print):
             "tier": _r(pr[main].get("tier")), "custom_elo": round(cs["elo"], 1), "custom_games": cs["g"],
             "custom_wins": cs["w"], "roles": roles,
         }
+        ex = extra.get(a["puuid"])
+        if ex:
+            players[key].update(ex)
 
     # 진영 보정: 학습 데이터 평균 차이가 0이 아닐 수 있어 절편에 흡수된 부분 분리
     side_bias = f["intercept"] - sum(ft["weight"] * ft["mean"] / ft["std"] for ft in feats)
@@ -93,6 +98,83 @@ def export(db, report, P, hist, state, run_id, out_dir="output", log=print):
                                                  ensure_ascii=False), encoding="utf-8")
     log(f"내보내기 완료: {out / 'latest.json'} · 선수 {len(players)}명")
     return model
+
+
+# ── 룽잉닷컴 표시용: 챔피언 내전 성적 · 팀원 궁합 · 맞라인 상대전적 (전체 내전 기록) ──
+#   champs: [[챔피언, 판, 승, 킬합, 데스합, 어시합, 주 라인], ...]  판수 많은 순 최대 CHAMP_MAX 개
+#   duo:    [[팀원 키(닉네임#태그 소문자), 같이 한 판, 승], ...]     DUO_MIN 판 이상, 승률 높은/낮은 순 각 DUO_MAX 개
+#   vs:     [[맞라인 상대 키, 판, 승], ...]                          VS_MIN 판 이상, 판수 많은 순 VS_MAX 개
+#   vs_champ: [[맞라인 상대 챔피언, 판, 승], ...]                    VS_MIN 판 이상, 판수 많은 순 VS_MAX 개
+#   recent: [[시각(ms), 라인, 챔피언, 승(1/0), 킬, 데스, 어시], ...]  최근 RECENT_MAX 판
+CHAMP_MAX, DUO_MIN, DUO_MAX, VS_MIN, VS_MAX, RECENT_MAX = 15, 3, 6, 2, 10, 10
+
+
+def _custom_extras(db, accounts):
+    want = {a["puuid"] for a in accounts}
+    keyof = {a["puuid"]: _norm_id(a["game_name"], a["tag_line"]) for a in accounts}
+    rows = db.q("SELECT match_id, puuid, game_start, team, role, win, champion, kills, deaths, assists "
+                "FROM game_players ORDER BY game_start")
+    by_match = {}
+    for r in rows:
+        by_match.setdefault(r[0], []).append(r)
+    champ, duo, vs, vsc, recent = {}, {}, {}, {}, {}
+    for mid, ps in by_match.items():
+        for (_, pu, t, team, role, win, ch, k, d, a) in ps:
+            if pu not in want:
+                continue
+            w = 1 if win else 0
+            c = champ.setdefault(pu, {}).setdefault(ch or "?", [0, 0, 0, 0, 0, {}])
+            c[0] += 1; c[1] += w; c[2] += k or 0; c[3] += d or 0; c[4] += a or 0
+            c[5][role] = c[5].get(role, 0) + 1
+            recent.setdefault(pu, []).append([int(t or 0), role, ch, w, k or 0, d or 0, a or 0])
+            for (_, pu2, _t, team2, role2, _w, ch2, *_r) in ps:
+                if pu2 == pu or not pu2:
+                    continue
+                if team2 == team:
+                    x = duo.setdefault(pu, {}).setdefault(pu2, [0, 0]); x[0] += 1; x[1] += w
+                elif role and role2 == role:
+                    x = vs.setdefault(pu, {}).setdefault(pu2, [0, 0]); x[0] += 1; x[1] += w
+                    if ch2:
+                        x = vsc.setdefault(pu, {}).setdefault(ch2, [0, 0]); x[0] += 1; x[1] += w
+    # 상대 키: 명단에 있으면 닉네임#태그, 없으면 그 경기 기록의 닉네임
+    names = {r[0]: _norm_id(r[1], r[2]) for r in db.q(
+        "SELECT p.puuid, p.name, p.tag FROM game_players p JOIN (SELECT puuid, MAX(game_start) t FROM game_players GROUP BY puuid) l "
+        "ON l.puuid=p.puuid AND l.t=p.game_start GROUP BY p.puuid")}
+    names.update(keyof)
+    out = {}
+    for pu in want:
+        e = {}
+        cm = champ.get(pu)
+        if cm:
+            lst = sorted(cm.items(), key=lambda kv: (-kv[1][0], -kv[1][1]))[:CHAMP_MAX]
+            e["champs"] = [[ch, v[0], v[1], v[2], v[3], v[4], max(v[5], key=v[5].get) if v[5] else None] for ch, v in lst]
+        dm = duo.get(pu)
+        if dm:
+            ok = [(names.get(p2, p2), g, w) for p2, (g, w) in dm.items() if g >= DUO_MIN]
+            best = sorted(ok, key=lambda x: (-(x[2] / x[1]), -x[1]))[:DUO_MAX]
+            worst = sorted(ok, key=lambda x: ((x[2] / x[1]), -x[1]))[:DUO_MAX]
+            seen, lst = set(), []
+            for x in best + worst:
+                if x[0] not in seen:
+                    seen.add(x[0]); lst.append(list(x))
+            if lst:
+                e["duo"] = lst
+        vm = vs.get(pu)
+        if vm:
+            lst = sorted(((names.get(p2, p2), g, w) for p2, (g, w) in vm.items() if g >= VS_MIN), key=lambda x: -x[1])[:VS_MAX]
+            if lst:
+                e["vs"] = [list(x) for x in lst]
+        vc = vsc.get(pu)
+        if vc:
+            lst = sorted(((c2, g, w) for c2, (g, w) in vc.items() if g >= VS_MIN), key=lambda x: -x[1])[:VS_MAX]
+            if lst:
+                e["vs_champ"] = [list(x) for x in lst]
+        rc = recent.get(pu)
+        if rc:
+            e["recent"] = rc[-RECENT_MAX:][::-1]
+        if e:
+            out[pu] = e
+    return out
 
 
 def _nan(v):
