@@ -1067,6 +1067,10 @@ const _WORKER = {
     if (path === '/discord-link-update' && request.method === 'POST') {
       return handleDiscordLinkUpdate(request, env);
     }
+    // 멸망전 AI 분석 권한 (마스터가 디스코드 연동된 소환사 계정을 골라 부여)
+    if (path === '/doom-ai-access' && request.method === 'POST') {
+      return handleDoomAiAccess(request, env);
+    }
     if (path === '/discord-link-list' && request.method === 'POST') {
       return handleDiscordLinkList(request, env);
     }
@@ -9252,6 +9256,56 @@ async function handleDiscordLinkUpdate(request, env) {
 }
 
 // 연동 목록 (관리자 전용 — 커뮤니티의 소환사 계정 등록 전체)
+// communities/{cid}/doom_ai_access/{discordId} = { riotName, riotTag, puuId, at, by }
+async function handleDoomAiAccess(request, env) {
+  let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
+  const { action, token, cid } = body || {};
+  if (!cid || !/^[A-Za-z0-9_-]+$/.test(String(cid))) return json({ok:false,error:'cid 없음'},400);
+  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth='+secret : '';
+  const base = `${dbUrl}/communities/${cid}/doom_ai_access`;
+  if (action === 'check') {
+    const did = String(body.discordId || '');
+    if (!/^\d{5,25}$/.test(did)) return json({ok:true, allowed:false});
+    const r = await fetch(`${base}/${did}.json${authQ}`);
+    const v = r.ok ? await r.json() : null;
+    return json({ok:true, allowed: !!v});
+  }
+  const session = getSession(token);
+  if (!session || session.role !== 'master') return json({ok:false,error:'마스터 권한이 필요합니다'},403);
+  if (action === 'list') {
+    const r = await fetch(`${base}.json${authQ}`);
+    const all = (r.ok ? await r.json() : null) || {};
+    return json({ok:true, list: Object.entries(all).map(([discordId, v]) => Object.assign({ discordId }, v))});
+  }
+  if (action === 'remove') {
+    const did = String(body.discordId || '');
+    if (!/^\d{5,25}$/.test(did)) return json({ok:false,error:'잘못된 디스코드 ID'},400);
+    const r = await fetch(`${base}/${did}.json${authQ}`, { method: 'DELETE' });
+    return json({ok: r.ok});
+  }
+  if (action === 'add') {
+    const puuId = String(body.puuId || ''), rn = String(body.riotName || '').toLowerCase().trim(), rt = String(body.riotTag || '').toLowerCase().trim();
+    // 이 커뮤니티 디스코드 연동(소환사 계정 등록) 목록에서 그 소환사 계정을 찾음
+    const pr = await fetch(`${dbUrl}/communities/${cid}/discord_profiles.json${authQ}`);
+    const all = (pr.ok ? await pr.json() : null) || {};
+    let hit = null;
+    for (const [did, p] of Object.entries(all)) {
+      if (!p) continue;
+      const subs = Array.isArray(p.subAccounts) ? p.subAccounts : (p.subAccounts ? Object.values(p.subAccounts) : []);
+      const nameHit = rn && String(p.riotName || '').toLowerCase() === rn && String(p.riotTag || '').toLowerCase() === rt;
+      if ((puuId && (p.dlPuuid === puuId || p.puuid === puuId)) || nameHit) { hit = [did, p]; break; }
+      if (subs.some(sa => sa && ((puuId && sa.dlPuuid === puuId) || (rn && String(sa.name || sa.riotName || '').toLowerCase() === rn && String(sa.tag || sa.riotTag || '').toLowerCase() === rt)))) { hit = [did, p]; break; }
+    }
+    if (!hit) return json({ok:false,error:'디스코드 계정이 연동되지 않은 소환사예요 (디스코드 포스트의 소환사 계정 등록 필요)'});
+    const [did, p] = hit;
+    const rec = { riotName: p.riotName || body.riotName || '', riotTag: p.riotTag || body.riotTag || '', puuId: p.dlPuuid || puuId || '', discordName: p.discordName || p.username || '', at: Date.now(), by: session.id || 'master' };
+    const w = await fetch(`${base}/${did}.json${authQ}`, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(rec) });
+    return json({ok: w.ok, discordId: did, item: rec});
+  }
+  return json({ok:false,error:'알 수 없는 요청'},400);
+}
+
 async function handleDiscordLinkList(request, env) {
   let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
   const { token, cid } = body;

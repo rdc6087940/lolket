@@ -1200,6 +1200,183 @@ body > div[style*="position: fixed"][style*="inset: 0"] > div,body > div[style*=
   .lab-part{grid-template-columns:92px 1fr 42px}
   .lab-2col{grid-template-columns:1fr;gap:0}
 }
+
+/* ══ 멸망전 시뮬레이션 v2 ══ */
+#doom-sim-view{padding:1rem;font-family:'IBM Plex Sans KR',sans-serif;--ds-line:rgba(255,255,255,.07);--ds-s1:rgba(255,255,255,.025);--ds-s2:rgba(255,255,255,.05);--ds-acc:#A78BFA}
+.ds-topbar{display:flex;align-items:center;gap:8px;margin-bottom:.75rem;flex-wrap:wrap}
+.ds-spacer{flex:1}
+.ds-src{font-size:11px;color:var(--muted)}
+.ds-btn{min-height:32px;padding:0 12px;border-radius:8px;border:1px solid var(--ds-line);background:var(--ds-s2);color:var(--white);font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;transition:background .15s,border-color .15s}
+.ds-btn:hover{border-color:rgba(167,139,250,.45)}
+.ds-btn.primary{background:rgba(167,139,250,.18);border-color:rgba(167,139,250,.5);color:#E4DAFF}
+.ds-btn.ai{color:#C9B6FF}
+.ds-btn.ghost{background:transparent;color:var(--sub)}
+.ds-btn.sm{min-height:28px;padding:0 9px;font-size:11px}
+.ds-btn.wide{width:100%;min-height:40px;margin-top:.6rem}
+.ds-input{width:100%;min-height:36px;background:var(--bg-dark);border:1px solid var(--ds-line);border-radius:8px;padding:0 10px;color:var(--white);font-family:inherit;font-size:13px;outline:none}
+.ds-input:focus{border-color:rgba(167,139,250,.55)}
+.ds-input.sm{width:auto;min-width:0;min-height:30px;padding:0 8px;font-size:12px}
+select.ds-input{padding-right:4px}
+.ds-wrap{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) 340px;gap:12px;align-items:start}
+.ds-teams{display:contents}
+.ds-team{background:var(--ds-s1);border:1px solid var(--ds-line);border-radius:12px;padding:10px;min-width:0}
+.ds-team-h{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+.ds-team-name{font-size:13px;font-weight:800}
+.ds-team-name.a{color:#6FB6FF}.ds-team-name.b{color:#FF7A7A}
+.ds-team-sum{font-size:12px;color:var(--sub)}
+.ds-team-sum span{font-weight:800;color:var(--white)}
+.ds-adv{display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--muted);margin-left:auto}
+.ds-adv input{width:54px;min-height:28px;background:var(--bg-dark);border:1px solid var(--ds-line);border-radius:7px;color:var(--white);text-align:center;font-family:inherit;font-size:12px;font-weight:700}
+.ds-team-final{font-size:12px;color:var(--muted)}
+.ds-team-final b{font-size:16px;color:var(--ds-acc)}
+.ds-slots{display:flex;flex-direction:column;gap:5px}
+.ds-slot{display:flex;align-items:center;gap:8px;min-height:44px;padding:0 8px;border-radius:9px;border:1px solid var(--ds-line);background:var(--ds-s2);cursor:pointer;transition:border-color .15s,background .15s;min-width:0}
+.ds-slot.empty{border-style:dashed;background:transparent}
+.ds-slot.sel{border-color:rgba(167,139,250,.75);background:rgba(167,139,250,.08)}
+.ds-slot.over{border-color:var(--ds-acc)}
+.ds-ln{flex:0 0 30px;font-size:11px;font-weight:700;color:var(--muted)}
+.ds-empty{font-size:12px;color:var(--muted)}
+.ds-slot.sel .ds-empty{color:#C9B6FF}
+.ds-nm{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px}
+.ds-nm b{font-weight:700;color:var(--white)}
+.ds-nm i{font-style:normal;font-size:11px;color:var(--muted);margin-left:2px}
+.ds-tierbtn{flex:0 0 auto;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;min-width:44px;min-height:32px;padding:0 6px;border-radius:7px;border:1px solid color-mix(in srgb,var(--tc) 45%,transparent);background:color-mix(in srgb,var(--tc) 12%,transparent);color:var(--tc);font-family:inherit;font-size:12px;font-weight:800;line-height:1.05;cursor:pointer}
+.ds-tierbtn small{font-size:8.5px;font-weight:600;opacity:.75}
+.ds-tierbtn.ov{box-shadow:0 0 0 1px var(--tc) inset}
+.ds-sc{flex:0 0 auto;min-width:30px;text-align:right;font-size:15px;font-weight:800;color:var(--ds-acc);font-variant-numeric:tabular-nums}
+.ds-sc.sm{font-size:12px;min-width:22px}
+.ds-rm{flex:0 0 auto;width:28px;height:28px;border-radius:7px;border:none;background:transparent;color:var(--muted);font-size:16px;cursor:pointer}
+.ds-rm:hover{color:#FF7A7A;background:rgba(255,90,90,.08)}
+.ds-team-act{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.ds-side{background:var(--ds-s1);border:1px solid var(--ds-line);border-radius:12px;padding:10px;min-width:0;position:sticky;top:8px}
+.ds-stabs{display:flex;gap:4px;margin-bottom:8px;background:var(--bg-dark);padding:3px;border-radius:9px}
+.ds-stabs button{flex:1;min-height:32px;border:none;border-radius:7px;background:transparent;color:var(--muted);font-family:inherit;font-size:12px;font-weight:700;cursor:pointer}
+.ds-stabs button.on{background:var(--ds-s2);color:var(--white)}
+.ds-hint{font-size:11px;color:var(--muted);margin-bottom:6px;line-height:1.5}
+.ds-hint b{color:#C9B6FF}
+.ds-list{display:flex;flex-direction:column;gap:3px;margin-top:6px;max-height:460px;overflow-y:auto;overscroll-behavior:contain}
+.ds-row{display:flex;align-items:center;gap:8px;min-height:40px;padding:0 8px;border-radius:8px;background:var(--ds-s2);cursor:pointer;min-width:0}
+.ds-row:hover{background:rgba(167,139,250,.08)}
+.ds-row.used{opacity:.55}
+.ds-meta{flex:0 0 auto;font-size:10.5px;color:var(--muted);white-space:nowrap}
+.ds-t{flex:0 0 auto;font-size:12px;font-weight:800;min-width:34px;text-align:right}
+.ds-used{flex:0 0 auto;font-size:10px;font-weight:800;color:var(--muted);border:1px solid var(--ds-line);border-radius:5px;padding:0 4px}
+.ds-none{font-size:12px;color:var(--muted);padding:.6rem .2rem;line-height:1.6}
+.ds-rec-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.ds-rec-row .ds-input.sm{width:84px}
+.ds-lbl{font-size:11px;color:var(--muted);font-weight:700}
+.ds-lbl2{font-size:11px;color:var(--muted);font-weight:700;margin:.7rem 0 .35rem}
+.ds-rec-sub{font-size:11.5px;color:var(--sub);margin-top:6px;line-height:1.6}
+.ds-rec-sub b{color:var(--white)}.ds-rec-sub b.neg{color:#FF7A7A}
+.ds-dim{color:var(--muted);font-size:10.5px}
+.ds-seg{display:inline-flex;background:var(--bg-dark);border-radius:8px;padding:2px;gap:2px}
+.ds-seg button{min-height:28px;padding:0 9px;border:none;border-radius:6px;background:transparent;color:var(--muted);font-family:inherit;font-size:11.5px;font-weight:700;cursor:pointer;white-space:nowrap}
+.ds-seg button.on{background:rgba(167,139,250,.2);color:#E4DAFF}
+.ds-rec-lanes{display:flex;flex-direction:column;gap:5px}
+.ds-pref{display:flex;align-items:center;gap:8px}
+.ds-pref .ds-seg{flex:1}
+.ds-pref .ds-seg button{flex:1}
+.ds-filters{margin-top:.7rem;border-top:1px solid var(--ds-line);padding-top:.5rem}
+.ds-filters summary{font-size:11px;font-weight:700;color:var(--muted);cursor:pointer;list-style:none;padding:2px 0}
+.ds-filters summary::before{content:'▸ ';}
+.ds-filters[open] summary::before{content:'▾ ';}
+.ds-fgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px 10px;margin-top:6px}
+.ds-fgrid label{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--sub);flex-wrap:wrap}
+.ds-fgrid label .ds-input.sm{width:62px}
+.ds-fgrid label select.ds-input.sm{width:auto;flex:1;min-width:84px}
+.ds-fgrid label.ck{grid-column:span 1}
+.ds-rec-out{margin-top:.6rem;display:flex;flex-direction:column;gap:6px}
+.ds-rec-cnt{font-size:11px;color:var(--muted)}
+.ds-rc{border:1px solid var(--ds-line);border-radius:10px;padding:6px 8px;background:var(--ds-s2)}
+.ds-rc-h{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--sub);margin-bottom:4px}
+.ds-rc-h span{flex:1}.ds-rc-h b{color:var(--white)}
+.ds-rc-r{display:flex;align-items:center;gap:8px;min-height:26px}
+.ds-rc-r .ds-nm{font-size:12px}
+.ds-ai-out{margin-top:12px;background:var(--ds-s1);border:1px solid rgba(167,139,250,.28);border-radius:12px;padding:12px}
+.ds-ai-h{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.ds-ai-h b{font-size:13px;color:#E4DAFF}
+.ds-ai-h span{flex:1;font-size:10.5px;color:var(--muted)}
+.ds-x{min-height:28px;padding:0 10px;border-radius:7px;border:1px solid var(--ds-line);background:transparent;color:var(--muted);font-family:inherit;font-size:11px;font-weight:700;cursor:pointer}
+.ds-ai-kpi{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+.ds-ai-kpi>div{background:var(--ds-s2);border-radius:10px;padding:9px 8px;text-align:center;min-width:0}
+.ds-ai-kpi b{display:block;font-size:22px;font-weight:800;color:var(--white);line-height:1.15}
+.ds-ai-kpi span{display:block;font-size:11px;color:var(--sub);margin-top:2px}
+.ds-ai-kpi small{display:block;font-size:9.5px;color:var(--muted)}
+.ds-ai-kpi>div:first-child b{color:#C9B6FF}
+.ds-ai-lanes{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}
+.ds-ai-r{display:grid;grid-template-columns:30px minmax(70px,1fr) 46px 62px 52px 2fr;align-items:center;gap:8px;min-height:36px;padding:3px 8px;border-radius:8px;background:var(--ds-s2);font-size:12px}
+.ds-ai-c{text-align:right;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.ds-ai-c small{display:block;font-size:9px;color:var(--muted);font-weight:600}
+.ds-ai-chips{display:flex;flex-wrap:wrap;gap:3px;min-width:0}
+.ds-ai-chips em{font-style:normal;font-size:10px;font-weight:700;padding:1px 6px;border-radius:999px;background:rgba(255,255,255,.05);color:var(--sub);white-space:nowrap}
+.ds-ai-chips em.up,.ds-ai-out .up{color:#3FD6C4}
+.ds-ai-chips em.down,.ds-ai-out .down{color:#FF8A8A}
+.ds-ai-txt{margin:0;padding-left:1.1rem;display:flex;flex-direction:column;gap:5px;font-size:12.5px;color:var(--sub);line-height:1.6}
+.ds-ai-txt b{color:var(--white)}
+.ds-ai-foot{margin-top:8px}
+.ds-ai-lock{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--sub);padding:.3rem}
+.ds-ai-lock b{color:var(--white)}
+.ds-pop{position:fixed;z-index:9000;background:#141922;border:1px solid rgba(167,139,250,.4);border-radius:12px;box-shadow:0 14px 34px rgba(0,0,0,.55);padding:10px;display:flex;flex-direction:column;gap:8px}
+.ds-pop[hidden],.ds-modal[hidden],.ds-ai-out[hidden],.ds-spane[hidden]{display:none!important}
+.ds-pop-h{font-size:12.5px;font-weight:800;color:var(--white);display:flex;flex-direction:column;gap:1px}
+.ds-pop-h small{font-size:10px;font-weight:600;color:var(--muted)}
+.ds-pop-row{display:flex;gap:6px;align-items:center}
+.ds-pop-row .ds-input.sm{flex:1}
+.ds-pop-row input.ds-input.sm{width:90px}
+.ds-modal{position:fixed;inset:0;z-index:9500;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:12px}
+.ds-modal-box{width:min(460px,100%);max-height:calc(100dvh - 24px);overflow-y:auto;background:#141922;border:1px solid var(--ds-line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:8px}
+.ds-modal-h{display:flex;align-items:center;justify-content:space-between;font-size:14px;font-weight:800;color:var(--white)}
+.ds-mtabs{display:none}
+
+@media (max-width:1100px){
+  .ds-wrap{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .ds-side{grid-column:1 / -1;position:static}
+}
+/* 폰: 팀 A / 팀 B / 찾기 를 탭으로 하나씩, 한 손으로 */
+@media (max-width:700px){
+  #doom-sim-view{padding:.5rem .5rem calc(1rem + env(safe-area-inset-bottom))}
+  .ds-topbar{margin-bottom:.4rem}
+  .ds-peak-btn{display:none!important}
+  .ds-mtabs{display:flex;gap:4px;padding:4px 0 6px;margin-bottom:6px}
+  /* 멸망전 화면에서는 떠 있는 캘린더 버튼이 팀 버튼을 가리지 않게 숨김 */
+  body:has(#doom-sim-view[style*="display: block"]) #cal-float-btn,body:has(#doom-sim-view:not([style*="display: none"]):not([style*="display:none"])) #cal-float-btn{display:none!important}
+  .ds-mtabs button{flex:1;min-height:40px;border-radius:10px;border:1px solid var(--ds-line);background:var(--ds-s1);color:var(--muted);font-family:inherit;font-size:12.5px;font-weight:700}
+  .ds-mtabs button b{color:var(--white);margin-left:3px}
+  .ds-mtabs button.on{background:rgba(167,139,250,.14);border-color:rgba(167,139,250,.45);color:#E4DAFF}
+  .ds-wrap{display:block}
+  .ds-wrap .ds-team,.ds-wrap .ds-side{display:none}
+  .ds-wrap[data-mt="a"] .ds-team[data-team="a"],.ds-wrap[data-mt="b"] .ds-team[data-team="b"],.ds-wrap[data-mt="find"] .ds-side{display:block}
+  .ds-slot{min-height:52px}
+  .ds-nm{font-size:14px}
+  .ds-team-act .ds-btn{flex:1;min-height:40px}
+  .ds-row{min-height:46px}
+  .ds-list{max-height:none}
+  .ds-input,.ds-input.sm,.ds-adv input{font-size:16px}
+  .ds-fgrid{grid-template-columns:1fr}
+  .ds-fgrid label .ds-input.sm{width:90px}
+  .ds-pref{flex-direction:column;align-items:stretch;gap:3px}
+  .ds-seg button{min-height:34px}
+  .ds-ai-kpi b{font-size:19px}
+  .ds-ai-r{grid-template-columns:30px 1fr 40px 58px 48px;row-gap:2px}
+  .ds-ai-chips{grid-column:2 / -1}
+}
+
+.ds-limit{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--sub);background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.35);border-radius:9px;padding:3px 4px 3px 10px}
+.ds-limit input{width:70px;min-height:30px;background:var(--bg-dark);border:1px solid var(--ds-line);border-radius:7px;color:#E4DAFF;text-align:center;font-family:inherit;font-size:14px;font-weight:800}
+.ds-capv{font-size:13px;color:#E4DAFF}
+.ds-team-left{flex-basis:100%;font-size:11px;color:var(--muted);text-align:right;margin-top:-4px}
+.ds-team-left.over{color:#FF8A8A;font-weight:700}
+@media (max-width:700px){.ds-limit{flex:1;justify-content:space-between}.ds-limit input{font-size:16px;width:84px}}
+
+.ds-padv{flex:0 0 auto;width:46px;min-height:30px;background:var(--bg-dark);border:1px solid var(--ds-line);border-radius:7px;color:#E4DAFF;text-align:center;font-family:inherit;font-size:12px;font-weight:700;padding:0 2px}
+.ds-padv::placeholder{color:var(--muted);font-weight:600;font-size:10px}
+.ds-padv:not(:placeholder-shown){border-color:rgba(167,139,250,.55);background:rgba(167,139,250,.1)}
+.ds-sc small{display:block;font-size:9px;font-weight:600;color:var(--muted);line-height:1}
+@media (max-width:700px){.ds-padv{font-size:16px;width:48px;min-height:34px}}
+
+/* 멸망전 숫자 입력칸: 위아래 화살표(스피너) 숨김 — 숫자만 입력 */
+#doom-sim-view input[type=number]{-moz-appearance:textfield;appearance:textfield}
+#doom-sim-view input[type=number]::-webkit-outer-spin-button,#doom-sim-view input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;appearance:none;margin:0}
 </style>
 </head>
 <body>
@@ -1420,79 +1597,112 @@ body > div[style*="position: fixed"][style*="inset: 0"] > div,body > div[style*=
   </div>
 
   <!-- ── 멸망전 팀 시뮬레이션 뷰 ── -->
-  <div id="doom-sim-view" style="display:none;padding:1rem;">
-    <div id="doom-sim-topbar" style="display:none;margin-bottom:.75rem;display:flex;align-items:center;gap:10px;">
-      <button onclick="updateAllPeakTiers()"
-        style="padding:5px 14px;border-radius:3px;border:1px solid rgba(167,139,250,.4);background:rgba(167,139,250,.08);color:#A78BFA;font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;cursor:pointer;">
-        전체 최고티어 업데이트
-      </button>
-      <div id="doom-sim-update-progress" style="font-size:11px;color:var(--muted);font-family:'IBM Plex Sans KR',sans-serif;"></div>
+  <div id="doom-sim-view" style="display:none;">
+    <div id="doom-sim-topbar" class="ds-topbar">
+      <label class="ds-limit">이번 멸망전 한도 <input type="number" inputmode="numeric" id="ds-cap" placeholder="예: 180" oninput="dsRender();dsRecRender()"> 점</label>
+      <span id="ds-table-src" class="ds-src">점수표 불러오는 중…</span>
+      <span class="ds-spacer"></span>
+      <button type="button" id="ds-btn-ai-perm" class="ds-btn ghost" onclick="dsOpenAiPerm()" style="display:none;">AI 권한 관리</button>
+      <button type="button" class="ds-btn ghost ds-peak-btn" onclick="updateAllPeakTiers()">전체 최고티어 업데이트</button>
+      <div id="doom-sim-update-progress" class="ds-src"></div>
     </div>
-    <div class="doom-sim-grid" style="display:grid;grid-template-columns:280px 1fr 1fr;gap:1rem;align-items:start;">
 
-      <!-- 멤버 검색 패널 -->
-      <div style="background:var(--bg-panel);border:1px solid var(--border);border-radius:4px;padding:.75rem;">
-        <div style="font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;letter-spacing:1.5px;color:var(--muted);margin-bottom:.5rem;">멤버 검색</div>
-        <div style="display:flex;gap:6px;margin-bottom:.5rem;">
-          <input id="doom-sim-search" type="text" placeholder="닉네임 검색..." oninput="doomSimSearch()" onkeydown="if(event.key==='Enter')doomSimSearch()"
-            style="flex:1;background:var(--bg-dark);border:1px solid var(--border);border-radius:3px;padding:6px 8px;color:var(--white);font-size:12px;outline:none;">
-        </div>
-        <!-- 모바일 슬롯 선택 -->
-        <div id="doom-sim-slot-picker" style="display:none;margin-bottom:.5rem;">
-          <div style="font-size:11px;color:var(--blue-bright);font-family:'IBM Plex Sans KR',sans-serif;font-weight:700;margin-bottom:6px;padding:6px 8px;background:rgba(10,200,185,.08);border:1px solid rgba(10,200,185,.2);border-radius:4px;">
-            💡 아래 슬롯 선택 → 멤버 탭하면 배치돼요
+    <!-- 모바일: 팀 A / 팀 B / 찾기 전환 -->
+    <div class="ds-mtabs" role="tablist">
+      <button type="button" class="on" data-mt="a" onclick="dsMTab('a')">팀 A <b id="ds-mt-a">0</b></button>
+      <button type="button" data-mt="b" onclick="dsMTab('b')">팀 B <b id="ds-mt-b">0</b></button>
+      <button type="button" data-mt="find" onclick="dsMTab('find')">찾기 · 추천</button>
+    </div>
+
+    <div class="ds-wrap" id="ds-wrap" data-mt="a">
+      <!-- 팀 A / B -->
+      <div class="ds-teams">
+        <section class="ds-team" data-team="a">
+          <header class="ds-team-h">
+            <span class="ds-team-name a">팀 A</span>
+            <span class="ds-team-sum"><span id="ds-sum-a">0</span>점</span>
+            <label class="ds-adv" title="팀 전체 특수룰 가산점(+)/감점(-)">팀 adv <input type="number" inputmode="numeric" step="1" id="ds-adv-a" placeholder="0" oninput="dsRender()"></label>
+            <span class="ds-team-final">= <b id="ds-final-a">0</b></span>
+            <span class="ds-team-left" id="ds-left-a"></span>
+          </header>
+          <div class="ds-slots" id="doom-sim-team-a"></div>
+          <div class="ds-team-act">
+            <button type="button" class="ds-btn" onclick="dsGoRecommend('a')">빈 자리 추천</button>
+            <button type="button" class="ds-btn ai" onclick="dsRunAi('a')">AI 분석</button>
+            <button type="button" class="ds-btn ghost" onclick="dsClearTeam('a')">비우기</button>
           </div>
-          <div style="font-size:10px;color:var(--muted);font-family:'IBM Plex Sans KR',sans-serif;margin-bottom:4px;">배치할 슬롯을 먼저 선택하세요</div>
-          <div style="display:flex;flex-wrap:wrap;gap:4px;">
-            <div style="font-size:10px;color:var(--blue-bright);font-family:'IBM Plex Sans KR',sans-serif;font-weight:700;align-self:center;white-space:nowrap;">🔵 팀A</div>
-            <button onclick="selectDoomSlot('a','top')" class="doom-slot-btn" data-team="a" data-lane="top" style="padding:3px 8px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;cursor:pointer;">탑</button>
-            <button onclick="selectDoomSlot('a','jg')" class="doom-slot-btn" data-team="a" data-lane="jg" style="padding:3px 8px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;cursor:pointer;">정글</button>
-            <button onclick="selectDoomSlot('a','mid')" class="doom-slot-btn" data-team="a" data-lane="mid" style="padding:3px 8px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;cursor:pointer;">미드</button>
-            <button onclick="selectDoomSlot('a','bot')" class="doom-slot-btn" data-team="a" data-lane="bot" style="padding:3px 8px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;cursor:pointer;">원딜</button>
-            <button onclick="selectDoomSlot('a','sup')" class="doom-slot-btn" data-team="a" data-lane="sup" style="padding:3px 8px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;cursor:pointer;">서폿</button>
+        </section>
+        <section class="ds-team" data-team="b">
+          <header class="ds-team-h">
+            <span class="ds-team-name b">팀 B</span>
+            <span class="ds-team-sum"><span id="ds-sum-b">0</span>점</span>
+            <label class="ds-adv" title="팀 전체 특수룰 가산점(+)/감점(-)">팀 adv <input type="number" inputmode="numeric" step="1" id="ds-adv-b" placeholder="0" oninput="dsRender()"></label>
+            <span class="ds-team-final">= <b id="ds-final-b">0</b></span>
+            <span class="ds-team-left" id="ds-left-b"></span>
+          </header>
+          <div class="ds-slots" id="doom-sim-team-b"></div>
+          <div class="ds-team-act">
+            <button type="button" class="ds-btn" onclick="dsGoRecommend('b')">빈 자리 추천</button>
+            <button type="button" class="ds-btn ai" onclick="dsRunAi('b')">AI 분석</button>
+            <button type="button" class="ds-btn ghost" onclick="dsClearTeam('b')">비우기</button>
           </div>
-          <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;">
-            <div style="font-size:10px;color:#E05050;font-family:'IBM Plex Sans KR',sans-serif;font-weight:700;align-self:center;white-space:nowrap;">🔴 팀B</div>
-            <button onclick="selectDoomSlot('b','top')" class="doom-slot-btn" data-team="b" data-lane="top" style="padding:3px 8px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;cursor:pointer;">탑</button>
-            <button onclick="selectDoomSlot('b','jg')" class="doom-slot-btn" data-team="b" data-lane="jg" style="padding:3px 8px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;cursor:pointer;">정글</button>
-            <button onclick="selectDoomSlot('b','mid')" class="doom-slot-btn" data-team="b" data-lane="mid" style="padding:3px 8px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;cursor:pointer;">미드</button>
-            <button onclick="selectDoomSlot('b','bot')" class="doom-slot-btn" data-team="b" data-lane="bot" style="padding:3px 8px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;cursor:pointer;">원딜</button>
-            <button onclick="selectDoomSlot('b','sup')" class="doom-slot-btn" data-team="b" data-lane="sup" style="padding:3px 8px;border-radius:3px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;cursor:pointer;">서폿</button>
-          </div>
-        </div>
-        <div id="doom-sim-results" style="max-height:400px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;"></div>
+        </section>
       </div>
 
-      <!-- 팀 A -->
-      <div>
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem;">
-          <div style="font-family:'IBM Plex Sans KR',sans-serif;font-size:13px;font-weight:700;color:var(--blue-bright);">🔵 팀 A</div>
-          <div id="doom-sim-a-total" style="font-family:'IBM Plex Sans KR',sans-serif;font-size:12px;font-weight:700;color:#A78BFA;">합산: 0점</div>
+      <!-- 찾기 · 추천 -->
+      <aside class="ds-side">
+        <div class="ds-stabs">
+          <button type="button" class="on" data-st="search" onclick="dsSTab('search')">멤버 검색</button>
+          <button type="button" data-st="rec" onclick="dsSTab('rec')">팀원 추천</button>
         </div>
-        <div id="doom-sim-team-a" style="display:flex;flex-direction:column;gap:6px;">
-          <div class="doom-lane-slot" data-team="a" data-lane="top">🛡️ 탑</div>
-          <div class="doom-lane-slot" data-team="a" data-lane="jg">🌲 정글</div>
-          <div class="doom-lane-slot" data-team="a" data-lane="mid">⚡ 미드</div>
-          <div class="doom-lane-slot" data-team="a" data-lane="bot">🏹 원딜</div>
-          <div class="doom-lane-slot" data-team="a" data-lane="sup">🌟 서폿</div>
+        <div class="ds-spane" id="ds-pane-search">
+          <div class="ds-hint" id="ds-sel-hint">자리를 누른 뒤 멤버를 누르면 들어가요</div>
+          <input id="doom-sim-search" class="ds-input" type="search" placeholder="닉네임 검색" oninput="doomSimSearch()" autocomplete="off">
+          <div id="doom-sim-results" class="ds-list"></div>
         </div>
-      </div>
+        <div class="ds-spane" id="ds-pane-rec" hidden>
+          <div class="ds-rec-row">
+            <span class="ds-lbl">대상</span>
+            <div class="ds-seg" id="ds-rec-team"><button type="button" class="on" data-v="a" onclick="dsRecTeam('a')">팀 A</button><button type="button" data-v="b" onclick="dsRecTeam('b')">팀 B</button></div>
+            <span class="ds-lbl">한도</span><b id="ds-cap-view" class="ds-capv">—</b><span class="ds-dim">(위쪽에서 입력)</span>
+          </div>
+          <div class="ds-rec-sub" id="ds-rec-budget"></div>
+          <div class="ds-lbl2">빈 자리 조건</div>
+          <div id="ds-rec-lanes" class="ds-rec-lanes"></div>
+          <details class="ds-filters" open>
+            <summary>필터</summary>
+            <div class="ds-fgrid">
+              <label>내전 최소<input type="number" inputmode="numeric" id="ds-f-games" class="ds-input sm" value="5" min="0">판</label>
+              <label>최근 내전<input type="number" inputmode="numeric" id="ds-f-days" class="ds-input sm" placeholder="전체" min="1">일 이내</label>
+              <label>최소 티어<select id="ds-f-tmin" class="ds-input sm"></select></label>
+              <label>최대 티어<select id="ds-f-tmax" class="ds-input sm"></select></label>
+              <label>내전 승률<input type="number" inputmode="numeric" id="ds-f-wr" class="ds-input sm" placeholder="0" min="0" max="100">% 이상</label>
+              <label>라인<select id="ds-f-lane" class="ds-input sm"><option value="exp">해당 라인 경험 있음</option><option value="main">주 포지션만</option><option value="any">상관없음</option></select></label>
+              <label class="ck"><input type="checkbox" id="ds-f-nosub" checked> 부계정 빼기</label>
+              <label class="ck"><input type="checkbox" id="ds-f-other" checked> 상대 팀 멤버 빼기</label>
+            </div>
+          </details>
+          <button type="button" class="ds-btn primary wide" onclick="dsRecommend()">추천 찾기</button>
+          <div id="ds-rec-out" class="ds-rec-out"></div>
+        </div>
+      </aside>
+    </div>
 
-      <!-- 팀 B -->
-      <div>
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem;">
-          <div style="font-family:'IBM Plex Sans KR',sans-serif;font-size:13px;font-weight:700;color:#E05050;">🔴 팀 B</div>
-          <div id="doom-sim-b-total" style="font-family:'IBM Plex Sans KR',sans-serif;font-size:12px;font-weight:700;color:#A78BFA;">합산: 0점</div>
-        </div>
-        <div id="doom-sim-team-b" style="display:flex;flex-direction:column;gap:6px;">
-          <div class="doom-lane-slot" data-team="b" data-lane="top">🛡️ 탑</div>
-          <div class="doom-lane-slot" data-team="b" data-lane="jg">🌲 정글</div>
-          <div class="doom-lane-slot" data-team="b" data-lane="mid">⚡ 미드</div>
-          <div class="doom-lane-slot" data-team="b" data-lane="bot">🏹 원딜</div>
-          <div class="doom-lane-slot" data-team="b" data-lane="sup">🌟 서폿</div>
-        </div>
-      </div>
+    <!-- AI 분석 결과 -->
+    <div id="ds-ai-out" class="ds-ai-out" hidden></div>
 
+    <!-- 티어 수정 (이 기기 시뮬레이션에서만) -->
+    <div id="ds-tier-pop" class="ds-pop" hidden></div>
+    <!-- AI 권한 관리 (마스터) -->
+    <div id="ds-perm-modal" class="ds-modal" hidden onclick="if(event.target===this)this.hidden=true">
+      <div class="ds-modal-box">
+        <div class="ds-modal-h">멸망전 AI 분석 권한<button type="button" class="ds-x" onclick="document.getElementById('ds-perm-modal').hidden=true">닫기</button></div>
+        <div class="ds-hint">디스코드 계정이 연동된(디스코드 포스트에서 소환사 계정을 등록한) 소환사만 추가할 수 있어요.</div>
+        <input id="ds-perm-q" class="ds-input" type="search" placeholder="소환사 검색해서 추가" oninput="dsPermSearch()" autocomplete="off">
+        <div id="ds-perm-found" class="ds-list"></div>
+        <div class="ds-lbl2">권한 있는 계정</div>
+        <div id="ds-perm-list" class="ds-list"></div>
+      </div>
     </div>
   </div>
 
@@ -7883,59 +8093,6 @@ checkMaintenanceMode();
 
 
 
-// ── 멸망전 시뮬레이터 모바일 탭 배치 ──
-var _selectedDoomSlot = null; // { team, lane }
-
-function selectDoomSlot(team, lane) {
-  _selectedDoomSlot = { team, lane };
-  document.querySelectorAll('.doom-slot-btn').forEach(function(btn) {
-    var isActive = btn.dataset.team === team && btn.dataset.lane === lane;
-    btn.style.background = isActive ? 'rgba(167,139,250,.2)' : 'transparent';
-    btn.style.borderColor = isActive ? 'rgba(167,139,250,.6)' : 'var(--border)';
-    btn.style.color = isActive ? '#A78BFA' : 'var(--muted)';
-  });
-}
-
-function doomSimMobileTap(m) {
-  if (!_selectedDoomSlot) {
-    // 슬롯 미선택 시 첫 빈 슬롯 자동 선택
-    var teams = ['a', 'b'];
-    var lanes = ['top', 'jg', 'mid', 'bot', 'sup'];
-    for (var t of teams) {
-      for (var l of lanes) {
-        var slot = document.querySelector('.doom-lane-slot[data-team="' + t + '"][data-lane="' + l + '"]');
-        if (slot && !slot.dataset.memberId) {
-          selectDoomSlot(t, l);
-          break;
-        }
-      }
-      if (_selectedDoomSlot) break;
-    }
-    if (!_selectedDoomSlot) return;
-  }
-  var { team, lane } = _selectedDoomSlot;
-
-  // _doomSimTeams에 저장 (renderDoomSimTeams가 이를 참조)
-  _doomSimTeams[team][lane] = m;
-
-  renderDoomSimTeams();
-
-  // 다음 빈 슬롯으로 자동 이동
-  _selectedDoomSlot = null;
-  var lanes = ['top', 'jg', 'mid', 'bot', 'sup'];
-  var teams = [team, team === 'a' ? 'b' : 'a'];
-  for (var t of teams) {
-    for (var l of lanes) {
-      var next = document.querySelector('.doom-lane-slot[data-team="' + t + '"][data-lane="' + l + '"]');
-      if (next && !next.dataset.memberId) {
-        selectDoomSlot(t, l);
-        break;
-      }
-    }
-    if (_selectedDoomSlot) break;
-  }
-}
-
 // ── 닉네임 변경 이력 ──
 async function loadNicknameHistory(member) {
   var el = document.getElementById('dm-nickname');
@@ -10946,244 +11103,614 @@ function renderNicknameLog(list) {
 
 
 // ══════════════════════════════════════
-// 멸망전 팀 시뮬레이션
+// 멸망전 팀 시뮬레이션 (v2)
+//   · 점수: 커뮤니티 내전 점수표(communities/{cid}/doom_scores, 없으면 기본표)
+//   · 티어: 이 기기에서 고친 티어 > 임시티어 > 최고티어 > 현재티어
+//   · 팀별 advantage(특수룰 가감점), 빈 자리 팀원 추천, AI 분석(권한 받은 디스코드 계정만)
 // ══════════════════════════════════════
-var _doomSimData = {}; // puuId → { name, tag, tier, peakTier, peakLp }
-var _doomSimDragMember = null;
-var _doomSimTeams = { a: {}, b: {} }; // lane → memberObj
+var DS_LANES = ['top', 'jg', 'mid', 'bot', 'sup'];
+var DS_LANE_KO = { top: '탑', jg: '정글', mid: '미드', bot: '원딜', sup: '서폿' };
+var DS_ROLE = { top: 'TOP', jg: 'JUNGLE', mid: 'MIDDLE', bot: 'BOTTOM', sup: 'UTILITY' };
+var DS_POS = { Top: 'top', Jungle: 'jg', Middle: 'mid', Bottom: 'bot', Support: 'sup' };
+var DS_TIERS = ['IRON', 'BRONZE', 'SILVER', 'GOLD', 'PLATINUM', 'EMERALD', 'DIAMOND', 'MASTER', 'GRANDMASTER', 'CHALLENGER'];
+var DS_TIER_KO = { IRON: '아이언', BRONZE: '브론즈', SILVER: '실버', GOLD: '골드', PLATINUM: '플래티넘', EMERALD: '에메랄드', DIAMOND: '다이아', MASTER: '마스터', GRANDMASTER: '그랜드마스터', CHALLENGER: '챌린저', UNRANKED: '언랭' };
+var DS_TC = { CHALLENGER: '#F4C842', GRANDMASTER: '#E05050', MASTER: '#B07FE0', DIAMOND: '#5B9BE6', EMERALD: '#2FB872', PLATINUM: '#1ABC9C', GOLD: '#E6A23C', SILVER: '#A2AFB5', BRONZE: '#CD6133', IRON: '#8A9597', UNRANKED: '#8A9597' };
+var DS_DIV = { I: 1, II: 2, III: 3, IV: 4, '1': 1, '2': 2, '3': 3, '4': 4 };
+var DS_DIV_R = ['', 'I', 'II', 'III', 'IV'];
+var DS_HIGH = ['MASTER', 'GRANDMASTER', 'CHALLENGER'];
+// 커뮤니티 점수표가 없을 때 쓰는 기본표 (룽잉닷컴 내전 점수 기본값과 같음)
+var DS_DEFAULT_TABLE = [
+  {tier:'MASTER+',minLp:1500,maxLp:99999,top:64,jg:69,mid:67,bot:68,sup:58},{tier:'MASTER+',minLp:1400,maxLp:1499,top:62,jg:67,mid:65,bot:66,sup:57},
+  {tier:'MASTER+',minLp:1300,maxLp:1399,top:60,jg:65,mid:63,bot:64,sup:55},{tier:'MASTER+',minLp:1200,maxLp:1299,top:58,jg:63,mid:61,bot:62,sup:53},
+  {tier:'MASTER+',minLp:1100,maxLp:1199,top:55,jg:61,mid:59,bot:60,sup:51},{tier:'MASTER+',minLp:1000,maxLp:1099,top:53,jg:59,mid:57,bot:58,sup:48},
+  {tier:'MASTER+',minLp:900,maxLp:999,top:51,jg:56,mid:54,bot:55,sup:46},{tier:'MASTER+',minLp:800,maxLp:899,top:48,jg:54,mid:52,bot:53,sup:44},
+  {tier:'MASTER+',minLp:700,maxLp:799,top:47,jg:52,mid:50,bot:51,sup:43},{tier:'MASTER+',minLp:600,maxLp:699,top:45,jg:50,mid:48,bot:49,sup:42},
+  {tier:'MASTER+',minLp:500,maxLp:599,top:43,jg:48,mid:46,bot:47,sup:40},{tier:'MASTER+',minLp:400,maxLp:499,top:41,jg:46,mid:44,bot:45,sup:39},
+  {tier:'MASTER+',minLp:300,maxLp:399,top:40,jg:44,mid:42,bot:43,sup:37},{tier:'MASTER+',minLp:200,maxLp:299,top:39,jg:43,mid:41,bot:42,sup:36},
+  {tier:'MASTER+',minLp:100,maxLp:199,top:38,jg:42,mid:40,bot:41,sup:35},{tier:'MASTER+',minLp:0,maxLp:99,top:37,jg:41,mid:39,bot:40,sup:34},
+  {tier:'DIAMOND',div:1,top:36,jg:40,mid:38,bot:39,sup:33},{tier:'DIAMOND',div:2,top:35,jg:38,mid:36,bot:38,sup:32},
+  {tier:'DIAMOND',div:3,top:33,jg:36,mid:35,bot:36,sup:31},{tier:'DIAMOND',div:4,top:31,jg:35,mid:33,bot:34,sup:30},
+  {tier:'EMERALD',div:1,top:29,jg:32,mid:30,bot:31,sup:28},{tier:'EMERALD',div:2,top:28,jg:31,mid:29,bot:30,sup:27},
+  {tier:'EMERALD',div:3,top:27,jg:30,mid:28,bot:29,sup:26},{tier:'EMERALD',div:4,top:26,jg:29,mid:27,bot:28,sup:25},
+  {tier:'PLATINUM',div:1,top:25,jg:26,mid:24,bot:25,sup:24},{tier:'PLATINUM',div:2,top:24,jg:24,mid:23,bot:24,sup:23},
+  {tier:'PLATINUM',div:3,top:23,jg:22,mid:22,bot:21,sup:22},{tier:'PLATINUM',div:4,top:22,jg:20,mid:21,bot:19,sup:21},
+  {tier:'GOLD',div:1,top:20,jg:17,mid:18,bot:16,sup:19},{tier:'GOLD',div:2,top:19,jg:14,mid:16,bot:13,sup:19}
+];
+var _dsTable = null, _dsTableSrc = '';
+var _dsTeams = { a: {}, b: {} };       // lane → puu_id
+var _dsSel = null;                     // { team, lane } 선택한 자리
+var _dsPref = {};                      // 추천: lane → 1(고티어 선호) / 0 / -1(저티어 선호)
+var _dsRecTeam = 'a';
+var _dsPAdv = {};                      // 개인 advantage: puu_id → 점수 가감 (예: -3 이면 그 사람 멸망전 점수 3점 낮게)
+var _dsAi = { checked: false, allowed: false, reason: '' };
+var _dsInited = false;
+var _doomSimData = {}; // (예전 코드 호환)
 
-var DOOM_LANE_EMOJI = { top:'🛡️ 탑', jg:'🌲 정글', mid:'⚡ 미드', bot:'🏹 원딜', sup:'🌟 서폿' };
+function _dsKey(k) { return 'ds_' + k + '_' + (COMMUNITY_ID || 'x'); }
+function _dsLoadLS(k, d) { try { var v = JSON.parse(localStorage.getItem(_dsKey(k)) || 'null'); return v == null ? d : v; } catch (e) { return d; } }
+function _dsSaveLS(k, v) { try { localStorage.setItem(_dsKey(k), JSON.stringify(v)); } catch (e) {} }
+function _dsM(puu) { return allData.find(function (x) { return x.puu_id === puu; }) || null; }
+function _dsSaveState() {
+  _dsSaveLS('state', { teams: _dsTeams, padv: _dsPAdv, adv: { a: _dsVal('ds-adv-a'), b: _dsVal('ds-adv-b') }, cap: _dsVal('ds-cap'), pref: _dsPref, recTeam: _dsRecTeam });
+}
+function _dsVal(id) { var el = document.getElementById(id); return el ? el.value : ''; }
 
-function initDoomSim() {
-  // allData에서 멤버 캐시 구성
-  _doomSimData = {};
-  allData.forEach(function(m) {
-    _doomSimData[m.puu_id] = {
-      puu_id: m.puu_id,
-      name: m.riot_name || m.name,
-      tag: m.riot_tag || m.tag,
-      tier: m.tier,
-      tierFull: m.tierFull || m.tier,
-      peakTier: m._peakTier || null,
-      peakLp: m._peakLp || 0,
-      _tempTier: (typeof m._tempTier === 'string') ? m._tempTier : (m._tempTier ? m._tempTier.tier || null : null),
-      _tempLp: m._tempLp || 0,
-      platform: m.platform_id || 'KR'
-    };
-  });
-  // 슬롯 이벤트 등록
-  document.querySelectorAll('.doom-lane-slot').forEach(function(slot) {
-    slot.addEventListener('dragover', function(e) {
-      e.preventDefault();
-      slot.classList.add('drag-over');
-    });
-    slot.addEventListener('dragleave', function() {
-      slot.classList.remove('drag-over');
-    });
-    slot.addEventListener('drop', function(e) {
-      e.preventDefault();
-      slot.classList.remove('drag-over');
-      if (!_doomSimDragMember) return;
-      var team = slot.dataset.team;
-      var lane = slot.dataset.lane;
-      // 기존 슬롯에서 제거
-      for (var t in _doomSimTeams) {
-        for (var l in _doomSimTeams[t]) {
-          if (_doomSimTeams[t][l] && _doomSimTeams[t][l].puu_id === _doomSimDragMember.puu_id) {
-            delete _doomSimTeams[t][l];
-          }
-        }
-      }
-      _doomSimTeams[team][lane] = _doomSimDragMember;
-      _doomSimDragMember = null;
-      renderDoomSimTeams();
-    });
-  });
-  renderDoomSimTeams();
-  doomSimSearch();
+// ── 점수표 ──
+async function dsLoadTable() {
+  _dsTable = DS_DEFAULT_TABLE; _dsTableSrc = '기본 점수표';
+  if (COMMUNITY_ID) {
+    try {
+      var r = await fetch(WORKER_URL + '/db-public-read', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ path: 'communities/' + COMMUNITY_ID + '/doom_scores' }) });
+      var j = await r.json();
+      var d = j && j.ok ? j.data : null;
+      if (d && !Array.isArray(d) && typeof d === 'object') d = Object.values(d);
+      if (Array.isArray(d) && d.filter(Boolean).length) { _dsTable = d.filter(Boolean); _dsTableSrc = '커뮤니티 내전 점수표'; }
+    } catch (e) {}
+  }
+  var el = document.getElementById('ds-table-src');
+  if (el) el.textContent = '점수: ' + _dsTableSrc;
 }
 
-function doomSimSearch() {
-  var DOOM_TIER_COLORS = {CHALLENGER:'#F4C842',GRANDMASTER:'#E05050',MASTER:'#9B59B6',DIAMOND:'#4A90D9',EMERALD:'#27AE60',PLATINUM:'#1ABC9C',GOLD:'#F39C12',SILVER:'#95A5A6',BRONZE:'#CD6133',IRON:'#7F8C8D'};
-  var q = (document.getElementById('doom-sim-search').value || '').toLowerCase().trim();
-  var results = Object.values(_doomSimData).filter(function(m) {
-    if (!q) return true;
-    return (m.name + '#' + m.tag).toLowerCase().includes(q);
-  }).slice(0, 30);
-
-  var el = document.getElementById('doom-sim-results');
-  if (!el) return;
-
-  if (!results.length) {
-    el.innerHTML = '<div style="font-size:11px;color:var(--muted);text-align:center;padding:.5rem;">검색 결과 없음</div>';
-    return;
+// ── 티어 ──
+function _dsParseTier(str, lp) {
+  var s = String(str || '').toUpperCase().trim();
+  if (!s) return null;
+  var parts = s.split(/\s+/), t = parts[0];
+  if (t === 'GRAND' && parts[1] === 'MASTER') { t = 'GRANDMASTER'; parts.splice(1, 1); }
+  if (DS_TIERS.indexOf(t) < 0) return t === 'UNRANKED' ? { tier: 'UNRANKED', div: 4, lp: 0 } : null;
+  var o = { tier: t, div: 4, lp: 0 };
+  if (DS_HIGH.indexOf(t) >= 0) { var m = s.match(/(\d+)\s*LP/) || s.match(/\s(\d+)$/); o.lp = m ? +m[1] : (+lp || 0); o.div = 1; }
+  else if (parts[1]) o.div = DS_DIV[parts[1]] || 4;
+  return o;
+}
+// 쓰는 티어: 이 기기에서 고친 티어 > 임시 > 최고 > 현재
+function dsTierOf(m) {
+  if (!m) return { tier: 'UNRANKED', div: 4, lp: 0, src: '' };
+  var ov = _dsLoadLS('ov', {})[m.puu_id];
+  if (ov && ov.tier) return { tier: ov.tier, div: ov.div || 4, lp: ov.lp || 0, src: '수정' };
+  var tt = m._tempTier ? _dsParseTier(m._tempTier, m._tempLp) : null; if (tt) { tt.src = '임시'; return tt; }
+  var pk = m._peakTier ? _dsParseTier(m._peakTier, m._peakLp) : null; if (pk) { pk.src = '최고'; return pk; }
+  var cur = _dsParseTier(m.tier, m.lp); if (cur) { cur.src = '현재'; return cur; }
+  return { tier: 'UNRANKED', div: 4, lp: 0, src: '' };
+}
+function dsTierText(t) {
+  if (!t || t.tier === 'UNRANKED') return '언랭';
+  return DS_TIER_KO[t.tier] + (DS_HIGH.indexOf(t.tier) >= 0 ? ' ' + (t.lp || 0) + 'LP' : ' ' + t.div);
+}
+function dsTierShort(t) {
+  var ab = { CHALLENGER: 'C', GRANDMASTER: 'GM', MASTER: 'M', DIAMOND: 'D', EMERALD: 'E', PLATINUM: 'P', GOLD: 'G', SILVER: 'S', BRONZE: 'B', IRON: 'I' };
+  if (!t || t.tier === 'UNRANKED') return 'U';
+  return (ab[t.tier] || '?') + (DS_HIGH.indexOf(t.tier) >= 0 ? (t.lp || 0) : t.div);
+}
+function dsTierLevel(t) { if (!t || DS_TIERS.indexOf(t.tier) < 0) return -1; return DS_TIERS.indexOf(t.tier); }
+// 점수표에서 그 라인 점수
+function dsScore(m, lane, tierObj) {
+  var t = tierObj || dsTierOf(m), tbl = _dsTable || DS_DEFAULT_TABLE, row = null;
+  if (DS_HIGH.indexOf(t.tier) >= 0) {
+    var lp = +t.lp || 0;
+    row = tbl.find(function (r) { return r.tier === 'MASTER+' && lp >= +r.minLp && lp <= +r.maxLp; }) ||
+      tbl.filter(function (r) { return r.tier === 'MASTER+'; }).sort(function (a, b) { return a.minLp - b.minLp; })[0];
+  } else {
+    var tier = t.tier === 'UNRANKED' ? 'SILVER' : t.tier;
+    row = tbl.find(function (r) { return r.tier === tier && +r.div === +t.div; });
+    if (!row) { var rs = tbl.filter(function (r) { return r.tier === tier; }); if (rs.length) row = rs[rs.length - 1]; }
+    if (!row && ['SILVER', 'BRONZE', 'IRON'].indexOf(tier) >= 0) { var g = tbl.filter(function (r) { return r.tier === 'GOLD'; }); if (g.length) row = g[g.length - 1]; }
   }
+  var v = row ? +row[lane] : NaN;
+  return isFinite(v) ? v : null;
+}
+// (예전 코드 호환)
+function _doomSimGetScore(m, lane) { var v = dsScore(m.puu_id ? (_dsM(m.puu_id) || m) : m, lane); return v == null ? '—' : v; }
 
-  el.innerHTML = results.map(function(m) {
-    var _dispTier = m._tempTier ? m._tempTier : (m.peakTier || m._peakTier || m.tier || 'UNRANKED');
-    var _dispLabel = m._tempTier ? '임시: ' : (m.peakTier || m._peakTier ? '최고: ' : '');
-    var tierColor = DOOM_TIER_COLORS[_dispTier.split(' ')[0]] || 'var(--muted)';
-    var tierText = _dispLabel + _dispTier;
-    return '<div class="doom-sim-member-card" draggable="true" data-puu="' + m.puu_id + '" ' +
-      'onclick="if(window.innerWidth<=700)doomSimMobileTap(allData.find(function(x){return x.puu_id===\'' + m.puu_id + '\'}))" ' +
-      'ondragstart="doomSimDragStart(event,&quot;' + m.puu_id + '&quot;)">' +
-      '<div style="flex:1;min-width:0;">' +
-      '<div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(m.name) + '<span style="color:var(--muted);font-size:10px;"> #' + esc(m.tag) + '</span></div>' +
-      '<div style="font-size:10px;font-weight:700;color:' + tierColor + ';">' + esc(tierText) + ((m._tempTier && m._tempLp) ? ' ' + m._tempLp + 'LP' : (m.peakTier && m.peakLp ? ' ' + m.peakLp + 'LP' : '')) + '</div>' +
-      '</div>' +
-      '<button onclick="doomSimFetchPeak(event,&quot;' + m.puu_id + '&quot;)" style="padding:2px 6px;border-radius:2px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:10px;cursor:pointer;flex-shrink:0;" title="최고티어 갱신">🔄</button>' +
-      '</div>';
+// ── 시작 ──
+async function initDoomSim() {
+  if (!_dsInited) {
+    _dsInited = true;
+    var st = _dsLoadLS('state', null);
+    if (st) {
+      _dsTeams = st.teams || { a: {}, b: {} }; _dsPref = st.pref || {}; _dsRecTeam = st.recTeam || 'a'; _dsPAdv = st.padv || {};
+      if (st.adv) { document.getElementById('ds-adv-a').value = st.adv.a || ''; document.getElementById('ds-adv-b').value = st.adv.b || ''; }
+      if (st.cap) document.getElementById('ds-cap').value = st.cap;
+    }
+    var opts = '<option value="">제한 없음</option>' + DS_TIERS.map(function (t, i) { return '<option value="' + i + '">' + DS_TIER_KO[t] + '</option>'; }).join('');
+    document.getElementById('ds-f-tmin').innerHTML = opts; document.getElementById('ds-f-tmax').innerHTML = opts;
+    ['a', 'b'].forEach(function (team) {
+      var box = document.getElementById('doom-sim-team-' + team);
+      box.addEventListener('dragover', function (e) { var s = e.target.closest('.ds-slot'); if (s) { e.preventDefault(); s.classList.add('over'); } });
+      box.addEventListener('dragleave', function (e) { var s = e.target.closest('.ds-slot'); if (s) s.classList.remove('over'); });
+      box.addEventListener('drop', function (e) {
+        var s = e.target.closest('.ds-slot'); if (!s) return; e.preventDefault(); s.classList.remove('over');
+        var puu = e.dataTransfer.getData('text/plain'); if (puu) dsPlace(s.dataset.team, s.dataset.lane, puu);
+      });
+    });
+    document.addEventListener('click', function (e) {
+      var pop = document.getElementById('ds-tier-pop');
+      if (pop && !pop.hidden && !pop.contains(e.target) && !e.target.closest('.ds-tierbtn')) pop.hidden = true;
+    });
+  }
+  var pb = document.getElementById('ds-btn-ai-perm'); if (pb) pb.style.display = _statsAdminRole === 'master' ? '' : 'none';
+  var pk = document.querySelector('.ds-peak-btn'); if (pk) pk.style.display = _statsAdminRole === 'master' ? '' : 'none';
+  _dsRecTeamUi();
+  dsRender(); doomSimSearch();
+  await dsLoadTable();
+  dsRender(); doomSimSearch(); dsRecRender();
+  dsCheckAi();
+}
+
+// ── 팀 · 자리 ──
+function dsPlace(team, lane, puu) {
+  ['a', 'b'].forEach(function (t) { DS_LANES.forEach(function (l) { if (_dsTeams[t][l] === puu) delete _dsTeams[t][l]; }); });
+  _dsTeams[team][lane] = puu;
+  // 같은 팀 다음 빈 자리 선택
+  var next = DS_LANES.find(function (l) { return !_dsTeams[team][l]; });
+  _dsSel = next ? { team: team, lane: next } : null;
+  dsRender(); doomSimSearch(); dsRecRender(); _dsSaveState();
+  if (window.innerWidth <= 700 && document.getElementById('ds-wrap').dataset.mt === 'find') dsMTab(team);
+}
+function dsSelSlot(team, lane) {
+  _dsSel = _dsSel && _dsSel.team === team && _dsSel.lane === lane ? null : { team: team, lane: lane };
+  dsRender(); doomSimSearch();
+  if (_dsSel && window.innerWidth <= 700 && !_dsTeams[team][lane]) { dsMTab('find'); dsSTab('search'); }
+}
+function doomSimRemove(team, lane) { delete _dsTeams[team][lane]; dsRender(); doomSimSearch(); dsRecRender(); _dsSaveState(); }
+function dsClearTeam(team) { _dsTeams[team] = {}; _dsSel = { team: team, lane: 'top' }; dsRender(); doomSimSearch(); dsRecRender(); _dsSaveState(); }
+// 개인 advantage 를 반영한 그 자리 점수
+function dsScoreEff(puu, lane) { var v = dsScore(_dsM(puu), lane); return v == null ? null : v + (parseInt(_dsPAdv[puu], 10) || 0); }
+function dsSetPAdv(puu, el) { var v = parseInt(el.value, 10); if (isFinite(v) && v) _dsPAdv[puu] = v; else delete _dsPAdv[puu]; dsRender(true); dsRecRender(); }
+function dsTeamSum(team) {
+  var s = 0, miss = 0, n = 0;
+  DS_LANES.forEach(function (l) { var puu = _dsTeams[team][l]; if (!puu) return; n++; var v = dsScoreEff(puu, l); if (v == null) miss++; else s += v; });
+  return { sum: s, miss: miss, n: n };
+}
+function dsRender(keepSlots) {
+  ['a', 'b'].forEach(function (team) {
+    var box = document.getElementById('doom-sim-team-' + team); if (!box) return;
+    if (keepSlots) { // 개인 adv 입력 중: 입력칸은 그대로 두고 점수만 바꿈
+      box.querySelectorAll('.ds-slot.filled').forEach(function (el) {
+        var puu = _dsTeams[team][el.dataset.lane]; if (!puu) return;
+        var base = dsScore(_dsM(puu), el.dataset.lane), pa = parseInt(_dsPAdv[puu], 10) || 0, sc = el.querySelector('.ds-sc');
+        if (sc) sc.innerHTML = base == null ? '?' : (base + pa) + (pa ? '<small>' + base + (pa > 0 ? '+' : '') + pa + '</small>' : '');
+      });
+    } else
+    box.innerHTML = DS_LANES.map(function (l) {
+      var puu = _dsTeams[team][l], m = puu ? _dsM(puu) : null;
+      var sel = _dsSel && _dsSel.team === team && _dsSel.lane === l ? ' sel' : '';
+      if (!m) return '<div class="ds-slot empty' + sel + '" data-team="' + team + '" data-lane="' + l + '" onclick="dsSelSlot(\'' + team + '\',\'' + l + '\')"><span class="ds-ln">' + DS_LANE_KO[l] + '</span><span class="ds-empty">' + (sel ? '멤버를 고르세요' : '비어 있음') + '</span></div>';
+      var t = dsTierOf(m), sc = dsScore(m, l, t), pa = parseInt(_dsPAdv[puu], 10) || 0;
+      return '<div class="ds-slot filled' + sel + '" data-team="' + team + '" data-lane="' + l + '" onclick="dsSelSlot(\'' + team + '\',\'' + l + '\')">' +
+        '<span class="ds-ln">' + DS_LANE_KO[l] + '</span>' +
+        '<span class="ds-nm"><b>' + esc(m.riot_name || '') + '</b><i>#' + esc(m.riot_tag || '') + '</i></span>' +
+        '<button type="button" class="ds-tierbtn' + (t.src === '수정' ? ' ov' : '') + '" style="--tc:' + (DS_TC[t.tier] || '#8A9597') + '" onclick="event.stopPropagation();dsTierEdit(\'' + puu + '\',this)" title="눌러서 티어 수정 (이 기기에서만)">' + esc(dsTierShort(t)) + '<small>' + esc(t.src) + '</small></button>' +
+        '<span class="ds-sc">' + (sc == null ? '?' : (sc + pa) + (pa ? '<small>' + sc + (pa > 0 ? '+' : '') + pa + '</small>' : '')) + '</span>' +
+        '<input class="ds-padv" type="number" inputmode="numeric" step="1" placeholder="adv" title="개인 advantage (예: -3 이면 이 사람 점수 3점 낮게)" value="' + (pa || '') + '" onclick="event.stopPropagation()" oninput="dsSetPAdv(\'' + puu + '\',this)">' +
+        '<button type="button" class="ds-rm" onclick="event.stopPropagation();doomSimRemove(\'' + team + '\',\'' + l + '\')" aria-label="빼기">×</button></div>';
+    }).join('');
+    var s = dsTeamSum(team), adv = parseInt(_dsVal('ds-adv-' + team), 10) || 0;
+    document.getElementById('ds-sum-' + team).textContent = s.sum + (s.miss ? '+?' : '');
+    document.getElementById('ds-final-' + team).textContent = (s.sum + adv);
+    var mt = document.getElementById('ds-mt-' + team); if (mt) mt.textContent = (s.sum + adv);
+    var cap0 = parseInt(_dsVal('ds-cap'), 10), lf = document.getElementById('ds-left-' + team);
+    if (lf) { lf.textContent = isFinite(cap0) ? (cap0 - s.sum >= 0 ? '한도까지 ' + (cap0 - s.sum) + '점' : '한도 ' + (s.sum - cap0) + '점 초과') : ''; lf.className = 'ds-team-left' + (isFinite(cap0) && s.sum > cap0 ? ' over' : ''); }
+  });
+  var hint = document.getElementById('ds-sel-hint');
+  if (hint) hint.innerHTML = _dsSel ? '<b>' + (_dsSel.team === 'a' ? '팀 A' : '팀 B') + ' ' + DS_LANE_KO[_dsSel.lane] + '</b> 자리에 넣을 멤버를 누르세요' : '자리를 누른 뒤 멤버를 누르면 들어가요';
+  _dsSaveState();
+}
+
+// ── 멤버 검색 ──
+function doomSimSearch() {
+  var el = document.getElementById('doom-sim-results'); if (!el) return;
+  var q = (_dsVal('doom-sim-search') || '').toLowerCase().trim();
+  var used = {}; ['a', 'b'].forEach(function (t) { DS_LANES.forEach(function (l) { if (_dsTeams[t][l]) used[_dsTeams[t][l]] = t; }); });
+  var lane = _dsSel ? _dsSel.lane : null;
+  var list = allData.filter(function (m) { return m.puu_id && (!q || ((m.riot_name || '') + '#' + (m.riot_tag || '')).toLowerCase().indexOf(q) >= 0); });
+  list.sort(function (a, b) { return (b.cnt || 0) - (a.cnt || 0); });
+  list = list.slice(0, 40);
+  if (!list.length) { el.innerHTML = '<div class="ds-none">검색 결과 없음</div>'; return; }
+  el.innerHTML = list.map(function (m) {
+    var t = dsTierOf(m), pos = DS_POS[normalizePos(m.most_position)] || '';
+    var sc = lane ? dsScore(m, lane, t) : null;
+    return '<div class="ds-row' + (used[m.puu_id] ? ' used' : '') + '" draggable="true" ondragstart="event.dataTransfer.setData(\'text/plain\',\'' + m.puu_id + '\')" onclick="dsPick(\'' + m.puu_id + '\')">' +
+      '<span class="ds-nm"><b>' + esc(m.riot_name || '') + '</b><i>#' + esc(m.riot_tag || '') + '</i></span>' +
+      '<span class="ds-meta">' + (pos ? DS_LANE_KO[pos] + ' · ' : '') + (m.cnt || 0) + '판</span>' +
+      '<span class="ds-t" style="color:' + (DS_TC[t.tier] || '#8A9597') + '">' + esc(dsTierShort(t)) + '</span>' +
+      (sc != null ? '<span class="ds-sc sm">' + sc + '</span>' : '') +
+      (used[m.puu_id] ? '<span class="ds-used">' + (used[m.puu_id] === 'a' ? 'A' : 'B') + '</span>' : '') + '</div>';
   }).join('');
 }
-
-function doomSimDragStart(e, puuId) {
-  _doomSimDragMember = _doomSimData[puuId];
-  e.dataTransfer.effectAllowed = 'move';
-  e.dataTransfer.setData('text/plain', puuId);
-  var _dragEl = e.currentTarget;
-  if (_dragEl) _dragEl.classList.add('dragging');
-  setTimeout(function() { if (_dragEl) _dragEl.classList.remove('dragging'); }, 100);
-}
-
-async function doomSimFetchPeak(e, puuId) {
-  e.stopPropagation();
-  var btn = e.currentTarget;
-  btn.textContent = '⏳';
-  btn.disabled = true;
-  var m = _doomSimData[puuId];
-  if (!m) return;
-  try {
-    var url = API_BASE + '/summoner/summoner-realtime?platform_id=' + (m.platform || 'KR') + '&summoner_id=&puu_id=' + encodeURIComponent(puuId);
-    var res = await fetch(url);
-    if (res.ok) {
-      var json = await res.json();
-      var solo = json.season_tier_info_dict && json.season_tier_info_dict.ranked_solo_5x5;
-      if (solo && solo.high_tier) {
-        m.peakTier = solo.high_tier;
-        m.peakLp = solo.high_lp || 0;
-        // allData에도 반영
-        var ad = allData.find(function(x){ return x.puu_id === puuId; });
-        if (ad) { ad._peakTier = m.peakTier; ad._peakLp = m.peakLp; }
-      }
-    }
-  } catch(e2) {}
-  btn.textContent = '🔄'; btn.disabled = false;
-  doomSimSearch();
-  renderDoomSimTeams();
-}
-
-function _doomSimGetScore(m, lane) {
-  // 최고 티어 기준으로 내전 점수 직접 계산
-  // _tempTiersCache에서 직접 조회 (임시티어 우선)
-  var _cachedTemp = m.puu_id && _tempTiersCache[m.puu_id];
-  var _tempTierStr = _cachedTemp ? (typeof _cachedTemp === 'string' ? _cachedTemp : (_cachedTemp.tier || null)) : (m._tempTier || null);
-  var _tempLpVal = _cachedTemp && typeof _cachedTemp === 'object' ? (_cachedTemp.lp || 0) : (m._tempLp || 0);
-  var tierStr = String(_tempTierStr || m.peakTier || m._peakTier || m.tier || 'UNRANKED').toUpperCase().trim();
-  var tierName = tierStr.split(' ')[0];
-  var laneKey = lane || 'top';
-  var HIGH = ['MASTER','GRANDMASTER','CHALLENGER'];
-  var DIV_MAP = {'I':1,'II':2,'III':3,'IV':4,'1':1,'2':2,'3':3,'4':4};
-  // 내전 점수 기본 테이블
-  var DOOM_TABLE = [
-    {tier:'MASTER+',minLp:1500,maxLp:99999,top:64,jg:69,mid:67,bot:68,sup:58},
-    {tier:'MASTER+',minLp:1400,maxLp:1499,top:62,jg:67,mid:65,bot:66,sup:57},
-    {tier:'MASTER+',minLp:1300,maxLp:1399,top:60,jg:65,mid:63,bot:64,sup:55},
-    {tier:'MASTER+',minLp:1200,maxLp:1299,top:58,jg:63,mid:61,bot:62,sup:53},
-    {tier:'MASTER+',minLp:1100,maxLp:1199,top:55,jg:61,mid:59,bot:60,sup:51},
-    {tier:'MASTER+',minLp:1000,maxLp:1099,top:53,jg:59,mid:57,bot:58,sup:48},
-    {tier:'MASTER+',minLp:900,maxLp:999,top:51,jg:56,mid:54,bot:55,sup:46},
-    {tier:'MASTER+',minLp:800,maxLp:899,top:48,jg:54,mid:52,bot:53,sup:44},
-    {tier:'MASTER+',minLp:700,maxLp:799,top:47,jg:52,mid:50,bot:51,sup:43},
-    {tier:'MASTER+',minLp:600,maxLp:699,top:45,jg:50,mid:48,bot:49,sup:42},
-    {tier:'MASTER+',minLp:500,maxLp:599,top:43,jg:48,mid:46,bot:47,sup:40},
-    {tier:'MASTER+',minLp:400,maxLp:499,top:41,jg:46,mid:44,bot:45,sup:39},
-    {tier:'MASTER+',minLp:300,maxLp:399,top:40,jg:44,mid:42,bot:43,sup:37},
-    {tier:'MASTER+',minLp:200,maxLp:299,top:39,jg:43,mid:41,bot:42,sup:36},
-    {tier:'MASTER+',minLp:100,maxLp:199,top:38,jg:42,mid:40,bot:41,sup:35},
-    {tier:'MASTER+',minLp:0,maxLp:99,top:37,jg:41,mid:39,bot:40,sup:34},
-    {tier:'DIAMOND',div:1,top:36,jg:40,mid:38,bot:39,sup:33},
-    {tier:'DIAMOND',div:2,top:35,jg:38,mid:36,bot:38,sup:32},
-    {tier:'DIAMOND',div:3,top:33,jg:36,mid:35,bot:36,sup:31},
-    {tier:'DIAMOND',div:4,top:31,jg:35,mid:33,bot:34,sup:30},
-    {tier:'EMERALD',div:1,top:29,jg:32,mid:30,bot:31,sup:28},
-    {tier:'EMERALD',div:2,top:28,jg:31,mid:29,bot:30,sup:27},
-    {tier:'EMERALD',div:3,top:27,jg:30,mid:28,bot:29,sup:26},
-    {tier:'EMERALD',div:4,top:26,jg:29,mid:27,bot:28,sup:25},
-    {tier:'PLATINUM',div:1,top:25,jg:26,mid:24,bot:25,sup:24},
-    {tier:'PLATINUM',div:2,top:24,jg:24,mid:23,bot:24,sup:23},
-    {tier:'PLATINUM',div:3,top:23,jg:22,mid:22,bot:21,sup:22},
-    {tier:'PLATINUM',div:4,top:22,jg:20,mid:21,bot:19,sup:21},
-    {tier:'GOLD',div:1,top:20,jg:17,mid:18,bot:16,sup:19},
-    {tier:'GOLD',div:2,top:19,jg:14,mid:16,bot:13,sup:19}
-  ];
-  var row = null;
-  if (HIGH.includes(tierName)) {
-    // 임시티어 사용 중이면 임시LP, 아니면 peakLp
-    var lp = _tempTierStr ? _tempLpVal : (m.peakLp || m._peakLp || 0);
-    row = DOOM_TABLE.find(function(r){ return r.tier==='MASTER+' && lp>=r.minLp && lp<=r.maxLp; });
-    if (!row) row = DOOM_TABLE.find(function(r){ return r.tier==='MASTER+' && r.minLp===0; });
-  } else {
-    var divNum = 4;
-    var parts = tierStr.split(/\s+/);
-    if (parts.length > 1) divNum = DIV_MAP[parts[1]] || 4;
-    row = DOOM_TABLE.find(function(r){ return r.tier===tierName && (r.div===divNum||r.div===String(divNum)); });
-    if (!row) {
-      var tierRows = DOOM_TABLE.filter(function(r){ return r.tier===tierName; });
-      if (tierRows.length) row = tierRows[tierRows.length-1];
-    }
-    if (!row) {
-      // 골드 이하
-      var BELOW = ['SILVER','BRONZE','IRON','UNRANKED'];
-      if (BELOW.includes(tierName)) {
-        var gRows = DOOM_TABLE.filter(function(r){ return r.tier==='GOLD'; });
-        row = gRows.length ? gRows[gRows.length-1] : null;
-      }
-    }
+function dsPick(puu) {
+  var sel = _dsSel;
+  if (!sel) {
+    var team = (document.getElementById('ds-wrap').dataset.mt === 'b') ? 'b' : (_dsLastTeam || 'a');
+    var l = DS_LANES.find(function (x) { return !_dsTeams[team][x]; }) || DS_LANES.find(function (x) { return !_dsTeams[team === 'a' ? 'b' : 'a'][x]; });
+    if (!l) return;
+    sel = _dsTeams[team][l] ? { team: team === 'a' ? 'b' : 'a', lane: l } : { team: team, lane: l };
   }
-  return row ? (row[laneKey] || '—') : '—';
+  _dsLastTeam = sel.team;
+  dsPlace(sel.team, sel.lane, puu);
+}
+var _dsLastTeam = 'a';
+
+// ── 티어 수정 (이 기기에서만) ──
+function dsTierEdit(puu, btn) {
+  var m = _dsM(puu); if (!m) return;
+  var t = dsTierOf(m), ov = _dsLoadLS('ov', {})[puu];
+  var pop = document.getElementById('ds-tier-pop');
+  var high = DS_HIGH.indexOf(t.tier) >= 0;
+  pop.innerHTML = '<div class="ds-pop-h">' + esc(m.riot_name || '') + ' 티어 수정<small>이 기기 시뮬레이션에서만 바뀌어요</small></div>' +
+    '<div class="ds-pop-row"><select id="ds-te-tier" class="ds-input sm" onchange="dsTierEditUi()">' + DS_TIERS.slice().reverse().map(function (x) { return '<option value="' + x + '"' + (x === t.tier ? ' selected' : '') + '>' + DS_TIER_KO[x] + '</option>'; }).join('') + '</select>' +
+    '<select id="ds-te-div" class="ds-input sm"' + (high ? ' hidden' : '') + '>' + [1, 2, 3, 4].map(function (d) { return '<option value="' + d + '"' + (d === +t.div ? ' selected' : '') + '>' + d + '</option>'; }).join('') + '</select>' +
+    '<input id="ds-te-lp" class="ds-input sm" type="number" inputmode="numeric" min="0" placeholder="LP" value="' + (high ? (t.lp || 0) : '') + '"' + (high ? '' : ' hidden') + '></div>' +
+    '<div class="ds-pop-row"><button type="button" class="ds-btn primary" onclick="dsTierSave(\'' + puu + '\')">적용</button>' + (ov ? '<button type="button" class="ds-btn ghost" onclick="dsTierSave(\'' + puu + '\',true)">원래대로</button>' : '') + '<button type="button" class="ds-btn ghost" onclick="document.getElementById(\'ds-tier-pop\').hidden=true">닫기</button></div>';
+  pop.hidden = false;
+  var r = btn.getBoundingClientRect(), w = Math.min(280, window.innerWidth - 16);
+  pop.style.width = w + 'px';
+  pop.style.left = Math.max(8, Math.min(window.innerWidth - w - 8, r.left - 40)) + 'px';
+  var top = r.bottom + 6; if (top + 150 > window.innerHeight) top = Math.max(8, r.top - 156);
+  pop.style.top = top + 'px';
+}
+function dsTierEditUi() {
+  var t = _dsVal('ds-te-tier'), high = DS_HIGH.indexOf(t) >= 0;
+  document.getElementById('ds-te-div').hidden = high; document.getElementById('ds-te-lp').hidden = !high;
+}
+function dsTierSave(puu, reset) {
+  var ov = _dsLoadLS('ov', {});
+  if (reset) delete ov[puu];
+  else { var t = _dsVal('ds-te-tier'); ov[puu] = DS_HIGH.indexOf(t) >= 0 ? { tier: t, div: 1, lp: Math.max(0, parseInt(_dsVal('ds-te-lp'), 10) || 0) } : { tier: t, div: +_dsVal('ds-te-div') || 4, lp: 0 }; }
+  _dsSaveLS('ov', ov);
+  document.getElementById('ds-tier-pop').hidden = true;
+  dsRender(); doomSimSearch(); dsRecRender();
 }
 
-function renderDoomSimTeams() {
-  ['a', 'b'].forEach(function(team) {
-    var grid = document.getElementById('doom-sim-team-' + team);
-    if (!grid) return;
-    var total = 0;
-    var missing = 0;
-    grid.querySelectorAll('.doom-lane-slot').forEach(function(slot) {
-      var lane = slot.dataset.lane;
-      var m = _doomSimTeams[team][lane];
-      if (m) {
-        var score = _doomSimGetScore(m, lane);
-        var numScore = (score && score !== '—') ? Number(score) : null;
-        if (numScore) total += numScore; else missing++;
-        var DOOM_TC = {CHALLENGER:'#F4C842',GRANDMASTER:'#E05050',MASTER:'#9B59B6',DIAMOND:'#4A90D9',EMERALD:'#27AE60',PLATINUM:'#1ABC9C',GOLD:'#F39C12',SILVER:'#95A5A6',BRONZE:'#CD6133',IRON:'#7F8C8D'};
-      var tierColor = DOOM_TC[(m.peakTier || m.tier || '').split(' ')[0]] || 'var(--muted)';
-        slot.classList.add('filled');
-        slot.innerHTML =
-          '<div style="flex:1;min-width:0;">' +
-          '<div style="display:flex;align-items:center;gap:4px;">' +
-          '<span style="font-size:10px;color:var(--muted);">' + DOOM_LANE_EMOJI[lane] + '</span>' +
-          '<span style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(m.name) + '</span>' +
-          '</div>' +
-          '<div style="display:flex;align-items:center;gap:6px;margin-top:2px;">' +
-          '<span style="font-size:10px;color:' + tierColor + ';font-weight:700;">' + esc(m.peakTier || m.tier || '?') + '</span>' +
-          '<span style="font-size:11px;font-weight:700;color:#A78BFA;">' + (numScore ? numScore + '점' : '?점') + '</span>' +
-          '</div>' +
-          '</div>' +
-          '<button onclick="doomSimRemove(&quot;' + team + '&quot;,&quot;' + lane + '&quot;)" style="padding:2px 5px;border-radius:2px;border:1px solid rgba(192,48,48,.3);background:transparent;color:#E05050;font-size:10px;cursor:pointer;flex-shrink:0;">✕</button>';
-      } else {
-        slot.classList.remove('filled');
-        slot.innerHTML = DOOM_LANE_EMOJI[lane];
-      }
-    });
-    var totalEl = document.getElementById('doom-sim-' + team + '-total');
-    if (totalEl) totalEl.textContent = '합산: ' + total + '점' + (missing > 0 ? ' (+미산정' + missing + '명)' : '');
+// ── 모바일 탭 / 옆 패널 탭 ──
+function dsMTab(v) {
+  var w = document.getElementById('ds-wrap'); w.dataset.mt = v;
+  document.querySelectorAll('.ds-mtabs button').forEach(function (b) { b.classList.toggle('on', b.dataset.mt === v); });
+  if (v === 'a' || v === 'b') _dsLastTeam = v;
+}
+function dsSTab(v) {
+  document.querySelectorAll('.ds-stabs button').forEach(function (b) { b.classList.toggle('on', b.dataset.st === v); });
+  document.getElementById('ds-pane-search').hidden = v !== 'search';
+  document.getElementById('ds-pane-rec').hidden = v !== 'rec';
+  if (v === 'rec') dsRecRender();
+}
+
+// ── 팀원 추천 ──
+function dsGoRecommend(team) { dsRecTeam(team); dsSTab('rec'); if (window.innerWidth <= 700) dsMTab('find'); else document.getElementById('ds-pane-rec').scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
+function dsRecTeam(team) { _dsRecTeam = team; _dsRecTeamUi(); dsRecRender(); _dsSaveState(); }
+function _dsRecTeamUi() { document.querySelectorAll('#ds-rec-team button').forEach(function (b) { b.classList.toggle('on', b.dataset.v === _dsRecTeam); }); }
+function dsSetPref(lane, v) { _dsPref[lane] = v; dsRecRender(); _dsSaveState(); }
+function dsRecRender() {
+  var team = _dsRecTeam, s = dsTeamSum(team), cap = parseInt(_dsVal('ds-cap'), 10);
+  var empty = DS_LANES.filter(function (l) { return !_dsTeams[team][l]; });
+  var cv = document.getElementById('ds-cap-view'); if (cv) cv.textContent = isFinite(cap) ? cap + '점' : '—';
+  var b = document.getElementById('ds-rec-budget');
+  if (b) b.innerHTML = '지금 ' + s.n + '명 <b>' + s.sum + '점</b>' + (isFinite(cap) ? ' · 남은 점수 <b class="' + (cap - s.sum < 0 ? 'neg' : '') + '">' + (cap - s.sum) + '점</b> (' + empty.length + '자리)' : ' · 위쪽에 이번 멸망전 한도를 넣어 주세요') + ' <span class="ds-dim">advantage 는 한도 계산에서 빼요</span>';
+  var box = document.getElementById('ds-rec-lanes'); if (!box) return;
+  if (!empty.length) { box.innerHTML = '<div class="ds-none">빈 자리가 없어요. 자리를 비우면 추천해 드려요.</div>'; return; }
+  box.innerHTML = empty.map(function (l) {
+    var v = _dsPref[l] || 0;
+    return '<div class="ds-pref"><span class="ds-ln">' + DS_LANE_KO[l] + '</span><div class="ds-seg">' +
+      [[1, '고티어 선호'], [0, '상관없음'], [-1, '저티어 선호']].map(function (o) { return '<button type="button" class="' + (v === o[0] ? 'on' : '') + '" onclick="dsSetPref(\'' + l + '\',' + o[0] + ')">' + o[1] + '</button>'; }).join('') + '</div></div>';
+  }).join('');
+}
+function _dsFilterBase(team) {
+  var games = parseInt(_dsVal('ds-f-games'), 10) || 0, days = parseInt(_dsVal('ds-f-days'), 10);
+  var tmin = _dsVal('ds-f-tmin'), tmax = _dsVal('ds-f-tmax'), wr = parseInt(_dsVal('ds-f-wr'), 10) || 0;
+  var nosub = document.getElementById('ds-f-nosub').checked, noOther = document.getElementById('ds-f-other').checked;
+  var used = {}; DS_LANES.forEach(function (l) { if (_dsTeams[team][l]) used[_dsTeams[team][l]] = 1; if (noOther && _dsTeams[team === 'a' ? 'b' : 'a'][l]) used[_dsTeams[team === 'a' ? 'b' : 'a'][l]] = 1; });
+  var now = Date.now() / 1000;
+  return allData.filter(function (m) {
+    if (!m.puu_id || used[m.puu_id]) return false;
+    if ((m.cnt || 0) < games) return false;
+    if (isFinite(days) && days > 0 && (!m.creation_timestamp || now - m.creation_timestamp > days * 86400)) return false;
+    if (wr && (!(m.cnt > 0) || (m.win || 0) / m.cnt * 100 < wr)) return false;
+    if (nosub && typeof _subMainOf !== 'undefined' && _subMainOf[m.puu_id]) return false;
+    var lv = dsTierLevel(dsTierOf(m));
+    if (tmin !== '' && lv < +tmin) return false;
+    if (tmax !== '' && lv > +tmax) return false;
+    return true;
   });
 }
+function _dsLaneOk(m, lane, mode, D) {
+  if (mode === 'any') return true;
+  var pos = DS_POS[normalizePos(m.most_position)] || '';
+  if (pos === lane) return true;
+  if (mode === 'main') return false;
+  // 해당 라인 경험: 내전 학습 데이터에서 그 라인 비중 15% 이상
+  var p = D ? RGLab.find(D, { name: m.riot_name, tag: m.riot_tag, puuid: m.puu_id }) : null;
+  var r = p && p.roles && p.roles[DS_ROLE[lane]];
+  return !!(r && r.role_share >= 0.15);
+}
+async function dsRecommend() {
+  var out = document.getElementById('ds-rec-out');
+  var team = _dsRecTeam, s = dsTeamSum(team), cap = parseInt(_dsVal('ds-cap'), 10);
+  var empty = DS_LANES.filter(function (l) { return !_dsTeams[team][l]; });
+  if (!empty.length) { out.innerHTML = '<div class="ds-none">빈 자리가 없어요.</div>'; return; }
+  if (!isFinite(cap)) { out.innerHTML = '<div class="ds-none">위쪽 \'이번 멸망전 한도\' 에 몇 점까지인지 넣어 주세요.</div>'; document.getElementById('ds-cap').focus(); return; }
+  var budget = cap - s.sum;
+  if (budget < 0) { out.innerHTML = '<div class="ds-none">이미 한도를 ' + (-budget) + '점 넘었어요.</div>'; return; }
+  out.innerHTML = '<div class="ds-none">찾는 중…</div>';
+  var mode = _dsVal('ds-f-lane');
+  var D = (mode === 'exp' && window.RGLab) ? await RGLab.load() : null;
+  var base = _dsFilterBase(team);
+  var K = { 1: 400, 2: 150, 3: 50, 4: 22, 5: 12 }[empty.length] || 12;
+  var lanes = empty.map(function (l) {
+    var pref = _dsPref[l] || 0;
+    var c = base.filter(function (m) { return _dsLaneOk(m, l, mode, D); }).map(function (m) { return { m: m, s: dsScore(m, l) }; }).filter(function (x) { return x.s != null && x.s <= budget; });
+    var mean = c.reduce(function (a, x) { return a + x.s; }, 0) / (c.length || 1);
+    var sd = Math.sqrt(c.reduce(function (a, x) { return a + (x.s - mean) * (x.s - mean); }, 0) / (c.length || 1)) || 1;
+    c.forEach(function (x) { x.v = pref * (x.s - mean) / sd; });
+    // 선호 방향으로 좋은 순 + 같은 값이면 내전 많이 한 순. '상관없음' 은 고르게 섞이도록 점수 구간별로 고름
+    if (pref) c.sort(function (a, b) { return b.v - a.v || (b.m.cnt || 0) - (a.m.cnt || 0); });
+    else c.sort(function (a, b) { return (b.m.cnt || 0) - (a.m.cnt || 0); });
+    var pick = c.slice(0, K);
+    if (!pref && c.length > K) { // 점수 낮은 사람도 들어가게 (상한 맞추기용)
+      var lo = c.slice().sort(function (a, b) { return a.s - b.s || (b.m.cnt || 0) - (a.m.cnt || 0); }).slice(0, Math.ceil(K / 3));
+      lo.forEach(function (x) { if (pick.indexOf(x) < 0) pick.push(x); });
+    }
+    return { lane: l, pref: pref, c: pick, min: pick.reduce(function (a, x) { return Math.min(a, x.s); }, Infinity), total: c.length };
+  });
+  var noCand = lanes.filter(function (x) { return !x.c.length; });
+  if (noCand.length) { out.innerHTML = '<div class="ds-none">' + noCand.map(function (x) { return DS_LANE_KO[x.lane]; }).join(', ') + ' 자리에 조건에 맞는 사람이 없어요. 필터를 풀어 보세요.</div>'; return; }
+  lanes.sort(function (a, b) { return a.c.length - b.c.length; });
+  var minRest = []; for (var i = lanes.length - 1, acc = 0; i >= 0; i--) { minRest[i] = acc; acc += lanes[i].min; }
+  var best = [], LIMIT = 15, steps = 0;
+  function push(sel, sum, obj, games) {
+    var key = obj * 1000 + sum + games / 1e5;
+    var KEEP = 300;
+    if (best.length >= KEEP && key <= best[best.length - 1].key) return;
+    var lo = 0, hi = best.length;
+    while (lo < hi) { var mid = (lo + hi) >> 1; if (best[mid].key >= key) lo = mid + 1; else hi = mid; }
+    best.splice(lo, 0, { sel: sel.slice(), sum: sum, obj: obj, key: key });
+    if (best.length > KEEP) best.pop();
+  }
+  (function dfs(i, sel, sum, obj, games, usedP) {
+    if (++steps > 400000) return;
+    if (i === lanes.length) { push(sel, sum, obj, games); return; }
+    var L = lanes[i];
+    for (var k = 0; k < L.c.length; k++) {
+      var x = L.c[k];
+      if (usedP[x.m.puu_id]) continue;
+      if (sum + x.s + minRest[i] > budget) continue;
+      usedP[x.m.puu_id] = 1; sel.push({ lane: L.lane, m: x.m, s: x.s });
+      dfs(i + 1, sel, sum + x.s, obj + x.v, games + (x.m.cnt || 0), usedP);
+      sel.pop(); delete usedP[x.m.puu_id];
+    }
+  })(0, [], 0, 0, 0, {});
+  // 비슷한 조합이 줄줄이 나오지 않게: 한 사람은 최대 3개 조합까지만 (모자라면 나머지로 채움)
+  var res = [], seenCnt = {}, rest = [];
+  best.forEach(function (r) {
+    if (res.length >= LIMIT) return;
+    if (r.sel.some(function (x) { return (seenCnt[x.m.puu_id] || 0) >= 3; })) { rest.push(r); return; }
+    res.push(r); r.sel.forEach(function (x) { seenCnt[x.m.puu_id] = (seenCnt[x.m.puu_id] || 0) + 1; });
+  });
+  rest.forEach(function (r) { if (res.length < LIMIT) res.push(r); });
+  window._dsRecRes = res;
+  if (!res.length) { out.innerHTML = '<div class="ds-none">남은 ' + budget + '점 안에서 만들 수 있는 조합이 없어요. 한도를 올리거나 필터를 풀어 보세요.</div>'; return; }
+  out.innerHTML = '<div class="ds-rec-cnt">조합 ' + res.length + '개 · 남은 ' + budget + '점 기준</div>' + res.map(function (r, idx) {
+    var rows = DS_LANES.filter(function (l) { return r.sel.some(function (x) { return x.lane === l; }); }).map(function (l) {
+      var x = r.sel.find(function (y) { return y.lane === l; }), t = dsTierOf(x.m);
+      return '<div class="ds-rc-r"><span class="ds-ln">' + DS_LANE_KO[l] + '</span><span class="ds-nm"><b>' + esc(x.m.riot_name || '') + '</b><i>#' + esc(x.m.riot_tag || '') + '</i></span><span class="ds-t" style="color:' + (DS_TC[t.tier] || '#8A9597') + '">' + esc(dsTierShort(t)) + '</span><span class="ds-meta">' + (x.m.cnt || 0) + '판</span><span class="ds-sc sm">' + x.s + '</span></div>';
+    }).join('');
+    return '<div class="ds-rc"><div class="ds-rc-h"><b>#' + (idx + 1) + '</b><span>추가 ' + r.sum + '점 → 합계 <b>' + (s.sum + r.sum) + '</b> / ' + cap + '</span><button type="button" class="ds-btn primary sm" onclick="dsApplyRec(' + idx + ')">적용</button></div>' + rows + '</div>';
+  }).join('');
+}
+function dsApplyRec(i) {
+  var r = (window._dsRecRes || [])[i]; if (!r) return;
+  r.sel.forEach(function (x) { ['a', 'b'].forEach(function (t) { DS_LANES.forEach(function (l) { if (_dsTeams[t][l] === x.m.puu_id) delete _dsTeams[t][l]; }); }); _dsTeams[_dsRecTeam][x.lane] = x.m.puu_id; });
+  _dsSel = null; dsRender(); doomSimSearch(); dsRecRender(); _dsSaveState();
+  if (window.innerWidth <= 700) dsMTab(_dsRecTeam);
+}
 
-function doomSimRemove(team, lane) {
-  delete _doomSimTeams[team][lane];
-  renderDoomSimTeams();
+// ── AI 분석 (권한 받은 디스코드 계정만) ──
+async function dsCheckAi() {
+  _dsAi = { checked: true, allowed: false, reason: '' };
+  if (!(typeof _discordUser !== 'undefined' && _discordUser && _discordUser.id)) { _dsAi.reason = 'login'; return _dsAi; }
+  try {
+    var r = await fetch(WORKER_URL + '/doom-ai-access', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'check', cid: COMMUNITY_ID, discordId: _discordUser.id }) });
+    var j = await r.json();
+    _dsAi.allowed = !!(j && j.allowed); if (!_dsAi.allowed) _dsAi.reason = 'perm';
+  } catch (e) { _dsAi.reason = 'err'; }
+  return _dsAi;
+}
+// 라인별: 멸망전 점수 → 내전 전력 점수 직선 (같은 점수 평균 선수 기준)
+var _dsFit = null;
+function _dsFitLines(D) {
+  var key = _dsTableSrc + '|' + (D.model && D.model.version);
+  if (_dsFit && _dsFit.key === key) return _dsFit;
+  var fit = { key: key };
+  DS_LANES.forEach(function (l) {
+    var xs = [], ys = [];
+    allData.forEach(function (m) {
+      var p = RGLab.find(D, { name: m.riot_name, tag: m.riot_tag, puuid: m.puu_id });
+      if (!p || (p.custom_games || 0) < 10 || !p.roles || !p.roles[DS_ROLE[l]]) return;
+      var d = dsScore(m, l); if (d == null) return;
+      xs.push(d); ys.push(p.roles[DS_ROLE[l]].score);
+    });
+    var n = xs.length, mx = xs.reduce(function (a, b) { return a + b; }, 0) / (n || 1), my = ys.reduce(function (a, b) { return a + b; }, 0) / (n || 1);
+    var sxy = 0, sxx = 0; for (var i = 0; i < n; i++) { sxy += (xs[i] - mx) * (ys[i] - my); sxx += (xs[i] - mx) * (xs[i] - mx); }
+    var b = sxx ? sxy / sxx : 0;
+    fit[l] = { a: my - b * mx, b: b, n: n };
+  });
+  _dsFit = fit; return fit;
+}
+async function dsRunAi(team) {
+  var out = document.getElementById('ds-ai-out');
+  out.hidden = false;
+  if (!_dsAi.checked || _dsAi.reason === 'err') await dsCheckAi();
+  if (!_dsAi.allowed) {
+    out.innerHTML = '<div class="ds-ai-lock"><b>AI 분석은 권한이 있는 계정만 쓸 수 있어요.</b><span>' +
+      (_dsAi.reason === 'login' ? '먼저 오른쪽 위에서 디스코드로 로그인해 주세요.' : _dsAi.reason === 'err' ? '권한을 확인하지 못했어요. 잠시 후 다시 눌러 주세요.' : '마스터 관리자에게 권한을 요청해 주세요.') + '</span></div>';
+    out.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    return;
+  }
+  var members = DS_LANES.map(function (l) { var puu = _dsTeams[team][l]; return puu ? { lane: l, m: _dsM(puu) } : null; }).filter(Boolean);
+  if (!members.length) { out.innerHTML = '<div class="ds-ai-lock"><b>팀에 멤버를 먼저 올려 주세요.</b></div>'; return; }
+  out.innerHTML = '<div class="ds-none">AI 학습 데이터 불러오는 중…</div>';
+  var D = window.RGLab ? await RGLab.load() : null;
+  if (!D) { out.innerHTML = '<div class="ds-ai-lock"><b>AI 학습 데이터를 불러오지 못했어요.</b><span>잠시 후 다시 눌러 주세요.</span></div>'; return; }
+  var fit = _dsFitLines(D), M = D.model || {};
+  var rows = members.map(function (x) {
+    var role = DS_ROLE[x.lane], p = RGLab.find(D, { name: x.m.riot_name, tag: x.m.riot_tag, puuid: x.m.puu_id });
+    var d0 = dsScore(x.m, x.lane), pa = parseInt(_dsPAdv[x.m.puu_id], 10) || 0, d = d0 == null ? null : d0 + pa, s = p ? RGLab.score(p, role) : null, f = fit[x.lane];
+    var exp = d != null && f && f.n >= 15 ? f.a + f.b * d : null;
+    var r = p && p.roles ? p.roles[role] : null;
+    return { lane: x.lane, role: role, m: x.m, p: p, d: d, d0: d0, pa: pa, slope: f && f.n >= 15 ? f.b : null, s: s, res: s != null && exp != null ? s - exp : null, pct: s != null ? RGLab.pct(D, role, s) : null, share: r ? r.role_share : null, wr: r ? r.role_wr : null, parts: p ? RGLab.parts(D, p, role, 2) : null };
+  });
+  var hit = rows.filter(function (r) { return r.p; });
+  var sumS = hit.reduce(function (a, r) { return a + r.s; }, 0);
+  var n = M.players_per_team || 5;
+  var vsAvg = 1 / (1 + Math.exp(-sumS / n));
+  var eff = rows.filter(function (r) { return r.res != null; }).reduce(function (a, r) { return a + r.res; }, 0);
+  var ideal = Math.round(100 / (1 + Math.exp(-eff * 0.6)));
+  // 이번 멸망전 한도와 비교: 같은 점수 평균 선수 직선으로 '한도를 꽉 채운 평균 팀' 전력을 만들어 비교
+  var tot0 = dsTeamSum(team), cap = parseInt(_dsVal('ds-cap'), 10), lim = null;
+  if (isFinite(cap) && cap > 0 && rows.length === 5 && rows.every(function (r) { return r.d != null && fit[r.lane] && fit[r.lane].n >= 15; }) && tot0.sum > 0) {
+    var expAt = function (scale) { return rows.reduce(function (a, r) { var f = fit[r.lane]; return a + f.a + f.b * r.d * scale; }, 0); };
+    var Sfull = expAt(cap / tot0.sum), Sown = expAt(1);
+    var S = rows.reduce(function (a, r) { return a + (r.s != null ? r.s : (fit[r.lane].a + fit[r.lane].b * r.d)); }, 0);
+    var sgm = function (x) { return 1 / (1 + Math.exp(-x / n)); };
+    lim = { cap: cap, used: tot0.sum, left: cap - tot0.sum,
+      lossPct: Math.round((0.5 - sgm(Sown - Sfull)) * 1000) / 10,   // 남긴 점수만큼 평균적으로 불리한 정도 (%p)
+      vsFull: Math.round(sgm(S - Sfull) * 100) };                   // 한도를 꽉 채운 평균 팀 상대 승률
+  }
+  // 상대 팀과
+  var other = team === 'a' ? 'b' : 'a', oppRows = [];
+  DS_LANES.forEach(function (l) { var puu = _dsTeams[other][l]; if (puu) { var mm = _dsM(puu); oppRows.push({ p: RGLab.find(D, { name: mm.riot_name, tag: mm.riot_tag, puuid: mm.puu_id }), role: DS_ROLE[l] }); } });
+  var vsOpp = oppRows.length >= 3 ? RGLab.teamProb(D, rows.map(function (r) { return { p: r.p, role: r.role }; }), oppRows, null).pA : null;
+  // 궁합
+  var chem = [];
+  hit.forEach(function (r) { (r.p.duo || []).forEach(function (d) { var o = hit.find(function (q) { return q.p.key === d[0]; }); if (o && r.p.key < o.p.key) chem.push({ a: r.m.riot_name, b: o.m.riot_name, g: d[1], w: d[2] }); }); });
+  chem.sort(function (a, b) { return Math.abs(b.w / b.g - .5) - Math.abs(a.w / a.g - .5); });
+  // 문장
+  var lines = [];
+  var tot = dsTeamSum(team), adv = parseInt(_dsVal('ds-adv-' + team), 10) || 0;
+  lines.push('합계 ' + tot.sum + '점' + (adv ? ' (advantage ' + (adv > 0 ? '+' : '') + adv + ' → ' + (tot.sum + adv) + '점)' : '') + ' 팀이에요. 같은 점수로 만든 평균 팀보다 ' + (eff > 0.25 ? '<b class="up">강한 편</b>' : eff < -0.25 ? '<b class="down">약한 편</b>' : '<b>비슷한 수준</b>') + '이에요 (점수 대비 전력 ' + (eff >= 0 ? '+' : '') + eff.toFixed(2) + ').');
+  var rs = rows.filter(function (r) { return r.res != null; }).sort(function (a, b) { return b.res - a.res; });
+  if (rs.length) {
+    var top = rs[0], low = rs[rs.length - 1];
+    if (top.res > 0.1) lines.push('가성비가 가장 좋은 자리는 <b>' + DS_LANE_KO[top.lane] + ' ' + esc(top.m.riot_name) + '</b>예요. 멸망전 점수 ' + top.d + '점에 비해 내전 전력이 높아요.');
+    if (low.res < -0.1 && low !== top) lines.push('<b>' + DS_LANE_KO[low.lane] + ' ' + esc(low.m.riot_name) + '</b>은(는) 점수에 비해 내전 전력이 낮은 편이에요.');
+  }
+  // 개인 adv: 점수가 낮아진 만큼 같은 점수대 평균보다 더 좋은 매물
+  rows.forEach(function (r) {
+    if (!r.pa || r.d0 == null) return;
+    var gain = r.slope != null ? -r.pa * r.slope : null; // 점수 1점당 평균 전력 차이 × 바뀐 점수
+    lines.push('<b>' + esc(r.m.riot_name) + '</b>은(는) 개인 adv ' + (r.pa > 0 ? '+' : '') + r.pa + '(으)로 점수가 ' + r.d0 + '→' + r.d + '점이 됐어요. ' +
+      (gain != null ? (r.pa < 0 ? '같은 실력을 ' + (-r.pa) + '점 싸게 데려온 셈이라 가성비가 <b class="' + (gain >= 0 ? 'up' : 'down') + '">' + (gain >= 0 ? '+' : '') + gain.toFixed(2) + '</b> 바뀌었어요' : '점수가 올라간 만큼 가성비가 <b class="' + (gain >= 0 ? 'up' : 'down') + '">' + (gain >= 0 ? '+' : '') + gain.toFixed(2) + '</b> 바뀌었어요') + (r.res != null ? ' (지금 가성비 ' + (r.res >= 0 ? '+' : '') + r.res.toFixed(2) + ').' : '.') : ''));
+  });
+  rows.forEach(function (r) { if (r.share != null && r.share < 0.15) lines.push('<b>' + esc(r.m.riot_name) + '</b>은(는) 내전에서 ' + DS_LANE_KO[r.lane] + '을(를) 거의 안 했어요 (비중 ' + Math.round(r.share * 100) + '%).'); });
+  var noData = rows.filter(function (r) { return !r.p; });
+  if (noData.length) lines.push(noData.map(function (r) { return esc(r.m.riot_name); }).join(', ') + '은(는) 학습 데이터가 없어 평균 선수로 계산했어요.');
+  if (chem.length) { var c0 = chem[0], w0 = Math.round(c0.w / c0.g * 100); lines.push('<b>' + esc(c0.a) + ' + ' + esc(c0.b) + '</b> 조합은 같은 팀으로 ' + c0.g + '판 승률 ' + w0 + '%예요' + (w0 >= 60 ? ' — 호흡이 좋아요.' : w0 < 45 ? ' — 결과가 좋지 않았어요.' : '.')); }
+  // 교체 제안: 점수 대비 전력이 가장 낮은 자리 → 점수가 같거나 낮으면서 더 강한 사람
+  var swap = '';
+  if (rs.length && rs[rs.length - 1].res != null) {
+    var w = rs[rs.length - 1], cand = null;
+    var usedP = {}; ['a', 'b'].forEach(function (t) { DS_LANES.forEach(function (l) { if (_dsTeams[t][l]) usedP[_dsTeams[t][l]] = 1; }); });
+    allData.forEach(function (m) {
+      if (usedP[m.puu_id] || (m.cnt || 0) < 10) return;
+      var d = dsScore(m, w.lane); if (d == null || d > w.d) return;
+      var p = RGLab.find(D, { name: m.riot_name, tag: m.riot_tag, puuid: m.puu_id }); if (!p || !p.roles || !p.roles[w.role] || p.roles[w.role].role_share < 0.2) return;
+      var s = p.roles[w.role].score; if (s <= (w.s || 0) + 0.15) return;
+      if (!cand || s - (d - w.d) * 0.01 > cand.s) cand = { m: m, d: d, s: s };
+    });
+    if (cand) swap = '<b>' + DS_LANE_KO[w.lane] + '</b> 자리를 <b>' + esc(cand.m.riot_name) + '</b>(으)로 바꾸면 점수는 ' + (cand.d === w.d ? '같고' : (w.d - cand.d) + '점 줄고') + ' 내전 전력은 +' + (cand.s - (w.s || 0)).toFixed(2) + ' 올라가요.';
+  }
+  if (swap) lines.push(swap);
+  if (lim) {
+    if (lim.left > 0) lines.splice(1, 0, '이번 한도 ' + lim.cap + '점 중 ' + lim.used + '점을 써서 <b>' + lim.left + '점이 남았어요</b>. 남긴 점수만큼 한도를 꽉 채운 같은 구성의 평균 팀보다 약 <b class="down">' + Math.abs(lim.lossPct).toFixed(1) + '%p</b> 불리해요. 실제 선수들 전력까지 넣으면 <b>한도를 꽉 채운 평균 팀 상대 승률은 ' + lim.vsFull + '%</b>예요.');
+    else if (lim.left === 0) lines.splice(1, 0, '이번 한도 ' + lim.cap + '점을 딱 맞게 다 썼어요. 한도를 꽉 채운 평균 팀 상대 승률은 <b>' + lim.vsFull + '%</b>예요.');
+    else lines.splice(1, 0, '<b class="down">한도 ' + lim.cap + '점을 ' + (-lim.left) + '점 넘었어요.</b> 한도에 맞추려면 점수를 줄여야 해요 (한도 팀 대비 약 ' + Math.abs(lim.lossPct).toFixed(1) + '%p 유리한 상태로 계산됨).');
+  } else if (!isFinite(cap)) lines.push('<span class="ds-dim">위쪽에 이번 멸망전 한도를 넣으면 한도 대비 얼마나 손해인지도 계산해 드려요.</span>');
+  else if (rows.length < 5) lines.push('<span class="ds-dim">한도 대비 계산은 5자리가 다 찼을 때 해요.</span>');
+  if (vsOpp != null) lines.push('지금 올라간 상대 팀 상대 예상 승률은 <b>' + Math.round(vsOpp * 100) + '%</b>예요' + (oppRows.length < 5 ? ' (상대 팀 ' + oppRows.length + '명 기준)' : '') + '.');
+  var hold = M.metrics && M.metrics.holdout_linear;
+  out.innerHTML =
+    '<div class="ds-ai-h"><b>AI 분석 · ' + (team === 'a' ? '팀 A' : '팀 B') + '</b><span>내전 ' + (M.games || 0).toLocaleString() + '판 학습' + (hold ? ' · 검증 정확도 ' + Math.round(hold.acc * 100) + '%' : '') + '</span><button type="button" class="ds-x" onclick="document.getElementById(\'ds-ai-out\').hidden=true">닫기</button></div>' +
+    '<div class="ds-ai-kpi">' +
+      '<div><b>' + ideal + '</b><span>이상적인 팀 지수</span><small>같은 점수 평균 팀 = 50</small></div>' +
+      (lim ? '<div><b>' + lim.vsFull + '%</b><span>한도(' + lim.cap + '점) 꽉 채운 팀 상대</span><small>' + (lim.left > 0 ? lim.left + '점 남김 · 약 -' + Math.abs(lim.lossPct).toFixed(1) + '%p' : lim.left === 0 ? '한도 딱 맞음' : (-lim.left) + '점 초과') + '</small></div>'
+        : '<div><b>' + Math.round(vsAvg * 100) + '%</b><span>평균 팀 상대 승률</span><small>' + hit.length + '/' + rows.length + '명 학습 데이터</small></div>') +
+      '<div><b>' + (vsOpp != null ? Math.round(vsOpp * 100) + '%' : '—') + '</b><span>상대 팀 상대 승률</span><small>' + (vsOpp != null ? '진영 모름 기준' : '상대 팀 3명 이상 필요') + '</small></div>' +
+    '</div>' +
+    '<div class="ds-ai-lanes">' + rows.map(function (r) {
+      var res = r.res == null ? '<span class="ds-dim">—</span>' : '<span class="' + (r.res >= 0 ? 'up' : 'down') + '">' + (r.res >= 0 ? '+' : '') + r.res.toFixed(2) + '</span>';
+      var chips = r.parts ? r.parts.plus.map(function (x) { return '<em class="up">' + esc(x.label) + '</em>'; }).join('') + r.parts.minus.map(function (x) { return '<em class="down">' + esc(x.label) + '</em>'; }).join('') : '';
+      return '<div class="ds-ai-r"><span class="ds-ln">' + DS_LANE_KO[r.lane] + '</span><span class="ds-nm"><b>' + esc(r.m.riot_name || '') + '</b></span>' +
+        '<span class="ds-ai-c"><small>점수' + (r.pa ? ' (adv ' + (r.pa > 0 ? '+' : '') + r.pa + ')' : '') + '</small>' + (r.d == null ? '?' : r.d) + '</span>' +
+        '<span class="ds-ai-c"><small>전력</small>' + (r.pct != null ? '상위 ' + r.pct + '%' : '—') + '</span>' +
+        '<span class="ds-ai-c"><small>가성비</small>' + res + '</span>' +
+        '<span class="ds-ai-chips">' + (r.p ? chips + (r.share != null ? '<em>' + DS_LANE_KO[r.lane] + ' 비중 ' + Math.round(r.share * 100) + '%</em>' : '') : '<em>학습 데이터 없음</em>') + '</span></div>';
+    }).join('') + '</div>' +
+    '<ul class="ds-ai-txt">' + lines.map(function (t) { return '<li>' + t + '</li>'; }).join('') + '</ul>' +
+    '<div class="ds-dim ds-ai-foot">가성비 = 그 라인에서 같은 멸망전 점수인 사람들의 평균 내전 전력과 비교한 값이에요.</div>';
+  if (window.innerWidth <= 700) dsMTab(team);
+  out.scrollIntoView({ block: 'start', behavior: 'smooth' });
+}
+
+// ── AI 권한 관리 (마스터) ──
+async function dsOpenAiPerm() {
+  if (_statsAdminRole !== 'master') return;
+  document.getElementById('ds-perm-modal').hidden = false;
+  document.getElementById('ds-perm-q').value = ''; document.getElementById('ds-perm-found').innerHTML = '';
+  await dsPermLoad();
+}
+async function dsPermLoad() {
+  var el = document.getElementById('ds-perm-list'); el.innerHTML = '<div class="ds-none">불러오는 중…</div>';
+  try {
+    var r = await fetch(WORKER_URL + '/doom-ai-access', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'list', cid: COMMUNITY_ID, token: _statsAdminToken }) });
+    var j = await r.json();
+    if (!j.ok) { el.innerHTML = '<div class="ds-none">' + esc(j.error || '불러오지 못했어요') + '</div>'; return; }
+    el.innerHTML = j.list.length ? j.list.map(function (x) {
+      return '<div class="ds-row"><span class="ds-nm"><b>' + esc(x.riotName || '?') + '</b><i>#' + esc(x.riotTag || '') + '</i></span><span class="ds-meta">' + esc(x.discordName || x.discordId) + '</span><button type="button" class="ds-btn ghost sm" onclick="dsPermRemove(\'' + esc(x.discordId) + '\')">빼기</button></div>';
+    }).join('') : '<div class="ds-none">아직 없어요</div>';
+  } catch (e) { el.innerHTML = '<div class="ds-none">불러오지 못했어요</div>'; }
+}
+function dsPermSearch() {
+  var q = (_dsVal('ds-perm-q') || '').toLowerCase().trim(), el = document.getElementById('ds-perm-found');
+  if (!q) { el.innerHTML = ''; return; }
+  el.innerHTML = allData.filter(function (m) { return ((m.riot_name || '') + '#' + (m.riot_tag || '')).toLowerCase().indexOf(q) >= 0; }).slice(0, 8).map(function (m) {
+    return '<div class="ds-row"><span class="ds-nm"><b>' + esc(m.riot_name || '') + '</b><i>#' + esc(m.riot_tag || '') + '</i></span><button type="button" class="ds-btn primary sm" onclick="dsPermAdd(\'' + m.puu_id + '\')">권한 주기</button></div>';
+  }).join('') || '<div class="ds-none">검색 결과 없음</div>';
+}
+async function dsPermAdd(puu) {
+  var m = _dsM(puu); if (!m) return;
+  try {
+    var r = await fetch(WORKER_URL + '/doom-ai-access', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'add', cid: COMMUNITY_ID, token: _statsAdminToken, puuId: puu, riotName: m.riot_name, riotTag: m.riot_tag }) });
+    var j = await r.json();
+    if (!j.ok) { alert(j.error || '권한을 주지 못했어요'); return; }
+    document.getElementById('ds-perm-q').value = ''; document.getElementById('ds-perm-found').innerHTML = '';
+    if (_discordUser && j.discordId === _discordUser.id) _dsAi.checked = false;
+    dsPermLoad();
+  } catch (e) { alert('권한을 주지 못했어요'); }
+}
+async function dsPermRemove(did) {
+  if (!confirm('이 계정의 AI 분석 권한을 뺄까요?')) return;
+  try { await fetch(WORKER_URL + '/doom-ai-access', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'remove', cid: COMMUNITY_ID, token: _statsAdminToken, discordId: did }) }); } catch (e) {}
+  if (_discordUser && did === _discordUser.id) _dsAi.checked = false;
+  dsPermLoad();
 }
 
 
