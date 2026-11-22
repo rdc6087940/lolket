@@ -3252,6 +3252,115 @@ body:has(#screen-0.active){background-color:var(--rg-bg)!important;background-im
 #screen-3-normal.aram-mode .mini-card .mini-tier, #screen-3-normal.aram-mode .add-team-btn,
 #screen-3-normal.aram-mode .team-header button[onclick^="openSetCaptainModal"] { display:none !important; }
 #screen-3-normal.aram-mode .aram-only { display:inline-block !important; }
+
+/* ── 내전 목록 · AI 정답률 ── */
+.ai-acc-toggle{display:inline-flex;align-items:center;gap:7px;padding:6px 12px;border-radius:4px;border:1px solid var(--border-subtle);background:transparent;color:var(--text-muted);font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;letter-spacing:.5px;cursor:pointer;transition:background .15s,border-color .15s,color .15s;white-space:nowrap}
+.ai-acc-toggle:hover{border-color:rgba(185,126,234,.5);color:#C9A0F0}
+.ai-acc-sw{position:relative;width:26px;height:14px;border-radius:7px;background:rgba(255,255,255,.12);transition:background .2s;flex-shrink:0}
+.ai-acc-sw i{position:absolute;top:2px;left:2px;width:10px;height:10px;border-radius:50%;background:#9aa3b2;transition:transform .2s,background .2s}
+.ai-acc-toggle.on{border-color:rgba(185,126,234,.55);background:rgba(157,72,224,.1);color:#C9A0F0}
+.ai-acc-toggle.on .ai-acc-sw{background:rgba(157,72,224,.55)}
+.ai-acc-toggle.on .ai-acc-sw i{transform:translateX(12px);background:#fff}
+.ai-acc-sum{font-weight:800;color:#E3CCF7}
+/* 위쪽 버튼 줄 안: 다른 버튼과 같은 높이로, 폭은 최소 (스위치 + 'AI') */
+#screen-0 .s0-btn-group > button.ai-acc-toggle{padding:0 10px!important;gap:5px;font-weight:700!important;color:var(--rg-t2)!important}
+#screen-0 .s0-btn-group > button.ai-acc-toggle.on{background:rgba(157,72,224,.16)!important;color:#D7B5F5!important}
+#screen-0 .s0-btn-group > button.ai-acc-toggle.on:hover{background:rgba(157,72,224,.24)!important}
+/* 검색칸이 남는 폭에 맞춰 줄어들게 (180~260px) → 버튼이 늘어도 한 줄 유지 */
+@media(min-width:769px){.s0-search{flex:1 1 180px;width:auto;max-width:260px;min-width:0}}
+.ai-acc-row{display:flex;align-items:center;flex-wrap:wrap;gap:5px;margin-top:.55rem;padding-top:.5rem;border-top:1px dashed rgba(157,72,224,.25);font-family:'IBM Plex Sans KR',sans-serif;font-size:10.5px}
+.ai-acc-lbl{font-size:9px;font-weight:800;letter-spacing:1px;color:#B97EEA;background:rgba(157,72,224,.12);border:1px solid rgba(157,72,224,.35);border-radius:3px;padding:0 5px;line-height:16px}
+.ai-acc-dim{color:var(--text-muted)}
+.ai-acc-g{padding:1px 7px;border-radius:999px;font-weight:700;white-space:nowrap;border:1px solid}
+.ai-acc-g.ok{color:#2BD9C5;border-color:rgba(43,217,197,.4);background:rgba(43,217,197,.08)}
+.ai-acc-g.no{color:#F06A7E;border-color:rgba(232,64,87,.4);background:rgba(232,64,87,.08)}
+.ai-acc-g.skip{color:var(--text-muted);border-color:var(--border-subtle)}
+.ai-acc-tot{margin-left:auto;font-weight:800;color:var(--text-white);white-space:nowrap}
+.ai-acc-tot i{font-style:normal;font-weight:600;color:var(--text-muted)}
+.ai-acc-tot.good{color:#2BD9C5}.ai-acc-tot.bad{color:#F06A7E}
+.ai-acc-teams{padding:2px 9px;border-radius:999px;border:1px solid rgba(157,72,224,.4);background:rgba(157,72,224,.08);color:#C9A0F0;font-family:inherit;font-size:10.5px;font-weight:700;cursor:help}
+.ai-acc-teams i{font-style:normal;color:var(--text-muted);font-weight:600;margin-left:2px}
+#ai-acc-pop{position:fixed;z-index:9999;display:none;min-width:240px;max-width:min(380px,calc(100vw - 16px));background:#141922;border:1px solid rgba(157,72,224,.45);border-radius:8px;box-shadow:0 10px 30px rgba(0,0,0,.5);padding:.55rem .65rem;font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;color:var(--text-white);pointer-events:none}
+#ai-acc-pop .ai-pop-h{font-size:10px;font-weight:800;color:#B97EEA;letter-spacing:1px;margin-bottom:.35rem}
+#ai-acc-pop .ai-pop-r{display:grid;grid-template-columns:1fr 34px 14px 34px 1fr 34px;align-items:center;gap:4px;padding:3px 0;border-top:1px solid rgba(255,255,255,.05)}
+#ai-acc-pop .ai-pop-r span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text-muted)}
+#ai-acc-pop .ai-pop-r span:nth-of-type(2){text-align:right}
+#ai-acc-pop .ai-pop-r span.win{color:var(--text-white);font-weight:800}
+#ai-acc-pop .ai-pop-r b{text-align:center;font-variant-numeric:tabular-nums}
+#ai-acc-pop .ai-pop-r i{font-style:normal;color:var(--text-muted);font-size:9px;text-align:center}
+#ai-acc-pop .ai-pop-r em{font-style:normal;font-weight:800;text-align:right;font-size:10px}
+#ai-acc-pop em.ok{color:#2BD9C5}#ai-acc-pop em.no{color:#F06A7E}#ai-acc-pop em.skip{color:var(--text-muted)}
+#ai-acc-pop .ai-pop-f{margin-top:.35rem;font-size:9px;color:var(--text-muted)}
+
+/* ══ 모바일: 팝업(모달) 공통 — 화면보다 길면 팝업 안에서 스크롤, 아래 버튼(취소·생성 등)은 항상 보이게 ══ */
+@media (max-width:768px){
+  .modal-overlay{padding:.5rem!important;align-items:center!important}
+  .modal-overlay > .modal{max-height:calc(100vh - 1rem)!important;max-height:calc(100dvh - 1rem)!important;overflow-y:auto!important;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:18px!important}
+  .modal-overlay > .modal > .modal-actions{position:sticky;bottom:-18px;z-index:5;margin:14px -18px -18px!important;padding:10px 18px calc(12px + env(safe-area-inset-bottom))!important;background:var(--rg-s1,#11151d);border-top:1px solid var(--rg-line,rgba(255,255,255,.06));flex-wrap:wrap}
+  .modal-overlay > .modal > .modal-actions > button{min-height:44px}
+  /* 팝업이 열려 있으면 오른쪽 아래 떠 있는 버튼(메뉴·채팅)이 팝업 버튼을 가리지 않게 숨김 */
+  body:has(.modal-overlay[style*="display: flex"]) #fab-trigger,body:has(.modal-overlay[style*="display:flex"]) #fab-trigger,
+  body:has(.modal-overlay[style*="display: flex"]) #fab-menu,body:has(.modal-overlay[style*="display:flex"]) #fab-menu,
+  body:has(.modal-overlay[style*="display: flex"]) #chat-float-btn,body:has(.modal-overlay[style*="display:flex"]) #chat-float-btn{visibility:hidden!important;pointer-events:none!important}
+  /* iOS: 입력칸 글자가 16px 미만이면 눌렀을 때 화면이 확대됨 */
+  .modal-overlay input:not([type=checkbox]):not([type=radio]):not([type=range]),.modal-overlay select,.modal-overlay textarea{font-size:16px!important}
+}
+
+/* 1단계 아래 버튼 묶음: PC 에서는 묶음이 없는 것처럼 (기존 배치 그대로) */
+.next-tools{display:contents}
+/* ══ 모바일: 내전 진행 화면 ══ */
+@media (max-width:768px){
+  /* 1단계 아래 버튼 줄: 윗줄 [조건 · 다음 단계], 아랫줄 나머지 버튼 (옆으로 밀어서 보기, 서로 겹치지 않음) */
+  .next-wrap{display:grid!important;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"cond next" "tools tools";align-items:center!important;gap:6px 8px!important;padding:.5rem .75rem calc(.5rem + env(safe-area-inset-bottom))!important;overflow:visible!important}
+  .next-wrap > .next-condition{grid-area:cond;display:flex!important;flex-direction:column!important;gap:1px!important;min-width:0}
+  .next-wrap > .next-condition span{font-size:10.5px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .next-wrap > #btn-next{grid-area:next;min-height:40px;white-space:nowrap!important;position:static!important;box-shadow:none!important;margin:0!important}
+  .next-wrap > .next-tools{grid-area:tools;display:flex!important;flex-wrap:nowrap!important;overflow-x:auto!important;gap:6px;min-width:0;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding-bottom:1px}
+  .next-wrap > .next-tools::-webkit-scrollbar{display:none}
+  .next-wrap > .next-tools > button{flex:0 0 auto!important;min-height:38px;white-space:nowrap!important;margin:0!important}
+  /* 3단계 위쪽 버튼 줄: [이전] [다음] 한 줄 + 도구 버튼은 아래 한 줄(옆으로 밀기) */
+  .builder-topbar-row{display:grid!important;grid-template-columns:auto 1fr auto;align-items:center!important;row-gap:6px!important}
+  .builder-topbar-row > :first-child{grid-row:1;grid-column:1}
+  .builder-topbar-row > :last-child{grid-row:1;grid-column:3;justify-self:end}
+  .builder-topbar-row > :not(:first-child):not(:last-child){grid-row:2;grid-column:1 / -1;display:flex!important;justify-content:flex-start!important;flex-wrap:nowrap!important;overflow-x:auto!important;gap:5px!important;padding-bottom:2px;scrollbar-width:none;-webkit-overflow-scrolling:touch;-webkit-mask-image:linear-gradient(90deg,#000 88%,transparent);mask-image:linear-gradient(90deg,#000 88%,transparent)}
+  .builder-topbar-row > :not(:first-child):not(:last-child)::-webkit-scrollbar{display:none}
+  .builder-topbar-row > :not(:first-child):not(:last-child) > *{flex:0 0 auto!important;white-space:nowrap}
+  .builder-topbar-row button{min-height:36px}
+  /* 1단계 멤버 목록: 작은 칸 안에서 따로 스크롤되지 않고 페이지와 같이 내려가게 + 카드 여백 줄임 */
+  #screen-1 .panel:has(> .member-grid){height:auto!important;overflow:visible!important}
+  #screen-1 .member-grid{max-height:none!important;overflow:visible!important;grid-template-columns:1fr!important;grid-auto-rows:auto!important;padding:.6rem!important;gap:6px!important}
+  #screen-1 .member-card{min-height:0!important;height:auto!important;padding:.5rem .6rem!important}
+  /* 4·5단계 위쪽 버튼 줄: 글자가 두 줄로 찌그러지지 않게 한 줄 + 옆으로 밀기 */
+  .results-topbar{flex-direction:column!important;align-items:stretch!important;min-width:0;max-width:100%}
+  .results-topbar > div:last-child{min-width:0;max-width:100%}
+  .results-topbar > div:last-child{display:flex!important;flex-wrap:nowrap!important;overflow-x:auto!important;gap:6px!important;padding-bottom:2px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .results-topbar > div:last-child::-webkit-scrollbar{display:none}
+  .results-topbar > div:last-child > *{flex:0 0 auto!important;white-space:nowrap!important;min-height:38px}
+  /* 내전 화면에서는 오른쪽 아래 떠 있는 메뉴·채팅 버튼을 아래 버튼 줄 위로 올림 */
+  /* (아래쪽엔 단계마다 다음·이전·낙찰 같은 주요 버튼이 있어서 화면 오른쪽 가운데쯤으로) */
+  /* 룽봇 초대·디스코드 참여 플로팅 버튼(메뉴)은 내전 단계에서 숨김 */
+  body:has(#btn-back.visible) #fab-trigger,body:has(#btn-back.visible) #fab-menu{display:none!important}
+  body:has(#btn-back.visible) #chat-float-btn{bottom:calc(38vh + 64px)!important;transform:scale(.82);transform-origin:right center}
+}
+/* 모바일 팀 배치: 카드를 누르면 아래에서 올라오는 '어디로 보낼까요' 창 */
+#mobile-move-sheet{position:fixed;left:0;right:0;bottom:0;z-index:9600;background:var(--rg-s1,#11151d);border-top:1px solid rgba(255,255,255,.08);border-radius:16px 16px 0 0;box-shadow:0 -16px 40px rgba(0,0,0,.55);padding:10px 14px calc(12px + env(safe-area-inset-bottom));max-height:70vh;max-height:70dvh;overflow-y:auto;transform:translateY(105%);transition:transform .22s ease;font-family:'IBM Plex Sans KR',sans-serif}
+#mobile-move-sheet.open{transform:none}
+#mobile-move-sheet .mms-grip{width:36px;height:4px;border-radius:2px;background:rgba(255,255,255,.18);margin:0 auto 10px}
+#mobile-move-sheet .mms-h{display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:13px;color:var(--text-muted,#8a93a3)}
+#mobile-move-sheet .mms-h b{color:var(--text-white,#e9ecf1);font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60%}
+#mobile-move-sheet .mms-x{margin-left:auto;min-width:44px;min-height:36px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:transparent;color:var(--text-muted,#8a93a3);font-size:13px;font-weight:700}
+#mobile-move-sheet .mms-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#mobile-move-sheet .mms-btn{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-height:52px;padding:8px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);color:var(--text-white,#e9ecf1);font-family:inherit;font-size:14px;font-weight:700;text-align:left}
+#mobile-move-sheet .mms-btn small{font-size:11px;font-weight:600;color:var(--text-muted,#8a93a3)}
+#mobile-move-sheet .mms-btn.full{opacity:.45}
+#mobile-move-sheet .mms-btn.here{border-color:rgba(43,217,197,.5);background:rgba(43,217,197,.08)}
+#mobile-move-sheet .mms-btn.pool{grid-column:1 / -1;flex-direction:row;align-items:center;justify-content:center;min-height:44px;font-size:13px;color:var(--text-muted,#a3acba)}
+#mobile-move-sheet .mms-team{grid-column:1 / -1;font-size:12px;font-weight:800;color:var(--gold,#C8AA6E);margin:6px 2px -2px}
+#mobile-move-sheet .mms-lanes{grid-column:1 / -1;display:grid;grid-template-columns:repeat(5,1fr);gap:5px}
+#mobile-move-sheet .mms-lane{min-height:54px;padding:5px 4px;border-radius:10px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);color:var(--text-white,#e9ecf1);font-family:inherit;font-size:11px;font-weight:800;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:0}
+#mobile-move-sheet .mms-lane small{font-size:9.5px;font-weight:600;color:var(--text-muted,#8a93a3);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#mobile-move-sheet .mms-lane.empty small{color:#2BD9C5}
+#mobile-move-sheet .mms-lane.here{border-color:rgba(43,217,197,.55);background:rgba(43,217,197,.1)}
 </style>
 </head>
 <body> <header class="header"> <div class="header-inner"> <div style="display:flex;align-items:center;gap:14px;"> <div class="logo" style="cursor:pointer;" onclick="goHome()"><div class="logo-diamond"></div><span class="logo-morph" id="logo-morph" role="img" aria-label="룽잉닷컴"><span class="lm-w" id="lm-a" aria-hidden="true">룽잉닷컴</span><span class="lm-w" id="lm-b" aria-hidden="true"></span></span><svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="lm-melt" x="-30%" y="-60%" width="160%" height="220%"><feColorMatrix in="SourceGraphic" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 255 -140"/></filter></svg></div><span id="app-version" onclick="isMaster && openVersionModal()" style="font-family:'IBM Plex Sans KR',sans-serif;font-size:9px;color:var(--text-muted);letter-spacing:1px;opacity:.7;margin-left:2px;transition:all .15s;">v1.1.005</span> <button class="btn-back" id="btn-back" onclick="goToList()" style="display:none;">← 목록</button> <div class="community-indicator" id="community-indicator" onclick="goToList()" title="커뮤니티 홈" style="cursor:pointer;"> <div class="community-indicator-dot"></div> <span id="community-indicator-name"></span> </div> </div> <div class="stage-indicator hidden" id="stage-indicator"> <div class="stage-pip" id="pip-1"><div class="stage-pip-dot"></div>1. 내전 대기</div> <div class="stage-pip" id="pip-2"><div class="stage-pip-dot"></div>2. 종류 선택</div> <div class="stage-pip" id="pip-3"><div class="stage-pip-dot"></div>3. 팀 짜기</div> <div class="stage-pip" id="pip-4"><div class="stage-pip-dot"></div>4. 대진표</div> <div class="stage-pip" id="pip-5"><div class="stage-pip-dot"></div>5. 결과</div> </div> <div class="header-actions"><button type="button" class="hdr-link" onclick="window.open('/guide','_blank')" title="룽잉닷컴 가이드 페이지"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5V5a2 2 0 0 1 2-2h13v16H6.5a2.5 2.5 0 0 0 0 5H19"/></svg><span>가이드</span></button><button type="button" class="hdr-icon" onclick="openGuide()" aria-label="이용 가이드" title="이용 가이드"><svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.2a2.6 2.6 0 0 1 5 .8c0 1.7-2.5 2.3-2.5 3.8"/><path d="M12 17.2h.01"/></svg></button><div class="hdr-divider" aria-hidden="true"></div><div class="hdr-account" id="hdr-account"><button type="button" class="hdr-account-btn" id="hdr-account-btn" onclick="toggleAccountMenu(event)" aria-haspopup="menu" aria-expanded="false" aria-controls="hdr-account-menu"><span class="hdr-login-text">로그인</span><span class="role-badge user" id="role-badge"><span class="role-dot"></span><span id="role-label">일반 유저</span></span><span class="hdr-msg-dot" id="hdr-msg-dot" aria-hidden="true"></span><svg class="hdr-chev" aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button><div class="hdr-menu" id="hdr-account-menu" role="menu" aria-label="계정 메뉴"><button type="button" role="menuitem" class="hdr-item" id="btn-admin-login" onclick="closeAccountMenu();openLoginModal()"><span class="hdr-item-text"><span class="hdr-item-title">관리자 로그인</span><span class="hdr-item-sub">커뮤니티 내전 생성·관리</span></span></button><button type="button" role="menuitem" class="hdr-item" id="btn-master-login" onclick="closeAccountMenu();openMasterLoginModal()"><span class="hdr-item-text"><span class="hdr-item-title">마스터 로그인</span><span class="hdr-item-sub">전체 커뮤니티 운영</span></span></button><button type="button" role="menuitem" class="hdr-item admin-only" id="btn-msg" onclick="closeAccountMenu();toggleMsgPanel()" style="display:none;"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg><span class="hdr-item-title">메시지</span><span id="msg-badge" style="display:none;">0</span></button><button type="button" role="menuitem" class="hdr-item admin-only" id="btn-blacklist" onclick="closeAccountMenu();openBlacklist()" style="display:none;"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg><span class="hdr-item-title">블랙리스트</span></button><div class="patch-toggle-wrap master-only hdr-toggle" id="patch-toggle-wrap" style="display:none;"><span class="patch-toggle-label" id="patch-toggle-label">패치중</span><label class="patch-toggle"><input type="checkbox" id="patch-toggle-input" onchange="onPatchToggle(this.checked)" aria-label="패치중 모드"><span class="patch-toggle-slider"></span></label></div><div class="hdr-sep admin-only" style="display:none;" aria-hidden="true"></div><button type="button" role="menuitem" class="btn-auth" id="btn-auth" onclick="openLoginModal()" style="display:none;">로그아웃</button></div></div></div>
@@ -3540,6 +3649,7 @@ body:has(#screen-0.active){background-color:var(--rg-bg)!important;background-im
         <button class="btn-secondary admin-only" id="btn-manage-cats-main" onclick="openManageCategories()" style="display:none;"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4l-7.2 7.2a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg><span>카테고리</span></button>
         <button class="btn-secondary admin-only" id="btn-manage-match-types" onclick="openMatchTypeManager()" style="display:none;"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13"/><path d="M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg><span>내전 종류</span></button>
         <button class="btn-secondary admin-only" id="btn-manage-hosts" onclick="openHostManager()" style="display:none;"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span>진행자</span></button>
+        <button type="button" id="btn-ai-acc" class="ai-acc-toggle" onclick="toggleAiAcc()" aria-pressed="false" title="AI 정답률 (꺼짐) — 5단계 결과가 저장된 내전에 AI 승률 예측과 정답 여부 표시" aria-label="AI 정답률"><span class="ai-acc-sw" aria-hidden="true"><i></i></span>AI</button>
         <button onclick="openDashboard()" style="padding:6px 12px;border-radius:4px;border:1px solid rgba(91,141,239,.4);background:rgba(91,141,239,.08);color:#5B8DEF;font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all .15s;"
           onmouseover="this.style.background='rgba(91,141,239,.16)';this.style.borderColor='rgba(91,141,239,.7)'"
           onmouseout="this.style.background='rgba(91,141,239,.08)';this.style.borderColor='rgba(91,141,239,.4)'" class="s0-dash-btn"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg><span>대시보드</span></button>
@@ -3637,8 +3747,8 @@ body:has(#screen-0.active){background-color:var(--rg-bg)!important;background-im
  </div> <div style="display:flex;align-items:center;gap:6px;"> <span style="font-size:10px;font-family:'IBM Plex Sans KR',sans-serif;font-weight:700;color:var(--text-muted);letter-spacing:1px;">자동 설정</span> <button id="auto-lane-toggle" onclick="toggleAutoLane()" style="width:40px;height:22px;border-radius:11px;border:none;cursor:pointer;transition:all .2s;background:#2D3748;position:relative;flex-shrink:0;"> <span id="auto-lane-dot" style="position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#718096;transition:all .2s;display:block;"></span> </button> </div> </div> <div class="panel-body search-section"> <div style="display:flex;align-items:center;gap:8px;padding:.4rem .75rem .2rem;border-bottom:1px solid var(--border-subtle);background:rgba(0,0,0,.1);"> <span style="font-size:10px;font-family:'IBM Plex Sans KR',sans-serif;font-weight:700;letter-spacing:1px;color:var(--text-muted);">부라인 비율</span> <input type="number" id="sub-lane-threshold" min="1" max="100" placeholder="15" style="width:60px;background:var(--bg-dark);border:1px solid var(--border-subtle);border-radius:2px;padding:3px 6px;font-family:'IBM Plex Sans KR',sans-serif;font-size:12px;font-weight:700;color:var(--text-white);outline:none;text-align:center;"> <span style="font-size:10px;color:var(--text-muted);font-family:'IBM Plex Sans KR',sans-serif;">% 이상 부라인 선택</span> </div> <div class="search-box-wrap"> <input type="text" id="search-input" placeholder="닉네임#KR1" onkeydown="onSearchKey(event)" /> <button class="search-btn" id="search-btn" onclick="searchSummoner()"> <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="5" cy="5" r="4" stroke="currentColor" stroke-width="1.5"/><line x1="8.5" y1="8.5" x2="12" y2="12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> </button> </div> <div class="search-hint"> <span>닉네임#태그</span> 형식으로 입력. 확장: <span style="color:var(--blue-bright);">닉네임#태그 최고티어/현티어 주라인/부라인</span><br>
  예) 페이커#KR1 · Hide on bush#KR1
  </div> <div id="search-loading" style="display:none;justify-content:center;padding:1.5rem;"> <div class="spinner"></div> </div> <div id="search-result" style="display:none;"> <div class="search-result"> <div class="result-profile"> <div class="result-avatar" id="r-avatar">?</div> <div> <div class="result-name" id="r-name">—</div> <div class="result-tag" id="r-tag">—</div> </div> </div> <div class="result-tiers"> <div class="tier-row"> <span class="tier-row-label">SOLO/DUO</span> <span class="tier-row-val" id="r-solo">—</span> </div> <div class="tier-row"> <span class="tier-row-label">FLEX</span> <span class="tier-row-val" id="r-flex">—</span> </div> <div class="tier-row" id="r-main-lane-row" style="display:none;"> <span class="tier-row-label">커뮤니티 주라인</span> <span class="tier-row-val" id="r-main-lane" style="color:var(--blue-bright);">—</span> </div>
- <div class="tier-row"> <span class="tier-row-label">솔랭 판수</span> <span class="tier-row-val" id="r-solo-games" style="font-family:'IBM Plex Sans KR',sans-serif;">—</span> </div> <div class="tier-row" id="r-match-count-row"> <span class="tier-row-label">내전 판수</span> <span class="tier-row-val" id="r-match-count" style="font-family:'IBM Plex Sans KR',sans-serif;color:var(--blue-bright);">—</span> </div> <div class="tier-row"> <span class="tier-row-label">LEVEL</span> <span class="tier-row-val" id="r-level">—</span> </div> <div class="tier-row" id="r-prev-row" style="display:none;background:rgba(200,170,110,0.04);border-radius:2px;padding:3px 6px;margin-top:2px;"> <span class="tier-row-label" style="display:flex;align-items:center;gap:4px;"><span style="font-size:9px;">🏆</span>전 시즌 최고</span> <span class="tier-row-val" id="r-prev-season" style="font-size:11px;">—</span> </div> </div> <div style="padding:.6rem 1rem;border-top:1px solid var(--border-subtle);background:rgba(200,170,110,0.03);"> <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;"> <span style="font-size:10px;font-family:'IBM Plex Sans KR',sans-serif;font-weight:700;letter-spacing:1px;color:var(--gold);">✏ 티어 직접 설정</span> <button onclick="applyTierOverride('')" style="font-size:9px;font-family:'IBM Plex Sans KR',sans-serif;font-weight:700;color:var(--text-muted);background:transparent;border:1px solid var(--border-subtle);border-radius:2px;padding:1px 7px;cursor:pointer;letter-spacing:.5px;" id="r-tier-reset">API 값으로 초기화</button> </div> <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;" id="r-tier-btns"> <button class="tier-override-btn" data-tier="UNRANKED" onclick="applyTierOverride('UNRANKED')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-iron);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;letter-spacing:.3px;">UNRANK</button> <button class="tier-override-btn" data-tier="IRON" onclick="applyTierOverride('IRON')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-iron);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">IRON</button> <button class="tier-override-btn" data-tier="BRONZE" onclick="applyTierOverride('BRONZE')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-bronze);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">BRONZE</button> <button class="tier-override-btn" data-tier="SILVER" onclick="applyTierOverride('SILVER')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-silver);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">SILVER</button> <button class="tier-override-btn" data-tier="GOLD" onclick="applyTierOverride('GOLD')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-gold);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">GOLD</button> <button class="tier-override-btn" data-tier="PLATINUM" onclick="applyTierOverride('PLATINUM')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-plat);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">PLAT</button> <button class="tier-override-btn" data-tier="EMERALD" onclick="applyTierOverride('EMERALD')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-emerald);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">EMERALD</button> <button class="tier-override-btn" data-tier="DIAMOND" onclick="applyTierOverride('DIAMOND')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-diamond);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">DIAMOND</button> <button class="tier-override-btn" data-tier="MASTER" onclick="applyTierOverride('MASTER')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-master);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">MASTER</button> <button class="tier-override-btn" data-tier="GRANDMASTER" onclick="applyTierOverride('GRANDMASTER')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-grandmaster);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">GM</button> <button class="tier-override-btn" data-tier="CHALLENGER" onclick="applyTierOverride('CHALLENGER')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-challenger);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">CHALL</button> </div> </div> <div class="lane-select"> <div class="lane-select-label">주 포지션</div> <div class="lane-buttons" id="main-lanes"> <button class="lane-btn" data-lane="top" onclick="selectLane('main','top')">TOP</button> <button class="lane-btn" data-lane="jg" onclick="selectLane('main','jg')">JG</button> <button class="lane-btn" data-lane="mid" onclick="selectLane('main','mid')">MID</button> <button class="lane-btn" data-lane="bot" onclick="selectLane('main','bot')">BOT</button> <button class="lane-btn" data-lane="sup" onclick="selectLane('main','sup')">SUP</button> </div> <div class="lane-select-label" style="margin-top:4px;">보조 포지션</div> <div class="lane-buttons" id="sub-lanes"> <button class="lane-btn" data-lane="top" onclick="selectLane('sub','top')">TOP</button> <button class="lane-btn" data-lane="jg" onclick="selectLane('sub','jg')">JG</button> <button class="lane-btn" data-lane="mid" onclick="selectLane('sub','mid')">MID</button> <button class="lane-btn" data-lane="bot" onclick="selectLane('sub','bot')">BOT</button> <button class="lane-btn" data-lane="sup" onclick="selectLane('sub','sup')">SUP</button> </div> </div> <div style="padding:.75rem 1rem;border-top:1px solid var(--border-subtle);"> <button class="btn-add-member" id="btn-add" onclick="addMember()" disabled>멤버 추가</button> </div> </div> </div> </div> </div></div> <div class="next-wrap"> <div class="next-condition"> <div class="cond-item"> <div class="cond-dot" id="cond-count"></div> <span id="cond-count-text" style="font-size:12px;color:var(--text-muted);">인원 10의 배수</span> </div> <div class="cond-item"> <div class="cond-dot" id="cond-attend"></div> <span id="cond-attend-text" style="font-size:12px;color:var(--text-muted);">전원 출석</span> </div> </div> <button onclick="copyMatchLink()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(10,200,185,.4);background:rgba(10,200,185,.06);color:var(--blue-bright);font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="내전 상세 링크 복사">링크 복사</button>
-<button onclick="copyMemberMentions()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(100,150,255,.4);background:rgba(100,150,255,.06);color:#7EB2FF;font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="참여 멤버 @멘션 복사">@ 멘션 복사</button> <button id="btn-confirm-members" onclick="openConfirmMembersModal()" title="진행 인원만 남기고 나머지 멤버를 제외합니다 (10명 초과일 때)" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(232,203,134,.45);background:rgba(232,203,134,.08);color:#E8CB86;font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;">멤버 확정하기</button> <button id="btn-cut-members" onclick="openCutMembersModal()" title="멤버 확정 때 진행 인원에서 빠진 대기 멤버 (3단계 선수 교체에서 넣을 수 있음)" style="display:none;padding:7px 14px;border-radius:2px;border:1px solid rgba(255,148,85,.45);background:rgba(255,148,85,.08);color:#FF9455;font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;">대기 멤버</button> <button id="btn-attend-all" onclick="toggleAttendAll()" style="padding:7px 16px;border-radius:2px;border:1px solid rgba(10,200,185,0.4);background:rgba(10,200,185,0.08);color:var(--blue-bright);font-family:'IBM Plex Sans KR',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;cursor:pointer;transition:all .15s;">전체 출석</button> <button id="btn-copy-post-link" onclick="copyForumPostLink()" title="이 내전의 디스코드 포스트 링크를 복사합니다" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(88,101,242,.45);background:rgba(88,101,242,.08);color:#A5B4FC;font-family:'IBM Plex Sans KR',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;cursor:pointer;transition:all .15s;">🔗 포스트 링크 복사</button> <button id="btn-match-delete" onclick="openMatchDeleteModal()" title="이 내전을 삭제합니다" style="padding:7px 14px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--text-muted);font-family:'IBM Plex Sans KR',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;cursor:pointer;transition:all .15s;" onmouseover="this.style.color='#E05050';this.style.borderColor='rgba(224,80,80,.5)'" onmouseout="this.style.color='var(--text-muted)';this.style.borderColor='var(--border-subtle)'">🗑 내전 삭제</button> <button id="btn-match-jjong" onclick="openJjongModal()" title="내전 모집을 중단하고 참여할 수 없는 내전으로 만듭니다" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(224,80,80,.5);background:rgba(224,80,80,.08);color:#E05050;font-family:'IBM Plex Sans KR',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;cursor:pointer;transition:all .15s;">🛑 내전 쫑</button> <button id="btn-match-promo" onclick="sendMatchPromo()" title="내전 멘션 채널에 역할을 멘션해 이 내전을 홍보합니다" style="display:none;padding:7px 14px;border-radius:2px;border:1px solid rgba(240,178,50,.45);background:rgba(240,178,50,.08);color:#F0B232;font-family:'IBM Plex Sans KR',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;cursor:pointer;transition:all .15s;">📣 내전 홍보</button> <button id="btn-discord-notify" onclick="sendDiscordNotify()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(114,137,218,0.4);background:rgba(114,137,218,0.08);color:#7289DA;font-family:'IBM Plex Sans KR',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;cursor:pointer;transition:all .15s;"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;margin-right:4px;"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>알림 전송</button> <button class="btn-next" id="btn-next" disabled onclick="goNextStage()">다음 단계 →</button> </div>
+ <div class="tier-row"> <span class="tier-row-label">솔랭 판수</span> <span class="tier-row-val" id="r-solo-games" style="font-family:'IBM Plex Sans KR',sans-serif;">—</span> </div> <div class="tier-row" id="r-match-count-row"> <span class="tier-row-label">내전 판수</span> <span class="tier-row-val" id="r-match-count" style="font-family:'IBM Plex Sans KR',sans-serif;color:var(--blue-bright);">—</span> </div> <div class="tier-row"> <span class="tier-row-label">LEVEL</span> <span class="tier-row-val" id="r-level">—</span> </div> <div class="tier-row" id="r-prev-row" style="display:none;background:rgba(200,170,110,0.04);border-radius:2px;padding:3px 6px;margin-top:2px;"> <span class="tier-row-label" style="display:flex;align-items:center;gap:4px;"><span style="font-size:9px;">🏆</span>전 시즌 최고</span> <span class="tier-row-val" id="r-prev-season" style="font-size:11px;">—</span> </div> </div> <div style="padding:.6rem 1rem;border-top:1px solid var(--border-subtle);background:rgba(200,170,110,0.03);"> <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;"> <span style="font-size:10px;font-family:'IBM Plex Sans KR',sans-serif;font-weight:700;letter-spacing:1px;color:var(--gold);">✏ 티어 직접 설정</span> <button onclick="applyTierOverride('')" style="font-size:9px;font-family:'IBM Plex Sans KR',sans-serif;font-weight:700;color:var(--text-muted);background:transparent;border:1px solid var(--border-subtle);border-radius:2px;padding:1px 7px;cursor:pointer;letter-spacing:.5px;" id="r-tier-reset">API 값으로 초기화</button> </div> <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;" id="r-tier-btns"> <button class="tier-override-btn" data-tier="UNRANKED" onclick="applyTierOverride('UNRANKED')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-iron);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;letter-spacing:.3px;">UNRANK</button> <button class="tier-override-btn" data-tier="IRON" onclick="applyTierOverride('IRON')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-iron);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">IRON</button> <button class="tier-override-btn" data-tier="BRONZE" onclick="applyTierOverride('BRONZE')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-bronze);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">BRONZE</button> <button class="tier-override-btn" data-tier="SILVER" onclick="applyTierOverride('SILVER')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-silver);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">SILVER</button> <button class="tier-override-btn" data-tier="GOLD" onclick="applyTierOverride('GOLD')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-gold);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">GOLD</button> <button class="tier-override-btn" data-tier="PLATINUM" onclick="applyTierOverride('PLATINUM')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-plat);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">PLAT</button> <button class="tier-override-btn" data-tier="EMERALD" onclick="applyTierOverride('EMERALD')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-emerald);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">EMERALD</button> <button class="tier-override-btn" data-tier="DIAMOND" onclick="applyTierOverride('DIAMOND')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-diamond);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">DIAMOND</button> <button class="tier-override-btn" data-tier="MASTER" onclick="applyTierOverride('MASTER')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-master);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">MASTER</button> <button class="tier-override-btn" data-tier="GRANDMASTER" onclick="applyTierOverride('GRANDMASTER')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-grandmaster);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">GM</button> <button class="tier-override-btn" data-tier="CHALLENGER" onclick="applyTierOverride('CHALLENGER')" style="padding:4px 2px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--tier-challenger);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .15s;">CHALL</button> </div> </div> <div class="lane-select"> <div class="lane-select-label">주 포지션</div> <div class="lane-buttons" id="main-lanes"> <button class="lane-btn" data-lane="top" onclick="selectLane('main','top')">TOP</button> <button class="lane-btn" data-lane="jg" onclick="selectLane('main','jg')">JG</button> <button class="lane-btn" data-lane="mid" onclick="selectLane('main','mid')">MID</button> <button class="lane-btn" data-lane="bot" onclick="selectLane('main','bot')">BOT</button> <button class="lane-btn" data-lane="sup" onclick="selectLane('main','sup')">SUP</button> </div> <div class="lane-select-label" style="margin-top:4px;">보조 포지션</div> <div class="lane-buttons" id="sub-lanes"> <button class="lane-btn" data-lane="top" onclick="selectLane('sub','top')">TOP</button> <button class="lane-btn" data-lane="jg" onclick="selectLane('sub','jg')">JG</button> <button class="lane-btn" data-lane="mid" onclick="selectLane('sub','mid')">MID</button> <button class="lane-btn" data-lane="bot" onclick="selectLane('sub','bot')">BOT</button> <button class="lane-btn" data-lane="sup" onclick="selectLane('sub','sup')">SUP</button> </div> </div> <div style="padding:.75rem 1rem;border-top:1px solid var(--border-subtle);"> <button class="btn-add-member" id="btn-add" onclick="addMember()" disabled>멤버 추가</button> </div> </div> </div> </div> </div></div> <div class="next-wrap"> <div class="next-condition"> <div class="cond-item"> <div class="cond-dot" id="cond-count"></div> <span id="cond-count-text" style="font-size:12px;color:var(--text-muted);">인원 10의 배수</span> </div> <div class="cond-item"> <div class="cond-dot" id="cond-attend"></div> <span id="cond-attend-text" style="font-size:12px;color:var(--text-muted);">전원 출석</span> </div> </div> <div class="next-tools"> <button onclick="copyMatchLink()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(10,200,185,.4);background:rgba(10,200,185,.06);color:var(--blue-bright);font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="내전 상세 링크 복사">링크 복사</button>
+<button onclick="copyMemberMentions()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(100,150,255,.4);background:rgba(100,150,255,.06);color:#7EB2FF;font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;" title="참여 멤버 @멘션 복사">@ 멘션 복사</button> <button id="btn-confirm-members" onclick="openConfirmMembersModal()" title="진행 인원만 남기고 나머지 멤버를 제외합니다 (10명 초과일 때)" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(232,203,134,.45);background:rgba(232,203,134,.08);color:#E8CB86;font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;">멤버 확정하기</button> <button id="btn-cut-members" onclick="openCutMembersModal()" title="멤버 확정 때 진행 인원에서 빠진 대기 멤버 (3단계 선수 교체에서 넣을 수 있음)" style="display:none;padding:7px 14px;border-radius:2px;border:1px solid rgba(255,148,85,.45);background:rgba(255,148,85,.08);color:#FF9455;font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;">대기 멤버</button> <button id="btn-attend-all" onclick="toggleAttendAll()" style="padding:7px 16px;border-radius:2px;border:1px solid rgba(10,200,185,0.4);background:rgba(10,200,185,0.08);color:var(--blue-bright);font-family:'IBM Plex Sans KR',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;cursor:pointer;transition:all .15s;">전체 출석</button> <button id="btn-copy-post-link" onclick="copyForumPostLink()" title="이 내전의 디스코드 포스트 링크를 복사합니다" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(88,101,242,.45);background:rgba(88,101,242,.08);color:#A5B4FC;font-family:'IBM Plex Sans KR',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;cursor:pointer;transition:all .15s;">🔗 포스트 링크 복사</button> <button id="btn-match-delete" onclick="openMatchDeleteModal()" title="이 내전을 삭제합니다" style="padding:7px 14px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--text-muted);font-family:'IBM Plex Sans KR',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;cursor:pointer;transition:all .15s;" onmouseover="this.style.color='#E05050';this.style.borderColor='rgba(224,80,80,.5)'" onmouseout="this.style.color='var(--text-muted)';this.style.borderColor='var(--border-subtle)'">🗑 내전 삭제</button> <button id="btn-match-jjong" onclick="openJjongModal()" title="내전 모집을 중단하고 참여할 수 없는 내전으로 만듭니다" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(224,80,80,.5);background:rgba(224,80,80,.08);color:#E05050;font-family:'IBM Plex Sans KR',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;cursor:pointer;transition:all .15s;">🛑 내전 쫑</button> <button id="btn-match-promo" onclick="sendMatchPromo()" title="내전 멘션 채널에 역할을 멘션해 이 내전을 홍보합니다" style="display:none;padding:7px 14px;border-radius:2px;border:1px solid rgba(240,178,50,.45);background:rgba(240,178,50,.08);color:#F0B232;font-family:'IBM Plex Sans KR',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;cursor:pointer;transition:all .15s;">📣 내전 홍보</button> <button id="btn-discord-notify" onclick="sendDiscordNotify()" style="padding:7px 14px;border-radius:2px;border:1px solid rgba(114,137,218,0.4);background:rgba(114,137,218,0.08);color:#7289DA;font-family:'IBM Plex Sans KR',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;cursor:pointer;transition:all .15s;"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:-2px;margin-right:4px;"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/></svg>알림 전송</button> </div> <button class="btn-next" id="btn-next" disabled onclick="goNextStage()">다음 단계 →</button> </div>
 </div>
 </div> <div class="modal-overlay" id="edit-time-modal" style="display:none;"> <div class="modal" style="max-width:400px;"> <div class="modal-title">내전 정보 수정</div> <div class="form-row"> <div class="form-label">내전 제목</div> <input class="form-input" type="text" id="et-name" maxlength="90" placeholder="예) 금요 정기 내전 시즌 1" onkeydown="if(event.key==='Enter')saveEditTime()"> </div> <div class="form-row"> <div class="form-label">시작 시간</div> <input class="form-input" type="datetime-local" id="et-time"> <label style="display:flex;align-items:center;gap:6px;margin-top:6px;font-size:12px;color:var(--text-muted);cursor:pointer;"><input type="checkbox" id="et-mobasi" onchange="_toggleMobasiInput('et')"> 모바시 (모두 모이면 바로 시작 · 시작 시간 없음)</label> </div> <div class="form-row"> <div class="form-label">진행자 (선택)</div> <div id="et-admin-btns" style="display:flex;flex-wrap:wrap;gap:6px;min-height:32px;padding:4px 0;"></div> </div> <div class="form-row" id="et-type-row" style="display:none;"> <div class="form-label">내전 종류 (선택)</div> <select class="form-input" id="et-type" style="cursor:pointer;font-family:'IBM Plex Sans KR',sans-serif;font-size:12px;"><option value="">없음</option></select> </div> <div class="modal-actions"> <button class="btn-secondary" onclick="closeEditTimeModal()">취소</button> <button class="btn-primary" id="btn-et-save" onclick="saveEditTime()">저장</button> </div> </div>
 </div> <div class="modal-overlay" id="em-modal" style="display:none;" data-id=""> <div class="modal" style="max-width:420px;"> <div class="modal-title">내전 정보 수정</div> <div class="form-row"> <div class="form-label">내전 이름</div> <input class="form-input" type="text" id="em-name"> </div> <div class="form-row"> <div class="form-label">시작 시간</div> <input class="form-input" type="datetime-local" id="em-time"> </div> <div class="form-row"> <div class="form-label">진행 관리자 (선택)</div> <input class="form-input" type="text" id="em-admin" placeholder="공란 가능"> </div> <div class="modal-actions"> <button class="btn-secondary" onclick="closeEditMatchModal()">취소</button> <button class="btn-secondary" onclick="saveEditMatch()">저장</button> <button class="btn-primary" onclick="(function(){saveEditMatch();setTimeout(()=>{const list=dbLoad();const snap=list.find(m=>m.name===document.getElementById('em-name').value.trim());if(snap)proceedToStage1(snap);},100)})()">진행하기 →</button> </div> </div>
@@ -7233,9 +7343,84 @@ function mobileSelectCard(mid, sourceZone, mode) {
 
   // 이동 가능한 존 하이라이트
   _mobileHighlightZones(mode);
-  _mobileShowToast('이동할 위치를 탭하세요');
   acquireEditLock();
+  // 아래에서 '어디로 보낼까요' 창을 띄움 (팀이 화면 밖에 있어도 바로 고를 수 있게)
+  if (!_mmsOpen(mid, sourceZone, mode)) _mobileShowToast('이동할 위치를 탭하세요');
   return true;
+}
+
+// ── 모바일 이동 창 (일반·경매: 팀 목록 / 라인고정: 팀 × 라인 자리) ──
+function _mmsEl() {
+  var el = document.getElementById('mobile-move-sheet');
+  if (!el) { el = document.createElement('div'); el.id = 'mobile-move-sheet'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', '이동할 위치 선택'); document.body.appendChild(el);
+    el.addEventListener('click', function (e) { e.stopPropagation(); }); }
+  return el;
+}
+function _mmsClose() { var el = document.getElementById('mobile-move-sheet'); if (el) el.classList.remove('open'); }
+function _mmsEsc(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function _mmsOpen(mid, sourceZone, mode) {
+  var m = findMemberById(mid); if (!m) return false;
+  var isLane = sourceZone === 'lane-team' || currentScreen === 'screen-3-lane';
+  var h = '<div class="mms-grip"></div><div class="mms-h"><b>' + _mmsEsc(m.name) + '</b>어디로 보낼까요?<button type="button" class="mms-x" onclick="_mobileClearSelection()">취소</button></div><div class="mms-grid">';
+  if (isLane) {
+    if (typeof laneTeams === 'undefined' || !laneTeams.length) return false;
+    laneTeams.forEach(function (t, ti) {
+      var tName = String(t.name || '').trim(); if (!tName || tName === '팀') tName = '팀 ' + (ti + 1);
+      h += '<div class="mms-team">' + _mmsEsc(tName) + '</div><div class="mms-lanes">';
+      LANE_SLOTS.forEach(function (sl) {
+        var o = t.slots && t.slots[sl], here = o && o.id === mid;
+        h += '<button type="button" class="mms-lane' + (o ? '' : ' empty') + (here ? ' here' : '') + '" onclick="_mmsLaneMove(' + JSON.stringify(t.id).replace(/"/g, '&quot;') + ',\'' + sl + '\')">' + _mmsEsc(LANE_SLOT_LABEL[sl] || sl) + '<small>' + (o ? _mmsEsc(o.name) : '빈자리') + '</small></button>';
+      });
+      h += '</div>';
+    });
+    h += '<button type="button" class="mms-btn pool" onclick="_mmsLaneMove(null,null)">대기칸으로 빼기</button>';
+  } else {
+    var pre = mode === 'auction' ? 'a' : 'n';
+    var cur = sourceZone;
+    teams.forEach(function (t) {
+      var n = (t.members || []).length, full = n >= 5, zone = pre + '-team-' + t.id;
+      var nm = ''; try { nm = getTeamName(t); } catch (e) {} if (!nm || nm === '?') nm = '팀 ' + t.id;
+      h += '<button type="button" class="mms-btn' + (full ? ' full' : '') + (cur === zone ? ' here' : '') + '" onclick="_mmsZone(\'' + zone + '\',\'' + mode + '\')">' + _mmsEsc(nm) + '<small>' + n + ' / 5명' + (full ? ' · 꽉 참' : '') + '</small></button>';
+    });
+    if (!teams.length) h += '<div class="mms-team" style="color:var(--text-muted)">팀이 아직 없어요. 위쪽 \'팀 생성(자동)\' 으로 먼저 만들어 주세요.</div>';
+    h += '<button type="button" class="mms-btn pool" onclick="_mmsZone(\'' + pre + '-pool\',\'' + mode + '\')">대기칸으로</button>';
+    if (mode === 'auction') {
+      // 대기칸 선수 → 현재 매물로 (PC 에서 매물칸으로 끌어다 놓는 것과 같음)
+      if (!onSaleMember && auctionPool.some(function (x) { return x.id === mid; })) h = h.replace('<div class="mms-grid">', '<div class="mms-grid"><button type="button" class="mms-btn pool" style="color:var(--gold,#C8AA6E);border-color:rgba(200,170,110,.45)" onclick="_mmsToSale()">현재 매물로 올리기</button>');
+      h += '<button type="button" class="mms-btn pool" onclick="_mmsZone(\'a-fail-zone\',\'auction\')">유찰로</button>';
+    }
+  }
+  h += '</div>';
+  var el = _mmsEl(); el.innerHTML = h;
+  requestAnimationFrame(function () { el.classList.add('open'); });
+  return true;
+}
+function _mmsZone(zone, mode) { _mmsClose(); mobileTapZone(zone, mode); }
+function _mmsToSale() {
+  var mid = _mobileSelMid; _mobileClearSelection();
+  if (mid == null) return;
+  dragMemberId = mid; dragSource = 'a-pool';
+  onDropToSale({ preventDefault: function () {} });
+  setTimeout(releaseEditLock, 100);
+}
+// 라인고정: 고른 자리로 (자리에 사람이 있으면 내가 있던 자리와 맞바꿈, 대기칸에서 왔으면 그 사람은 대기칸으로)
+function _mmsLaneMove(teamId, slot) {
+  var mid = _mobileSelMid;
+  _mobileClearSelection();
+  var m = findMemberById(mid); if (!m) return;
+  var srcTeam = null, srcSlot = null;
+  laneTeams.forEach(function (t) { Object.keys(t.slots || {}).forEach(function (s) { if (t.slots[s] && t.slots[s].id === mid) { srcTeam = t; srcSlot = s; } }); });
+  if (teamId == null) { if (srcTeam) srcTeam.slots[srcSlot] = null; }
+  else {
+    var team = laneTeams.find(function (t) { return t.id === teamId; }); if (!team) return;
+    if (srcTeam === team && srcSlot === slot) return;
+    var displaced = team.slots[slot] || null;
+    if (srcTeam) srcTeam.slots[srcSlot] = displaced; // 맞바꿈 (빈자리였으면 비움)
+    team.slots[slot] = m;
+  }
+  renderLaneBuilder();
+  saveCurrentMatch();
+  setTimeout(releaseEditLock, 100);
 }
 
 // 모바일: 존 탭 → 이동
@@ -7251,6 +7436,7 @@ function mobileTapZone(zoneId, mode) {
 }
 
 function _mobileClearSelection() {
+  _mmsClose();
   if (_mobileSelMid) {
     const el = document.querySelector(`[data-mid="${_mobileSelMid}"]`);
     if (el) el.classList.remove('mobile-selected');
@@ -15851,6 +16037,151 @@ if (typeof window._updateChatVisibility === 'function') {
   window._updateChatVisibility(screenId);
 }
 }
+
+// ══════════════════════════════════════════════════════════════════
+// 내전 목록 · AI 정답률 (기본 OFF)
+//   5단계 결과가 저장된 내전만: 대진마다 AI(내전 분석 랩) 승률 예측 → 실제 승패와 비교
+//   처음 한 번 계산해서 matches/{id}/aiPred 에 저장 (관리자) / 비관리자는 이 브라우저에만 보관
+// ══════════════════════════════════════════════════════════════════
+window._aiAccOn = false;
+var _aiAccMem = {};          // { matchId: aiPred } — 계산했지만 DB 에 못 쓴 것(비관리자) 포함
+var _aiAccBusy = {};         // 계산 중인 matchId
+var _AI_POS = { TOP: 'TOP', JUNGLE: 'JUNGLE', MIDDLE: 'MIDDLE', BOTTOM: 'BOTTOM', UTILITY: 'UTILITY' };
+var _AI_LANE = { top: 'TOP', jg: 'JUNGLE', mid: 'MIDDLE', bot: 'BOTTOM', sup: 'UTILITY' };
+function _aiArr(v) { return Array.isArray(v) ? v.filter(Boolean) : (v && typeof v === 'object' ? Object.values(v).filter(Boolean) : []); }
+// 결과가 저장된 대진만
+function _aiSavedGames(m) {
+  return _aiArr(m && m._resultMatches).filter(function (rm) { return rm && rm.teamA && rm.teamB && (rm.winner === 'a' || rm.winner === 'b') && (rm.saved || rm.auto); });
+}
+function _aiSig(games) { return games.map(function (rm) { return (rm.id || '') + ':' + rm.winner + ':' + (rm.customCode || ''); }).join('|'); }
+function _aiTeamCount(m) { return _aiArr(m && m.teams).length; }
+function _aiTName(t) { var n = ''; try { n = getTeamName(t, _aiArr(t.members)); } catch (e) {} return n && n !== '?' ? n : (t.name || '팀'); }
+// 한 대진의 팀 → [{p, role}] (실제 게임에서 선 라인, 없으면 주 라인)
+function _aiSide(D, team, gameSide) {
+  var pos = {};
+  _aiArr(gameSide).forEach(function (x) { if (x && x.name && x.pos) pos[String(x.name).trim().toLowerCase()] = x.pos; });
+  return _aiArr(team.members).map(function (mm) {
+    var role = pos[String(mm.name || '').trim().toLowerCase()] || _AI_LANE[mm.mainLane] || 'MIDDLE';
+    return { p: RGLab.find(D, { name: mm.name, tag: mm.tag, puuid: mm.puuid }), role: _AI_POS[role] || 'MIDDLE' };
+  });
+}
+function _aiCompute(D, m) {
+  var games = _aiSavedGames(m);
+  var out = { v: 1, model: String((D.model && D.model.version) || ''), sig: _aiSig(games), at: Date.now(), games: [] };
+  games.forEach(function (rm) {
+    var gd = rm.gameData || {};
+    var A = _aiSide(D, rm.teamA, gd.teamA), B = _aiSide(D, rm.teamB, gd.teamB);
+    var tp = RGLab.teamProb(D, A, B, null);
+    var g = { a: _aiTName(rm.teamA), b: _aiTName(rm.teamB), p: Math.round(tp.pA * 1000) / 1000, w: rm.winner, hit: tp.hitA + tp.hitB };
+    // 학습 데이터가 있는 사람이 없거나 정확히 50:50 이면 예측 없음
+    if (!g.hit || g.p === 0.5) g.skip = true;
+    else g.ok = (g.p > 0.5) === (rm.winner === 'a');
+    out.games.push(g);
+  });
+  var cnt = out.games.filter(function (g) { return !g.skip; });
+  out.n = cnt.length; out.hits = cnt.filter(function (g) { return g.ok; }).length;
+  return out;
+}
+// 저장된 값(같은 결과일 때만) → 이 브라우저 보관 값
+function _aiGet(m) {
+  var games = _aiSavedGames(m);
+  if (!games.length) return null;
+  var sig = _aiSig(games);
+  var a = m.aiPred && m.aiPred.sig === sig ? m.aiPred : null;
+  if (!a && _aiAccMem[m.id] && _aiAccMem[m.id].sig === sig) a = _aiAccMem[m.id];
+  if (!a) { try { var ls = JSON.parse(localStorage.getItem('aiPred:' + m.id) || 'null'); if (ls && ls.sig === sig) a = _aiAccMem[m.id] = ls; } catch (e) {} }
+  return a;
+}
+// 목록에 있는 내전 중 아직 계산 안 된 것만 계산
+async function _aiFill(list) {
+  var need = (list || []).filter(function (m) { return m && m.id && !_aiAccBusy[m.id] && _aiSavedGames(m).length && !_aiGet(m); });
+  if (!need.length || !window.RGLab || window._aiAccFail) return;
+  need.forEach(function (m) { _aiAccBusy[m.id] = 1; });
+  var D = await RGLab.load();
+  if (!D) { need.forEach(function (m) { delete _aiAccBusy[m.id]; }); window._aiAccFail = true; toast('AI 학습 데이터를 불러오지 못했습니다', 'err'); return; }
+  var canSave = isMaster || isAdmin;
+  for (var i = 0; i < need.length; i++) {
+    var m = need[i];
+    try {
+      var r = _aiCompute(D, m);
+      _aiAccMem[m.id] = r;
+      try { localStorage.setItem('aiPred:' + m.id, JSON.stringify(r)); } catch (e) {}
+      if (canSave && (isMaster || m.communityId === window._currentCommunityId || !m.communityId)) {
+        var cid = m.communityId || window._currentCommunityId;
+        _workerWrite('communities/' + cid + '/matches/' + m.id + '/aiPred', r, 'admin').then(function () {}).catch(function (e) { console.warn('[aiPred] 저장 실패', e.message); });
+      }
+    } catch (e) { console.warn('[aiPred]', m.id, e); }
+    delete _aiAccBusy[m.id];
+  }
+  if (currentScreen === 'screen-0') renderMatchList();
+}
+function toggleAiAcc() {
+  window._aiAccOn = !window._aiAccOn;
+  window._aiAccFail = false;
+  _aiUpdateToggle();
+  renderMatchList();
+}
+function _aiUpdateToggle() {
+  var b = document.getElementById('btn-ai-acc'); if (!b) return;
+  b.classList.toggle('on', !!window._aiAccOn);
+  b.setAttribute('aria-pressed', window._aiAccOn ? 'true' : 'false');
+  // 버튼은 'AI' + 스위치만, 정답률 숫자는 마우스를 올리면 보이게
+  var tip = '5단계 결과가 저장된 내전에 AI 승률 예측과 정답 여부 표시';
+  if (!window._aiAccOn) { b.title = 'AI 정답률 (꺼짐) — ' + tip; return; }
+  var n = 0, h = 0;
+  (_listCache || []).forEach(function (m) { var a = _aiGet(m); if (a) { n += a.n || 0; h += a.hits || 0; } });
+  b.title = 'AI 정답률 (켜짐)' + (n ? ' — 지금 목록 ' + Math.round(h / n * 100) + '% (' + h + '/' + n + ' 맞힘)' : '') + '\n' + tip;
+}
+// 카드 안 표시
+function _aiCardHtml(m) {
+  if (!window._aiAccOn || !_aiSavedGames(m).length) return '';
+  var a = _aiGet(m);
+  if (!a) return '<div class="ai-acc-row"><span class="ai-acc-lbl">AI</span><span class="ai-acc-dim">계산 중…</span></div>';
+  if (!a.n) return '<div class="ai-acc-row"><span class="ai-acc-lbl">AI</span><span class="ai-acc-dim">학습 데이터가 있는 참가자가 없어 예측하지 않았어요</span></div>';
+  var pct = Math.round(a.hits / a.n * 100);
+  var accCls = pct >= 60 ? 'good' : pct < 45 ? 'bad' : '';
+  if (_aiTeamCount(m) <= 2) {
+    var chips = a.games.map(function (g, i) {
+      if (g.skip) return '<span class="ai-acc-g skip">' + (a.games.length > 1 ? (i + 1) + '경기 ' : '') + '예측 없음</span>';
+      var fav = g.p > 0.5 ? g.a : g.b, fp = Math.round(Math.max(g.p, 1 - g.p) * 100);
+      return '<span class="ai-acc-g ' + (g.ok ? 'ok' : 'no') + '">' + (a.games.length > 1 ? (i + 1) + '경기 ' : '') + _escHtml(fav) + ' ' + fp + '% ' + (g.ok ? '✓' : '✗') + '</span>';
+    }).join('');
+    return '<div class="ai-acc-row"><span class="ai-acc-lbl">AI</span>' + chips + (a.games.length > 1 ? '<span class="ai-acc-tot ' + accCls + '">' + a.hits + '/' + a.n + '</span>' : '') + '</div>';
+  }
+  return '<div class="ai-acc-row"><span class="ai-acc-lbl">AI</span>' +
+    '<button type="button" class="ai-acc-teams" data-aimid="' + _escHtml(m.id) + '" onclick="event.stopPropagation();_aiPopToggle(this)" onmouseenter="_aiPopShow(this)" onmouseleave="_aiPopHide()">팀 목록 <i>' + a.games.length + '대진</i></button>' +
+    '<span class="ai-acc-tot ' + accCls + '">정답률 ' + pct + '% <i>(' + a.hits + '/' + a.n + ')</i></span></div>';
+}
+// '팀 목록' 위에 대진별 승률 띄우기 (카드가 overflow:hidden 이라 body 에 붙임)
+function _aiPopHtml(m) {
+  var a = _aiGet(m); if (!a) return '';
+  return '<div class="ai-pop-h">대진별 AI 승률</div>' + a.games.map(function (g) {
+    var pa = Math.round(g.p * 100), pb = 100 - pa;
+    var res = g.skip ? '<em class="skip">예측 없음</em>' : g.ok ? '<em class="ok">정답</em>' : '<em class="no">오답</em>';
+    return '<div class="ai-pop-r"><span class="' + (g.w === 'a' ? 'win' : '') + '">' + _escHtml(g.a) + '</span><b>' + pa + '%</b><i>vs</i><b>' + pb + '%</b><span class="' + (g.w === 'b' ? 'win' : '') + '">' + _escHtml(g.b) + '</span>' + res + '</div>';
+  }).join('') + '<div class="ai-pop-f">굵은 팀 = 실제 승리</div>';
+}
+function _aiPopShow(btn) {
+  var mid = btn.getAttribute('data-aimid');
+  var m = (_listCache || []).find(function (x) { return x.id === mid; }); if (!m) return;
+  var pop = document.getElementById('ai-acc-pop');
+  if (!pop) { pop = document.createElement('div'); pop.id = 'ai-acc-pop'; document.body.appendChild(pop); }
+  pop.innerHTML = _aiPopHtml(m);
+  pop.style.display = 'block';
+  var r = btn.getBoundingClientRect(), w = pop.offsetWidth, h = pop.offsetHeight;
+  var left = Math.max(8, Math.min(window.innerWidth - w - 8, r.left));
+  var top = r.bottom + 6; if (top + h > window.innerHeight - 8) top = Math.max(8, r.top - h - 6);
+  pop.style.left = left + 'px'; pop.style.top = top + 'px';
+  pop.dataset.mid = mid;
+}
+function _aiPopHide() { var pop = document.getElementById('ai-acc-pop'); if (pop) pop.style.display = 'none'; }
+function _aiPopToggle(btn) {
+  var pop = document.getElementById('ai-acc-pop');
+  if (pop && pop.style.display === 'block' && pop.dataset.mid === btn.getAttribute('data-aimid')) _aiPopHide(); else _aiPopShow(btn);
+}
+document.addEventListener('click', function () { _aiPopHide(); });
+window.addEventListener('scroll', function () { _aiPopHide(); }, true);
+
 // 내전 목록 실시간 구독 콜백 (커뮤니티 진입·목록 복귀 공용)
 function _onMatchListSnapshot(list) {
 _listCache = list;
@@ -15977,10 +16308,13 @@ const list = query
   : catFiltered;
 const grid = document.getElementById('list-grid');
 const empty = document.getElementById('list-empty');
+// AI 정답률: 켜져 있으면 아직 계산 안 된 내전만 계산 (결과 저장된 내전만)
+if (window._aiAccOn) { setTimeout(function () { _aiFill(list); }, 0); _aiUpdateToggle(); }
 // ── 깜빡임 방지 ──
 // 목록 데이터는 최신 24개 중 하나라도 바뀌면(다른 관리자 저장, 디스코드 참가, 서버의 포스트 정보 기록 등) 다시 들어옴.
 // 카드에 보이는 내용이 그대로면 다시 그리지 않고, 바뀌었으면 등장 애니메이션 없이 교체함.
 var _mlSig = JSON.stringify([query, catFilter, isMaster, isAdmin, window._matchListLoaded === false && !allList.length,
+  window._aiAccOn ? 'ai:' + Object.keys(_aiAccMem).length + ':' + Object.keys(_aiAccBusy).length + ':' + list.map(function (m) { return m.aiPred ? m.aiPred.sig : ''; }).join(',') : 0,
   Array.from(_deletingMatchIds), list.map(function(m) {
     return [m.id, m.name, m.time, m.status, m._currentScreen, m.admin, m.categoryId, (m._members || []).length, m.maxMembers, m.communityId, m.matchType, m.isAram];
   })]);
@@ -16045,6 +16379,7 @@ card.innerHTML =
       '<span class="list-card-admin"><svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>'+_escHtml(m.admin||'')+'</span>' +
       _mtBadge +
     '</div>' +
+    _aiCardHtml(m) +
   '</div>' +
   (isOwnMatch
     ? '<div class="list-card-footer">'+catMenuBtn+'<button class="list-card-del s0-card-act" data-mid="'+m.id+'" title="삭제" aria-label="내전 삭제"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg>삭제</button></div>'
