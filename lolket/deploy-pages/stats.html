@@ -1416,6 +1416,8 @@ select.ds-input{padding-right:4px}
         <button id="mobile-menu-btn" onclick="openMobileMenu()" aria-label="메뉴">☰</button>
         <!-- 우측: 디스코드 + 구분선 + 관리자 -->
         <div class="header-account">
+          <!-- 멸망전 -->
+          <button id="btn-doom" onclick="goDoom()" style="display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:3px;border:1px solid rgba(226,190,106,.45);background:linear-gradient(180deg,rgba(226,190,106,.18),rgba(226,190,106,.06));color:#E2BE6A;font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:800;cursor:pointer;white-space:nowrap;"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:block;"><path d="M14.5 17.5L3 6V3h3l11.5 11.5"/><path d="M13 19l6-6"/><path d="M16 16l4 4"/><path d="M19 21l2-2"/></svg>멸망전</button>
           <!-- PWA 설치 버튼 -->
           <button id="btn-pwa-install" onclick="_pwaInstall()">앱 설치</button>
           <!-- 디스코드 -->
@@ -2637,6 +2639,10 @@ document.getElementById('games-min').addEventListener('input',e=>{gamesMin=e.tar
 document.getElementById('games-max').addEventListener('input',e=>{gamesMax=e.target.value.trim();applyAll();});
 document.getElementById('btn-refresh').addEventListener('click',loadData);
 
+function goDoom(){
+  if(!COMMUNITY_ID){ alert('커뮤니티 정보가 없어요'); return; }
+  window.open('/doom?cid='+encodeURIComponent(COMMUNITY_ID), '_blank');
+}
 function goRanking(){
   const q=new URLSearchParams();
   if(COMMUNITY_ID) q.set('cid',COMMUNITY_ID);
@@ -13434,6 +13440,9 @@ function _getDiscordUserId() { return _discordUser && _discordUser.id ? _discord
     </button>
     <button class="mobile-menu-item" onclick="closeMobileMenu();goRanking();">
       <span class="mmi-icon">🏆</span>주간 랭킹
+    </button>
+    <button class="mobile-menu-item" onclick="closeMobileMenu();goDoom();">
+      <span class="mmi-icon">⚔️</span><span style="color:var(--gold);">멸망전</span>
     </button>
     <button class="mobile-menu-item" onclick="closeMobileMenu();window.open('/guide','_blank');">
       <span class="mmi-icon">📖</span>가이드
