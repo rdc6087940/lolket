@@ -2839,6 +2839,249 @@ body:not(:has(#screen-v.active)) #uv-float-btn,
 body:not(:has(#screen-v.active)) #uv-auction-panel,
 body:not(:has(#screen-v.active)) #uv-log-panel{display:none!important}
 
+
+/* ═══ 밸투라고소 (밸런스 투표 라인 고정 소프트피어리스) ═══ */
+#screen-2 #type-balvote{--h:40}
+#type-balvote .type-card-warn{margin-top:10px;display:flex;flex-direction:column;gap:3px;font-size:11px;line-height:1.45;color:#FF9A6A;text-align:left}
+#type-balvote .type-card-warn .ok{color:#3CE085;margin-right:6px}
+#type-balvote.bv-ineligible{opacity:.72}
+#type-balvote.bv-ineligible.selected{opacity:1}
+#screen-3-normal:not(.balvote-mode) .bv-only{display:none!important}
+#screen-3-normal.balvote-mode .rd-hide,
+#screen-3-normal.balvote-mode .builder-layout,
+#screen-3-normal.balvote-mode .builder-cond,
+#screen-3-normal.balvote-mode #s3n-guide-wrap,
+#screen-3-normal.balvote-mode #bal-check-normal,
+#screen-3-normal.balvote-mode #btn-normal-next,
+#screen-3-normal.balvote-mode #lane-ratio-inline-normal,
+#screen-3-normal.balvote-mode .aram-only,
+#screen-3-normal.balvote-mode .builder-topbar-row button[onclick^="openAutoBalance"],
+#screen-3-normal.balvote-mode .builder-topbar-row button[onclick^="copyTeam"],
+#screen-3-normal.balvote-mode .builder-topbar-row button[onclick^="issueAnalysisCode"]{display:none!important}
+#bv-root,.bv-modal{--bv-gold:#E8C26A;--bv-gold-s:rgba(232,194,106,.13);--bv-ok:#3CE085;--bv-no:#FF7A6A;--bv-a:#5AA9FF;--bv-b:#FF6B7A;--bv-line:var(--border-subtle,#222A36);--bv-sunk:rgba(255,255,255,.035);
+  font-family:'IBM Plex Sans KR',sans-serif;color:var(--text-white,#E9ECF1)}
+#bv-root{display:flex;flex-direction:column;gap:12px;margin-bottom:12px}
+.bv-head{background:var(--bg-panel);border:1px solid var(--border-gold,rgba(200,170,110,.35));border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.bv-title{font-size:17px;font-weight:800;letter-spacing:.5px;color:var(--bv-gold)}
+.bv-title small{font-size:11px;font-weight:600;color:var(--text-muted);margin-left:6px;letter-spacing:0}
+.bv-steps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.bv-steps li{display:flex;align-items:center;gap:7px;padding:7px 9px;border-radius:8px;background:var(--bv-sunk);border:1px solid var(--bv-line);font-size:11.5px;color:var(--text-muted);min-width:0}
+.bv-steps li b{flex-shrink:0;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:11px;background:rgba(255,255,255,.07)}
+.bv-steps li span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bv-steps li.done{color:var(--text-white)}
+.bv-steps li.done b{background:rgba(60,224,133,.18);color:var(--bv-ok)}
+.bv-steps li.now{border-color:var(--bv-gold);color:var(--bv-gold);background:var(--bv-gold-s);box-shadow:0 0 0 3px rgba(232,194,106,.08)}
+.bv-steps li.now b{background:var(--bv-gold);color:#1A1406}
+.bv-note,.bv-sub{font-size:11.5px;color:var(--text-muted);line-height:1.55}
+.bv-warn{padding:10px 14px;border-radius:8px;border:1px solid rgba(255,122,106,.45);background:rgba(255,122,106,.08);color:#FFB3A8;font-size:12px;line-height:1.6}
+.bv-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.bv-card{background:var(--bg-panel);border:1px solid var(--bv-line);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:9px;min-width:0}
+.bv-wide{grid-column:1/-1}
+.bv-card-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.bv-card-h>span{font-size:13px;font-weight:800;color:var(--text-white)}
+.bv-card-h>em{font-style:normal;font-size:11px;color:var(--text-muted)}
+.bv-card-h>.bv-btn{margin-left:auto}
+.bv-empty{font-size:12px;color:#FFB3A8;padding:8px 10px;border-radius:7px;background:rgba(255,122,106,.06);border:1px dashed rgba(255,122,106,.35)}
+.bv-guides{display:flex;flex-wrap:wrap;gap:6px}
+.bv-guide{padding:6px 11px;border-radius:999px;border:1px solid rgba(232,194,106,.45);background:var(--bv-gold-s);color:var(--bv-gold);font:700 12px 'IBM Plex Sans KR',sans-serif;cursor:pointer}
+.bv-pairs{display:flex;flex-direction:column;gap:5px}
+.bv-pair{display:grid;grid-template-columns:38px 1fr 22px 1fr;align-items:center;gap:6px;font-size:12.5px;padding:5px 8px;border-radius:7px;background:var(--bv-sunk)}
+.bv-pair i{font-style:normal;font-size:11px;font-weight:800;color:var(--bv-gold)}
+.bv-pair span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700}
+.bv-pair span:last-child{text-align:right}
+.bv-pair em{font-style:normal;font-size:10px;color:var(--text-muted);text-align:center}
+.bv-btn{padding:8px 14px;border-radius:8px;border:1px solid var(--bv-line);background:rgba(255,255,255,.04);color:var(--text-white);font:700 12px 'IBM Plex Sans KR',sans-serif;cursor:pointer;transition:background .15s,border-color .15s,transform .1s}
+.bv-btn:hover:not(:disabled){border-color:rgba(255,255,255,.25)}
+.bv-btn:active:not(:disabled){transform:scale(.98)}
+.bv-btn:disabled{opacity:.45;cursor:not-allowed}
+.bv-btn.sm{padding:5px 10px;font-size:11px}
+.bv-btn.wide{width:100%;padding:12px}
+.bv-btn.primary{background:linear-gradient(180deg,#F0CE7A,#C9A24C);border-color:#E8C26A;color:#1A1406}
+.bv-btn.primary:not(:disabled){box-shadow:0 0 18px rgba(232,194,106,.28)}
+.bv-btn.danger{border-color:rgba(255,122,106,.55);color:#FF9A8C;background:rgba(255,122,106,.08)}
+.bv-btn.ghost{background:transparent;color:var(--text-muted)}
+.bv-acts{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.bv-acts.end{justify-content:flex-end}
+.bv-meters{display:flex;flex-direction:column;gap:6px;margin-top:2px}
+.bv-meter{display:grid;grid-template-columns:74px 1fr 40px;align-items:center;gap:8px;font-size:11.5px;color:var(--text-muted)}
+.bv-meter div{height:7px;border-radius:99px;background:rgba(255,255,255,.06);overflow:hidden}
+.bv-meter i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#3CE085,#2BD9C5);transition:width .5s cubic-bezier(.2,.8,.2,1)}
+.bv-meter b{color:var(--text-white);text-align:right;font-family:'Space Grotesk',sans-serif}
+.bv-ptable{display:flex;flex-direction:column;gap:3px;overflow-x:auto}
+.bv-pr{display:grid;grid-template-columns:44px minmax(90px,1.6fr) repeat(5,minmax(52px,1fr));gap:6px;align-items:center;padding:7px 9px;border-radius:7px;background:var(--bv-sunk);font-size:12px;min-width:480px}
+.bv-pr.hd{background:transparent;font-size:10.5px;color:var(--text-muted);font-weight:700;padding-top:0;padding-bottom:0}
+.bv-pr>span:first-child{color:var(--bv-gold);font-weight:800;font-size:11px}
+.bv-pr .nm{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bv-pr b.ok{color:var(--bv-ok)} .bv-pr b.no{color:var(--bv-no)} .bv-pr b.dim{color:rgba(255,255,255,.25);font-weight:500}
+.bv-cands{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:10px}
+.bv-cand{border:1px solid var(--bv-line);border-radius:10px;padding:10px 12px;background:var(--bv-sunk);display:flex;flex-direction:column;gap:8px;transition:border-color .2s,box-shadow .2s}
+.bv-cand.hot{border-color:rgba(232,194,106,.7);box-shadow:0 0 0 1px rgba(232,194,106,.25),0 0 22px rgba(232,194,106,.14)}
+.bv-cand.conf{border-color:var(--bv-ok);box-shadow:0 0 24px rgba(60,224,133,.18)}
+.bv-cand.pick{cursor:pointer}
+.bv-cand.pick.on{border-color:#FF9A8C;box-shadow:0 0 0 2px rgba(255,122,106,.35)}
+.bv-cand-h{display:flex;align-items:center;gap:8px}
+.bv-cand-h>b{font-size:13px}
+.bv-votes{margin-left:auto;font-size:11.5px;color:var(--text-muted)}
+.bv-votes b{font-size:15px;color:var(--bv-gold);font-family:'Space Grotesk',sans-serif}
+.bv-prob{position:relative;height:18px;border-radius:5px;background:rgba(255,107,122,.28);overflow:hidden}
+.bv-prob span{position:absolute;left:0;top:0;bottom:0;background:rgba(90,169,255,.45)}
+.bv-prob em{position:relative;display:block;text-align:center;font-style:normal;font-size:10.5px;line-height:18px;font-weight:700}
+.bv-cteams{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.bv-ct{display:flex;flex-direction:column;gap:2px;min-width:0}
+.bv-ct-h{font-size:10.5px;font-weight:800;letter-spacing:1px;padding-bottom:2px}
+.bv-ct.a .bv-ct-h{color:var(--bv-a)} .bv-ct.b .bv-ct-h{color:var(--bv-b)}
+.bv-pl{display:grid;grid-template-columns:28px minmax(0,1fr) 30px;gap:4px;font-size:11.5px;align-items:center;min-width:0;padding:2px 5px;border-radius:5px}
+.bv-pl b{font-family:'Space Grotesk',sans-serif;font-size:11.5px;text-align:right}
+.bv-ct-h{display:flex;align-items:center;gap:6px}
+.bv-ds{margin-left:auto;font-size:10.5px;letter-spacing:0;color:var(--text-muted);font-weight:700}
+.bv-ds.up{color:#3CE085}.bv-ds.dn{color:#FF8A7A}
+.bv-legend{font-size:11px;color:var(--text-muted);display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.bv-legend i{display:inline-block;width:26px;height:9px;border-radius:3px;vertical-align:-1px;margin-right:4px}
+.bv-pl i{font-style:normal;color:var(--text-muted);font-size:10px}
+.bv-pl span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.bv-pl em{font-style:normal;font-size:10px;color:var(--text-muted)}
+.bv-vbar{height:4px;border-radius:99px;background:rgba(255,255,255,.06);overflow:hidden}
+.bv-vbar span{display:block;height:100%;background:var(--bv-gold);transition:width .4s}
+.bv-rk{font:700 10.5px 'Space Grotesk',sans-serif;color:#1A1406;background:var(--bv-gold);padding:1px 6px;border-radius:5px}
+.bv-vbar{position:relative;overflow:visible!important}
+.bv-vbar u{position:absolute;left:70%;top:-3px;bottom:-3px;width:2px;background:rgba(255,255,255,.4)}
+.bv-pr .vs{display:flex;flex-wrap:wrap;gap:4px}
+.bv-pr .vs b{font-size:11px;padding:1px 6px;border-radius:5px;background:rgba(60,224,133,.1)}
+.bv-pr{grid-template-columns:44px minmax(90px,1.4fr) repeat(3,minmax(52px,.8fr)) minmax(120px,2fr)!important}
+.bv-lim{margin-top:4px;padding-top:10px;border-top:1px dashed var(--bv-line);display:flex;flex-direction:column;gap:7px}
+.bv-lim.done{font-size:12px;color:var(--text-muted)}
+.bv-lim.done b{color:var(--bv-gold)}
+.bv-lim-h{font-size:12.5px;font-weight:800}
+.bv-seg{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+.bv-seg>button{padding:6px 11px;border-radius:7px;border:1px solid var(--bv-line);background:rgba(255,255,255,.03);color:var(--text-muted);font:700 12px 'IBM Plex Sans KR',sans-serif;cursor:pointer}
+.bv-seg>button.on{background:var(--bv-gold);border-color:var(--bv-gold);color:#1A1406}
+.bv-lim-in{display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--text-muted)}
+.bv-lim-in input{width:56px;padding:6px 8px;border-radius:7px;border:1px solid var(--bv-line);background:rgba(0,0,0,.25);color:var(--text-white);font:600 12px 'Space Grotesk',sans-serif;-moz-appearance:textfield}
+.bv-lim-in input::-webkit-inner-spin-button,.bv-lim-in input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.bv-timer{padding:8px 11px;border-radius:8px;background:rgba(255,255,255,.035);border:1px solid var(--bv-line);font-size:12px;color:var(--text-muted)}
+.bv-timer.run{border-color:rgba(232,194,106,.5);color:var(--text-white)}
+.bv-timer b{font:700 15px 'Space Grotesk',sans-serif;color:var(--bv-gold)}
+.bv-testbtn{border-style:dashed!important;color:#8FC3FF!important;border-color:rgba(90,169,255,.5)!important;margin-top:6px}
+.bv-testbar{padding:10px 14px;border-radius:8px;border:1px dashed rgba(90,169,255,.6);background:rgba(90,169,255,.07);color:#BBD9FF;font-size:12px;line-height:1.6}
+.bv-testbar b{color:#8FC3FF;margin-right:6px}
+.bv-test{border-color:rgba(90,169,255,.45)!important}
+.bv-tlinks{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:6px}
+.bv-tl{display:grid;grid-template-columns:34px 1fr auto;gap:6px;align-items:center;padding:8px 10px;border-radius:8px;border:1px solid var(--bv-line);background:rgba(255,255,255,.03);color:var(--text-white);font:600 12px 'IBM Plex Sans KR',sans-serif;cursor:pointer;text-align:left}
+.bv-tl:hover{border-color:rgba(90,169,255,.6)}
+.bv-tl i{font-style:normal;font-size:10.5px;color:var(--bv-gold);font-weight:800}
+.bv-tl span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bv-tl em{font-style:normal;font-size:10.5px;color:#8FC3FF}
+#type-balvote .type-card-warn .t{color:#8FC3FF}
+.bv-done{background:var(--bg-panel);border:1px solid rgba(60,224,133,.5);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:12px;align-items:stretch;max-width:640px}
+.bv-done-t{font-size:22px;font-weight:900;color:var(--bv-ok)}
+.bv-done-s{font-size:12px;color:var(--text-muted);margin-top:-6px}
+.bv-modal{position:fixed;inset:0;z-index:9500;background:rgba(0,0,0,.72);display:none;align-items:center;justify-content:center;padding:16px}
+.bv-modal-box{background:var(--bg-panel,#12161D);border:1px solid var(--bv-line);border-radius:12px;width:100%;max-width:880px;max-height:88vh;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
+.bv-modal-h{display:flex;align-items:center;font-size:16px;font-weight:800;color:#FF9A8C}
+.bv-x{margin-left:auto;background:transparent;border:1px solid var(--bv-line);border-radius:6px;color:var(--text-muted);padding:4px 10px;cursor:pointer;font:600 11px 'IBM Plex Sans KR',sans-serif}
+.bv-fx{position:fixed;inset:0;z-index:9800;display:grid;place-items:center;background:radial-gradient(circle at center,rgba(60,224,133,.18),rgba(0,0,0,.78) 60%);animation:bvFxIn .35s ease both}
+.bv-fx.out{animation:bvFxOut .5s ease both}
+.bv-fx-in{text-align:center;animation:bvPop .6s cubic-bezier(.2,1.4,.4,1) both}
+.bv-fx-t{font:900 clamp(28px,6vw,54px) 'IBM Plex Sans KR',sans-serif;color:#fff;text-shadow:0 0 30px rgba(60,224,133,.6)}
+.bv-fx-s{margin-top:8px;font-size:14px;color:rgba(255,255,255,.75)}
+@keyframes bvFxIn{from{opacity:0}to{opacity:1}}
+@keyframes bvFxOut{to{opacity:0}}
+@keyframes bvPop{from{transform:scale(.7);opacity:0}to{transform:none;opacity:1}}
+@media (max-width:900px){.bv-grid{grid-template-columns:1fr 1fr}.bv-ctrl{grid-column:1/-1}}
+@media (max-width:768px){
+  .bv-grid{grid-template-columns:1fr}
+  .bv-steps{grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}
+  .bv-steps li{flex-direction:column;gap:3px;padding:6px 2px;text-align:center;font-size:10px}
+  .bv-steps li span{white-space:normal;line-height:1.25}
+  .bv-cands{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){.bv-fx,.bv-fx-in,.bv-fx.out{animation:none}}
+
+/* ═══ AI 경기 리뷰 ═══ */
+.gr{--gr-a:#4FA8FF;--gr-b:#FF6B7A;--gr-ok:#3CE085;--gr-no:#FF7A6A;--gr-gold:#E8C26A;--gr-line:var(--border-subtle,#232B37);
+  background:var(--bg-panel,#11161E);border:1px solid var(--gr-line);border-radius:10px;padding:14px 16px;margin-bottom:14px;font-family:'IBM Plex Sans KR',sans-serif;color:var(--text-white,#E9ECF1);display:flex;flex-direction:column;gap:10px}
+.gr-h{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.gr-h>b{font-size:15px;font-weight:800}
+.gr-sub{font-size:11.5px;color:var(--text-muted)}
+.gr-badge{font-size:11px;font-weight:800;padding:3px 9px;border-radius:99px;letter-spacing:.5px}
+.gr-badge.hit{background:rgba(60,224,133,.14);color:var(--gr-ok);border:1px solid rgba(60,224,133,.45)}
+.gr-badge.miss{background:rgba(255,122,106,.12);color:var(--gr-no);border:1px solid rgba(255,122,106,.45)}
+.gr-badge.none{background:rgba(255,255,255,.06);color:var(--text-muted);border:1px solid var(--gr-line)}
+.gr-vs{display:flex;flex-direction:column;gap:6px;padding:10px 12px;border-radius:8px;background:rgba(255,255,255,.03);border:1px solid var(--gr-line)}
+.gr-row{display:grid;grid-template-columns:64px minmax(0,1fr) minmax(120px,2fr) minmax(0,1fr);gap:10px;align-items:center;font-size:12px}
+.gr-k{font-size:10.5px;font-weight:700;color:var(--text-muted);letter-spacing:.5px}
+.gr-tn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700}
+.gr-tn.a{color:var(--gr-a)} .gr-tn.b{color:var(--gr-b);text-align:right}
+.gr-tn.w{font-weight:800} .gr-tn:not(.w){opacity:.85}
+.gr-row:nth-child(2) .gr-tn:not(.w){color:var(--text-muted)}
+.gr-tn b{font-family:'Space Grotesk',sans-serif;font-size:15px}
+.gr-bar{height:8px;border-radius:99px;background:var(--gr-b);overflow:hidden;opacity:.9}
+.gr-bar i{display:block;height:100%;background:var(--gr-a)}
+.gr-mid{text-align:center;font-size:11.5px;color:var(--text-muted);font-family:'Space Grotesk','IBM Plex Sans KR',sans-serif}
+.gr-pace{font-size:13px;line-height:1.6;padding:2px 2px}
+.gr-sec{font-size:11px;font-weight:800;letter-spacing:1.5px;color:var(--text-muted);margin-top:4px}
+.gr-why{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px}
+.gr-why li{position:relative;padding:8px 12px 8px 26px;border-radius:8px;background:rgba(255,255,255,.03);border:1px solid var(--gr-line);font-size:12.5px;line-height:1.6}
+.gr-why li::before{content:'';position:absolute;left:11px;top:15px;width:6px;height:6px;border-radius:50%;background:var(--gr-gold)}
+.gr-why b{color:#fff}
+.gr-dim{color:var(--text-muted);font-size:11.5px}
+.gr-lanes{display:flex;flex-direction:column;gap:4px;overflow-x:auto}
+.gr-ln{display:grid;grid-template-columns:minmax(150px,1.6fr) 40px 74px minmax(110px,1.1fr) minmax(150px,1.6fr);gap:8px;align-items:center;padding:7px 8px;border-radius:8px;background:rgba(255,255,255,.03);min-width:560px}
+.gr-ln.hd{background:transparent;font-size:10.5px;font-weight:700;color:var(--text-muted);padding-top:0;padding-bottom:0}
+.gr-ln.hd span:first-child{color:var(--gr-a)} .gr-ln.hd span:last-child{color:var(--gr-b);text-align:right}
+.gr-ln.hd span:nth-child(2),.gr-ln.hd span:nth-child(3),.gr-ln.hd span:nth-child(4){text-align:center}
+.gr-pl{display:flex;align-items:center;gap:8px;min-width:0}
+.gr-pl.r{justify-content:flex-end;text-align:right}
+.gr-ci{width:30px;height:30px;border-radius:6px;flex-shrink:0;background:rgba(255,255,255,.05)}
+.gr-pn{display:flex;flex-direction:column;min-width:0;line-height:1.25}
+.gr-pn b{font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gr-pn small{font-size:10.5px;color:var(--text-muted);white-space:nowrap}
+.gr-pn i{font-style:normal;font-size:9.5px;font-weight:800;margin-top:1px}
+.gr-up{color:var(--gr-ok)} .gr-dn{color:var(--gr-no)}
+.gr-lk{text-align:center;font-size:11px;font-weight:800;color:var(--gr-gold)}
+.gr-pd{text-align:center;font-size:11.5px;font-weight:800;font-family:'Space Grotesk','IBM Plex Sans KR',sans-serif}
+.gr-pd.a{color:var(--gr-a)} .gr-pd.b{color:var(--gr-b)} .gr-pd.e{color:var(--text-muted)}
+.gr-ad{display:flex;flex-direction:column;align-items:center;line-height:1.25;padding:4px 6px;border-radius:7px}
+.gr-ad b{font-family:'Space Grotesk',sans-serif;font-size:13px}
+.gr-ad small{font-size:10px;color:var(--text-muted)}
+.gr-ad.a{background:linear-gradient(90deg,rgba(79,168,255,.22),rgba(79,168,255,0))} .gr-ad.a b{color:var(--gr-a)}
+.gr-ad.b{background:linear-gradient(270deg,rgba(255,107,122,.22),rgba(255,107,122,0))} .gr-ad.b b{color:var(--gr-b)}
+.gr-mk{font-style:normal;font-size:9.5px;font-weight:800;margin-top:2px}
+.gr-mk.ok{color:var(--gr-ok)} .gr-mk.no{color:var(--gr-no)} .gr-mk.e{color:var(--text-muted)}
+.gr-gaps{display:flex;flex-wrap:wrap;gap:6px}
+.gr-chip{font-size:11.5px;font-weight:700;padding:4px 10px;border-radius:99px;border:1px solid}
+.gr-chip small{font-size:10px;opacity:.75}
+.gr-chip b{font-family:'Space Grotesk',sans-serif}
+.gr-chip.up{color:var(--gr-ok);border-color:rgba(60,224,133,.4);background:rgba(60,224,133,.08)}
+.gr-chip.dn{color:var(--gr-no);border-color:rgba(255,122,106,.4);background:rgba(255,122,106,.08)}
+.gr-foot{font-size:10.5px;color:var(--text-muted);line-height:1.5}
+.gr-load{font-size:12px;color:var(--text-muted);padding:12px;border:1px dashed var(--border-subtle);border-radius:8px;margin-bottom:12px}
+.gr-btnrow{padding:0 0 10px;display:flex}
+.gr-open{display:inline-flex;align-items:center;gap:8px;padding:7px 14px;border-radius:7px;border:1px solid rgba(157,72,224,.5);background:linear-gradient(90deg,rgba(157,72,224,.16),rgba(79,168,255,.08));color:#D2B3F5;font:800 12px 'IBM Plex Sans KR',sans-serif;cursor:pointer;transition:border-color .15s,transform .1s}
+.gr-open small{font-weight:600;font-size:10.5px;color:var(--text-muted)}
+.gr-open:hover{border-color:#B97EEA}
+.gr-open:active{transform:scale(.98)}
+.gr-modal{position:fixed;inset:0;z-index:9600;background:rgba(0,0,0,.72);display:none;align-items:center;justify-content:center;padding:16px}
+.gr-modal.open{display:flex;animation:grIn .18s ease}
+.gr-modal-box{position:relative;width:100%;max-width:860px;max-height:90vh;overflow:auto;border-radius:12px}
+.gr-modal-box .gr{margin:0;border-color:rgba(157,72,224,.4)}
+.gr-x{position:sticky;top:8px;float:right;margin:8px 8px -38px 0;z-index:2;padding:5px 11px;border-radius:7px;border:1px solid var(--border-subtle);background:rgba(10,14,20,.85);color:var(--text-muted);font:700 11px 'IBM Plex Sans KR',sans-serif;cursor:pointer}
+@keyframes grIn{from{opacity:0}}
+@media (max-width:768px){
+  .gr{padding:12px}
+  .gr-row{grid-template-columns:52px minmax(0,1fr) minmax(0,1fr);row-gap:4px}
+  .gr-row .gr-bar,.gr-row .gr-mid{grid-column:2/4;grid-row:2}
+  .gr-row .gr-tn.b{grid-column:3}
+  .gr-ln{min-width:0;grid-template-columns:minmax(0,1fr) 78px minmax(0,1fr);grid-template-areas:"a lk b" "a pd b" "a ad b";row-gap:2px;padding:8px 6px}
+  .gr-ln.hd{display:none}
+  .gr-ln>.gr-pl:first-child{grid-area:a} .gr-ln>.gr-lk{grid-area:lk} .gr-ln>.gr-pd{grid-area:pd} .gr-ln>.gr-ad{grid-area:ad} .gr-ln>.gr-pl.r{grid-area:b}
+  .gr-pl{flex-direction:column;align-items:flex-start;gap:4px} .gr-pl.r{flex-direction:column-reverse;align-items:flex-end}
+  .gr-ci{width:26px;height:26px}
+  .gr-pn b{white-space:normal;word-break:break-all}
+  .gr-modal{padding:0;align-items:flex-end}
+  .gr-modal-box{max-height:92vh;border-radius:14px 14px 0 0}
+}
+
 /* ═══ 랜덤뽑기 내전 ═══ */
 #screen-3-normal:not(.random-mode) .rd-only{display:none!important}
 #screen-3-normal.random-mode .rd-hide,
@@ -3342,6 +3585,8 @@ body:has(#screen-0.active){background-color:var(--rg-bg)!important;background-im
   body:has(#btn-back.visible) #fab-trigger,body:has(#btn-back.visible) #fab-menu{display:none!important}
   body:has(#btn-back.visible) #chat-float-btn{bottom:calc(38vh + 64px)!important;transform:scale(.82);transform-origin:right center}
 }
+/* 내전 단계(데스크톱 포함)에서는 메뉴 플로팅 버튼 숨김 */
+body:has(#btn-back.visible) #fab-trigger,body:has(#btn-back.visible) #fab-menu{display:none!important}
 /* 모바일 팀 배치: 카드를 누르면 아래에서 올라오는 '어디로 보낼까요' 창 */
 #mobile-move-sheet{position:fixed;left:0;right:0;bottom:0;z-index:9600;background:var(--rg-s1,#11151d);border-top:1px solid rgba(255,255,255,.08);border-radius:16px 16px 0 0;box-shadow:0 -16px 40px rgba(0,0,0,.55);padding:10px 14px calc(12px + env(safe-area-inset-bottom));max-height:70vh;max-height:70dvh;overflow-y:auto;transform:translateY(105%);transition:transform .22s ease;font-family:'IBM Plex Sans KR',sans-serif}
 #mobile-move-sheet.open{transform:none}
@@ -3852,7 +4097,7 @@ body:has(#screen-0.active){background-color:var(--rg-bg)!important;background-im
     <span class="type-tag">5인 팀</span>
   </div>
 </div>
-<div class="type-card" id="type-auction" onclick="selectType('auction')"> <div class="type-card-icon"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4"/><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg></div> <div class="type-card-title">경매 내전</div> <div class="type-card-desc">팀장들이 포인트를 가지고 멤버를 입찰해 영입합니다. 전략적이고 긴장감 있는 팀 구성이 가능합니다.</div> <div class="type-card-tags"> <span class="type-tag">포인트 입찰</span> <span class="type-tag">랜덤 경매</span> <span class="type-tag">카운트다운</span> </div> </div> <div class="type-card" id="type-aram" onclick="selectType('aram')"> <div class="type-card-icon"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M4.9 4.9l14.2 14.2M2 12h20M4.9 19.1L19.1 4.9"/></svg></div> <div class="type-card-title">칼바람 내전</div> <div class="type-card-desc">레이팅·티어를 가리고 랜덤으로 팀을 섞습니다. 팀장 없이 바로 진행합니다.</div> <div class="type-card-tags"> <span class="type-tag">랜덤 팀섞기</span> <span class="type-tag">레이팅·티어 비공개</span> </div> </div> <div class="type-card" id="type-random" onclick="selectType('random')"> <div class="type-card-icon"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.2" fill="currentColor"/><circle cx="15.5" cy="15.5" r="1.2" fill="currentColor"/><circle cx="15.5" cy="8.5" r="1.2" fill="currentColor"/><circle cx="8.5" cy="15.5" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/></svg></div> <div class="type-card-title">랜덤뽑기 내전</div> <div class="type-card-desc">고티어·저티어에 번호를 매기고 랜덤 팀장들이 번호만 보고 팀원을 뽑습니다. 관전 화면에 번호판이 실시간으로 나와 방송용으로 좋습니다.</div> <div class="type-card-tags"> <span class="type-tag">번호 뽑기</span> <span class="type-tag">랜덤 팀장</span> <span class="type-tag">힌트 계산</span> </div> </div> </div> <div class="type-select-footer" style="justify-content:space-between;"> <button class="btn-secondary" onclick="goBackToStage1()">← 이전 단계</button> <button class="btn-next" id="btn-type-next" disabled onclick="goToStage3()">다음 단계 →</button> </div> </div>
+<div class="type-card" id="type-auction" onclick="selectType('auction')"> <div class="type-card-icon"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4"/><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg></div> <div class="type-card-title">경매 내전</div> <div class="type-card-desc">팀장들이 포인트를 가지고 멤버를 입찰해 영입합니다. 전략적이고 긴장감 있는 팀 구성이 가능합니다.</div> <div class="type-card-tags"> <span class="type-tag">포인트 입찰</span> <span class="type-tag">랜덤 경매</span> <span class="type-tag">카운트다운</span> </div> </div> <div class="type-card" id="type-aram" onclick="selectType('aram')"> <div class="type-card-icon"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M4.9 4.9l14.2 14.2M2 12h20M4.9 19.1L19.1 4.9"/></svg></div> <div class="type-card-title">칼바람 내전</div> <div class="type-card-desc">레이팅·티어를 가리고 랜덤으로 팀을 섞습니다. 팀장 없이 바로 진행합니다.</div> <div class="type-card-tags"> <span class="type-tag">랜덤 팀섞기</span> <span class="type-tag">레이팅·티어 비공개</span> </div> </div> <div class="type-card" id="type-random" onclick="selectType('random')"> <div class="type-card-icon"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.2" fill="currentColor"/><circle cx="15.5" cy="15.5" r="1.2" fill="currentColor"/><circle cx="15.5" cy="8.5" r="1.2" fill="currentColor"/><circle cx="8.5" cy="15.5" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/></svg></div> <div class="type-card-title">랜덤뽑기 내전</div> <div class="type-card-desc">고티어·저티어에 번호를 매기고 랜덤 팀장들이 번호만 보고 팀원을 뽑습니다. 관전 화면에 번호판이 실시간으로 나와 방송용으로 좋습니다.</div> <div class="type-card-tags"> <span class="type-tag">번호 뽑기</span> <span class="type-tag">랜덤 팀장</span> <span class="type-tag">힌트 계산</span> </div> </div> <div class="type-card" id="type-balvote" onclick="selectType('balvote')"> <div class="type-card-icon"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg></div> <div class="type-card-title">밸투라고소</div> <div class="type-card-desc">밸런스 투표 · 라인 고정 · 소프트피어리스. 진행자 없이 참여자 10명이 디스코드 링크에서 AI 추천 조합에 투표하고, 7명이 최종 확정하면 팀이 정해집니다.</div> <div class="type-card-tags"> <span class="type-tag">참여자 투표</span> <span class="type-tag">라인별 2명</span> <span class="type-tag">디스코드 10명</span> </div> <div class="type-card-warn" id="type-balvote-warn"></div> </div> </div> <div class="type-select-footer" style="justify-content:space-between;"> <button class="btn-secondary" onclick="goBackToStage1()">← 이전 단계</button> <button class="btn-next" id="btn-type-next" disabled onclick="goToStage3()">다음 단계 →</button> </div> </div>
 </div> <div id="screen-3-normal" class="screen"> <div class="builder-wrap"> <div class="builder-topbar-row" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:.5rem;padding:.35rem .5rem;background:var(--bg-panel);border:1px solid var(--border-subtle);border-radius:4px;">
   <button class="btn-secondary" onclick="goBackToStage2()" style="font-size:11px;padding:6px 12px;font-weight:700;">← 이전</button>
   <div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;flex:1;">
@@ -3873,7 +4118,7 @@ body:has(#screen-0.active){background-color:var(--rg-bg)!important;background-im
     <div id="lane-ratio-inline-normal" class="aram-hide" style="display:flex;gap:3px;align-items:center;"></div>
     <button class="btn-next" id="btn-normal-next" disabled onclick="if(window.rdNext)rdNext();else goToStage4()" style="font-size:11px;padding:6px 14px;font-weight:700;">다음 →</button>
   </div>
-</div> <div id="rd-root" class="rd-only"></div> <div class="builder-cond" style="margin-bottom:.4rem;"> <div class="cond-item"><div class="cond-dot" id="n-cond-pool"></div><span id="n-cond-pool-text" style="font-size:12px;color:var(--text-muted);">대기칸 비어있음</span></div> <div class="cond-item"><div class="cond-dot" id="n-cond-teams"></div><span id="n-cond-teams-text" style="font-size:12px;color:var(--text-muted);">팀 조건 충족</span></div> </div> <div id="bal-check-normal" class="bc-panel" style="display:none;"></div> <div class="builder-layout"> <div class="pool-panel"> <div id="lane-ratio-section-normal" style="background:var(--bg-panel);border:1px solid var(--border-subtle);border-radius:4px;overflow:hidden;margin-bottom:.75rem;"><div onclick="_lrToggle('lane-ratio-body-normal','lane-ratio-arrow-normal')" style="padding:.4rem .75rem;display:flex;align-items:center;justify-content:space-between;background:rgba(200,170,110,.04);cursor:pointer;user-select:none;"><span style="font-family:IBM Plex Sans KR,sans-serif;font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--gold);display:flex;align-items:center;gap:6px;"><span style="width:5px;height:5px;border-radius:50%;background:var(--blue-bright);display:inline-block;flex-shrink:0;"></span>라인 비율</span><span id="lane-ratio-arrow-normal" style="font-size:10px;color:var(--text-muted);transition:transform .2s;">▼</span></div><div id="lane-ratio-body-normal" style="padding:.5rem .75rem .6rem;"><div style="margin-bottom:6px;"><div style="font-size:9px;color:var(--text-muted);font-family:IBM Plex Sans KR,sans-serif;margin-bottom:3px;">주라인</div><div id="lane-ratio-main-normal"></div></div><div><div style="font-size:9px;color:var(--text-muted);font-family:IBM Plex Sans KR,sans-serif;margin-bottom:3px;">주+부라인</div><div id="lane-ratio-both-normal"></div></div></div></div>
+</div> <div id="rd-root" class="rd-only"></div> <div id="bv-root" class="bv-only"></div> <div class="builder-cond" style="margin-bottom:.4rem;"> <div class="cond-item"><div class="cond-dot" id="n-cond-pool"></div><span id="n-cond-pool-text" style="font-size:12px;color:var(--text-muted);">대기칸 비어있음</span></div> <div class="cond-item"><div class="cond-dot" id="n-cond-teams"></div><span id="n-cond-teams-text" style="font-size:12px;color:var(--text-muted);">팀 조건 충족</span></div> </div> <div id="bal-check-normal" class="bc-panel" style="display:none;"></div> <div class="builder-layout"> <div class="pool-panel"> <div id="lane-ratio-section-normal" style="background:var(--bg-panel);border:1px solid var(--border-subtle);border-radius:4px;overflow:hidden;margin-bottom:.75rem;"><div onclick="_lrToggle('lane-ratio-body-normal','lane-ratio-arrow-normal')" style="padding:.4rem .75rem;display:flex;align-items:center;justify-content:space-between;background:rgba(200,170,110,.04);cursor:pointer;user-select:none;"><span style="font-family:IBM Plex Sans KR,sans-serif;font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--gold);display:flex;align-items:center;gap:6px;"><span style="width:5px;height:5px;border-radius:50%;background:var(--blue-bright);display:inline-block;flex-shrink:0;"></span>라인 비율</span><span id="lane-ratio-arrow-normal" style="font-size:10px;color:var(--text-muted);transition:transform .2s;">▼</span></div><div id="lane-ratio-body-normal" style="padding:.5rem .75rem .6rem;"><div style="margin-bottom:6px;"><div style="font-size:9px;color:var(--text-muted);font-family:IBM Plex Sans KR,sans-serif;margin-bottom:3px;">주라인</div><div id="lane-ratio-main-normal"></div></div><div><div style="font-size:9px;color:var(--text-muted);font-family:IBM Plex Sans KR,sans-serif;margin-bottom:3px;">주+부라인</div><div id="lane-ratio-both-normal"></div></div></div></div>
 <div id="s3n-guide-wrap" style="background:var(--bg-panel);border:1px solid var(--border-gold);border-radius:4px;overflow:hidden;box-shadow:0 2px 12px rgba(200,170,110,.06);margin-bottom:.75rem;"> <div onclick="_s3GuideToggle('s3n-guide-wrap','s3n-guide-list')" style="padding:.45rem 1rem;display:flex;align-items:center;justify-content:space-between;background:rgba(200,170,110,.06);cursor:pointer;user-select:none;"> <span style="font-family:IBM Plex Sans KR,sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;color:var(--gold);display:flex;align-items:center;gap:6px;"><span style="width:5px;height:5px;border-radius:50%;background:var(--blue-bright);display:inline-block;flex-shrink:0;"></span>가이드/룰 </span> <span id="s3n-guide-arrow" style="font-size:10px;color:var(--text-muted);transition:transform .2s;">▼</span> </div> <div id="s3n-guide-list" style="display:none;padding:.4rem .5rem;flex-wrap:wrap;gap:5px;max-height:100px;overflow-y:auto;"><div style="font-size:11px;color:var(--text-muted);font-family:IBM Plex Sans KR,sans-serif;text-align:center;padding:.5rem;width:100%;letter-spacing:1px;">적용된 가이드가 없습니다</div></div> </div><div class="pool-header"> <div class="pool-title"><div class="panel-title-dot"></div>대기</div> <div style="display:flex;align-items:center;gap:5px;"> <div class="filter-active-dot" id="np-filter-dot"></div> <div class="count-badge lit" id="n-pool-count">0명</div> </div> </div> <div class="filter-bar" style="padding:.4rem .5rem;gap:.35rem;"> <div class="filter-search-row"> <input class="filter-search-input" id="np-search" placeholder="닉네임 검색..." oninput="applyFilter('np')"> <button class="filter-search-clear" id="np-search-clear" onclick="clearSearch('np')">✕</button> </div> <div class="filter-row"> <span class="filter-label">포지션</span> <button id="np-lane-mode-main" onclick="setLaneMode('np','main')" style="padding:2px 7px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--muted);font-family:'IBM Plex Sans KR',sans-serif;font-size:9px;font-weight:700;cursor:pointer;letter-spacing:.5px;">주라인</button><button id="np-lane-mode-both" onclick="setLaneMode('np','both')" style="padding:2px 7px;border-radius:2px;border:1px solid rgba(10,200,185,.4);background:rgba(10,200,185,.1);color:var(--blue-bright);font-family:'IBM Plex Sans KR',sans-serif;font-size:9px;font-weight:700;cursor:pointer;letter-spacing:.5px;margin-right:4px;">주+보조</button><button class="lane-filter-btn" data-lane="top" onclick="toggleLaneFilter('np','top')">TOP</button> <button class="lane-filter-btn" data-lane="jg" onclick="toggleLaneFilter('np','jg')">JG</button> <button class="lane-filter-btn" data-lane="mid" onclick="toggleLaneFilter('np','mid')">MID</button> <button class="lane-filter-btn" data-lane="bot" onclick="toggleLaneFilter('np','bot')">BOT</button> <button class="lane-filter-btn" data-lane="sup" onclick="toggleLaneFilter('np','sup')">SUP</button> </div> <div class="filter-row"> <span class="filter-label">정렬</span> <select class="sort-select" id="np-sort" onchange="applyFilter('np')"> <option value="">기본</option> <option value="tier-asc">티어 낮은순</option> <option value="tier-desc">티어 높은순</option> <option value="name-asc">이름 ㄱ→ㅎ</option> <option value="name-desc">이름 ㅎ→ㄱ</option> <option value="doom-desc">내전 높은순</option> <option value="doom-asc">내전 낮은순</option> </select> </div> <div class="filter-row"> <span class="filter-label">내전</span> <button id="np-doom-toggle" onclick="toggleDoomScore()" style="padding:2px 10px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--text-muted);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:.5px;transition:all .15s;">내전점수 OFF</button> </div> </div> <div class="pool-body" id="n-pool"
  ondragover="onDragOver(event,'n-pool')"
  ondragleave="onDragLeave(event,'n-pool')"
@@ -4326,6 +4571,7 @@ body:has(#screen-0.active){background-color:var(--rg-bg)!important;background-im
 
       <!-- 결과 -->
       <div id="uva-result" style="display:none;">
+        <div id="uva-review"></div>
         <div id="uva-lab"></div>
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:.9rem;">
           <span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:rgba(10,200,185,.15);border:1px solid rgba(10,200,185,.4);font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;color:var(--blue-bright);">4</span>
@@ -7011,6 +7257,7 @@ pips[1].classList.add('active');
 document.getElementById('btn-next').disabled=true;
 showScreen('screen-2');
 match.status='종류 선택';
+if (window._bvTypeCheck) _bvTypeCheck();
 gaEvent('stage_progress', { stage: 2, community_id: window._currentCommunityId });
 await saveCurrentMatch();
 toast('2단계 종류 선택으로 이동합니다', 'ok');
@@ -7018,20 +7265,26 @@ toast('2단계 종류 선택으로 이동합니다', 'ok');
 // 칼바람 내전 = 일반 내전 팀 짜기 화면 + match.aramTeam (레이팅·티어 숨김, 랜덤 팀섞기, 팀장 없이 진행)
 var _selAramType = false;
 var _selRandomType = false;
+var _selBalVoteType = false;
 function selectType(type){
 _selAramType = (type === 'aram');
 _selRandomType = (type === 'random');
-if (type === 'aram' || type === 'random') type = 'normal';
+_selBalVoteType = (type === 'balvote');
+if (type === 'aram' || type === 'random' || type === 'balvote') type = 'normal';
+var _bvEl = document.getElementById('type-balvote');
+if (_bvEl) _bvEl.classList.toggle('selected', _selBalVoteType);
 var _rdEl = document.getElementById('type-random');
 if (_rdEl) _rdEl.classList.toggle('selected', _selRandomType);
 matchType=type;
 var _aramEl = document.getElementById('type-aram');
 if (_aramEl) _aramEl.classList.toggle('selected', _selAramType);
-document.getElementById('type-normal').classList.toggle('selected', type === 'normal' && !_selAramType && !_selRandomType);
+document.getElementById('type-normal').classList.toggle('selected', type === 'normal' && !_selAramType && !_selRandomType && !_selBalVoteType);
 document.getElementById('type-auction').classList.toggle('selected', type === 'auction');
 var laneEl = document.getElementById('type-lane');
 if (laneEl) laneEl.classList.toggle('selected', type === 'lane');
 document.getElementById('btn-type-next').disabled=false;
+// 밸투라고소: 10명 · 전원 디스코드 연동 · 라인별 2명일 때만 다음 단계
+if (_selBalVoteType && window._bvTypeCheck) { var _bvE = _bvTypeCheck(); if (!_bvE.canTest) { document.getElementById('btn-type-next').disabled = true; toast('밸투라고소 조건이 맞지 않아요: ' + _bvE.why[0], 'err'); } }
 }
 async function goToStage3(){
 if (!matchType) return;
@@ -7050,6 +7303,8 @@ normalPool=[...members];
 teams=[];
 match.aramTeam = !!_selAramType;
 match.randomTeam = !!_selRandomType;
+match.balVoteMode = !!_selBalVoteType;
+if (match.balVoteMode) { var _bvE3 = window._bvEligibility ? _bvEligibility(members) : { canTest: true }; if (!_bvE3.canTest) { toast(_bvE3.why[0], 'err'); pips[2].classList.remove('active'); pips[1].classList.remove('done'); pips[1].classList.add('active'); return; } match.balVoteApplied = null; }
 if (match.randomTeam) { match.randomDraft = null; if (window._rdInitDraft) _rdInitDraft(); }
 _applyAramTeamMode();
 showScreen('screen-3-normal');
@@ -7058,10 +7313,11 @@ await saveCurrentMatch();
 renderNormalPool();
 renderNormalTeams();
 setTimeout(renderLaneRatioChart, 50);
-toast(match.randomTeam ? '랜덤뽑기 내전을 시작합니다 — 🎲 팀장 뽑기를 눌러 주세요' : match.aramTeam ? '칼바람 내전 팀 짜기를 시작합니다' : '일반 내전 팀 짜기를 시작합니다', 'ok');
+toast(match.balVoteMode ? '밸투라고소를 시작합니다 — 가이드 룰을 고르고 투표 참여링크를 보내 주세요' : match.randomTeam ? '랜덤뽑기 내전을 시작합니다 — 🎲 팀장 뽑기를 눌러 주세요' : match.aramTeam ? '칼바람 내전 팀 짜기를 시작합니다' : '일반 내전 팀 짜기를 시작합니다', 'ok');
 } else if (matchType === 'lane') {
 match.aramTeam = false;
 match.randomTeam = false;
+match.balVoteMode = false;
 teams=[];
 showScreen('screen-3-lane');
 match.status='팀 짜기';
@@ -7070,6 +7326,7 @@ initLaneBuilder();
 setTimeout(renderLaneRatioChart, 50);
 toast('라인 고정 내전 팀 짜기를 시작합니다', 'ok');
 }else{
+match.balVoteMode = false;
 auctionPool=[...members];
 failedMembers=[];
 onSaleMember=null;
@@ -7244,7 +7501,7 @@ function _postTeamInfoToDiscord() {
 function _teamPostData() {
   var POS_KO = { top:'탑', jg:'정글', mid:'미드', bot:'원딜', sup:'서폿' };
   var TYPE_KO = { normal: '일반 내전', lane: '라인고정 내전', auction: '경매 내전' };
-  var typeLabel = match.isAram ? '칼바람 내전' : (match.randomTeam ? '랜덤뽑기 내전' : (TYPE_KO[matchType] || ''));
+  var typeLabel = match.isAram ? '칼바람 내전' : match.balVoteMode ? '밸투라고소' : (match.randomTeam ? '랜덤뽑기 내전' : (TYPE_KO[matchType] || ''));
   var tierKey = function (m) { return String(m.tierFull || m.tier || 'UNRANKED').trim().toUpperCase().split(/\s+/)[0]; };
   var row = function (m, capId) {
     m = _teamCopyFullMember(m);
@@ -7590,6 +7847,8 @@ condTeamsText.textContent=teamsOk?'팀 조건 충족 ✓':'팀 미완성';
 document.getElementById('btn-normal-next').disabled=!(poolEmpty && teamsOk);
 // 랜덤뽑기: 모든 팀 5명이면 다음 (남은 사람은 대기 멤버로)
 if (window._rdIsOn && _rdIsOn()) document.getElementById('btn-normal-next').disabled = !_rdReady();
+// 밸투라고소: 진행자는 팀을 짜지 않음 (참여자 투표 확정 → 자동 4단계)
+if (window._bvIsOn && _bvIsOn()) document.getElementById('btn-normal-next').disabled = true;
 }
 function moveAuction(mid, src, dst){
 const member=findMemberById(mid);
@@ -8825,7 +9084,7 @@ if (_doomVisible && typeof getDoomScore === 'function') {
     _doomSumEl.style.cssText = 'padding:5px 10px;border-top:1px solid var(--border-subtle);display:flex;align-items:center;justify-content:space-between;background:rgba(167,139,250,.04);';
     _doomSumEl.innerHTML = '<span style="font-family:IBM Plex Sans KR,sans-serif;font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--text-muted);">내전</span>'
       + '<span style="font-family:IBM Plex Sans KR,sans-serif;font-size:13px;font-weight:700;color:#A78BFA;">'
-      + _doomTotal + '점'
+      + _doomFmt(_doomTotal) + '점'
       + (_doomMissing > 0 ? '<span style="font-size:9px;color:var(--text-muted);margin-left:4px;">+미산정' + _doomMissing + '명</span>' : '')
       + '</span>';
     div.appendChild(_doomSumEl);
@@ -9658,34 +9917,7 @@ document.getElementById('bar-status').textContent='내전 종료';
 await saveCurrentMatch();
 s5SwitchTab('result');
 toast('5단계 결과 입력을 시작합니다', 'ok');
-// 후기 DM 자동 발송 (이미 발송한 내전은 스킵)
-if (!match.reviewDmSent) {
-  const dcMembers = members.filter(function(m){ return m.discordId; });
-  if (dcMembers.length) {
-    try {
-      var res = await fetch(RIOT_PROXY_URL + '/review-dm', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          cid: window._currentCommunityId,
-          matchId: match && match.id,
-          matchName: match && match.name ? match.name : '',
-          members: dcMembers.map(function(m){ return { puuid: m.puuid, discordId: m.discordId, name: m.name }; }),
-          token: _sessionToken,
-          auto: true
-        })
-      });
-      var j = await res.json();
-      if (j.ok) {
-        var sent = j.results ? j.results.filter(function(r){ return r.ok; }).length : 0;
-        match.reviewDmSent = true;
-        await saveCurrentMatch();
-        if (!j.skipped) toast('📝 ' + sent + '명에게 후기 DM 전송 완료', 'ok');
-      }
-    } catch(e) {
-      console.warn('[reviewDM auto]', e.message);
-    }
-  }
-}
+// 후기 DM 은 자동으로 보내지 않음 → 5단계 상단 '후기 DM' 버튼으로 진행자가 직접 발송
 }
 let resultMatches=[];
 let _0xB1=1;
@@ -9929,6 +10161,7 @@ onmouseover="this.style.background='rgba(10,200,185,0.16)'"
 onmouseout="this.style.background='rgba(10,200,185,0.08)'">대진 저장</button>`}
 </div> </div> </div>
 ${renderScoreboard(rm)}
+${typeof _grBtnHtml === 'function' ? _grBtnHtml(rm) : ''}
 ${_gdBlock(rm, 'gd')}
 </div>`;
 list.appendChild(card);
@@ -15563,7 +15796,12 @@ _localVersion = remote._version || 0;
 members        = remote._members        || members;
 matchType      = remote._matchType      || matchType;
 // _teams 복원 시 로컬 captainCode 유지
-if (remote._teams) {
+// 4·5단계에서 원격 스냅샷의 팀이 비어 있으면(오래된/중간 상태 스냅샷) 로컬 팀을 지킴
+var _tmCount = function (arr) { return (Array.isArray(arr) ? arr : Object.values(arr || {})).reduce(function (n, t) { return n + (t && t.members ? (Array.isArray(t.members) ? t.members : Object.values(t.members)).filter(Boolean).length : 0); }, 0); };
+var _inPlay = currentScreen === 'screen-4' || currentScreen === 'screen-5';
+if (remote._teams && _inPlay && _tmCount(teams) > 0 && _tmCount(remote._teams) === 0) {
+  console.warn('[sync] 팀이 비어 있는 원격 스냅샷 무시 (로컬 팀 유지)');
+} else if (remote._teams) {
   const localCodeMap = {};
   (teams || []).forEach(function(t) { if (t.captainCode) localCodeMap[t.id] = t.captainCode; });
   teams = remote._teams.map ? remote._teams.map(function(t) {
@@ -15585,7 +15823,9 @@ if (remote._onSaleMember !== undefined && remote._onSaleMember !== null) {
   // 매물이 null이고 pool 정보가 있을 때만 동기화
   onSaleMember = null;
 }
-bracketRounds  = _restoreBracketRounds(remote._bracketRounds) || bracketRounds;
+// 대진표: 원격에 대진표가 없는데 지금 4·5단계에서 대진표를 보고 있으면 지우지 않음 (예전엔 빈 배열로 덮어써 대진표가 사라졌음)
+if (remote._bracketRounds) bracketRounds = _restoreBracketRounds(remote._bracketRounds);
+else if (!(_inPlay && bracketRounds.length && /^screen-(4|5)$/.test(remote._currentScreen || ''))) bracketRounds = [];
 extraMatches   = remote._extraMatches   || extraMatches;
 resultMatches  = (remote._resultMatches || resultMatches).map((rm, i) => ({
   ...(resultMatches[i] || {}), ...rm, fetching: false,
@@ -15597,6 +15837,7 @@ if (remote.time)    { match.time    = remote.time; }
 if (remote.admin)   { match.admin   = remote.admin; }
 if (remote.jjong != null) { match.jjong = !!remote.jjong; match.jjongAt = remote.jjongAt || null; _updateJjongBtn(); }
 if (remote.randomTeam != null) match.randomTeam = !!remote.randomTeam;
+if (remote.balVoteMode != null) { match.balVoteMode = !!remote.balVoteMode; if (remote.balVoteApplied !== undefined) match.balVoteApplied = remote.balVoteApplied || null; if (window._bvApplyMode && currentScreen === 'screen-3-normal') _bvApplyMode(); }
 if (remote.randomDraft !== undefined) { match.randomDraft = remote.randomDraft; if (window._rdApplyMode && currentScreen === 'screen-3-normal') _rdApplyMode(); }
 if (remote.autoResultChecked) match.autoResultChecked = true;
 if (remote.reviewDmSent) match.reviewDmSent = true;
@@ -15676,11 +15917,17 @@ renderMatchList();
 let _editLock = false;
 let _pendingRemote = null;
 function acquireEditLock() { _editLock = true; }
+// 잠금 동안 쌓인 원격 스냅샷은 지금 로컬보다 새것일 때만 적용 (그 사이 로컬에서 저장했으면 오래된 것)
+function _remoteIsNewer(r) {
+  if (!r) return false;
+  var rv = r._version || 0, lv = _localVersion || 0;
+  return rv > lv || (rv === lv && (r._updatedAt || 0) > ((match && match._updatedAt) || 0));
+}
 async function releaseEditLock() {
 _editLock = false;
 if (_pendingRemote) {
-_applyRemoteUpdate(_pendingRemote);
-_pendingRemote = null;
+var _pr = _pendingRemote; _pendingRemote = null;
+if (_remoteIsNewer(_pr)) _applyRemoteUpdate(_pr);
 }
 }
 function showConflictBanner() {
@@ -15696,7 +15943,7 @@ banner.style.display = 'flex';
 }
 function applyPendingRemote() {
 _editLock = false;
-if (_pendingRemote) { _applyRemoteUpdate(_pendingRemote); _pendingRemote = null; }
+if (_pendingRemote) { var _pr2 = _pendingRemote; _pendingRemote = null; if (_remoteIsNewer(_pr2)) _applyRemoteUpdate(_pr2); }
 dismissConflict();
 }
 async function dismissConflict() {
@@ -15875,7 +16122,7 @@ _laneTeams: matchType === 'lane' ? laneTeams.map(function(t) {
       mainLane: mb.mainLane || null, subLanes: mb.subLanes || [],
       puuid: mb.puuid || null } : null;
   });
-  return { id: t.id, name: t.name, slots: slots };
+  return { id: t.id, name: t.name, captainId: t.captainId || null, slots: slots };
 }) : null,
 _normalPool: normalPool,
 _auctionPool: auctionPool,
@@ -15916,7 +16163,7 @@ try {
 }
 }
 function restoreMatch(snapshot) {
-match = { id: snapshot.id, name: snapshot.name, time: snapshot.time, admin: snapshot.admin, status: snapshot.status, discordJoinable: snapshot.discordJoinable || false, discordLeaveDisabled: snapshot.discordLeaveDisabled || false, isAram: snapshot.isAram || false, maxMembers: snapshot.maxMembers || null, laneFixedRecruit: snapshot.laneFixedRecruit || false, laneRestrictOff: snapshot.laneRestrictOff || false, cutMembers: snapshot.cutMembers || null, tierLimit: snapshot.tierLimit || null, aramTeam: snapshot.aramTeam || false, randomTeam: snapshot.randomTeam || false, randomDraft: snapshot.randomDraft || null, jjong: snapshot.jjong || false, jjongAt: snapshot.jjongAt || null, stage4At: snapshot.stage4At || null, autoResultAt: snapshot.autoResultAt || null, autoResultChecked: snapshot.autoResultChecked || false, autoResult: snapshot.autoResult || null, reviewDmSent: snapshot.reviewDmSent || false, reviewDmAt: snapshot.reviewDmAt || null };
+match = { id: snapshot.id, name: snapshot.name, time: snapshot.time, admin: snapshot.admin, status: snapshot.status, discordJoinable: snapshot.discordJoinable || false, discordLeaveDisabled: snapshot.discordLeaveDisabled || false, isAram: snapshot.isAram || false, maxMembers: snapshot.maxMembers || null, laneFixedRecruit: snapshot.laneFixedRecruit || false, laneRestrictOff: snapshot.laneRestrictOff || false, cutMembers: snapshot.cutMembers || null, tierLimit: snapshot.tierLimit || null, aramTeam: snapshot.aramTeam || false, randomTeam: snapshot.randomTeam || false, balVoteMode: snapshot.balVoteMode || false, balVoteLimit: snapshot.balVoteLimit != null ? snapshot.balVoteLimit : 5, balVoteApplied: snapshot.balVoteApplied || null, randomDraft: snapshot.randomDraft || null, jjong: snapshot.jjong || false, jjongAt: snapshot.jjongAt || null, stage4At: snapshot.stage4At || null, autoResultAt: snapshot.autoResultAt || null, autoResultChecked: snapshot.autoResultChecked || false, autoResult: snapshot.autoResult || null, reviewDmSent: snapshot.reviewDmSent || false, reviewDmAt: snapshot.reviewDmAt || null };
 members = snapshot._members || [];
 // 내전 점수 로드
 if (typeof loadDoomScores === 'function') loadDoomScores();
@@ -15992,7 +16239,7 @@ if (matchType === 'lane') {
     });
     // 누락된 슬롯 채우기
     ['top','jg','mid','bot','sup'].forEach(function(s) { if (!(s in slots)) slots[s] = null; });
-    return { id: t.id, name: t.name, slots: slots };
+    return { id: t.id, name: t.name, captainId: t.captainId || null, slots: slots };
   });
   if (laneTeams.length === 0) initLaneBuilder();
   else renderLaneBuilder();
@@ -23994,6 +24241,7 @@ function _applyAramTeamMode() {
   var sc = document.getElementById('screen-3-normal');
   if (sc) sc.classList.toggle('aram-mode', !!(match && match.aramTeam && matchType === 'normal'));
   if (window._rdApplyMode) _rdApplyMode();
+  if (window._bvApplyMode) _bvApplyMode();
 }
 async function randomShuffleTeams() {
   if (!match || matchType !== 'normal') return;
@@ -24347,7 +24595,10 @@ function uvSetLaneMode(mode) {
 // ── 내전 점수 ──
 var _DOOM_DEFAULT = [
   // 마스터/그마/챌 LP 구간
-  {tier:'MASTER+', minLp:1500, maxLp:99999, top:64,jg:69,mid:67,bot:68,sup:58},
+  {tier:'MASTER+', minLp:1800, maxLp:99999, top:64,jg:69,mid:67,bot:68,sup:58},
+  {tier:'MASTER+', minLp:1700, maxLp:1799,  top:64,jg:69,mid:67,bot:68,sup:58},
+  {tier:'MASTER+', minLp:1600, maxLp:1699,  top:64,jg:69,mid:67,bot:68,sup:58},
+  {tier:'MASTER+', minLp:1500, maxLp:1599,  top:64,jg:69,mid:67,bot:68,sup:58},
   {tier:'MASTER+', minLp:1400, maxLp:1499,  top:62,jg:67,mid:65,bot:66,sup:57},
   {tier:'MASTER+', minLp:1300, maxLp:1399,  top:60,jg:65,mid:63,bot:64,sup:55},
   {tier:'MASTER+', minLp:1200, maxLp:1299,  top:58,jg:63,mid:61,bot:62,sup:53},
@@ -24397,19 +24648,54 @@ var _DOOM_DEFAULT = [
 
 var _doomScores = null; // 로드 후 캐시
 
-async function loadDoomScores() {
-  if (!window._currentCommunityId) { _doomScores = _DOOM_DEFAULT; return; }
+// 커뮤니티 내전 점수표: 커뮤니티별로 불러오고(_doomScoresCid), 불러온 뒤 지금 화면을 다시 그림
+//  · 예전: 커뮤니티가 정해지기 전에 불러오면 기본표로 굳거나, 다 불러오기 전에 그린 화면이 기본표 점수로 남아 있었음
+//  · DB 에 배열이 객체 모양으로 저장돼 있어도 읽음
+var _doomScoresCid = null, _doomLoadingCid = null, _doomFailAt = {};
+function _doomCid() { return window._currentCommunityId || (typeof match !== 'undefined' && match && match.communityId) || null; }
+async function loadDoomScores(force) {
+  var cid = _doomCid();
+  if (!cid) { if (!_doomScores) _doomScores = _DOOM_DEFAULT; return; }
+  if (!force && _doomScoresCid === cid && _doomScores) return;
+  if (_doomLoadingCid === cid) return;
+  _doomLoadingCid = cid;
+  var table = null, okRes = false;
   try {
-    var res = await fetch(_workerBase + '/db-public-read', {
+    // (_workerBase 는 모듈 스크립트 안 변수라 여기서 쓰면 ReferenceError → 항상 기본표였음)
+    var res = await fetch('https://api.roonging.com/db-public-read', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ path: 'communities/' + window._currentCommunityId + '/doom_scores' })
+      body: JSON.stringify({ path: 'communities/' + cid + '/doom_scores' })
     });
     var j = await res.json();
-    _doomScores = (j.ok && Array.isArray(j.data) && j.data.length > 0) ? j.data : _DOOM_DEFAULT;
-  } catch(e) { _doomScores = _DOOM_DEFAULT; }
+    okRes = !!(j && j.ok);
+    var d = j && j.ok ? j.data : null;
+    if (d && !Array.isArray(d) && typeof d === 'object') d = Object.keys(d).sort(function (a, b) { return Number(a) - Number(b); }).map(function (k) { return d[k]; });
+    if (Array.isArray(d) && d.filter(Boolean).length) table = _doomSplitTop(d.filter(Boolean));
+  } catch(e) {}
+  _doomLoadingCid = null;
+  if (_doomCid() !== cid) return;            // 그 사이 다른 커뮤니티로 이동
+  _doomScores = table || _DOOM_DEFAULT;
+  if (okRes) _doomScoresCid = cid;           // 점수표가 없는 커뮤니티면 기본표로 확정
+  else _doomFailAt[cid] = Date.now();       // 실패: 30초 뒤에 다시 시도
+  _doomRerender();
+}
+// 내전 점수가 보이는 화면만 다시 그림
+function _doomRerender() {
+  try {
+    if (typeof currentScreen === 'undefined') return;
+    if (currentScreen === 'screen-1' && typeof renderMembers === 'function') renderMembers();
+    else if (currentScreen === 'screen-3-normal' && typeof renderNormalTeams === 'function') { renderNormalPool(); renderNormalTeams(); }
+    else if (currentScreen === 'screen-3-auction' && typeof renderAuctionTeams === 'function') { renderAuctionPool(); renderAuctionTeams(); renderOnSale(); }
+    else if (currentScreen === 'screen-3-lane' && typeof renderLaneBuilder === 'function') renderLaneBuilder();
+    else if (currentScreen === 'screen-v' && typeof renderUvTeams === 'function') renderUvTeams();
+    if (window._bvRender) window._bvRender();
+  } catch (e) { console.warn('[doom] rerender', e); }
 }
 
 function getDoomScore(member, laneOverride) {
+  // 지금 커뮤니티의 점수표가 아직 없으면 불러오기 시작 (다 불러오면 화면을 다시 그림)
+  var _dc = _doomCid();
+  if (_dc && _doomScoresCid !== _dc && _doomLoadingCid !== _dc && !(Date.now() - (_doomFailAt[_dc] || 0) < 30000)) loadDoomScores();
   var table = _doomScores || _DOOM_DEFAULT;
   // 임시티어 → 최고티어 → 현재티어 순 우선
   var rawTier = member.highTier || member._tempTier || member._peakTier || member.tier || 'UNRANKED';
@@ -24461,13 +24747,17 @@ function getDoomScore(member, laneOverride) {
 }
 
 
+// 내전 점수 소수점: 입력은 소수 둘째 자리까지 저장, 합계는 부동소수 오차 없이 표시
+function _doomNum(v) { var n = parseFloat(v); return isFinite(n) ? Math.round(n * 100) / 100 : 0; }
+function _doomFmt(n) { n = Number(n); return isFinite(n) ? String(Math.round(n * 100) / 100) : '—'; }
+
 // ── 내전 점수 편집 ──
 var _doomEditCid = null;
 var _doomEditData = null;
 
 function _doomRowLabel(row) {
   if (row.tier === 'MASTER+') {
-    var max = row.maxLp >= 9999 ? '1500+' : row.minLp + '~' + row.maxLp;
+    var max = row.maxLp >= 9999 ? row.minLp + '+' : row.minLp + '~' + row.maxLp;
     return '마/그/챌 ' + max + 'LP';
   }
   var KO = {DIAMOND:'다이아',EMERALD:'에메랄드',PLATINUM:'플래티넘',GOLD:'골드',SILVER:'실버',BRONZE:'브론즈',IRON:'아이언'};
@@ -24478,11 +24768,11 @@ function _doomMakeCell(val, rowIdx, key) {
   var td = document.createElement('td');
   td.style.cssText = 'padding:6px 10px;border:1px solid rgba(167,139,250,.15);text-align:center;';
   var inp = document.createElement('input');
-  inp.type = 'number'; inp.value = val; inp.min = 0; inp.max = 999;
+  inp.type = 'number'; inp.value = val; inp.min = 0; inp.max = 999; inp.step = 'any'; inp.inputMode = 'decimal';
   inp.dataset.row = rowIdx; inp.dataset.key = key;
   inp.style.cssText = 'width:48px;background:transparent;border:none;border-bottom:1px solid rgba(167,139,250,.3);color:var(--white);font-family:IBM Plex Sans KR,sans-serif;font-size:12px;font-weight:700;text-align:center;outline:none;padding:2px;';
   inp.addEventListener('input', function() {
-    if (window._doomEditData) window._doomEditData[rowIdx][key] = parseInt(this.value) || 0;
+    if (window._doomEditData) window._doomEditData[rowIdx][key] = _doomNum(this.value);
   });
   td.appendChild(inp);
   return td.outerHTML;
@@ -24530,11 +24820,11 @@ function _renderDoomTable() {
       var inp = document.createElement('input');
       inp.type = 'number';
       inp.value = row[key] !== undefined ? row[key] : 0;
-      inp.min = 0; inp.max = 999;
+      inp.min = 0; inp.max = 999; inp.step = 'any'; inp.inputMode = 'decimal';
       inp.style.cssText = 'width:48px;background:transparent;border:none;border-bottom:1px solid rgba(167,139,250,.3);color:var(--white);font-family:IBM Plex Sans KR,sans-serif;font-size:12px;font-weight:700;text-align:center;outline:none;padding:2px;';
       (function(ri, k) {
         inp.addEventListener('input', function() {
-          if (window._doomEditData) window._doomEditData[ri][k] = parseInt(this.value) || 0;
+          if (window._doomEditData) window._doomEditData[ri][k] = _doomNum(this.value);
         });
       })(i, key);
       td.appendChild(inp);
@@ -24549,7 +24839,19 @@ function _renderDoomTable() {
 function _doomRowKey(r) {
   return r.tier === 'MASTER+' ? 'M:' + Number(r.minLp) + '-' + Number(r.maxLp) : String(r.tier).toUpperCase() + ':' + Number(r.div);
 }
+// 예전 점수표의 맨 위 구간(1500+)을 1500~1599 · 1600~1699 · 1700~1799 · 1800+ 로 나눔 (점수는 1500+ 값 그대로)
+function _doomSplitTop(table) {
+  if (!Array.isArray(table)) return table;
+  var hasNew = table.some(function (r) { return r && r.tier === 'MASTER+' && Number(r.minLp) >= 1800 && Number(r.maxLp) >= 9999; });
+  var old = table.find(function (r) { return r && r.tier === 'MASTER+' && Number(r.minLp) === 1500 && Number(r.maxLp) >= 9999; });
+  if (hasNew || !old) return table;
+  var mk = function (a, b) { var n = JSON.parse(JSON.stringify(old)); n.minLp = a; n.maxLp = b; return n; };
+  var out = [];
+  table.forEach(function (r) { if (r === old) out.push(mk(1800, 99999), mk(1700, 1799), mk(1600, 1699), mk(1500, 1599)); else out.push(r); });
+  return out;
+}
 function _doomNormalize(table) {
+  table = _doomSplitTop((table || []).filter(Boolean));
   var have = {};
   (table || []).forEach(function (r) { if (r && r.tier) have[_doomRowKey(r)] = r; });
   var gold2 = have['GOLD:2'] || _DOOM_DEFAULT.find(function (r) { return r.tier === 'GOLD' && r.div === 2; });
@@ -24635,7 +24937,7 @@ function _doomParseCsv(text) {
     ['top', 'jg', 'mid', 'bot', 'sup'].forEach(function (k) {
       var v = Number(c[idx[k]]);
       if (c[idx[k]] === '' || isNaN(v) || v < 0 || v > 999) bad = bad || k;
-      row[k] = Math.round(v);
+      row[k] = _doomNum(v);
     });
     if (bad) return { error: n + '번째 줄: ' + bad + ' 점수가 0~999 숫자가 아닙니다' };
     var key = _doomRowKey(row);
@@ -24670,7 +24972,7 @@ window.saveDoomScores = async function saveDoomScores() {
     if (j.ok) {
       // 캐시 갱신
       if (_doomEditCid === window._currentCommunityId) {
-        _doomScores = _doomEditData;
+        _doomScores = _doomEditData; _doomScoresCid = _doomEditCid; _doomRerender();
         if (typeof renderMembers === 'function') renderMembers();
       }
       toast('✅ 내전 점수 저장 완료', 'ok');
@@ -26461,7 +26763,7 @@ function renderLaneBuilder() {
       e.dataTransfer.setData('text/plain', String(teamId));
     }; })(t.id));
     var filled = Object.values(t.slots).filter(Boolean).length;
-    var doomHtml = (_doomVisible && hasDoom) ? '<span style="font-family:IBM Plex Sans KR,sans-serif;font-size:11px;font-weight:700;color:#A78BFA;margin-left:6px;">내전 ' + totalDoom.toFixed(1) + '</span>' : '';
+    var doomHtml = (_doomVisible && hasDoom) ? '<span style="font-family:IBM Plex Sans KR,sans-serif;font-size:11px;font-weight:700;color:#A78BFA;margin-left:6px;">내전 ' + _doomFmt(totalDoom) + '</span>' : '';
     hdr.innerHTML = '<span class="team-name">' + t.name + '</span><span class="team-count">' + filled + '/5</span>' + doomHtml;
     teamPanel.appendChild(hdr);
 
@@ -27828,12 +28130,65 @@ function showLaneMismatchPopup(opts) {
     });
   }
 
-  // 라인 격차: 두 선수 모두 학습 데이터가 있으면 내전 전력 점수 차이(×100), 아니면 솔랭 티어 점수 차이
+  // ── 학습 데이터가 없는 멤버: 솔랭 티어(내전에 들어올 때 기록된 티어)로 내전 전력 점수를 추정 ──
+  //   학습된 선수들의 '솔랭 티어 → 라인별 전력 점수' 직선(라인마다 따로)을 그대로 씀 → 학습된 선수와 같은 눈금
+  function _uvaFit(D) {
+    if (!D) return null;
+    if (D._tierFit) return D._tierFit;
+    var fit = {};
+    Object.keys(_UVA_ROLE_LANE).forEach(function (R) {
+      var xs = [], ys = [];
+      Object.keys(D.players || {}).forEach(function (k) {
+        var p = D.players[k], t = p && p.tier, sc = p && p.roles && p.roles[R] && p.roles[R].score;
+        if (typeof t === 'number' && typeof sc === 'number') { xs.push(t); ys.push(sc); }
+      });
+      var n = xs.length;
+      if (n < 10) { fit[R] = null; return; }
+      var mx = 0, my = 0; for (var i = 0; i < n; i++) { mx += xs[i]; my += ys[i]; } mx /= n; my /= n;
+      var sxy = 0, sxx = 0; for (var j = 0; j < n; j++) { sxy += (xs[j] - mx) * (ys[j] - my); sxx += (xs[j] - mx) * (xs[j] - mx); }
+      var b = sxx ? sxy / sxx : 0;
+      fit[R] = { a: my - b * mx, b: b };
+    });
+    return (D._tierFit = fit);
+  }
+  function _uvaTierNum(m) {
+    if (!m) return null;
+    try { if (typeof _balTierScore === 'function') { var t = _balTierScore(m); if (t != null) return t; } } catch (e) {}
+    return null;
+  }
+  // 멤버 × 라인 → { s: 전력 점수, src: 'lab' | 'tier' | 'none' }
+  function _uvaScoreOf(m, lane) {
+    var R = _UVA_LAB_ROLE[lane];
+    if (!m) return { s: 0, src: 'none' };
+    if (m._lab) return { s: RGLab.score(m._lab, R), src: 'lab' };
+    var f = _uvaLab ? _uvaFit(_uvaLab) : null, t = _uvaTierNum(m);
+    if (f && f[R] && t != null) return { s: f[R].a + f[R].b * t, src: 'tier', t: t };
+    return { s: 0, src: 'none' };
+  }
+
+  function _uvaFillSolo(m) {
+    if (!m || (m.soloTier && String(m.soloTier).toUpperCase() !== 'UNRANKED')) return;   // 솔랭 정보가 있으면 그대로
+    var KNOWN = ['IRON','BRONZE','SILVER','GOLD','PLATINUM','EMERALD','DIAMOND','MASTER','GRANDMASTER','CHALLENGER'];
+    var tf = String(m.tierFull || m.tier || '').replace(/\(임시\)/g, ' ').toUpperCase().trim();
+    var toks = tf.split(/\s+/), t = toks[0] || String(m.tier || '').toUpperCase().split(/\s+/)[0];
+    if (KNOWN.indexOf(t) < 0) return;
+    m.soloTier = t;
+    var R = { I: 'I', II: 'II', III: 'III', IV: 'IV', '1': 'I', '2': 'II', '3': 'III', '4': 'IV' };
+    var high = t === 'MASTER' || t === 'GRANDMASTER' || t === 'CHALLENGER';
+    if (!high && toks[1] && R[toks[1]]) m.soloDivision = R[toks[1]];
+    var lpM = tf.match(/(\d+)\s*LP/);
+    if (lpM) m.soloLP = parseInt(lpM[1], 10);
+    else if (high && m.highLp != null && isFinite(+m.highLp)) m.soloLP = +m.highLp;
+  }
+
+  // 라인 격차: 한쪽이라도 학습 데이터가 있으면 내전 전력 점수 차이(×100, 없는 쪽은 솔랭 티어로 추정), 둘 다 없으면 솔랭 티어 점수 차이
   function _uvaLaneGap(myM, enM, lane) {
-    if (myM && enM && myM._lab && enM._lab) {
-      var role = _UVA_LAB_ROLE[lane];
-      var d = RGLab.score(myM._lab, role) - RGLab.score(enM._lab, role);
-      return { gap: Math.round(d * 100), lab: true, diff: d };
+    if (myM && enM && (myM._lab || enM._lab) && _uvaLab) {
+      var a = _uvaScoreOf(myM, lane), b = _uvaScoreOf(enM, lane);
+      if (a.src !== 'none' && b.src !== 'none') {
+        var d = a.s - b.s;
+        return { gap: Math.round(d * 100), lab: true, est: a.src !== 'lab' || b.src !== 'lab', diff: d };
+      }
     }
     return { gap: _getTierScore(myM) - _getTierScore(enM), lab: false };
   }
@@ -27855,14 +28210,18 @@ function showLaneMismatchPopup(opts) {
       var id = String(lanes[lane] || '');
       return id ? (team.members || []).find(function (x) { return String(x.id || x.name) === id; }) : null;
     }
-    var A = [], B = [], rows = [];
+    var rows = [], sA = 0, sB = 0, labN = 0, estN = 0, noneN = 0;
     LANE_KEYS.forEach(function (lane) {
       var role = _UVA_LAB_ROLE[lane];
       var a = memberAt(myTeam, _uvaMyLanes, lane), b = memberAt(enemyTeam, _uvaEnemyLanes, lane);
-      A.push({ p: a && a._lab, role: role }); B.push({ p: b && b._lab, role: role });
-      rows.push({ lane: lane, role: role, a: a, b: b });
+      var ea = _uvaScoreOf(a, lane), eb = _uvaScoreOf(b, lane);
+      sA += ea.s; sB += eb.s;
+      [ea, eb].forEach(function (e) { if (e.src === 'lab') labN++; else if (e.src === 'tier') estN++; else noneN++; });
+      rows.push({ lane: lane, role: role, a: a, b: b, ea: ea, eb: eb });
     });
-    var tp = RGLab.teamProb(D, A, B, null);
+    // 학습 모델 수식 그대로 (진영 모름 → bias 0): 승률 = sig((ΣA − ΣB) / 5) · 학습 데이터 없는 사람은 솔랭 티어 추정 점수
+    var _n = (M.players_per_team) || 5;
+    var tp = { pA: 1 / (1 + Math.exp(-(sA - sB) / _n)) };
     var pa = Math.round(tp.pA * 100), pb = 100 - pa;
     var hold = M.metrics && M.metrics.holdout_linear;
     var esc = _esc;
@@ -27876,8 +28235,9 @@ function showLaneMismatchPopup(opts) {
     html += '<div style="text-align:right;"><div style="' + _UVA_F + 'font-size:10px;font-weight:700;color:#E05050;letter-spacing:1px;">상대팀 · ' + esc(enemyTeam.name || '') + '</div><div style="' + _UVA_F + 'font-size:26px;font-weight:800;color:' + (pb > pa ? '#E05050' : 'var(--text-white)') + ';line-height:1.1;">' + pb + '%</div></div>';
     html += '</div>';
     html += '<div style="display:flex;height:8px;border-radius:4px;overflow:hidden;background:var(--bg-dark);"><div style="width:' + pa + '%;background:var(--blue-bright);transition:width .6s;"></div><div style="flex:1;background:#E05050;opacity:.85;"></div></div>';
-    var miss = (5 - tp.hitA) + (5 - tp.hitB);
-    html += '<div style="' + _UVA_F + 'font-size:10px;color:var(--text-muted);margin-top:.5rem;line-height:1.5;">진영(블루/레드)은 모른다고 보고 계산했어요.' + (miss ? ' 학습 데이터가 없는 ' + miss + '명은 평균 선수로 계산했어요.' : '') + '</div>';
+    html += '<div style="' + _UVA_F + 'font-size:10px;color:var(--text-muted);margin-top:.5rem;line-height:1.5;">진영(블루/레드)은 모른다고 보고 계산했어요.' +
+      (estN ? ' 학습 데이터가 없는 ' + estN + '명은 솔랭 티어(내전에 들어올 때 기록된 티어)로 전력 점수를 추정했어요.' : '') +
+      (noneN ? ' 티어 정보도 없는 ' + noneN + '명은 평균 선수로 계산했어요.' : '') + '</div>';
     html += '</div>';
 
     // ② 라인별 맞대결
@@ -27885,16 +28245,17 @@ function showLaneMismatchPopup(opts) {
     html += '<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:1rem;">';
     rows.forEach(function (r) {
       var pa1 = r.a && r.a._lab, pb1 = r.b && r.b._lab;
-      var lp = pa1 && pb1 ? Math.round(RGLab.laneProb(D, pa1, pb1, r.role) * 100) : null;
+      // 라인 맞대결도 같은 눈금: 학습 데이터 없는 쪽은 솔랭 티어 추정 점수로
+      var lp = r.a && r.b && r.ea.src !== 'none' && r.eb.src !== 'none' ? Math.round(1 / (1 + Math.exp(-(r.ea.s - r.eb.s) / _n)) * 100) : null;
       var h2h = '';
       if (pa1 && pb1 && pa1.vs) { var v = pa1.vs.find(function (x) { return x[0] === pb1.key; }); if (v) h2h = '상대전적 ' + v[2] + '승 ' + (v[1] - v[2]) + '패'; }
       html += '<div style="background:var(--bg-panel);border:1px solid var(--border-subtle);border-radius:3px;padding:.5rem .6rem;">';
       html += '<div style="display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;">';
-      html += _uvaSide(r.a, pa1, r.role, false);
+      html += _uvaSide(r.a, pa1, r.role, false, r.ea);
       html += '<div style="text-align:center;min-width:58px;"><div style="' + _UVA_F + 'font-size:9px;font-weight:700;color:var(--text-muted);letter-spacing:1px;">' + LANE_KO_A[r.lane] + '</div>' +
         (lp != null ? '<div style="' + _UVA_F + 'font-size:13px;font-weight:800;color:' + (lp > 52 ? 'var(--blue-bright)' : lp < 48 ? '#E05050' : 'var(--text-white)') + ';">' + lp + ' : ' + (100 - lp) + '</div>' : '<div style="' + _UVA_F + 'font-size:11px;color:var(--text-muted);">—</div>') +
         (h2h ? '<div style="' + _UVA_F + 'font-size:9px;color:#F4C84A;white-space:nowrap;">' + h2h + '</div>' : '') + '</div>';
-      html += _uvaSide(r.b, pb1, r.role, true);
+      html += _uvaSide(r.b, pb1, r.role, true, r.eb);
       html += '</div></div>';
     });
     html += '</div>';
@@ -27928,7 +28289,7 @@ function showLaneMismatchPopup(opts) {
         var role = _UVA_LAB_ROLE[LANE_KEYS[i]], p = m._lab;
         html += '<div style="background:var(--bg-panel);border:1px solid var(--border-subtle);border-radius:3px;padding:.45rem .55rem;">';
         html += '<div style="' + _UVA_F + 'font-size:10px;font-weight:700;color:var(--text-white);margin-bottom:.3rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><span style="color:' + (side[1] ? '#E05050' : 'var(--blue-bright)') + ';margin-right:4px;">' + LANE_KO_A[LANE_KEYS[i]] + '</span>' + esc(m.name || '') + '</div>';
-        if (!p) html += '<div style="' + _UVA_F + 'font-size:10px;color:var(--text-muted);">학습 데이터 없음</div>';
+        if (!p) { var _e = _uvaScoreOf(m, LANE_KEYS[i]); html += '<div style="' + _UVA_F + 'font-size:10px;color:var(--text-muted);">학습 데이터 없음' + (_e.src === 'tier' ? ' · 솔랭 티어로 전력 추정' : ' · 티어 정보도 없어 평균으로 계산') + '</div>'; }
         else {
           var pr = RGLab.parts(D, p, role, 3);
           html += '<div style="display:flex;flex-wrap:wrap;gap:3px;">';
@@ -27944,6 +28305,23 @@ function showLaneMismatchPopup(opts) {
     el.innerHTML = html;
   }
 
+  // 두 팀의 결과가 저장돼 있으면 'AI 경기 리뷰' (예측이 왜 맞았는지 · 틀렸는지)
+  function _uvaRenderReview(myTeam, enemyTeam) {
+    var el = document.getElementById('uva-review');
+    if (!el) return;
+    el.innerHTML = '';
+    if (!window.GameReview) return;
+    var snap = window._uvSnapshot || {};
+    var rms = (Array.isArray(snap._resultMatches) ? snap._resultMatches : Object.values(snap._resultMatches || {})).filter(Boolean);
+    var ids = [String(myTeam.id), String(enemyTeam.id)];
+    var pair = rms.filter(function (rm) {
+      return rm.teamA && rm.teamB && ids.indexOf(String(rm.teamA.id)) >= 0 && ids.indexOf(String(rm.teamB.id)) >= 0 && String(rm.teamA.id) !== String(rm.teamB.id);
+    });
+    if (!pair.some(GameReview.usable)) return;
+    el.innerHTML = _uvaSecHead('', '경기 결과 리뷰', '이 대진은 결과가 저장돼 있어요 · AI 예측과 실제 경기 비교') + '<div id="uva-review-body"></div>';
+    GameReview.render(document.getElementById('uva-review-body'), pair, { title: 'AI 경기 리뷰' });
+  }
+
   function _uvaSecHead(num, title, sub) {
     return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:.6rem;flex-wrap:wrap;">' +
       (num ? '<span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:rgba(10,200,185,.15);border:1px solid rgba(10,200,185,.4);' + _UVA_F + 'font-size:11px;font-weight:700;color:var(--blue-bright);">' + num + '</span>' : '<span style="width:20px;"></span>') +
@@ -27953,12 +28331,20 @@ function showLaneMismatchPopup(opts) {
   function _uvaChip(t, c, bg) {
     return '<span style="' + _UVA_F + 'font-size:9px;font-weight:700;color:' + c + ';background:' + bg + ';border:1px solid ' + c + '55;border-radius:10px;padding:1px 7px;white-space:nowrap;">' + _esc(t) + '</span>';
   }
-  function _uvaSide(m, p, role, right) {
+  function _uvaSide(m, p, role, right, est) {
     var al = right ? 'right' : 'left';
     if (!m) return '<div></div>';
     var h = '<div style="min-width:0;text-align:' + al + ';">';
     h += '<div style="' + _UVA_F + 'font-size:11px;font-weight:700;color:var(--text-white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + _esc(m.name || '') + '</div>';
-    if (!p) return h + '<div style="' + _UVA_F + 'font-size:9px;color:var(--text-muted);">학습 데이터 없음</div></div>';
+    if (!p) {
+      if (est && est.src === 'tier') {
+        var pc = RGLab.pct(_uvaLab, role, est.s);
+        var tf = String(m.tierFull || m.tier || '').replace(/\(임시\)/g, '').trim();
+        return h + '<div style="' + _UVA_F + 'font-size:10px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><b style="color:#9DB4D6;">' + (pc != null ? '상위 ' + pc + '%' : (est.s >= 0 ? '+' : '') + est.s.toFixed(2)) + '</b> · 솔랭 티어 추정</div>' +
+          '<div style="' + _UVA_F + 'font-size:9px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">학습 데이터 없음' + (tf ? ' · ' + _esc(tf) : '') + '</div></div>';
+      }
+      return h + '<div style="' + _UVA_F + 'font-size:9px;color:var(--text-muted);">학습 데이터 · 티어 정보 없음 (평균으로 계산)</div></div>';
+    }
     var r = (p.roles && p.roles[role]) || {};
     var rs = r.role_share != null ? Math.round(r.role_share * 100) : null;
     h += '<div style="' + _UVA_F + 'font-size:10px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' +
@@ -28501,9 +28887,13 @@ function showLaneMismatchPopup(opts) {
       if (_uvaLab && _champI) _uvaMergeLab(allMembers, _champI);
     } catch (e) { console.warn('[uva] lab merge', e); _uvaLab = null; }
 
+    // 솔랭 티어: 멤버가 들어올 때 기록된 티어(tier / tierFull)로 채움 (이전엔 비어 있어 전부 UNRANKED 로 보였음)
+    allMembers.forEach(_uvaFillSolo);
+
     document.getElementById('uva-loading').style.display = 'none';
     document.getElementById('uva-result').style.display = 'block';
     _uvaRenderLab(myTeam, enemyTeam);
+    _uvaRenderReview(myTeam, enemyTeam);
     _uvaRenderChampCards(myTeam, enemyTeam);
     _uvaRenderBanPick(myTeam, enemyTeam);
   };
@@ -28778,7 +29168,8 @@ function showLaneMismatchPopup(opts) {
   // ── 공통 티어 점수 계산 (외부 노출) ─────────────
   function _getTierScore(m) {
     var t = (m.soloTier || '').toUpperCase();
-    var d = parseInt(m.soloDivision || '4', 10);
+    var _RD = { I: 1, II: 2, III: 3, IV: 4 };
+    var d = _RD[String(m.soloDivision || '').toUpperCase()] || parseInt(m.soloDivision || '4', 10) || 4;   // 'I'~'IV' (라이엇 형식) 도 읽음
     var lp = parseInt(m.soloLP || '0', 10) || 0;
     var tierMap = { IRON:1, BRONZE:2, SILVER:3, GOLD:4, PLATINUM:5, EMERALD:6, DIAMOND:7, MASTER:8, GRANDMASTER:9, CHALLENGER:10 };
     var tier = tierMap[t] || 1;
@@ -30695,6 +31086,795 @@ function _attRenderModal() {
 /*RDRAFT-END*/
 
 </script>
+<script>
+/*BVOTE-BEGIN*/
+/* ═══════════════════════════════════════════════════════════════
+   밸투라고소 (밸런스 투표 · 라인 고정 · 소프트피어리스)
+   - 일반 내전(matchType 'normal') + match.balVoteMode
+   - 2단계: 10명 · 전원 디스코드 연동 · 주 라인별 정확히 2명일 때만 선택 가능
+   - 3단계: 진행자는 팀을 짜지 않음. 가이드 룰 선택 → 투표 참여링크 DM 전송 → 현황 보기 / 강제 집행
+   - 참여자: balvote.html (가이드 동의 → 출석 → 투표/직접 조합 → 7표 이상 조합 최종 확정)
+   - 7명이 최종 확정(또는 강제 집행) → 그 팀으로 자동으로 4단계
+   - 데이터: matches/{id}/balVote (서버만 씀 · /balvote)
+   ═══════════════════════════════════════════════════════════════ */
+(function () {
+  var LANES = ['top', 'jg', 'mid', 'bot', 'sup'];
+  var KO = { top: '탑', jg: '정글', mid: '미드', bot: '원딜', sup: '서폿' };
+  var NEED = 7;
+  var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]; }); };
+  var arr = function (v) { return Array.isArray(v) ? v.filter(function (x) { return x != null; }) : (v && typeof v === 'object' ? Object.values(v).filter(function (x) { return x != null; }) : []); };
+  var keyOf = function (id) { return String(id).replace(/[.#$\[\]\/]/g, '_'); };
+  var normLane = function (x) { return (typeof _balNormLane === 'function') ? _balNormLane(x) : (LANES.indexOf(x) >= 0 ? x : null); };
+  // 같은 라인 맞상대 내전점수 비교 → 센 쪽 초록, 약한 쪽 빨강 (차이가 클수록 진하게)
+  function laneBg(me, opp) {
+    if (me == null || opp == null || me === opp) return '';
+    var t = Math.min(1, Math.abs(me - opp) / Math.max(1, 0.3 * Math.max(me, opp)));
+    var a = (0.12 + 0.43 * t).toFixed(2), c = me > opp ? '60,224,133' : '255,107,122';
+    return 'background:linear-gradient(90deg,rgba(' + c + ',' + a + ') 0%,rgba(' + c + ',' + (a * 0.35).toFixed(2) + ') 70%,rgba(' + c + ',0) 100%);';
+  }
+  function fmtDs(v) { return v == null ? '—' : (Math.round(v * 100) / 100) + ''; }
+  function tierShort(m) {
+    var tf = String((m && (m.tierFull || m.tier)) || '').replace(/\(임시\)/g, '').trim();
+    if (!tf) return '언랭';
+    var MAP = { IRON: '아이언', BRONZE: '브론즈', SILVER: '실버', GOLD: '골드', PLATINUM: '플레', EMERALD: '에메', DIAMOND: '다이아', MASTER: '마스터', GRANDMASTER: '그마', CHALLENGER: '챌린저', UNRANKED: '언랭' };
+    var p = tf.toUpperCase().split(/\s+/);
+    var R = { I: 1, II: 2, III: 3, IV: 4 };
+    return (MAP[p[0]] || p[0]) + (p[1] ? ' ' + (R[p[1]] || p[1]) : '');
+  }
+
+  // ── 2단계 선택 조건 ──
+  function eligibility(list) {
+    list = arr(list);
+    var why = [], pairs = {};
+    LANES.forEach(function (l) { pairs[l] = []; });
+    if (list.length !== 10) why.push('참여자가 정확히 10명이어야 해요 (현재 ' + list.length + '명)');
+    var noDc = list.filter(function (m) { return !m.discordId; });
+    if (noDc.length) why.push('디스코드 미연동 ' + noDc.length + '명: ' + noDc.slice(0, 4).map(function (m) { return m.name; }).join(', ') + (noDc.length > 4 ? ' 외' : ''));
+    var noLane = [];
+    list.forEach(function (m) { var l = normLane(m.mainLane); if (l) pairs[l].push(m); else noLane.push(m); });
+    if (noLane.length) why.push('주 라인이 없는 멤버: ' + noLane.map(function (m) { return m.name; }).join(', '));
+    var bad = LANES.filter(function (l) { return pairs[l].length !== 2; });
+    if (bad.length && list.length === 10) why.push('주 라인이 라인마다 2명씩이어야 해요 (' + LANES.map(function (l) { return KO[l] + ' ' + pairs[l].length; }).join(' · ') + ')');
+    // 테스트용 라인 짝: 라인별 2명이 아니면 남는 사람을 빈 라인으로 옮겨 채움
+    var tp = {}; LANES.forEach(function (l) { tp[l] = pairs[l].slice(0, 2); });
+    var rest = []; LANES.forEach(function (l) { rest = rest.concat(pairs[l].slice(2)); }); rest = rest.concat(noLane);
+    LANES.forEach(function (l) { while (tp[l].length < 2 && rest.length) tp[l].push(rest.shift()); });
+    return { ok: !why.length, why: why, pairs: pairs, canTest: list.length === 10, testPairs: tp };
+  }
+  window._bvEligibility = eligibility;
+  window._bvTypeCheck = function () {
+    var card = document.getElementById('type-balvote');
+    var warn = document.getElementById('type-balvote-warn');
+    var e = eligibility(members);
+    if (card) card.classList.toggle('bv-ineligible', !e.ok);
+    if (warn) warn.innerHTML = e.ok ? '<b class="ok">진행 가능</b> 10명 · 디스코드 연동 · 라인별 2명' : e.why.map(function (w) { return '<span>' + esc(w) + '</span>'; }).join('') + (e.canTest ? '<span class="t">지금은 테스트 모드로만 진행할 수 있어요 (DM 없이)</span>' : '');
+    return e;
+  };
+
+  function isOn() { return !!(typeof match !== 'undefined' && match && match.balVoteMode && typeof matchType !== 'undefined' && matchType === 'normal'); }
+  window._bvIsOn = isOn;
+
+  // ── 실시간 구독 ──
+  var _st = null, _unsub = null, _watchKey = null, _busy = false, _advancing = false, _forceSel = null;
+  function cidOf() { return window._currentCommunityId || (match && match.communityId); }
+  function watch() {
+    var cid = cidOf();
+    var path = (isOn() && cid && match && match.id) ? 'communities/' + cid + '/matches/' + match.id + '/balVote' : null;
+    if (path === _watchKey) return;
+    if (_unsub) { try { _unsub(); } catch (e) {} _unsub = null; }
+    _watchKey = path; _st = null;
+    if (!path || !window._fb || !window._fb.fbSubscribePath) return;
+    _unsub = window._fb.fbSubscribePath(path, function (v) {
+      if (_watchKey !== path) return;
+      _st = v || null;
+      render();
+      maybeAdvance();
+    });
+  }
+
+  // 찬성 투표: 한 사람이 여러 조합에 찬성 (members[k].votes = {cand:true})
+  function votesOfM(m) { if (!m) return []; if (m.votes && typeof m.votes === 'object') return Object.keys(m.votes).filter(function (c) { return m.votes[c]; }); return m.vote ? [m.vote] : []; }
+  function tally(st) {
+    var votes = {};
+    arr(st && st.members).forEach(function (m) { votesOfM(m).forEach(function (c) { votes[c] = (votes[c] || 0) + 1; }); });
+    return { votes: votes };
+  }
+  // 찬성 많은 순 → 동률이면 AI 승률이 50%에 가까운 순 → 먼저 올라온 순 (서버와 같은 규칙)
+  function rankIds(st) {
+    var tl = tally(st), c = st.cands || {};
+    return Object.keys(c).sort(function (a, b) {
+      var d = (tl.votes[b] || 0) - (tl.votes[a] || 0); if (d) return d;
+      var pa = c[a].p == null ? 1 : Math.abs(c[a].p - 0.5), pb = c[b].p == null ? 1 : Math.abs(c[b].p - 0.5);
+      if (pa !== pb) return pa - pb;
+      return (c[a].at || 0) - (c[b].at || 0);
+    });
+  }
+  function limitOf() { return (match && match.balVoteLimit != null) ? match.balVoteLimit : 5; }
+  function mmss(ms) { ms = Math.max(0, ms); var x = Math.ceil(ms / 1000); return Math.floor(x / 60) + ':' + ('0' + (x % 60)).slice(-2); }
+  function timerTxt(st) {
+    if (!st.limitMin) return '제한 시간 없음 · 찬성 ' + NEED + '명이 모이면 확정';
+    if (!st.deadline) { var a = arr(st.members).filter(function (m) { return m.attendAt; }).length; return st.limitMin + '분 타이머 대기 · 10명 출석하면 시작 (지금 ' + a + '/10)'; }
+    return '마감까지 <b data-bvcd>' + mmss(st.deadline - Date.now()) + '</b> · 끝나면 찬성 1위로 자동 확정';
+  }
+  // 이 브라우저의 멤버 목록이 투표 시작 때와 같은지
+  function sameMembers(st) {
+    if (!st || !st.members) return true;
+    var a = Object.keys(st.members).sort().join(','), b = arr(members).map(function (m) { return keyOf(m.id); }).sort().join(',');
+    return a === b;
+  }
+  function memberByKey(k) { return arr(members).find(function (m) { return keyOf(m.id) === k; }) || null; }
+  function teamsOf(st, bits) {
+    var A = [], B = [];
+    LANES.forEach(function (l, i) {
+      var pr = (st.lanes && st.lanes[l]) || [];
+      var b = +bits[i] || 0;
+      A.push({ k: pr[b], lane: l }); B.push({ k: pr[1 - b], lane: l });
+    });
+    return [A, B];
+  }
+  // 내전점수: 투표 시작 때 저장한 값 → 없으면 지금 점수표로 계산
+  function dsOf(st, k, lane) {
+    var x = st && st.members && st.members[k];
+    if (x && x.ds != null && isFinite(+x.ds)) return +x.ds;
+    var m = memberByKey(k);
+    if (!m || typeof getDoomScore !== 'function') return null;
+    var v = parseFloat(getDoomScore(m, lane));
+    return isFinite(v) ? v : null;
+  }
+  function nameOf(st, k) { var m = st && st.members && st.members[k]; return m ? m.name : (memberByKey(k) || {}).name || '?'; }
+
+  // ── 렌더 ──
+  function stepOf(st) {
+    if (!st) return (_appliedGuides && _appliedGuides.length) ? 2 : 1;
+    if (st.status === 'confirmed') return 5;
+    var ms = arr(st.members), att = ms.filter(function (m) { return m.attendAt; }).length;
+    var tl = tally(st), top = Math.max.apply(null, [0].concat(Object.values(tl.votes)));
+    if (top >= NEED) return 5;
+    if (att >= 10 || ms.some(function (m) { return votesOfM(m).length; })) return 4;
+    return 3;
+  }
+  function candTitle(c, id) { return c.by === 'AI' ? 'AI 추천 ' + (c.n || id.replace(/\D/g, '')) : esc(c.by) + ' 님 조합'; }
+  function pctTxt(p) { if (p == null) return '-'; var a = Math.round(p * 100); return a + ' : ' + (100 - a); }
+
+  function candHtml(st, id, c, tl, opts) {
+    opts = opts || {};
+    var T = teamsOf(st, c.bits), v = tl.votes[id] || 0, rk = opts.rank || 0;
+    var pa = c.p == null ? 50 : Math.round(c.p * 100);
+    var conf = st.status === 'confirmed' && st.confirmedCand === id;
+    var D = [T[0].map(function (x) { return dsOf(st, x.k, x.lane); }), T[1].map(function (x) { return dsOf(st, x.k, x.lane); })];
+    var sum = function (side) { var s = 0, ok = false; D[side].forEach(function (v) { if (v != null) { s += v; ok = true; } }); return ok ? Math.round(s * 100) / 100 : null; };
+    var row = function (side) {
+      return T[side].map(function (x, i) { return '<div class="bv-pl" style="' + laneBg(D[side][i], D[1 - side][i]) + '" title="' + esc(nameOf(st, x.k) + ' · ' + tierShort(st.members[x.k] || memberByKey(x.k))) + '"><i>' + KO[x.lane] + '</i><span>' + esc(nameOf(st, x.k)) + '</span><b>' + fmtDs(D[side][i]) + '</b></div>'; }).join('');
+    };
+    var sA = sum(0), sB = sum(1);
+    var head = function (side, s, o) { return '<div class="bv-ct-h">' + (side ? '2팀' : '1팀') + '<span class="bv-ds' + (s != null && o != null && s !== o ? (s > o ? ' up' : ' dn') : '') + '">내전 ' + fmtDs(s) + '점</span></div>'; };
+    return '<div class="bv-cand' + (v >= NEED ? ' hot' : '') + (conf ? ' conf' : '') + (opts.pick ? ' pick' + (_forceSel === id ? ' on' : '') : '') + '"' + (opts.pick ? ' onclick="bvForcePick(\'' + id + '\')"' : '') + '>' +
+      '<div class="bv-cand-h">' + (rk ? '<span class="bv-rk">' + rk + '위</span>' : '') + '<b>' + candTitle(c, id) + '</b>' +
+      '<span class="bv-votes">찬성 <b>' + v + '</b>/' + NEED + '</span></div>' +
+      '<div class="bv-prob" title="AI 예상 승률 (1팀 : 2팀)"><span style="width:' + pa + '%"></span><em>AI 승률 ' + pctTxt(c.p) + '</em></div>' +
+      '<div class="bv-cteams"><div class="bv-ct a">' + head(0, sA, sB) + row(0) + '</div><div class="bv-ct b">' + head(1, sB, sA) + row(1) + '</div></div>' +
+      '<div class="bv-vbar"><span style="width:' + Math.min(100, v / 10 * 100) + '%"></span><u></u></div>' +
+      '</div>';
+  }
+
+  function render() {
+    var root = document.getElementById('bv-root'); if (!root || !isOn()) return;
+    var st = _st, step = stepOf(st), e = eligibility(members);
+    var guides = (_appliedGuides || []).map(function (id) { var r = (_rulesList || []).find(function (x) { return x.id === id; }); return { id: id, title: r ? r.title : '가이드' }; });
+    var started = !!(st && st.members);
+    var steps = ['가이드 룰 · 시간', '투표 링크 전송', '동의 · 출석', '찬성 투표', '확정'];
+    var h = '<div class="bv-head"><div class="bv-title">밸런스 투표 <small>라인 고정 · 소프트피어리스</small></div>' +
+      '<ol class="bv-steps">' + steps.map(function (s, i) { var n = i + 1; return '<li class="' + (n < step ? 'done' : n === step ? 'now' : '') + '"><b>' + n + '</b><span>' + s + '</span></li>'; }).join('') + '</ol>' +
+      '<div class="bv-note">진행자는 팀을 직접 짜지 않아요. 참여자들이 링크에서 괜찮은 조합에 모두 찬성하고, 찬성 7명이 모인 조합(또는 제한 시간이 끝났을 때 1위 조합)으로 확정되면 자동으로 4단계로 넘어가요.</div></div>';
+
+    if (!e.ok && !(st && st.test)) h += '<div class="bv-warn">' + e.why.map(esc).join('<br>') + '<br>' + (e.canTest ? '실제 진행은 1단계 멤버를 고친 뒤에 할 수 있어요. 지금은 <b>테스트로 시작</b>만 할 수 있어요.' : '1단계 멤버를 고친 뒤 2단계에서 다시 선택해 주세요.') + '</div>';
+    if (st && st.test) h += '<div class="bv-testbar"><b>테스트 투표 중</b> DM을 보내지 않았고, 아래 테스트 도구에서 참여자 화면을 열거나 가상 참여자를 움직일 수 있어요. 확정돼도 4단계로 자동으로 넘어가지 않아요.</div>';
+    if (started && !sameMembers(st)) h += '<div class="bv-warn">투표를 시작한 뒤 참여 멤버가 바뀌었어요. <b>처음부터 다시</b>를 눌러 새 링크를 보내 주세요.</div>';
+
+    // 확정됨
+    if (st && st.status === 'confirmed' && st.cands && st.cands[st.confirmedCand]) {
+      var tl0 = tally(st);
+      var why0 = (st.confirmedBy === 'force' || st.forced) ? '진행자가 강제 집행으로 확정했어요' : st.confirmedBy === 'timeout' ? '제한 시간이 끝나 찬성이 가장 많은 조합(' + (tl0.votes[st.confirmedCand] || 0) + '명)으로 확정했어요' : '찬성 ' + (tl0.votes[st.confirmedCand] || 0) + '명이 모여 확정했어요';
+      h += '<div class="bv-done"><div class="bv-done-t">내전이 확정되었습니다' + (st.test ? ' (테스트)' : '') + '</div><div class="bv-done-s">' + why0 + '</div>' +
+        candHtml(st, st.confirmedCand, st.cands[st.confirmedCand], tl0) +
+        '<div class="bv-acts">' +
+        (st.test || match.balVoteApplied === st.confirmedAt ? '<button type="button" class="bv-btn primary" onclick="bvApplyAndGo(true)">이 팀으로 4단계 진행</button>' : '<span class="bv-sub">4단계로 넘어가는 중…</span>') +
+        '<button type="button" class="bv-btn" onclick="bvOpenHostView()">참여자 화면 보기</button>' +
+        '<button type="button" class="bv-btn ghost" onclick="bvReset()">처음부터 다시 투표</button></div>' +
+        (st.test ? '<div class="bv-sub">테스트라 자동으로 넘어가지 않았어요. 4단계로 진행하면 실제 내전처럼 디스코드에 팀 정보가 올라갈 수 있어요.</div>' : '') + '</div>';
+      root.innerHTML = h; return;
+    }
+
+    h += '<div class="bv-grid">';
+    // 1. 가이드 룰
+    h += '<section class="bv-card"><div class="bv-card-h"><span>1. 가이드 룰 · 시간</span><button type="button" class="bv-btn sm" onclick="openGuidePickModal()"' + (started ? ' disabled title="투표를 시작한 뒤에는 바꿀 수 없어요. 처음부터 다시를 누르면 바꿀 수 있어요"' : '') + '>가이드 선택</button></div>' +
+      (guides.length ? '<div class="bv-guides">' + guides.map(function (g) { return '<button type="button" class="bv-guide" onclick="openRulesViewerFromApplied(\'' + esc(g.id) + '\')">' + esc(g.title) + '</button>'; }).join('') + '</div>'
+        : '<div class="bv-empty">아직 선택한 가이드 룰이 없어요. 1개 이상 골라야 링크를 보낼 수 있어요.</div>') +
+      '<div class="bv-sub">참여자는 링크에서 이 가이드 룰과 팀 확정 동의를 먼저 읽고 동의해야 출석 · 투표를 할 수 있어요.</div>' + limitHtml(st, started) + '</section>';
+    // 라인 짝
+    var pairs = started ? null : (e.ok ? e.pairs : e.testPairs);   // 조건이 안 맞으면 테스트에서 쓸 짝을 보여줌
+    h += '<section class="bv-card"><div class="bv-card-h"><span>라인 고정 짝</span><em>같은 라인 2명이 서로 다른 팀으로 가요</em></div><div class="bv-pairs">' +
+      LANES.map(function (l) {
+        var a, b;
+        if (started) { var pr = (st.lanes && st.lanes[l]) || []; a = nameOf(st, pr[0]); b = nameOf(st, pr[1]); }
+        else { a = pairs[l][0] ? pairs[l][0].name : '—'; b = pairs[l][1] ? pairs[l][1].name : '—'; }
+        return '<div class="bv-pair"><i>' + KO[l] + '</i><span>' + esc(a) + '</span><em>vs</em><span>' + esc(b) + '</span></div>';
+      }).join('') + '</div></section>';
+    // 2. 진행
+    var canSend = e.ok && guides.length > 0;
+    h += '<section class="bv-card bv-ctrl"><div class="bv-card-h"><span>2. 투표 진행</span></div>';
+    if (!started) {
+      h += '<button type="button" class="bv-btn primary wide" onclick="bvStart(false)"' + (canSend && !_busy ? '' : ' disabled') + '>' + (_busy ? 'AI 후보 만드는 중…' : '투표 참여링크 전송') + '</button>' +
+        '<div class="bv-sub">' + (!guides.length ? '가이드 룰을 1개 이상 선택하면 눌러져요.' : !e.ok ? '조건이 맞지 않아 실제 전송은 할 수 없어요.' : 'AI가 밸런스 좋은 조합 5개를 만들고, 10명에게 디스코드 DM으로 각자 전용 링크를 보내요. 제한 시간: ' + (limitOf() ? limitOf() + '분' : '없음')) + '</div>' +
+        '<button type="button" class="bv-btn wide bv-testbtn" onclick="bvStart(true)"' + (e.canTest && guides.length && !_busy ? '' : ' disabled') + '>테스트로 시작 (DM 없이)</button>' +
+        '<div class="bv-sub">DM을 보내지 않고, 진행자 혼자 참여자 10명 화면을 열어 보거나 가상 참여자를 움직여 볼 수 있어요.</div>';
+    } else {
+      var ms = arr(st.members), fail = Object.keys(st.members).filter(function (k) { return st.members[k].dm === 'failed'; });
+      h += '<div class="bv-acts">' +
+        '<button type="button" class="bv-btn" onclick="bvResend(' + (fail.length ? 'true' : 'false') + ')"' + (_busy ? ' disabled' : '') + '>' + (fail.length ? 'DM 실패 ' + fail.length + '명 다시 보내기' : 'DM 다시 보내기') + '</button>' +
+        '<button type="button" class="bv-btn danger" onclick="bvForceOpen()">강제 집행</button>' +
+        '<button type="button" class="bv-btn" onclick="bvOpenHostView()">참여자 화면 보기</button>' +
+        '<button type="button" class="bv-btn ghost" onclick="bvReset()">처음부터 다시</button></div>' +
+        '<div class="bv-sub">강제 집행: 투표가 안 모일 때 진행자가 후보 중 하나를 골라 바로 확정해요.</div>' +
+        '<div class="bv-timer' + (st.deadline ? ' run' : '') + '">' + timerTxt(st) + '</div>';
+      var cnt = function (f) { return ms.filter(f).length; };
+      h += '<div class="bv-meters">' +
+        (st.test ? '' : meter('DM 받음', cnt(function (m) { return m.dm === 'sent'; }))) +
+        meter('동의', cnt(function (m) { return m.agreedAt; })) +
+        meter('출석', cnt(function (m) { return m.attendAt; })) +
+        meter('찬성한 사람', cnt(function (m) { return votesOfM(m).length; })) + '</div>';
+    }
+    h += '</section>';
+    // 3. 참여 현황
+    if (started) {
+      var tl = tally(st);
+      var candName = function (id) { var c = st.cands && st.cands[id]; return c ? (c.by === 'AI' ? 'AI ' + (c.n || '') : esc(c.by)) : ''; };
+      var rows = LANES.map(function (l) { return ((st.lanes && st.lanes[l]) || []); }).reduce(function (a, b) { return a.concat(b); }, []);
+      h += '<section class="bv-card bv-wide"><div class="bv-card-h"><span>참여 현황</span><em>실시간</em></div><div class="bv-ptable">' +
+        '<div class="bv-pr hd"><span>라인</span><span>이름</span><span>DM</span><span>동의</span><span>출석</span><span>찬성한 조합</span></div>' +
+        rows.map(function (k) {
+          var m = st.members[k] || {};
+          var dm = m.dm === 'sent' ? '<b class="ok">받음</b>' : m.dm === 'failed' ? '<b class="no">실패</b>' : m.dm === 'test' ? '<b class="dim">테스트</b>' : '<b class="dim">보내는 중</b>';
+          var vs = votesOfM(m).filter(function (c) { return st.cands && st.cands[c]; });
+          var ck = function (v) { return v ? '<b class="ok">✓</b>' : '<b class="dim">—</b>'; };
+          return '<div class="bv-pr"><span>' + KO[m.lane] + '</span><span class="nm">' + esc(m.name) + '</span><span>' + dm + '</span><span>' + ck(m.agreedAt) + '</span><span>' + ck(m.attendAt) + '</span><span class="vs">' + (vs.length ? vs.map(function (c) { return '<b class="ok">' + candName(c) + '</b>'; }).join(' ') : '<b class="dim">—</b>') + '</span></div>';
+        }).join('') + '</div></section>';
+      // 후보
+      var ids = rankIds(st);
+      h += '<section class="bv-card bv-wide"><div class="bv-card-h"><span>후보 조합</span><em>' + ids.length + '개 · 찬성 많은 순 · 찬성 ' + NEED + '명이 모이면 바로 확정</em></div>' + LEGEND + '<div class="bv-cands">' +
+        ids.map(function (id, i) { return candHtml(st, id, st.cands[id], tl, { rank: i + 1 }); }).join('') + '</div></section>';
+      if (st.test) h += testHtml(st);
+    }
+    h += '</div>';
+    root.innerHTML = h;
+  }
+  // 투표 제한 시간 (보내기 전에 설정 · 기본 5분)
+  function limitHtml(st, started) {
+    if (started) return '<div class="bv-lim done">투표 제한 시간: <b>' + (st.limitMin ? st.limitMin + '분' : '없음') + '</b></div>';
+    var L = limitOf(), opts = [0, 3, 5, 7, 10];
+    return '<div class="bv-lim"><div class="bv-lim-h">투표 제한 시간</div><div class="bv-seg">' +
+      opts.map(function (v) { return '<button type="button" class="' + (L === v ? 'on' : '') + '" onclick="bvSetLimit(' + v + ')">' + (v ? v + '분' : '없음') + '</button>'; }).join('') +
+      '<label class="bv-lim-in">직접<input type="number" inputmode="numeric" min="1" max="120" value="' + (L && opts.indexOf(L) < 0 ? L : '') + '" placeholder="분" onchange="bvSetLimit(this.value)"></label></div>' +
+      '<div class="bv-sub">10명이 모두 출석한 순간부터 시작해요. 끝나면 찬성이 가장 많은 조합으로 자동 확정돼요 (동률이면 AI 승률이 50%에 가까운 조합).</div></div>';
+  }
+  window.bvSetLimit = function (v) {
+    v = Math.round(+v); if (!isFinite(v) || v < 0) v = 5; if (v > 120) v = 120;
+    match.balVoteLimit = v; try { saveCurrentMatch(); } catch (e) {} render();
+  };
+  // 테스트 도구
+  var _testLinks = null, _testFor = null, _botBusy = false;
+  async function testLinks(st) {
+    if (_testLinks && (_testFor === st.startedAt || _testFor === null)) { _testFor = st.startedAt; return _testLinks; }
+    var j = await post({ action: 'testlinks' }); _testLinks = j.links; _testFor = st.startedAt; return _testLinks;
+  }
+  function testHtml(st) {
+    var rows = LANES.map(function (l) { return ((st.lanes && st.lanes[l]) || []); }).reduce(function (a, b) { return a.concat(b); }, []);
+    var dis = _botBusy ? ' disabled' : '';
+    return '<section class="bv-card bv-wide bv-test"><div class="bv-card-h"><span>테스트 도구</span><em>참여자 화면을 열어서 직접 해 보거나, 가상 참여자를 한 번에 움직여 보세요</em></div>' +
+      '<div class="bv-acts">' +
+      '<button type="button" class="bv-btn" onclick="bvBot(\'join\')"' + dis + '>안 한 사람 전원 동의 · 출석</button>' +
+      '<button type="button" class="bv-btn" onclick="bvBot(\'rand\')"' + dis + '>찬성 안 한 사람들 랜덤 찬성</button>' +
+      '<button type="button" class="bv-btn" onclick="bvBot(\'top\')"' + dis + '>1위 조합에 찬성 1명 추가</button>' +
+      '<button type="button" class="bv-btn ghost" onclick="bvBot(\'clear\')"' + dis + '>모든 찬성 지우기</button></div>' +
+      '<div class="bv-tlinks">' + rows.map(function (k) { var m = st.members[k] || {}; return '<button type="button" class="bv-tl" onclick="bvOpenAs(\'' + esc(k) + '\')"><i>' + KO[m.lane] + '</i><span>' + esc(m.name) + '</span><em>참여자로 열기</em></button>'; }).join('') + '</div>' +
+      '<div class="bv-sub">참여자로 열기는 새 탭에서 그 사람 전용 링크를 열어요. 탭마다 다른 사람으로 동시에 해 볼 수 있어요. 제한 시간을 1분으로 두고 시작하면 자동 확정도 빨리 볼 수 있어요.</div></section>';
+  }
+  window.bvOpenAs = async function (k) {
+    if (!_st || !_st.test) return;
+    var w = window.open('about:blank', '_blank');
+    try {
+      var L = await testLinks(_st), u = L[k] && L[k].url; if (!u) throw new Error('링크 없음');
+      var rel = u.replace(/^https?:\/\/[^/]+\//, '');   // 지금 보고 있는 사이트의 balvote.html 로
+      if (w) w.location.href = rel; else window.open(rel, '_blank');
+    } catch (er) { if (w) w.close(); toast('링크를 불러오지 못했어요: ' + er.message, 'err'); }
+  };
+  async function actAs(L, k, op, extra) {
+    var res = await fetch(RIOT_PROXY_URL + '/balvote', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(Object.assign({ action: 'act', cid: cidOf(), matchId: match.id, k: k, t: L[k].t, op: op }, extra || {})) });
+    var j = {}; try { j = await res.json(); } catch (e) {} return j;
+  }
+  window.bvBot = async function (kind) {
+    if (!_st || !_st.test || _botBusy) return;
+    _botBusy = true; render();
+    try {
+      var L = await testLinks(_st), st = _st, keys = Object.keys(st.members), ids = Object.keys(st.cands || {});
+      if (kind === 'join') {
+        for (var i = 0; i < keys.length; i++) { var m = st.members[keys[i]]; if (!m.agreedAt) await actAs(L, keys[i], 'agree'); if (!m.attendAt) await actAs(L, keys[i], 'attend'); }
+      } else if (kind === 'rand') {
+        var n0 = 0;
+        for (var j = 0; j < keys.length; j++) {
+          var mm = st.members[keys[j]]; if (!mm.attendAt || votesOfM(mm).length) continue;
+          var pick = ids.slice().sort(function () { return Math.random() - 0.5; }).slice(0, 1 + Math.floor(Math.random() * 2));
+          for (var q = 0; q < pick.length; q++) await actAs(L, keys[j], 'vote', { cand: pick[q], on: true });
+          n0++;
+        }
+        if (!n0) toast('찬성할 수 있는 사람이 없어요 (출석했고 아직 찬성 안 한 사람만)', 'err');
+      } else if (kind === 'top') {
+        var top = rankIds(st)[0];
+        var who = keys.find(function (k) { var x = st.members[k]; return x.attendAt && votesOfM(x).indexOf(top) < 0; });
+        if (!who) toast('1위 조합에 찬성할 수 있는 출석자가 없어요 (먼저 출석시켜 주세요)', 'err');
+        else await actAs(L, who, 'vote', { cand: top, on: true });
+      } else if (kind === 'clear') {
+        for (var c = 0; c < keys.length; c++) { var vs = votesOfM(st.members[keys[c]]); for (var d = 0; d < vs.length; d++) await actAs(L, keys[c], 'vote', { cand: vs[d], on: false }); }
+      }
+    } catch (er) { toast('테스트 도구 실패: ' + er.message, 'err'); }
+    _botBusy = false; render();
+  };
+  // 남은 시간 표시 · 시간이 끝나면 서버에 확정 요청 (참여자 화면이 없어도 확정되게)
+  var _tickedFor = null;
+  setInterval(function () {
+    if (!_st || !_st.deadline || _st.status === 'confirmed' || !isOn()) return;
+    var left = _st.deadline - Date.now();
+    document.querySelectorAll('[data-bvcd]').forEach(function (e) { e.textContent = mmss(left); });
+    if (left <= 0 && _tickedFor !== _st.deadline && (isAdmin || isMaster)) { _tickedFor = _st.deadline; post({ action: 'tick' }).catch(function () { _tickedFor = null; }); }
+  }, 1000);
+  var LEGEND = '<div class="bv-legend"><span>숫자 = 내전점수(라인 기준)</span><span><i style="background:linear-gradient(90deg,rgba(60,224,133,.55),rgba(60,224,133,0))"></i>같은 라인 상대보다 셈</span><span><i style="background:linear-gradient(90deg,rgba(255,107,122,.55),rgba(255,107,122,0))"></i>약함</span><span>진할수록 차이가 커요</span></div>';
+  function meter(lbl, n) {
+    return '<div class="bv-meter"><span>' + lbl + '</span><div><i style="width:' + n * 10 + '%"></i></div><b>' + n + '/10</b></div>';
+  }
+
+  // ── AI 후보 (16가지 중 승률 50%에 가까운 5개) ──
+  async function buildSplits(pairs) {
+    var useModel = false;
+    try { if (typeof _balLoadModel === 'function') { await _balLoadModel(); useModel = true; } } catch (e) { useModel = false; }
+    var splits = {}, list = [];
+    for (var n = 0; n < 16; n++) {
+      var bits = '0' + ('0000' + n.toString(2)).slice(-4);
+      var A = [], B = [];
+      LANES.forEach(function (l, i) { var b = +bits[i]; A.push(pairs[l][b]); B.push(pairs[l][1 - b]); });
+      var p;
+      if (useModel) {
+        var sa = 0, sb = 0;
+        LANES.forEach(function (l, i) { sa += _balScore(A[i], l); sb += _balScore(B[i], l); });
+        var ex = 0; try { ex = _balSynLogit(A, LANES, B, LANES) || 0; } catch (e2) {}
+        p = _balWinProb(sa, sb, ex);
+      } else {
+        var ts = function (m) { var t = (typeof _balTierScore === 'function') ? _balTierScore(m) : null; return t == null ? 12 : t; };
+        var da = 0; LANES.forEach(function (l, i) { da += ts(A[i]) - ts(B[i]); });
+        p = 1 / (1 + Math.exp(-da / 8));
+      }
+      splits[bits] = Math.round(p * 1000) / 1000;
+      list.push({ bits: bits, p: p });
+    }
+    list.sort(function (a, b) { return Math.abs(a.p - 0.5) - Math.abs(b.p - 0.5); });
+    return { splits: splits, cands: list.slice(0, 5).map(function (x) { return x.bits; }), model: useModel ? String((_balModel && _balModel.version) || 'lab') : 'tier' };
+  }
+
+  async function post(body) {
+    var res = await fetch(RIOT_PROXY_URL + '/balvote', { method: 'POST', headers: _getHeaders(), body: JSON.stringify(Object.assign({ cid: cidOf(), matchId: match.id }, body)) });
+    var j = {}; try { j = await res.json(); } catch (e) {}
+    if (!res.ok || !j.ok) throw new Error(j.error || ('요청 실패 ' + res.status));
+    return j;
+  }
+
+  window.bvStart = async function (test) {
+    if (_busy || !isOn()) return;
+    var e = eligibility(members);
+    if (test ? !e.canTest : !e.ok) return toast(e.why[0], 'err');
+    if (!(_appliedGuides && _appliedGuides.length)) return toast('가이드 룰을 1개 이상 선택해 주세요', 'err');
+    var lim = limitOf();
+    if (!confirm(test ? '테스트 투표를 시작할까요?\n\nDM은 보내지 않아요. 테스트 도구에서 참여자 화면을 열어 보거나 가상 참여자를 움직일 수 있어요.\n제한 시간: ' + (lim ? lim + '분' : '없음')
+      : '참여자 10명에게 디스코드 DM으로 투표 참여링크를 보낼까요?\n\nAI가 라인 고정 조합 16가지 중 밸런스가 좋은 5개를 후보로 올려요.\n제한 시간: ' + (lim ? lim + '분 (10명 모두 출석하면 시작)' : '없음'))) return;
+    var pairs = test && !e.ok ? e.testPairs : e.pairs;
+    _busy = true; render();
+    try {
+      try { await saveCurrentMatch(); } catch (er) {}
+      var S = await buildSplits(pairs);
+      var lanes = {}; LANES.forEach(function (l) { lanes[l] = pairs[l].map(function (m) { return m.id; }); });
+      // 내전점수(주 라인 기준)도 같이 저장 → 참여자 화면에도 표시
+      try { if (!_doomScores && typeof loadDoomScores === 'function') await loadDoomScores(); } catch (er2) {}
+      var doom = {};
+      LANES.forEach(function (l) { pairs[l].forEach(function (m) { var v = typeof getDoomScore === 'function' ? parseFloat(getDoomScore(m, l)) : NaN; doom[m.id] = isFinite(v) ? v : null; }); });
+      var j = await post({ action: 'start', rules: _appliedGuides.slice(), lanes: lanes, splits: S.splits, cands: S.cands, model: S.model, doom: doom, limitMin: lim, test: !!test });
+      if (test) { _testLinks = j.links; _testFor = null; toast('테스트 투표를 시작했어요. 아래 테스트 도구를 써 보세요', 'ok'); }
+      else toast('투표 참여링크 DM 전송: ' + j.sent + '/' + j.total + '명' + (S.model === 'tier' ? ' (AI 모델을 못 불러와 티어로 계산)' : ''), j.sent === j.total ? 'ok' : 'err');
+    } catch (er) { toast('전송 실패: ' + er.message, 'err'); }
+    _busy = false; render();
+  };
+  // 진행자 보기: 참여자 링크 화면을 읽기 전용으로 새 탭에서
+  window.bvOpenHostView = function () {
+    var cid = cidOf(); if (!cid || !match || !match.id) return;
+    window.open('balvote.html?c=' + encodeURIComponent(cid) + '&m=' + encodeURIComponent(match.id) + '&view=host', '_blank', 'noopener');
+  };
+  window.bvResend = async function (onlyFailed) {
+    if (!_st || !_st.members || _busy) return;
+    var keys = onlyFailed ? Object.keys(_st.members).filter(function (k) { return _st.members[k].dm === 'failed'; }) : null;
+    if (!confirm(onlyFailed ? 'DM을 받지 못한 ' + keys.length + '명에게 다시 보낼까요?' : '10명 모두에게 같은 링크를 다시 보낼까요? (투표 기록은 그대로예요)')) return;
+    _busy = true; render();
+    try { var j = await post({ action: 'resend', keys: keys }); toast('DM 다시 보냄: ' + j.sent + '/' + j.total + '명', j.sent === j.total ? 'ok' : 'err'); }
+    catch (er) { toast('다시 보내기 실패: ' + er.message, 'err'); }
+    _busy = false; render();
+  };
+  window.bvReset = async function () {
+    if (!confirm('투표를 처음부터 다시 할까요?\n\n지금까지의 동의 · 출석 · 투표 기록이 모두 지워지고, 이미 보낸 링크는 더 이상 열리지 않아요.')) return;
+    try { await post({ action: 'reset' }); _testLinks = null; match.balVoteApplied = null; teams = []; normalPool = arr(members).slice(); await saveCurrentMatch(); toast('투표를 초기화했어요. 가이드 룰을 확인하고 다시 보내 주세요', 'ok'); }
+    catch (er) { toast('초기화 실패: ' + er.message, 'err'); }
+  };
+
+  // 강제 집행: 후보 하나를 골라 확정
+  window.bvForceOpen = function () {
+    if (!_st || !_st.cands) return toast('투표를 먼저 시작해 주세요', 'err');
+    var tl = tally(_st);
+    var ids = rankIds(_st);
+    _forceSel = ids[0] || null;
+    var m = document.getElementById('bv-force-modal');
+    if (!m) { m = document.createElement('div'); m.id = 'bv-force-modal'; m.className = 'bv-modal'; m.onclick = function (ev) { if (ev.target === m) m.style.display = 'none'; }; document.body.appendChild(m); }
+    m.style.display = 'flex';
+    drawForce();
+  };
+  function drawForce() {
+    var m = document.getElementById('bv-force-modal'); if (!m || !_st) return;
+    var tl = tally(_st);
+    var ids = rankIds(_st);
+    m.innerHTML = '<div class="bv-modal-box"><div class="bv-modal-h">강제 집행 <button type="button" class="bv-x" onclick="document.getElementById(\'bv-force-modal\').style.display=\'none\'">닫기</button></div>' +
+      '<div class="bv-sub">확정할 조합을 눌러 고르세요. 찬성이 많은 순서예요. 확정하면 참여자 화면에도 바로 확정으로 바뀌고 4단계로 넘어가요.</div>' +
+      '<div class="bv-cands">' + ids.map(function (id, i) { return candHtml(_st, id, _st.cands[id], tl, { pick: true, rank: i + 1 }); }).join('') + '</div>' +
+      '<div class="bv-acts end"><button type="button" class="bv-btn ghost" onclick="document.getElementById(\'bv-force-modal\').style.display=\'none\'">취소</button>' +
+      '<button type="button" class="bv-btn danger" onclick="bvForceGo()"' + (_forceSel ? '' : ' disabled') + '>이 조합으로 확정</button></div></div>';
+  }
+  window.bvForcePick = function (id) { _forceSel = id; drawForce(); };
+  window.bvForceGo = async function () {
+    if (!_forceSel || !_st || !_st.cands[_forceSel]) return;
+    var c = _st.cands[_forceSel], tl = tally(_st);
+    if (!confirm('"' + (c.by === 'AI' ? 'AI 추천 ' + (c.n || '') : c.by + ' 님 조합') + '" (찬성 ' + (tl.votes[_forceSel] || 0) + '명) 으로 강제 확정할까요?\n되돌리려면 처음부터 다시 투표해야 해요.')) return;
+    try { await post({ action: 'force', cand: _forceSel }); var m = document.getElementById('bv-force-modal'); if (m) m.style.display = 'none'; toast('강제 집행으로 확정했어요', 'ok'); }
+    catch (er) { toast('강제 집행 실패: ' + er.message, 'err'); }
+  };
+
+  // ── 확정 → 팀 적용 → 4단계 ──
+  function applyTeams(st) {
+    var c = st.cands && st.cands[st.confirmedCand]; if (!c) return false;
+    var T = teamsOf(st, c.bits);
+    var mk = function (side) {
+      return T[side].map(function (x) { var m = memberByKey(x.k); if (m) m.balLane = x.lane; return m; }).filter(Boolean);
+    };
+    var A = mk(0), B = mk(1);
+    if (A.length !== 5 || B.length !== 5) { toast('확정된 팀의 멤버를 찾지 못했어요. 1단계 멤버가 바뀌었는지 확인해 주세요', 'err'); return false; }
+    var code = function () { return Math.random().toString(36).slice(2, 6).toUpperCase(); };
+    teams = [{ id: nextTeamId++, captainId: null, members: A, points: 1000, captainCode: code() },
+             { id: nextTeamId++, captainId: null, members: B, points: 1000, captainCode: code() }];
+    normalPool = [];
+    match.balVoteApplied = st.confirmedAt || Date.now();
+    return true;
+  }
+  window.bvApplyAndGo = async function (manual) {
+    if (_advancing || !_st || _st.status !== 'confirmed') return;
+    if (manual && !confirm('확정된 팀으로 4단계를 진행할까요?')) return;
+    _advancing = true;
+    try {
+      if (!applyTeams(_st)) return;
+      try { renderNormalTeams(); } catch (e) {}
+      await goToStage4();
+    } finally { _advancing = false; }
+  };
+  function maybeAdvance() {
+    if (!_st || _st.status !== 'confirmed' || !isOn()) return;
+    if (typeof currentScreen === 'undefined' || currentScreen !== 'screen-3-normal') return;
+    if (!(isAdmin || isMaster)) return;
+    if (match.balVoteApplied === _st.confirmedAt) return;   // 4단계에서 3단계로 돌아온 경우는 자동으로 다시 넘기지 않음
+    if (!sameMembers(_st)) return;
+    if (_st.test) return;   // 테스트는 자동으로 4단계로 넘기지 않음
+    showConfirmedFx(_st);
+    setTimeout(function () { window.bvApplyAndGo(false); }, 1800);
+  }
+  function showConfirmedFx(st) {
+    var o = document.createElement('div'); o.className = 'bv-fx';
+    o.innerHTML = '<div class="bv-fx-in"><div class="bv-fx-t">내전이 확정되었습니다!</div><div class="bv-fx-s">' + (st.forced || st.confirmedBy === 'force' ? '강제 집행' : st.confirmedBy === 'timeout' ? '제한 시간 종료 · 찬성 1위' : '참여자 찬성 투표') + '로 정한 팀으로 4단계를 시작해요</div></div>';
+    document.body.appendChild(o);
+    setTimeout(function () { o.classList.add('out'); }, 1600);
+    setTimeout(function () { o.remove(); }, 2200);
+  }
+
+  // 화면 모드 전환 (일반 내전 화면 안에서 투표 현황으로)
+  window._bvApplyMode = function () {
+    var sc = document.getElementById('screen-3-normal'); if (!sc) return;
+    var on = isOn();
+    sc.classList.toggle('balvote-mode', on);
+    watch();
+    if (on) {
+      render();
+      if ((_appliedGuides || []).length && (!_rulesList || !_rulesList.length) && typeof loadRulesList === 'function') loadRulesList().then(render);
+    }
+  };
+  window._bvRender = render;
+  // 가이드 선택이 바뀌면 투표 현황 화면도 다시 그림
+  if (typeof renderAppliedGuides === 'function') {
+    var _origRAG = renderAppliedGuides;
+    window.renderAppliedGuides = function () { var r = _origRAG.apply(this, arguments); try { if (isOn()) render(); } catch (e) {} return r; };
+  }
+})();
+/*BVOTE-END*/
+</script>
+<script>
+/*GAMEREVIEW-BEGIN*/
+/* ═══════════════════════════════════════════════════════════════
+   AI 경기 리뷰 — 결과가 저장된 대진: AI 예측(내전 분석 랩) vs 실제 게임 기록
+   · 맞췄으면: 예측 근거가 실제로 어떻게 나타났는지(라인 우위 · 핵심 선수 · 경기 양상)
+   · 틀렸으면: 예측과 반대로 간 라인, 기대보다 잘한/못한 선수, 챔피언 경험, 데이터 부족 등
+   · 규칙 기반 문장 (LLM 없음). 5단계 결과 화면 · 관전 페이지 대진 분석 탭에서 사용
+   ═══════════════════════════════════════════════════════════════ */
+window.GameReview = (function () {
+  var ROLES = ['TOP', 'JUNGLE', 'MIDDLE', 'BOTTOM', 'UTILITY'];
+  var RKO = { TOP: '탑', JUNGLE: '정글', MIDDLE: '미드', BOTTOM: '원딜', UTILITY: '서폿' };
+  var POSMAP = { TOP: 'TOP', JUNGLE: 'JUNGLE', MIDDLE: 'MIDDLE', MID: 'MIDDLE', BOTTOM: 'BOTTOM', BOT: 'BOTTOM', ADC: 'BOTTOM', UTILITY: 'UTILITY', SUPPORT: 'UTILITY' };
+  var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]; }); };
+  var arr = function (v) { return Array.isArray(v) ? v.filter(Boolean) : (v && typeof v === 'object' ? Object.keys(v).sort(function (a, b) { return a - b; }).map(function (k) { return v[k]; }).filter(Boolean) : []); };
+  var sig = function (x) { return 1 / (1 + Math.exp(-x)); };
+  var k1 = function (n) { n = Math.round(n); return Math.abs(n) >= 1000 ? (n / 1000).toFixed(1) + 'k' : String(n); };
+  var sgn = function (n, f) { return (n > 0 ? '+' : n < 0 ? '−' : '±') + (f ? f(Math.abs(n)) : Math.abs(n)); };
+
+  // 실제 라이엇 기록인지 (예전 테스트용 가짜 기록 제외)
+  function isReal(rm) {
+    var gd = rm && rm.gameData;
+    if (!gd || !gd.ddVer) return false;
+    var A = arr(gd.teamA), B = arr(gd.teamB);
+    return A.length >= 5 && B.length >= 5 && A.concat(B).every(function (p) { return p && p.pos && p.champion && p.champion !== '?'; });
+  }
+  function usable(rm) { return !!(rm && rm.teamA && rm.teamB && (rm.winner === 'a' || rm.winner === 'b') && isReal(rm)); }
+
+  // 학습 데이터 없는 사람: 솔랭 티어 → 라인별 전력 점수 직선 (대진 분석과 같은 방식)
+  function fit(D) {
+    if (D._grFit) return D._grFit;
+    var f = {};
+    ROLES.forEach(function (R) {
+      var xs = [], ys = [];
+      Object.keys(D.players || {}).forEach(function (k) {
+        var p = D.players[k], t = p && p.tier, sc = p && p.roles && p.roles[R] && p.roles[R].score;
+        if (typeof t === 'number' && typeof sc === 'number') { xs.push(t); ys.push(sc); }
+      });
+      var n = xs.length; if (n < 10) { f[R] = null; return; }
+      var mx = 0, my = 0, i; for (i = 0; i < n; i++) { mx += xs[i]; my += ys[i]; } mx /= n; my /= n;
+      var sxy = 0, sxx = 0; for (i = 0; i < n; i++) { sxy += (xs[i] - mx) * (ys[i] - my); sxx += (xs[i] - mx) * (xs[i] - mx); }
+      var b = sxx ? sxy / sxx : 0; f[R] = { a: my - b * mx, b: b };
+    });
+    return (D._grFit = f);
+  }
+  function tierNum(m) { try { return (m && typeof _balTierScore === 'function') ? _balTierScore(m) : null; } catch (e) { return null; } }
+  function memberFor(team, pl) {
+    var nm = String(pl.name || '').trim().toLowerCase();
+    return arr(team && team.members).find(function (m) { return String(m.name || '').trim().toLowerCase() === nm; }) || null;
+  }
+  function scoreOf(D, m, pl, R) {
+    var p = m ? RGLab.find(D, { name: m.name, tag: m.tag, puuid: m.puuid, puu_id: m.puu_id }) : RGLab.find(D, { name: pl.name });
+    if (p) return { s: RGLab.score(p, R), src: 'lab', p: p };
+    var f = fit(D), t = tierNum(m);
+    if (f && f[R] && t != null) return { s: f[R].a + f[R].b * t, src: 'tier' };
+    return { s: 0, src: 'none' };
+  }
+  function champRec(p, champ) {
+    if (!p || !p.champs) return null;
+    var c = String(champ || '').toLowerCase();
+    var row = p.champs.find(function (x) { return String(x[0]).toLowerCase() === c; });
+    return row ? { g: row[1], w: row[2] } : { g: 0, w: 0 };
+  }
+
+  function analyze(D, rm) {
+    var gd = rm.gameData, A = arr(gd.teamA), B = arr(gd.teamB);
+    var dur = String(gd.duration || '0:00').split(':'), mins = (+dur[0] || 0) + (+dur[1] || 0) / 60;
+    var side = function (list, team, R) {
+      var pl = list.find(function (p) { return POSMAP[String(p.pos || '').toUpperCase()] === R; });
+      if (!pl) return null;
+      var m = memberFor(team, pl), sc = scoreOf(D, m, pl, R);
+      return { pl: pl, m: m, sc: sc, name: (m && m.name) || pl.name, R: R };
+    };
+    var rows = ROLES.map(function (R) { return { R: R, a: side(A, rm.teamA, R), b: side(B, rm.teamB, R) }; });
+    // 팀 합계
+    var tot = function (list, k) { return list.reduce(function (s, p) { return s + (+p[k] || 0); }, 0); };
+    var T = {
+      a: { k: tot(A, 'k'), d: tot(A, 'd'), gold: tot(A, 'gold'), dmg: tot(A, 'dmg'), cs: tot(A, 'cs'), wards: tot(A, 'wards') },
+      b: { k: tot(B, 'k'), d: tot(B, 'd'), gold: tot(B, 'gold'), dmg: tot(B, 'dmg'), cs: tot(B, 'cs'), wards: tot(B, 'wards') }
+    };
+    // 예측
+    var sA = 0, sB = 0, srcN = { lab: 0, tier: 0, none: 0 };
+    rows.forEach(function (r) {
+      if (r.a) { sA += r.a.sc.s; srcN[r.a.sc.src]++; }
+      if (r.b) { sB += r.b.sc.s; srcN[r.b.sc.src]++; }
+    });
+    var n = (D.model && D.model.players_per_team) || 5;
+    var pA = sig((sA - sB) / n), fav = pA > 0.5 ? 'a' : pA < 0.5 ? 'b' : null, conf = Math.max(pA, 1 - pA);
+    var win = rm.winner, hit = fav ? fav === win : null;
+    // 선수 기여도 (그 경기 10명 안에서) — 킬 관여 · 딜 비중 · 데스 · 골드
+    var all = [];
+    rows.forEach(function (r) {
+      [['a', r.a], ['b', r.b]].forEach(function (x) {
+        var s = x[1]; if (!s) return;
+        var tm = T[x[0]], pl = s.pl;
+        var kp = tm.k ? (pl.k + pl.a) / tm.k : 0, ds = tm.dmg ? pl.dmg / tm.dmg : 0, gs = tm.gold ? pl.gold / tm.gold : 0;
+        s.kp = kp; s.ds = ds; s.kda = (pl.k + pl.a) / Math.max(1, pl.d);
+        s.impact = kp * 2 + ds * 3 + gs * 2 - pl.d / Math.max(10, mins) * 4 + (pl.k / Math.max(10, mins)) * 1.5;
+        s.side = x[0];
+        all.push(s);
+      });
+    });
+    // 기대(예측 점수) 순위 vs 실제(기여도) 순위 → 백분위 차이
+    // 같은 팀 5명 안에서: AI 가 본 순위(예측 점수) vs 실제 기여도 순위 → 차이(%p, 한 칸 = 25)
+    var rankPct = function (list, key, out) { var srt = list.slice().sort(function (p, q) { return key(p) - key(q); }); list.forEach(function (s) { s[out] = srt.indexOf(s) / Math.max(1, srt.length - 1); }); };
+    ['a', 'b'].forEach(function (sd) {
+      var tm = all.filter(function (s) { return s.side === sd; });
+      rankPct(tm, function (s) { return s.sc.s; }, '_exp'); rankPct(tm, function (s) { return s.impact; }, '_act');
+    });
+    all.forEach(function (s) { s.gap = Math.round((s._act - s._exp) * 100); });
+    // 라인별 예측 vs 실제
+    rows.forEach(function (r) {
+      if (!r.a || !r.b) return;
+      var pd = r.a.sc.s - r.b.sc.s;
+      r.predP = sig(pd / n); r.predSide = Math.abs(pd) < 0.15 ? 'even' : (pd > 0 ? 'a' : 'b');
+      var pa = r.a.pl, pb = r.b.pl;
+      r.goldDiff = pa.gold - pb.gold; r.csDiff = pa.cs - pb.cs; r.dmgDiff = pa.dmg - pb.dmg;
+      var edge = r.goldDiff / 1500 + ((pa.k + 0.5 * pa.a - pa.d) - (pb.k + 0.5 * pb.a - pb.d)) / 6;
+      r.actEdge = edge; r.actSide = Math.abs(edge) < 0.35 ? 'even' : (edge > 0 ? 'a' : 'b');
+      r.agree = r.predSide === 'even' || r.actSide === 'even' ? null : r.predSide === r.actSide;
+      r.champA = champRec(r.a.sc.p, pa.champion); r.champB = champRec(r.b.sc.p, pb.champion);
+    });
+    // 경기 양상
+    var goldDiff = T.a.gold - T.b.gold, killDiff = T.a.k - T.b.k;
+    var wT = T[win], lT = T[win === 'a' ? 'b' : 'a'], wGold = win === 'a' ? goldDiff : -goldDiff;
+    var kind = wGold >= 9000 || (wT.k >= lT.k * 2 && wT.k - lT.k >= 10) ? 'crush' : wGold <= 3000 ? 'close' : 'edge';
+    if (wGold < 0) kind = 'comeback';
+    var pace = mins < 22 ? 'fast' : mins > 35 ? 'long' : 'normal';
+    return { rm: rm, gd: gd, rows: rows, T: T, pA: pA, fav: fav, conf: conf, win: win, hit: hit, srcN: srcN, all: all, mins: mins, kind: kind, pace: pace, goldDiff: goldDiff, killDiff: killDiff, model: D.model || {} };
+  }
+
+  function teamName(t) { var n = ''; try { n = getTeamName(t, arr(t.members)); } catch (e) {} return n && n !== '?' ? n : (t && t.name) || '팀'; }
+
+  // ── 문장 ──
+  function reasons(r, CI) {
+    var out = [], nm = { a: teamName(r.rm.teamA), b: teamName(r.rm.teamB) };
+    var W = r.win, L = W === 'a' ? 'b' : 'a';
+    var lanes = r.rows.filter(function (x) { return x.a && x.b; });
+    var favLanes = lanes.filter(function (x) { return x.predSide === r.fav; });
+    var winLanes = lanes.filter(function (x) { return x.actSide === W; });
+    var lname = function (x) { return RKO[x.R]; };
+    var nameOf = function (s) { return esc(s.name); };
+    var champTxt = function (s) { return esc((CI && CI.ko && CI.ko[s.pl.champion]) || s.pl.champion); };
+    if (r.hit === null) {
+      out.push('두 팀 예측 점수가 같아서 AI가 어느 쪽도 고르지 않았어요.');
+    } else if (r.hit) {
+      var held = favLanes.filter(function (x) { return x.actSide === r.fav; });
+      if (held.length) out.push('예상대로 <b>' + held.map(lname).join(' · ') + '</b> 라인에서 우위를 가져갔어요 (' + held.map(function (x) { var g = r.fav === 'a' ? x.goldDiff : -x.goldDiff; return lname(x) + ' 골드 ' + sgn(g, k1); }).join(', ') + ').');
+      else if (winLanes.length) out.push('라인 하나하나는 예상과 달랐지만 <b>' + winLanes.map(lname).join(' · ') + '</b> 에서 앞서며 결국 예측대로 이겼어요.');
+      var mvp = r.all.filter(function (s) { return s.side === W; }).sort(function (p, q) { return q.impact - p.impact; })[0];
+      if (mvp) out.push('<b>' + nameOf(mvp) + '</b>(' + RKO[mvp.R] + ' · ' + champTxt(mvp) + ')이 킬 관여 ' + Math.round(mvp.kp * 100) + '% · 딜 비중 ' + Math.round(mvp.ds * 100) + '%로 팀을 이끌었어요' + (mvp.gap >= 50 ? ' — AI가 본 것보다 더 잘했어요.' : '.'));
+      var lost = favLanes.filter(function (x) { return x.actSide === L; });
+      if (lost.length) out.push('반대로 <b>' + lost.map(lname).join(' · ') + '</b> 은(는) 유리할 거라 봤지만 밀렸는데, 다른 라인 우위로 덮었어요.');
+      if (r.conf >= 0.65) out.push('예측 확신이 ' + Math.min(99, Math.round(r.conf * 100)) + '%로 높았던 대진이었어요.');
+    } else {
+      if (r.conf < 0.56) out.push('예측 자체가 <b>' + Math.round(r.conf * 100) + ' : ' + (100 - Math.round(r.conf * 100)) + '</b> 박빙이라 뒤집힐 여지가 컸어요.');
+      var flips = lanes.filter(function (x) { return x.predSide === r.fav && x.actSide === W; }).sort(function (p, q) { return Math.abs(q.actEdge) - Math.abs(p.actEdge); });
+      flips.slice(0, 2).forEach(function (x) {
+        var f = x[r.fav], w = x[W], g = W === 'a' ? x.goldDiff : -x.goldDiff;
+        out.push('<b>' + lname(x) + '</b>: ' + esc(nm[r.fav]) + ' 쪽(' + nameOf(f) + ')이 유리하다고 봤지만, 실제로는 ' + nameOf(w) + '(' + champTxt(w) + ')이 골드 ' + sgn(g, k1) + ' · KDA ' + w.pl.k + '/' + w.pl.d + '/' + w.pl.a + ' 로 앞섰어요.');
+      });
+      var under = r.all.filter(function (s) { return s.side === r.fav && s.gap <= -50; }).sort(function (p, q) { return p.gap - q.gap; })[0];
+      if (under) {
+        var cr = r.rows.find(function (x) { return x.R === under.R; }), crec = cr ? cr['champ' + (under.side === 'a' ? 'A' : 'B')] : null;
+        out.push('기대보다 아쉬웠던 선수: <b>' + nameOf(under) + '</b>(' + RKO[under.R] + ' · ' + champTxt(under) + ') — 데스 ' + under.pl.d + ', 딜 비중 ' + Math.round(under.ds * 100) + '%' +
+          (crec && crec.g === 0 ? '. 내전에서 처음 쓴 챔피언이었어요' : crec && crec.g >= 3 && crec.w / crec.g < 0.4 ? '. 이 챔피언 내전 승률이 ' + Math.round(crec.w / crec.g * 100) + '%로 낮은 편이에요' : '') + '.');
+      }
+      var over = r.all.filter(function (s) { return s.side === W && s.gap >= 50; }).sort(function (p, q) { return q.gap - p.gap; })[0];
+      if (over) out.push('예상 밖 활약: <b>' + nameOf(over) + '</b>(' + RKO[over.R] + ' · ' + champTxt(over) + ') — ' + over.pl.k + '/' + over.pl.d + '/' + over.pl.a + ', 킬 관여 ' + Math.round(over.kp * 100) + '%. 팀 안에서 AI가 본 것보다 ' + Math.round(over.gap / 25) + '칸 높은 기여를 했어요.');
+      if (!flips.length && !under && !over) out.push('라인별 차이는 크지 않았어요. 한타 · 운영 같은 라인 밖 요소에서 승부가 갈린 것으로 보여요.');
+    }
+    var miss = r.srcN.tier + r.srcN.none;
+    if (miss) out.push('<span class="gr-dim">학습 데이터가 없는 ' + miss + '명은 ' + (r.srcN.none ? '솔랭 티어(없으면 평균)' : '솔랭 티어') + '로 추정해서 예측했어요' + (r.hit === false && miss >= 3 ? ' — 그래서 이번 예측은 정확도가 낮았을 수 있어요.' : '.') + '</span>');
+    return out;
+  }
+  function paceTxt(r) {
+    var W = r.win, nm = teamName(r.win === 'a' ? r.rm.teamA : r.rm.teamB);
+    var wg = Math.abs(r.goldDiff), wk = r.T[W].k, lk = r.T[W === 'a' ? 'b' : 'a'].k;
+    var t = Math.floor(r.mins) + '분 ';
+    var k = { crush: '압승', edge: '우세승', close: '접전 끝 승리', comeback: '골드 열세를 뒤집은 역전승' }[r.kind];
+    var p = r.pace === 'fast' ? '빠르게 끝난 경기' : r.pace === 'long' ? '길게 이어진 장기전' : '보통 길이의 경기';
+    return '<b>' + esc(nm) + '</b>의 ' + k + ' — ' + t + p + ', 킬 ' + wk + ' : ' + lk + ', 골드 차이 ' + k1(wg) + '.';
+  }
+
+  // ── 화면 ──
+  function html(r, CI, label) {
+    var nm = { a: teamName(r.rm.teamA), b: teamName(r.rm.teamB) };
+    var pa = Math.min(99, Math.max(1, Math.round(r.pA * 100))), ver = r.gd.ddVer || '16.14.1';
+    var icon = function (c) { return '<img class="gr-ci" src="https://ddragon.leagueoflegends.com/cdn/' + ver + '/img/champion/' + encodeURIComponent(c) + '.png" loading="lazy" onerror="this.style.visibility=\'hidden\'" alt="">'; };
+    var ck = function (c) { return (CI && CI.ko && CI.ko[c]) || c; };
+    var badge = r.hit === null ? '<span class="gr-badge none">예측 없음</span>' : r.hit ? '<span class="gr-badge hit">AI 적중</span>' : '<span class="gr-badge miss">AI 빗나감</span>';
+    var h = '<div class="gr">';
+    h += '<div class="gr-h">' + badge + '<b>' + esc(label || 'AI 경기 리뷰') + '</b><span class="gr-sub">' + esc(nm.a) + ' vs ' + esc(nm.b) + '</span></div>';
+    // 예측 vs 결과
+    h += '<div class="gr-vs">' +
+      '<div class="gr-row"><span class="gr-k">AI 예측</span><span class="gr-tn a">' + esc(nm.a) + ' <b>' + pa + '%</b></span><span class="gr-bar"><i style="width:' + pa + '%"></i></span><span class="gr-tn b"><b>' + (100 - pa) + '%</b> ' + esc(nm.b) + '</span></div>' +
+      '<div class="gr-row"><span class="gr-k">실제 결과</span><span class="gr-tn a' + (r.win === 'a' ? ' w' : '') + '">' + (r.win === 'a' ? '승리' : '패배') + '</span><span class="gr-mid">' + esc(r.gd.duration || '') + ' · 킬 ' + r.T.a.k + ' : ' + r.T.b.k + ' · 골드 ' + sgn(r.goldDiff, k1) + '</span><span class="gr-tn b' + (r.win === 'b' ? ' w' : '') + '">' + (r.win === 'b' ? '승리' : '패배') + '</span></div>' +
+      '</div>';
+    h += '<div class="gr-pace">' + paceTxt(r) + '</div>';
+    // 이유
+    h += '<div class="gr-sec">' + (r.hit === false ? '왜 빗나갔나' : r.hit ? '왜 맞았나' : '경기 요약') + '</div><ul class="gr-why">' + reasons(r, CI).map(function (t) { return '<li>' + t + '</li>'; }).join('') + '</ul>';
+    // 라인별
+    h += '<div class="gr-sec">라인별 · 예측 vs 실제</div><div class="gr-lanes">' +
+      '<div class="gr-ln hd"><span>' + esc(nm.a) + '</span><span>라인</span><span>AI 예측</span><span>실제 (골드 · CS)</span><span>' + esc(nm.b) + '</span></div>';
+    r.rows.forEach(function (x) {
+      if (!x.a || !x.b) return;
+      var pp = Math.round(x.predP * 100);
+      var predTxt = x.predSide === 'even' ? '비슷' : (x.predSide === 'a' ? '◀ ' + pp + '%' : (100 - pp) + '% ▶');
+      var actCls = x.actSide === 'a' ? 'a' : x.actSide === 'b' ? 'b' : 'e';
+      var mark = x.agree === null ? '<em class="gr-mk e">–</em>' : x.agree ? '<em class="gr-mk ok">예측대로</em>' : '<em class="gr-mk no">반대로</em>';
+      var pl = function (s, right) {
+        var p = s.pl, gap = s.gap, tag = gap >= 50 ? '<i class="gr-up">기대 이상</i>' : gap <= -50 ? '<i class="gr-dn">기대 이하</i>' : '';
+        return '<span class="gr-pl' + (right ? ' r' : '') + '">' + (right ? '' : icon(p.champion)) + '<span class="gr-pn"><b>' + esc(s.name) + '</b><small>' + esc(ck(p.champion)) + ' · ' + p.k + '/' + p.d + '/' + p.a + '</small>' + tag + '</span>' + (right ? icon(p.champion) : '') + '</span>';
+      };
+      h += '<div class="gr-ln">' + pl(x.a, false) + '<span class="gr-lk">' + RKO[x.R] + '</span><span class="gr-pd ' + (x.predSide === 'even' ? 'e' : x.predSide) + '">' + predTxt + '</span>' +
+        '<span class="gr-ad ' + actCls + '"><b>' + sgn(x.goldDiff, k1) + '</b><small>CS ' + sgn(x.csDiff) + '</small>' + mark + '</span>' + pl(x.b, true) + '</div>';
+    });
+    h += '</div>';
+    // 선수 기대 대비
+    var ups = r.all.filter(function (s) { return s.gap >= 50; }).sort(function (p, q) { return q.gap - p.gap; });
+    var dns = r.all.filter(function (s) { return s.gap <= -50; }).sort(function (p, q) { return p.gap - q.gap; });
+    if (ups.length || dns.length) {
+      h += '<div class="gr-sec">AI 예상과 실제 기여도 차이</div><div class="gr-gaps">';
+      ups.forEach(function (s) { h += '<span class="gr-chip up">' + esc(s.name) + ' <small>' + RKO[s.R] + '</small> <b>+' + Math.round(s.gap / 25) + '</b></span>'; });
+      dns.forEach(function (s) { h += '<span class="gr-chip dn">' + esc(s.name) + ' <small>' + RKO[s.R] + '</small> <b>−' + Math.round(-s.gap / 25) + '</b></span>'; });
+      h += '</div><div class="gr-foot">같은 팀 5명 안에서 AI가 예상한 순위와 실제 기여도(킬 관여 · 딜 · 골드 비중 · 데스) 순위가 2칸 이상 차이 난 선수 (+ 기대 이상 · − 기대 이하, 숫자 = 칸 수)</div>';
+    }
+    var M = r.model, hold = M.metrics && M.metrics.holdout_linear;
+    h += '<div class="gr-foot">내전 분석 랩 ' + (M.games || 0).toLocaleString() + '판 학습 모델' + (hold ? ' · 검증 정확도 ' + Math.round(hold.acc * 100) + '%' : '') + ' · 진영은 모른다고 보고 예측 · 게임 기록은 라이엇 경기 결과</div>';
+    return h + '</div>';
+  }
+
+  async function render(el, rms, opts) {
+    opts = opts || {};
+    if (!el) return;
+    var list = (rms || []).filter(usable);
+    if (!list.length) { el.innerHTML = opts.emptyHtml || ''; return; }
+    el.innerHTML = '<div class="gr-load">AI 경기 리뷰 준비 중…</div>';
+    var D = window.RGLab ? await RGLab.load() : null;
+    if (!D) { el.innerHTML = '<div class="gr-load">내전 AI 학습 데이터를 불러오지 못해 리뷰를 만들 수 없어요.</div>'; return; }
+    var CI = null; try { CI = await RGLab.champInfo(list[0].gameData.ddVer); } catch (e) {}
+    el.innerHTML = list.map(function (rm, i) {
+      try { return html(analyze(D, rm), CI, (opts.title || 'AI 경기 리뷰') + (list.length > 1 ? ' · ' + (rm.label || (i + 1) + '경기') : '')); }
+      catch (e) { console.warn('[GameReview]', e); return ''; }
+    }).join('');
+  }
+
+  return { usable: usable, analyze: analyze, html: html, render: render };
+})();
+
+// ── 5단계: 저장된 게임마다 'AI 경기 리뷰' 버튼 → 리뷰 창 ──
+function _grBtnHtml(rm) {
+  if (!window.GameReview || !GameReview.usable(rm)) return '';
+  return '<div class="gr-btnrow"><button type="button" class="gr-open" onclick="_grOpen(' + (typeof rm.id === 'number' ? rm.id : '\'' + String(rm.id).replace(/[^\w-]/g, '') + '\'') + ')">AI 경기 리뷰 <small>예측이 왜 맞았는지 · 틀렸는지</small></button></div>';
+}
+async function _grOpen(id) {
+  var rm = (resultMatches || []).find(function (x) { return x.id === id; });
+  if (!rm) return;
+  var m = document.getElementById('gr-modal');
+  if (!m) {
+    m = document.createElement('div'); m.id = 'gr-modal'; m.className = 'gr-modal';
+    m.innerHTML = '<div class="gr-modal-box"><button type="button" class="gr-x" onclick="document.getElementById(\'gr-modal\').classList.remove(\'open\')">닫기</button><div id="gr-modal-body"></div></div>';
+    m.addEventListener('click', function (e) { if (e.target === m) m.classList.remove('open'); });
+    document.body.appendChild(m);
+  }
+  m.classList.add('open');
+  await GameReview.render(document.getElementById('gr-modal-body'), [rm], { title: rm.label || 'AI 경기 리뷰' });
+}
+/*GAMEREVIEW-END*/
+</script>
+
+
 <script>
 /* 2단계 내전 종류 캐러셀: 끌어서 넘기기 (관성 0.93 · 속도만큼 skewX ±12° · 끝에서 되돌아옴 — cg-skew 응용)
    + 가운데 카드 강조 · 화살표 · 점 · 카드 누르면 선택하고 가운데로 */

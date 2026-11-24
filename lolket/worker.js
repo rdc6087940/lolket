@@ -1067,6 +1067,10 @@ const _WORKER = {
     if (path === '/discord-link-update' && request.method === 'POST') {
       return handleDiscordLinkUpdate(request, env);
     }
+    // 밸투라고소: 진행자(시작·재전송·강제 집행·초기화) / 참여자(상태·동의·출석·투표·후보 제출·최종 확정)
+    if (path === '/balvote' && request.method === 'POST') {
+      return handleBalVote(request, env);
+    }
     // 멸망전 AI 분석 권한 (마스터가 디스코드 연동된 소환사 계정을 골라 부여)
     if (path === '/doom-ai-access' && request.method === 'POST') {
       return handleDoomAiAccess(request, env);
@@ -2773,13 +2777,15 @@ async function handleDbWrite(request, env, ctx) {
     const httpMethod = isMatchRoot ? 'PATCH' : 'PUT';
     // discordForumThread(포럼 포스트/참가자 현황 댓글 정보)는 서버만 관리 → 웹 스냅샷의 오래된 값으로 덮어쓰지 않음
     let writeData = data;
-    if (isMatchRoot && data && typeof data === 'object' && !Array.isArray(data) && ('discordForumThread' in data || 'discordTeamPost' in data || 'fullNotified' in data || 'attendanceCall' in data)) {
+    if (isMatchRoot && data && typeof data === 'object' && !Array.isArray(data) && ('discordForumThread' in data || 'discordTeamPost' in data || 'fullNotified' in data || 'attendanceCall' in data || 'balVote' in data)) {
       writeData = Object.assign({}, data);
       delete writeData.discordForumThread;
       delete writeData.discordTeamPost; // 4단계 팀 정보 메시지 정보도 서버만 관리
       delete writeData.attendanceCall; // 출석 현황도 서버(디스코드 버튼)만 관리
       delete writeData.fullNotified; // 인원 마감 알림 여부도 서버만 관리
+      delete writeData.balVote; // 밸투라고소 투표도 서버만 관리
     }
+    if (/^communities\/[^/]+\/matches\/[^/]+\/balVote(\/|$)/.test(dbPath)) return json({ ok: false, error: '투표 데이터는 직접 쓸 수 없습니다' }, 403);
 
     const res = await fetch(fullUrl, {
       method: httpMethod,
@@ -8608,7 +8614,7 @@ async function _checkMatchFullAndNotify(cid, matchId, env) {
   }
 }
 
-async function updateForumPostMembers(cid, matchId, env) {
+async function updateForumPostMembers(cid, matchId, env, _retry) {
   // 멤버가 바뀔 때마다 호출되는 곳 → 인원 마감 처리도 여기서 함께
   await _checkMatchFullAndNotify(cid, matchId, env);
   try {
@@ -8671,6 +8677,25 @@ async function updateForumPostMembers(cid, matchId, env) {
       if (patchRes.status !== 404) { console.error('[updateForumPostMembers] PATCH', patchRes.status, (await patchRes.text()).slice(0, 200)); return; }
       // 댓글이 삭제된 경우 → 새로 작성
     }
+    // 새 댓글 작성은 한 번에 한 요청만 (내전 생성 직후 여러 요청이 동시에 와서 댓글이 2개 생기던 문제)
+    //   membersLock 을 조건부 쓰기(ETag)로 먼저 잡은 요청만 작성하고, 나머지는 잠깐 기다렸다가 그 댓글을 수정
+    const lockUrl = `${base}/discordForumThread/membersLock.json${authQ}`;
+    let gotLock = false;
+    try {
+      const lg = await fetch(lockUrl, { headers: { 'X-Firebase-ETag': 'true' } });
+      const etag = lg.headers.get('ETag');
+      const held = lg.ok ? await lg.json() : null;
+      if (etag && !(held && Date.now() - Number(held) < 20000)) {
+        const lp = await fetch(lockUrl, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'if-match': etag }, body: JSON.stringify(Date.now()) });
+        gotLock = lp.ok;
+      }
+      if (!etag) gotLock = true; // ETag 를 못 받으면 예전처럼 진행
+    } catch (e3) { gotLock = true; }
+    if (!gotLock) {
+      if (_retry) return;
+      await new Promise(r => setTimeout(r, 2500));
+      return updateForumPostMembers(cid, matchId, env, true);
+    }
     const postRes = await fetch(`https://discord.com/api/v10/channels/${forumThread.threadId}/messages`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bot ' + botToken },
@@ -8682,6 +8707,7 @@ async function updateForumPostMembers(cid, matchId, env) {
     } else {
       console.error('[updateForumPostMembers] POST', postRes.status, (await postRes.text()).slice(0, 200));
     }
+    await fetch(lockUrl, { method: 'DELETE' }).catch(() => {});
   } catch(e) {
     console.error('[updateForumPostMembers] 오류:', e.message);
   }
@@ -9111,15 +9137,25 @@ async function handlePeakTiersWrite(request, env) {
   if (!communityId || !data) return json({ok:false,error:'필수값 없음'},400);
   const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
   const authQ = secret ? '?auth='+secret : '';
-  // 각 puuId의 member_analysis/custom에 peakTier, peakLp PATCH
-  const entries = Object.entries(data);
-  await Promise.all(entries.map(async ([puuId, val]) => {
-    await fetch(`${dbUrl}/communities/${communityId}/member_analysis/${puuId}/custom.json${authQ}`, {
-      method: 'PATCH',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ peakTier: val.tier, peakLp: val.lp || 0 })
-    });
-  }));
+  if (!/^[A-Za-z0-9_-]+$/.test(String(communityId))) return json({ok:false,error:'잘못된 communityId'},400);
+  // 사람 수만큼 따로 쓰면 워커 호출 한도(50회)를 넘어 대부분 저장이 안 됐음 → 한 번에 여러 경로를 PATCH
+  const entries = Object.entries(data).filter(([puuId, val]) => puuId && !/[.#$\[\]\/]/.test(puuId) && val && val.tier);
+  if (!entries.length) return json({ ok: true, count: 0 });
+  const multi = {}, cachePatch = {};
+  for (const [puuId, val] of entries) {
+    multi[`${puuId}/custom/peakTier`] = String(val.tier);
+    multi[`${puuId}/custom/peakLp`] = +val.lp || 0;
+    cachePatch[puuId] = { tier: String(val.tier), lp: +val.lp || 0 };
+  }
+  const w1 = await fetch(`${dbUrl}/communities/${communityId}/member_analysis.json${authQ}`, {
+    method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify(multi)
+  });
+  // 읽을 때는 peak_tiers_cache 를 먼저 보므로 여기도 같이 갱신 (예전엔 안 해서 새로고침하면 옛 값이 나왔음)
+  const w2 = await fetch(`${dbUrl}/communities/${communityId}/peak_tiers_cache.json${authQ}`, {
+    method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify(cachePatch)
+  });
+  await invalidateCache(`peak-tiers-${communityId}`).catch(() => {});
+  if (!w1.ok || !w2.ok) return json({ ok: false, error: 'DB 저장 실패 (' + w1.status + '/' + w2.status + ')' }, 500);
   return json({ ok: true, count: entries.length });
 }
 
@@ -9253,6 +9289,318 @@ async function handleDiscordLinkUpdate(request, env) {
   const res = await fetch(path, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(updated) });
   if (!res.ok) return json({ok:false,error:'수정 실패'},500);
   return json({ok:true, data:_profileAsLink(cid, discordId, updated)});
+}
+
+// ══════════════════════════════════════════════════════════════════
+// 밸투라고소 (밸런스 투표 · 라인 고정 · 소프트피어리스)  v2
+//   matches/{id}/balVote = { v:2, status:'open'|'confirmed', nonce, limitMin, voteStartAt, deadline,
+//     rules[], lanes{top:[k,k]..}, splits{bits:p}, cands{id:{bits,p,by}},
+//     members{k:{name,lane,tier,ds,did,dm,agreedAt,attendAt,votes{cand:true},sub}}, test }
+//   찬성 투표: 한 사람이 여러 조합에 찬성 가능 → 찬성 7 이상 조합이 생기면 바로 확정
+//   제한 시간: 10명이 모두 출석한 순간부터 limitMin 분 → 끝나면 찬성 1위로 자동 확정 (동률이면 AI 승률이 50%에 가까운 쪽)
+//   참여자 링크 = balvote.html?c&m&k&t  (t = HMAC(cid|matchId|k|nonce) · DB 에 토큰을 저장하지 않음)
+//   bits: 라인 순서(탑 정글 미드 원딜 서폿)마다 lanes[lane][bit] 이 1팀 · 첫 자리는 항상 0
+// ══════════════════════════════════════════════════════════════════
+const _BV_LANES = ['top', 'jg', 'mid', 'bot', 'sup'];
+const _BV_NEED = 7;
+const _BV_MAX_CANDS = 15;
+function _bvKey(id) { return String(id).replace(/[.#$\[\]\/]/g, '_'); }
+function _bvNormBits(b) {
+  b = String(b || '');
+  if (!/^[01]{5}$/.test(b)) return null;
+  return b[0] === '1' ? b.split('').map(c => (c === '1' ? '0' : '1')).join('') : b;
+}
+async function _bvSign(env, cid, mid, k, nonce) {
+  const raw = new TextEncoder().encode(String(env.BALVOTE_SECRET || env.FB_DB_SECRET || 'roonging-balvote'));
+  const key = await crypto.subtle.importKey('raw', raw, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  const sig = new Uint8Array(await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(`${cid}|${mid}|${k}|${nonce}`)));
+  let s = ''; for (const b of sig) s += String.fromCharCode(b);
+  return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '').slice(0, 24);
+}
+function _bvLink(env, cid, mid, k, t) {
+  const site = String(env.SITE_URL || 'https://roonging.com').replace(/\/$/, '');
+  return `${site}/balvote.html?c=${encodeURIComponent(cid)}&m=${encodeURIComponent(mid)}&k=${encodeURIComponent(k)}&t=${t}`;
+}
+function _bvVotesOf(m) {
+  if (!m) return [];
+  if (m.votes && typeof m.votes === 'object') return Object.keys(m.votes).filter(c => m.votes[c]);
+  return m.vote ? [m.vote] : [];
+}
+function _bvTally(bv) {
+  const votes = {};
+  Object.values((bv && bv.members) || {}).forEach(m => { _bvVotesOf(m).forEach(c => { votes[c] = (votes[c] || 0) + 1; }); });
+  return { votes };
+}
+// 찬성 많은 순 → 동률이면 AI 승률이 50%에 가까운 순 → 먼저 올라온 순
+function _bvRank(bv) {
+  const tl = _bvTally(bv), cands = bv.cands || {};
+  return Object.keys(cands).sort((a, b) => {
+    const d = (tl.votes[b] || 0) - (tl.votes[a] || 0); if (d) return d;
+    const pa = cands[a].p == null ? 1 : Math.abs(cands[a].p - 0.5), pb = cands[b].p == null ? 1 : Math.abs(cands[b].p - 0.5);
+    if (pa !== pb) return pa - pb;
+    return (cands[a].at || 0) - (cands[b].at || 0);
+  });
+}
+// 지금 확정해야 하면 { cand, by } (찬성 7 이상 / 제한 시간 끝)
+function _bvShouldConfirm(bv, now) {
+  if (!bv || bv.status === 'confirmed' || !bv.cands) return null;
+  const rank = _bvRank(bv), tl = _bvTally(bv), need = bv.need || _BV_NEED;
+  if (rank.length && (tl.votes[rank[0]] || 0) >= need) return { cand: rank[0], by: 'votes' };
+  if (bv.deadline && now >= bv.deadline && rank.length) return { cand: rank[0], by: 'timeout' };
+  return null;
+}
+function _bvPublic(bv, me) {
+  const out = Object.assign({}, bv);
+  delete out.nonce;
+  const ms = {};
+  Object.entries(bv.members || {}).forEach(([k, m]) => { const c = Object.assign({}, m); delete c.did; c.votes = _bvVotesOf(m).reduce((o, x) => { o[x] = true; return o; }, {}); delete c.vote; ms[k] = c; });
+  out.members = ms;
+  out.tally = _bvTally(bv);
+  out.rank = _bvRank(bv);
+  if (me) out.me = me;
+  out.now = Date.now();
+  return out;
+}
+function _bvIsHost(session, cid) {
+  if (!session) return false;
+  if (session.role === 'master') return true;
+  return session.role === 'admin' && (!session.communityId || String(session.communityId) === String(cid));
+}
+async function _bvSendDms(env, cid, mid, bv, onlyKeys) {
+  const BOT = env.DISCORD_BOT_TOKEN;
+  const res = {};
+  let sent = 0;
+  const limitTxt = bv.limitMin ? `10명이 모두 출석하면 **${bv.limitMin}분** 투표 타이머가 시작되고, 끝나면 찬성이 가장 많은 조합으로 자동 확정돼요.` : '제한 시간 없이, 찬성 7명이 모인 조합으로 확정돼요.';
+  for (const [k, m] of Object.entries(bv.members || {})) {
+    if (onlyKeys && onlyKeys.indexOf(k) < 0) continue;
+    if (!m.did || !BOT) { res[k] = 'failed'; continue; }
+    let dm = 'failed';
+    try {
+      const url = _bvLink(env, cid, mid, k, await _bvSign(env, cid, mid, k, bv.nonce));
+      const ch = await fetch('https://discord.com/api/v10/users/@me/channels', {
+        method: 'POST', headers: { 'Authorization': 'Bot ' + BOT, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ recipient_id: String(m.did) }),
+      });
+      if (ch.ok) {
+        const chj = await ch.json();
+        const mr = await fetch(`https://discord.com/api/v10/channels/${chj.id}/messages`, {
+          method: 'POST', headers: { 'Authorization': 'Bot ' + BOT, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            content: `**밸런스 투표 내전** — ${m.name} 님\n\n` +
+              `내전: **${bv.matchName || '내전'}**${bv.timeStr ? '  ·  ' + bv.timeStr : ''}\n` +
+              (bv.admin ? `진행자: **${bv.admin}**\n` : '') +
+              `\n이번 내전은 참여자 투표로 팀을 정해요. 아래 **투표 참여하기** 버튼을 눌러 주세요.\n` +
+              `가이드 룰 동의 → 출석 → 찬성 투표(여러 개 가능) 순서로, 화면 안내를 따라가면 돼요.\n` + limitTxt + `\n` +
+              `-# 이 링크는 ${m.name} 님 전용이에요. 다른 사람에게 보내지 마세요.`,
+            components: [{ type: 1, components: [{ type: 2, style: 5, label: '투표 참여하기', url }] }],
+          }),
+        });
+        if (mr.ok) { dm = 'sent'; sent++; }
+      }
+    } catch (e) {}
+    res[k] = dm;
+  }
+  return { res, sent };
+}
+
+async function handleBalVote(request, env) {
+  let body; try { body = await request.json(); } catch { return json({ ok: false, error: 'bad request' }, 400); }
+  const { action, cid, matchId } = body || {};
+  const idOk = (v) => typeof v === 'string' && /^[A-Za-z0-9_-]{1,80}$/.test(v);
+  if (!idOk(cid) || !idOk(matchId)) return json({ ok: false, error: '필수 파라미터 없음' }, 400);
+  const dbUrl = env.FB_DATABASE_URL, secret = env.FB_DB_SECRET;
+  const authQ = secret ? '?auth=' + secret : '';
+  const base = `${dbUrl}/communities/${cid}/matches/${matchId}`;
+  const readBv = async () => { const r = await fetch(`${base}/balVote.json${authQ}`); return r.ok ? await r.json() : null; };
+  const patchBv = (obj) => fetch(`${base}/balVote.json${authQ}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(obj) });
+  // 확정 조건(찬성 7 / 시간 끝)을 보고 필요하면 확정 → 확정된 bv 반환
+  const settle = async (bv) => {
+    const c = _bvShouldConfirm(bv, Date.now());
+    if (!c) return bv;
+    const at = Date.now();
+    await patchBv({ status: 'confirmed', confirmedCand: c.cand, confirmedAt: at, confirmedBy: c.by });
+    return Object.assign({}, bv, { status: 'confirmed', confirmedCand: c.cand, confirmedAt: at, confirmedBy: c.by });
+  };
+
+  // ── 진행자: 시작 / DM 재전송 / 강제 집행 / 초기화 / 시간 확인 / 테스트 링크 / 진행자 보기 ──
+  const hostActs = ['start', 'resend', 'force', 'reset', 'tick', 'testlinks'];
+  if (hostActs.indexOf(action) >= 0 || (action === 'state' && body.view === 'host')) {
+    const session = getSession(request.headers.get('X-Session-Token') || body.token);
+    if (!_bvIsHost(session, cid)) return json({ ok: false, code: 'host', error: action === 'state' ? '진행자(관리자)로 로그인한 브라우저에서 열어 주세요.' : '관리자 로그인이 필요합니다' }, 403);
+
+    if (action === 'reset') {
+      await fetch(`${base}/balVote.json${authQ}`, { method: 'DELETE' });
+      return json({ ok: true });
+    }
+    if (action === 'state' || action === 'tick') {
+      let bv = await readBv();
+      if (!bv || !bv.members) return json({ ok: false, code: 'gone', error: '아직 투표를 시작하지 않았거나 초기화됐어요.' }, 404);
+      bv = await settle(bv);
+      return json({ ok: true, state: Object.assign(_bvPublic(bv, null), { viewer: 'host' }) });
+    }
+    if (action === 'testlinks') {
+      const bv = await readBv();
+      if (!bv || !bv.nonce) return json({ ok: false, error: '투표가 없습니다' }, 400);
+      if (!bv.test) return json({ ok: false, error: '테스트 투표에서만 볼 수 있어요' }, 403);
+      const links = {};
+      for (const k of Object.keys(bv.members || {})) { const t = await _bvSign(env, cid, matchId, k, bv.nonce); links[k] = { t, url: _bvLink(env, cid, matchId, k, t) }; }
+      return json({ ok: true, links });
+    }
+    if (action === 'resend') {
+      const bv = await readBv();
+      if (!bv || !bv.nonce) return json({ ok: false, error: '아직 투표를 시작하지 않았습니다' }, 400);
+      if (bv.test) return json({ ok: false, error: '테스트 투표는 DM을 보내지 않아요' }, 400);
+      const only = Array.isArray(body.keys) && body.keys.length ? body.keys.map(String) : null;
+      const { res, sent } = await _bvSendDms(env, cid, matchId, bv, only);
+      const p = {}; Object.entries(res).forEach(([k, v]) => { p[`members/${k}/dm`] = v; });
+      if (Object.keys(p).length) await patchBv(p);
+      return json({ ok: true, sent, total: Object.keys(res).length });
+    }
+    if (action === 'force') {
+      const bv = await readBv();
+      if (!bv || !bv.cands) return json({ ok: false, error: '투표가 없습니다' }, 400);
+      const cand = String(body.cand || '');
+      if (!bv.cands[cand]) return json({ ok: false, error: '없는 조합입니다' }, 400);
+      if (bv.status === 'confirmed') return json({ ok: true, already: true });
+      await patchBv({ status: 'confirmed', confirmedCand: cand, confirmedAt: Date.now(), confirmedBy: 'force', forced: true });
+      return json({ ok: true });
+    }
+
+    // start
+    const test = !!body.test;
+    const [mRes, nRes, aRes, tRes, rRes] = await Promise.all([
+      fetch(`${base}/_members.json${authQ}`), fetch(`${base}/name.json${authQ}`),
+      fetch(`${base}/admin.json${authQ}`), fetch(`${base}/time.json${authQ}`),
+      fetch(`${dbUrl}/communities/${cid}/rules.json${authQ}`),
+    ]);
+    const membersD = _toList(mRes.ok ? await mRes.json() : null);
+    if (membersD.length !== 10) return json({ ok: false, error: '참여자가 정확히 10명이어야 합니다 (현재 ' + membersD.length + '명)' }, 400);
+    const noDc = membersD.filter(m => !m.discordId).map(m => m.name || '?');
+    if (noDc.length && !test) return json({ ok: false, error: '디스코드가 연동되지 않은 참여자가 있습니다: ' + noDc.join(', ') }, 400);
+    const byKey = {}; membersD.forEach(m => { byKey[_bvKey(m.id)] = m; });
+    const lanesIn = body.lanes || {}, lanes = {}, seen = {};
+    for (const l of _BV_LANES) {
+      const pair = Array.isArray(lanesIn[l]) ? lanesIn[l].map(x => _bvKey(x)) : [];
+      if (pair.length !== 2 || !byKey[pair[0]] || !byKey[pair[1]] || pair[0] === pair[1] || seen[pair[0]] || seen[pair[1]])
+        return json({ ok: false, error: '라인별로 2명씩 나뉘어 있어야 합니다' }, 400);
+      seen[pair[0]] = seen[pair[1]] = 1; lanes[l] = pair;
+    }
+    const allRules = (rRes.ok ? await rRes.json() : null) || {};
+    const ruleIds = Array.isArray(body.rules) ? body.rules.map(String) : [];
+    const rules = ruleIds.map(id => allRules[id] || Object.values(allRules).find(r => r && r.id === id)).filter(Boolean)
+      .map(r => ({ id: String(r.id || ''), title: String(r.title || '가이드'), html: String(r.contentHtml || '').slice(0, 60000) }));
+    if (!rules.length) return json({ ok: false, error: '가이드 룰을 1개 이상 선택해 주세요' }, 400);
+    const splits = {};
+    Object.entries(body.splits || {}).forEach(([b, p]) => { const nb = _bvNormBits(b); const v = +p; if (nb && isFinite(v) && v >= 0 && v <= 1) splits[nb] = Math.round(v * 1000) / 1000; });
+    const cands = {};
+    (Array.isArray(body.cands) ? body.cands : []).slice(0, 5).forEach((b, i) => {
+      const nb = _bvNormBits(b); if (!nb || Object.values(cands).some(c => c.bits === nb)) return;
+      cands['ai' + (i + 1)] = { bits: nb, p: splits[nb] != null ? splits[nb] : null, by: 'AI', at: Date.now() + i, n: i + 1 };
+    });
+    if (!Object.keys(cands).length) return json({ ok: false, error: 'AI 후보 조합이 없습니다' }, 400);
+    let limitMin = body.limitMin == null ? 5 : Math.round(+body.limitMin);
+    if (!isFinite(limitMin) || limitMin < 0) limitMin = 5;
+    limitMin = Math.min(limitMin, 120);
+
+    const matchName = (nRes.ok ? await nRes.json() : '') || '내전';
+    const admin = (aRes.ok ? await aRes.json() : '') || '';
+    const mt = tRes.ok ? await tRes.json() : null;
+    let timeStr = '';
+    if (mt === 'mobasi') timeStr = '모바시';
+    else if (mt) { const d = new Date(mt); if (!isNaN(d)) timeStr = d.toLocaleString('ko-KR', { timeZone: 'Asia/Seoul', month: 'numeric', day: 'numeric', weekday: 'short', hour: '2-digit', minute: '2-digit' }); }
+
+    const laneOf = {}; _BV_LANES.forEach(l => lanes[l].forEach(k => { laneOf[k] = l; }));
+    const members = {};
+    Object.entries(byKey).forEach(([k, m]) => {
+      const dv = body.doom ? body.doom[m.id] : null;
+      members[k] = {
+        name: String(m.name || '?'), tag: m.tag ? String(m.tag) : null, lane: laneOf[k],
+        tier: m.tier || null, tierFull: m.tierFull || null, did: m.discordId ? String(m.discordId) : null,
+        dm: test ? 'test' : 'sending',
+        ds: (dv !== null && dv !== '' && dv !== undefined && isFinite(+dv)) ? Math.round(+dv * 100) / 100 : null,
+      };
+    });
+    const bv = {
+      v: 2, status: 'open', need: _BV_NEED, startedAt: Date.now(), limitMin, voteStartAt: null, deadline: null,
+      nonce: Date.now().toString(36) + Math.random().toString(36).slice(2, 10),
+      matchName, admin, timeStr, rules, lanes, splits, cands, members, test,
+      model: String(body.model || '').slice(0, 40),
+    };
+    const put = await fetch(`${base}/balVote.json${authQ}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bv) });
+    if (!put.ok) return json({ ok: false, error: '저장 실패' }, 500);
+    if (test) {
+      const links = {};
+      for (const k of Object.keys(members)) { const t = await _bvSign(env, cid, matchId, k, bv.nonce); links[k] = { t, url: _bvLink(env, cid, matchId, k, t) }; }
+      return json({ ok: true, test: true, sent: 0, total: 10, links });
+    }
+    const { res, sent } = await _bvSendDms(env, cid, matchId, bv, null);
+    const p = {}; Object.entries(res).forEach(([k, v]) => { p[`members/${k}/dm`] = v; });
+    await patchBv(p);
+    return json({ ok: true, sent, total: 10 });
+  }
+
+  // ── 참여자: 상태 보기 / 행동 ──
+  if (action === 'state' || action === 'act') {
+    const k = String(body.k || ''), t = String(body.t || '');
+    let bv = await readBv();
+    if (!bv || !bv.nonce || !bv.members) return json({ ok: false, code: 'gone', error: '투표가 없거나 진행자가 다시 시작했어요. 디스코드 DM으로 받은 새 링크를 열어 주세요.' }, 404);
+    const me = bv.members[k];
+    if (!me || t !== await _bvSign(env, cid, matchId, k, bv.nonce))
+      return json({ ok: false, code: 'token', error: '링크가 맞지 않아요. 디스코드 DM으로 받은 가장 최근 링크를 열어 주세요.' }, 403);
+    if (action === 'state') { bv = await settle(bv); return json({ ok: true, state: _bvPublic(bv, k) }); }
+
+    const op = String(body.op || ''), now = Date.now();
+    bv = await settle(bv);
+    if (bv.status === 'confirmed') return json({ ok: true, state: _bvPublic(bv, k), note: '이미 확정됐어요' });
+    const P = {}, fail = (msg) => json({ ok: false, error: msg, state: _bvPublic(bv, k) }, 400);
+    const myVotes = _bvVotesOf(me);
+    if (op === 'agree') {
+      if (!me.agreedAt) P[`members/${k}/agreedAt`] = now;
+    } else if (op === 'attend') {
+      if (!me.agreedAt) return fail('먼저 가이드 룰에 동의해 주세요');
+      if (!me.attendAt) P[`members/${k}/attendAt`] = now;
+    } else if (op === 'vote') {
+      // 찬성 켜기/끄기 (여러 조합에 찬성 가능)
+      if (!me.attendAt) return fail('먼저 출석해 주세요');
+      const cand = String(body.cand || '');
+      if (!(bv.cands || {})[cand]) return fail('없는 조합이에요');
+      const on = body.on == null ? myVotes.indexOf(cand) < 0 : !!body.on;
+      P[`members/${k}/votes/${cand}`] = on ? true : null;
+      if (me.vote) P[`members/${k}/vote`] = null;
+    } else if (op === 'submit') {
+      if (!me.attendAt) return fail('먼저 출석해 주세요');
+      const nb = _bvNormBits(body.bits);
+      if (!nb) return fail('조합이 올바르지 않아요');
+      const same = Object.entries(bv.cands || {}).find(([, c]) => c && c.bits === nb);
+      if (same) {
+        P[`members/${k}/votes/${same[0]}`] = true;
+      } else {
+        if (me.sub) return fail('직접 만든 조합은 한 사람당 1개만 올릴 수 있어요');
+        if (Object.keys(bv.cands || {}).length >= _BV_MAX_CANDS) return fail('후보가 너무 많아요 (최대 ' + _BV_MAX_CANDS + '개)');
+        const id = 'u_' + k;
+        P[`cands/${id}`] = { bits: nb, p: (bv.splits || {})[nb] != null ? bv.splits[nb] : null, by: me.name, byKey: k, at: now };
+        P[`members/${k}/sub`] = id;
+        P[`members/${k}/votes/${id}`] = true;
+      }
+    } else {
+      return fail('알 수 없는 요청');
+    }
+    if (Object.keys(P).length) await patchBv(P);
+    // 동시에 누른 사람까지 반영하려고 다시 읽어서 판단
+    let after = await readBv() || bv;
+    // 10명 전원 출석 → 투표 타이머 시작
+    if (after.status !== 'confirmed' && !after.voteStartAt) {
+      const ms = Object.values(after.members || {});
+      if (ms.length === 10 && ms.every(x => x && x.attendAt)) {
+        const st = Date.now(), dl = after.limitMin ? st + after.limitMin * 60000 : null;
+        await patchBv({ voteStartAt: st, deadline: dl });
+        after = Object.assign({}, after, { voteStartAt: st, deadline: dl });
+      }
+    }
+    after = await settle(after);
+    return json({ ok: true, state: _bvPublic(after, k) });
+  }
+  return json({ ok: false, error: '알 수 없는 요청' }, 400);
 }
 
 // 연동 목록 (관리자 전용 — 커뮤니티의 소환사 계정 등록 전체)

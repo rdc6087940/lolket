@@ -903,6 +903,9 @@ tr.has-bg-effect td {
 #stats-body tr.sub-row td:nth-child(2){padding-left:28px!important}
 #stats-body tr.sub-row[hidden],.mc-sub[hidden]{display:none!important}
 .mc.mc-sub{margin-left:18px;border-left:2px solid rgba(167,139,250,.45)!important}
+
+/* 멸망전 화면에서는 캘린더 플로팅 버튼 숨김 (데스크톱 포함) */
+body:has(#doom-sim-view[style*="display: block"]) #cal-float-btn,body:has(#doom-sim-view:not([style*="display: none"]):not([style*="display:none"])) #cal-float-btn{display:none!important}
 </style>
 <link rel="manifest" href="/stats-manifest.json">
 <meta name="theme-color" content="#0c1117">
@@ -1377,6 +1380,22 @@ select.ds-input{padding-right:4px}
 /* 멸망전 숫자 입력칸: 위아래 화살표(스피너) 숨김 — 숫자만 입력 */
 #doom-sim-view input[type=number]{-moz-appearance:textfield;appearance:textfield}
 #doom-sim-view input[type=number]::-webkit-outer-spin-button,#doom-sim-view input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;appearance:none;margin:0}
+
+.ds-excl{margin-top:.6rem;display:flex;flex-direction:column;gap:5px}
+.ds-excl-h{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:var(--sub)}
+.ds-excl-h .ds-x{margin-left:auto;min-height:24px;padding:0 8px;font-size:10.5px}
+.ds-excl-h .ds-x[hidden]{display:none}
+.ds-excl .ds-input.sm{width:100%}
+.ds-excl-found{display:flex;flex-direction:column;gap:3px}
+.ds-excl-found button{display:flex;align-items:center;gap:4px;min-height:34px;padding:0 8px;border-radius:7px;border:1px solid var(--ds-line);background:var(--ds-s2);color:var(--white);font-family:inherit;font-size:12px;cursor:pointer;text-align:left}
+.ds-excl-found button i{font-style:normal;font-size:10.5px;color:var(--muted)}
+.ds-excl-found button span{margin-left:auto;font-size:11px;font-weight:700;color:#FF8A8A}
+.ds-excl-list{display:flex;flex-wrap:wrap;gap:4px}
+.ds-chip{display:inline-flex;align-items:center;gap:2px;padding:2px 2px 2px 9px;border-radius:999px;background:rgba(255,120,120,.1);border:1px solid rgba(255,120,120,.3);color:#FFB0B0;font-size:11.5px;font-weight:700}
+.ds-chip button{width:22px;height:22px;border:none;border-radius:50%;background:transparent;color:inherit;font-size:14px;cursor:pointer}
+.ds-rc-x{flex:0 0 auto;min-height:24px;padding:0 7px;border-radius:6px;border:1px solid var(--ds-line);background:transparent;color:var(--muted);font-family:inherit;font-size:10.5px;font-weight:700;cursor:pointer}
+.ds-rc-x:hover{color:#FF8A8A;border-color:rgba(255,120,120,.4)}
+@media (max-width:700px){.ds-excl .ds-input.sm{font-size:16px}.ds-chip{font-size:12.5px}.ds-chip button{width:28px;height:28px}.ds-rc-x{min-height:30px}}
 </style>
 </head>
 <body>
@@ -1599,7 +1618,7 @@ select.ds-input{padding-right:4px}
   <!-- ── 멸망전 팀 시뮬레이션 뷰 ── -->
   <div id="doom-sim-view" style="display:none;">
     <div id="doom-sim-topbar" class="ds-topbar">
-      <label class="ds-limit">이번 멸망전 한도 <input type="number" inputmode="numeric" id="ds-cap" placeholder="예: 180" oninput="dsRender();dsRecRender()"> 점</label>
+      <label class="ds-limit">이번 멸망전 한도 <input type="number" inputmode="decimal" step="any" id="ds-cap" placeholder="예: 180" oninput="dsRender();dsRecRender()"> 점</label>
       <span id="ds-table-src" class="ds-src">점수표 불러오는 중…</span>
       <span class="ds-spacer"></span>
       <button type="button" id="ds-btn-ai-perm" class="ds-btn ghost" onclick="dsOpenAiPerm()" style="display:none;">AI 권한 관리</button>
@@ -1621,7 +1640,7 @@ select.ds-input{padding-right:4px}
           <header class="ds-team-h">
             <span class="ds-team-name a">팀 A</span>
             <span class="ds-team-sum"><span id="ds-sum-a">0</span>점</span>
-            <label class="ds-adv" title="팀 전체 특수룰 가산점(+)/감점(-)">팀 adv <input type="number" inputmode="numeric" step="1" id="ds-adv-a" placeholder="0" oninput="dsRender()"></label>
+            <label class="ds-adv" title="팀 전체 특수룰 가산점(+)/감점(-)">팀 adv <input type="number" inputmode="decimal" step="any" id="ds-adv-a" placeholder="0" oninput="dsRender()"></label>
             <span class="ds-team-final">= <b id="ds-final-a">0</b></span>
             <span class="ds-team-left" id="ds-left-a"></span>
           </header>
@@ -1636,7 +1655,7 @@ select.ds-input{padding-right:4px}
           <header class="ds-team-h">
             <span class="ds-team-name b">팀 B</span>
             <span class="ds-team-sum"><span id="ds-sum-b">0</span>점</span>
-            <label class="ds-adv" title="팀 전체 특수룰 가산점(+)/감점(-)">팀 adv <input type="number" inputmode="numeric" step="1" id="ds-adv-b" placeholder="0" oninput="dsRender()"></label>
+            <label class="ds-adv" title="팀 전체 특수룰 가산점(+)/감점(-)">팀 adv <input type="number" inputmode="decimal" step="any" id="ds-adv-b" placeholder="0" oninput="dsRender()"></label>
             <span class="ds-team-final">= <b id="ds-final-b">0</b></span>
             <span class="ds-team-left" id="ds-left-b"></span>
           </header>
@@ -1664,7 +1683,7 @@ select.ds-input{padding-right:4px}
           <div class="ds-rec-row">
             <span class="ds-lbl">대상</span>
             <div class="ds-seg" id="ds-rec-team"><button type="button" class="on" data-v="a" onclick="dsRecTeam('a')">팀 A</button><button type="button" data-v="b" onclick="dsRecTeam('b')">팀 B</button></div>
-            <span class="ds-lbl">한도</span><b id="ds-cap-view" class="ds-capv">—</b><span class="ds-dim">(위쪽에서 입력)</span>
+            <span class="ds-lbl">한도</span><b id="ds-cap-show" class="ds-capv">—</b><span class="ds-dim">(위쪽에서 입력)</span>
           </div>
           <div class="ds-rec-sub" id="ds-rec-budget"></div>
           <div class="ds-lbl2">빈 자리 조건</div>
@@ -1680,6 +1699,12 @@ select.ds-input{padding-right:4px}
               <label>라인<select id="ds-f-lane" class="ds-input sm"><option value="exp">해당 라인 경험 있음</option><option value="main">주 포지션만</option><option value="any">상관없음</option></select></label>
               <label class="ck"><input type="checkbox" id="ds-f-nosub" checked> 부계정 빼기</label>
               <label class="ck"><input type="checkbox" id="ds-f-other" checked> 상대 팀 멤버 빼기</label>
+            </div>
+            <div class="ds-excl">
+              <div class="ds-excl-h">추천에서 뺄 유저 <span class="ds-dim" id="ds-excl-cnt"></span><button type="button" class="ds-x" id="ds-excl-clear" onclick="dsExclClear()" hidden>모두 지우기</button></div>
+              <input id="ds-excl-q" class="ds-input sm" type="search" placeholder="닉네임 검색해서 추가" oninput="dsExclSearch()" autocomplete="off">
+              <div id="ds-excl-found" class="ds-excl-found"></div>
+              <div id="ds-excl-list" class="ds-excl-list"></div>
             </div>
           </details>
           <button type="button" class="ds-btn primary wide" onclick="dsRecommend()">추천 찾기</button>
@@ -2237,6 +2262,17 @@ async function loadData(){
   }
 }
 
+// 목록에서 멤버 찾기: 부계정은 filteredData 에서 빠지고 본계정의 _subRows 에만 있어서 거기까지 찾음
+function _findListMember(puuId) {
+  var hit = filteredData.find(function(m){ return m.puu_id === puuId; });
+  if (hit) return hit;
+  for (var i = 0; i < filteredData.length; i++) {
+    var subs = filteredData[i]._subRows || [];
+    for (var j = 0; j < subs.length; j++) if (subs[j].puu_id === puuId) return subs[j];
+  }
+  var src = (_currentSeason && _seasonFilteredData) ? _seasonFilteredData : allData;
+  return (src || []).find(function(m){ return m.puu_id === puuId; }) || null;
+}
 function applyAll(){
   // 시즌 모드면 시즌 데이터 기준으로 필터/정렬
   let data = (_currentSeason && _seasonFilteredData) ? _seasonFilteredData.slice() : allData.slice();
@@ -2467,7 +2503,7 @@ function renderMobileCards(slice, start) {
   el.querySelectorAll('.mc[data-puu]').forEach(function(card) {
     card.addEventListener('click', function() {
       var puuId = this.getAttribute('data-puu');
-      var member = filteredData.find(function(m){ return m.puu_id === puuId; });
+      var member = _findListMember(puuId);
       if (member) openDetail(member);
     });
   });
@@ -3638,7 +3674,7 @@ document.addEventListener('click', function(e) {
   if (ubtn) {
     if (ubtn.disabled) return;
     const puuId = ubtn.dataset.puu;
-    const member = filteredData.find(function(m){ return m.puu_id === puuId; });
+    const member = _findListMember(puuId);
     if (!member) return;
     // 쿨타임 시작
     const cKey = _cacheKey(puuId, _queueMode);
@@ -3672,7 +3708,7 @@ document.addEventListener('click', function(e) {
   const btn = e.target.closest('.detail-btn');
   if (!btn) return;
   const puuId = btn.dataset.puu;
-  const member = filteredData.find(function(m){ return m.puu_id === puuId; });
+  const member = _findListMember(puuId);
   if (member) openDetail(member);
 });
 
@@ -4727,7 +4763,7 @@ function renderTempTierCell(m) {
 
 // 임시 티어 팝업 열기
 function openTempTierPopup(puuId, name) {
-  var member = filteredData.find(function(m){ return m.puu_id === puuId; });
+  var member = _findListMember(puuId);
   _ttCurrentMember = member || { puu_id: puuId };
   var rawTt = _tempTiers[puuId] || null;
   // _ttSelectedTier는 항상 tier 문자열로 정규화
@@ -11120,7 +11156,8 @@ var DS_DIV_R = ['', 'I', 'II', 'III', 'IV'];
 var DS_HIGH = ['MASTER', 'GRANDMASTER', 'CHALLENGER'];
 // 커뮤니티 점수표가 없을 때 쓰는 기본표 (룽잉닷컴 내전 점수 기본값과 같음)
 var DS_DEFAULT_TABLE = [
-  {tier:'MASTER+',minLp:1500,maxLp:99999,top:64,jg:69,mid:67,bot:68,sup:58},{tier:'MASTER+',minLp:1400,maxLp:1499,top:62,jg:67,mid:65,bot:66,sup:57},
+  {tier:'MASTER+',minLp:1800,maxLp:99999,top:64,jg:69,mid:67,bot:68,sup:58},{tier:'MASTER+',minLp:1700,maxLp:1799,top:64,jg:69,mid:67,bot:68,sup:58},
+  {tier:'MASTER+',minLp:1600,maxLp:1699,top:64,jg:69,mid:67,bot:68,sup:58},{tier:'MASTER+',minLp:1500,maxLp:1599,top:64,jg:69,mid:67,bot:68,sup:58},{tier:'MASTER+',minLp:1400,maxLp:1499,top:62,jg:67,mid:65,bot:66,sup:57},
   {tier:'MASTER+',minLp:1300,maxLp:1399,top:60,jg:65,mid:63,bot:64,sup:55},{tier:'MASTER+',minLp:1200,maxLp:1299,top:58,jg:63,mid:61,bot:62,sup:53},
   {tier:'MASTER+',minLp:1100,maxLp:1199,top:55,jg:61,mid:59,bot:60,sup:51},{tier:'MASTER+',minLp:1000,maxLp:1099,top:53,jg:59,mid:57,bot:58,sup:48},
   {tier:'MASTER+',minLp:900,maxLp:999,top:51,jg:56,mid:54,bot:55,sup:46},{tier:'MASTER+',minLp:800,maxLp:899,top:48,jg:54,mid:52,bot:53,sup:44},
@@ -11141,7 +11178,8 @@ var _dsTeams = { a: {}, b: {} };       // lane → puu_id
 var _dsSel = null;                     // { team, lane } 선택한 자리
 var _dsPref = {};                      // 추천: lane → 1(고티어 선호) / 0 / -1(저티어 선호)
 var _dsRecTeam = 'a';
-var _dsPAdv = {};                      // 개인 advantage: puu_id → 점수 가감 (예: -3 이면 그 사람 멸망전 점수 3점 낮게)
+var _dsPAdv = {};
+var _dsExcl = {};                      // 추천에서 뺄 유저: puu_id → 1                      // 개인 advantage: puu_id → 점수 가감 (예: -3 이면 그 사람 멸망전 점수 3점 낮게)
 var _dsAi = { checked: false, allowed: false, reason: '' };
 var _dsInited = false;
 var _doomSimData = {}; // (예전 코드 호환)
@@ -11151,11 +11189,22 @@ function _dsLoadLS(k, d) { try { var v = JSON.parse(localStorage.getItem(_dsKey(
 function _dsSaveLS(k, v) { try { localStorage.setItem(_dsKey(k), JSON.stringify(v)); } catch (e) {} }
 function _dsM(puu) { return allData.find(function (x) { return x.puu_id === puu; }) || null; }
 function _dsSaveState() {
-  _dsSaveLS('state', { teams: _dsTeams, padv: _dsPAdv, adv: { a: _dsVal('ds-adv-a'), b: _dsVal('ds-adv-b') }, cap: _dsVal('ds-cap'), pref: _dsPref, recTeam: _dsRecTeam });
+  _dsSaveLS('state', { teams: _dsTeams, padv: _dsPAdv, excl: _dsExcl, adv: { a: _dsVal('ds-adv-a'), b: _dsVal('ds-adv-b') }, cap: _dsVal('ds-cap'), pref: _dsPref, recTeam: _dsRecTeam });
 }
 function _dsVal(id) { var el = document.getElementById(id); return el ? el.value : ''; }
 
 // ── 점수표 ──
+// 예전 점수표의 맨 위 구간(1500+)을 1500~1599 · 1600~1699 · 1700~1799 · 1800+ 로 나눔 (점수는 1500+ 값 그대로)
+function _dsSplitTop(table) {
+  if (!Array.isArray(table)) return table;
+  var hasNew = table.some(function (r) { return r && r.tier === 'MASTER+' && Number(r.minLp) >= 1800 && Number(r.maxLp) >= 9999; });
+  var old = table.find(function (r) { return r && r.tier === 'MASTER+' && Number(r.minLp) === 1500 && Number(r.maxLp) >= 9999; });
+  if (hasNew || !old) return table;
+  var mk = function (a, b) { var n = JSON.parse(JSON.stringify(old)); n.minLp = a; n.maxLp = b; return n; };
+  var out = [];
+  table.forEach(function (r) { if (r === old) out.push(mk(1800, 99999), mk(1700, 1799), mk(1600, 1699), mk(1500, 1599)); else out.push(r); });
+  return out;
+}
 async function dsLoadTable() {
   _dsTable = DS_DEFAULT_TABLE; _dsTableSrc = '기본 점수표';
   if (COMMUNITY_ID) {
@@ -11164,7 +11213,7 @@ async function dsLoadTable() {
       var j = await r.json();
       var d = j && j.ok ? j.data : null;
       if (d && !Array.isArray(d) && typeof d === 'object') d = Object.values(d);
-      if (Array.isArray(d) && d.filter(Boolean).length) { _dsTable = d.filter(Boolean); _dsTableSrc = '커뮤니티 내전 점수표'; }
+      if (Array.isArray(d) && d.filter(Boolean).length) { _dsTable = _dsSplitTop(d.filter(Boolean)); _dsTableSrc = '커뮤니티 내전 점수표'; }
     } catch (e) {}
   }
   var el = document.getElementById('ds-table-src');
@@ -11183,12 +11232,21 @@ function _dsParseTier(str, lp) {
   else if (parts[1]) o.div = DS_DIV[parts[1]] || 4;
   return o;
 }
+// 임시티어: 임시티어 명단(_tempTiersCache)을 먼저 보고, 없으면 멤버에 붙은 값. {tier:{tier:..}} 처럼 겹쳐 저장된 것도 풀어서 읽음
+function _dsTempOf(m) {
+  var t = (typeof _tempTiersCache !== 'undefined' && _tempTiersCache && m.puu_id && _tempTiersCache[m.puu_id] != null) ? _tempTiersCache[m.puu_id] : (m._tempTier != null ? { tier: m._tempTier, lp: m._tempLp } : null);
+  var lp = 0, guard = 0;
+  while (t && typeof t === 'object' && guard++ < 4) { if (t.lp != null && !lp) lp = +t.lp || 0; t = t.tier; }
+  if (!t || typeof t !== 'string') return null;
+  if (!lp && m._tempLp) lp = +m._tempLp || 0;
+  return { tier: t, lp: lp };
+}
 // 쓰는 티어: 이 기기에서 고친 티어 > 임시 > 최고 > 현재
 function dsTierOf(m) {
   if (!m) return { tier: 'UNRANKED', div: 4, lp: 0, src: '' };
   var ov = _dsLoadLS('ov', {})[m.puu_id];
   if (ov && ov.tier) return { tier: ov.tier, div: ov.div || 4, lp: ov.lp || 0, src: '수정' };
-  var tt = m._tempTier ? _dsParseTier(m._tempTier, m._tempLp) : null; if (tt) { tt.src = '임시'; return tt; }
+  var tmp = _dsTempOf(m), tt = tmp ? _dsParseTier(tmp.tier, tmp.lp) : null; if (tt) { tt.src = '임시'; return tt; }
   var pk = m._peakTier ? _dsParseTier(m._peakTier, m._peakLp) : null; if (pk) { pk.src = '최고'; return pk; }
   var cur = _dsParseTier(m.tier, m.lp); if (cur) { cur.src = '현재'; return cur; }
   return { tier: 'UNRANKED', div: 4, lp: 0, src: '' };
@@ -11204,6 +11262,9 @@ function dsTierShort(t) {
 }
 function dsTierLevel(t) { if (!t || DS_TIERS.indexOf(t.tier) < 0) return -1; return DS_TIERS.indexOf(t.tier); }
 // 점수표에서 그 라인 점수
+// 소수점 점수: 둘째 자리까지 (부동소수 오차 제거)
+function _dsN(x) { x = +x; return isFinite(x) ? Math.round(x * 100) / 100 : x; }
+function _dsF(v) { var n = parseFloat(v); return isFinite(n) ? _dsN(n) : NaN; }
 function dsScore(m, lane, tierObj) {
   var t = tierObj || dsTierOf(m), tbl = _dsTable || DS_DEFAULT_TABLE, row = null;
   if (DS_HIGH.indexOf(t.tier) >= 0) {
@@ -11217,7 +11278,7 @@ function dsScore(m, lane, tierObj) {
     if (!row && ['SILVER', 'BRONZE', 'IRON'].indexOf(tier) >= 0) { var g = tbl.filter(function (r) { return r.tier === 'GOLD'; }); if (g.length) row = g[g.length - 1]; }
   }
   var v = row ? +row[lane] : NaN;
-  return isFinite(v) ? v : null;
+  return isFinite(v) ? _dsN(v) : null;
 }
 // (예전 코드 호환)
 function _doomSimGetScore(m, lane) { var v = dsScore(m.puu_id ? (_dsM(m.puu_id) || m) : m, lane); return v == null ? '—' : v; }
@@ -11228,7 +11289,7 @@ async function initDoomSim() {
     _dsInited = true;
     var st = _dsLoadLS('state', null);
     if (st) {
-      _dsTeams = st.teams || { a: {}, b: {} }; _dsPref = st.pref || {}; _dsRecTeam = st.recTeam || 'a'; _dsPAdv = st.padv || {};
+      _dsTeams = st.teams || { a: {}, b: {} }; _dsPref = st.pref || {}; _dsRecTeam = st.recTeam || 'a'; _dsPAdv = st.padv || {}; _dsExcl = st.excl || {};
       if (st.adv) { document.getElementById('ds-adv-a').value = st.adv.a || ''; document.getElementById('ds-adv-b').value = st.adv.b || ''; }
       if (st.cap) document.getElementById('ds-cap').value = st.cap;
     }
@@ -11250,7 +11311,7 @@ async function initDoomSim() {
   }
   var pb = document.getElementById('ds-btn-ai-perm'); if (pb) pb.style.display = _statsAdminRole === 'master' ? '' : 'none';
   var pk = document.querySelector('.ds-peak-btn'); if (pk) pk.style.display = _statsAdminRole === 'master' ? '' : 'none';
-  _dsRecTeamUi();
+  _dsRecTeamUi(); dsExclRender();
   dsRender(); doomSimSearch();
   await dsLoadTable();
   dsRender(); doomSimSearch(); dsRecRender();
@@ -11275,12 +11336,12 @@ function dsSelSlot(team, lane) {
 function doomSimRemove(team, lane) { delete _dsTeams[team][lane]; dsRender(); doomSimSearch(); dsRecRender(); _dsSaveState(); }
 function dsClearTeam(team) { _dsTeams[team] = {}; _dsSel = { team: team, lane: 'top' }; dsRender(); doomSimSearch(); dsRecRender(); _dsSaveState(); }
 // 개인 advantage 를 반영한 그 자리 점수
-function dsScoreEff(puu, lane) { var v = dsScore(_dsM(puu), lane); return v == null ? null : v + (parseInt(_dsPAdv[puu], 10) || 0); }
-function dsSetPAdv(puu, el) { var v = parseInt(el.value, 10); if (isFinite(v) && v) _dsPAdv[puu] = v; else delete _dsPAdv[puu]; dsRender(true); dsRecRender(); }
+function dsScoreEff(puu, lane) { var v = dsScore(_dsM(puu), lane); return v == null ? null : _dsN(v + (+_dsPAdv[puu] || 0)); }
+function dsSetPAdv(puu, el) { var v = _dsF(el.value); if (isFinite(v) && v) _dsPAdv[puu] = v; else delete _dsPAdv[puu]; dsRender(true); dsRecRender(); }
 function dsTeamSum(team) {
   var s = 0, miss = 0, n = 0;
   DS_LANES.forEach(function (l) { var puu = _dsTeams[team][l]; if (!puu) return; n++; var v = dsScoreEff(puu, l); if (v == null) miss++; else s += v; });
-  return { sum: s, miss: miss, n: n };
+  return { sum: _dsN(s), miss: miss, n: n };
 }
 function dsRender(keepSlots) {
   ['a', 'b'].forEach(function (team) {
@@ -11288,29 +11349,29 @@ function dsRender(keepSlots) {
     if (keepSlots) { // 개인 adv 입력 중: 입력칸은 그대로 두고 점수만 바꿈
       box.querySelectorAll('.ds-slot.filled').forEach(function (el) {
         var puu = _dsTeams[team][el.dataset.lane]; if (!puu) return;
-        var base = dsScore(_dsM(puu), el.dataset.lane), pa = parseInt(_dsPAdv[puu], 10) || 0, sc = el.querySelector('.ds-sc');
-        if (sc) sc.innerHTML = base == null ? '?' : (base + pa) + (pa ? '<small>' + base + (pa > 0 ? '+' : '') + pa + '</small>' : '');
+        var base = dsScore(_dsM(puu), el.dataset.lane), pa = (+_dsPAdv[puu] || 0), sc = el.querySelector('.ds-sc');
+        if (sc) sc.innerHTML = base == null ? '?' : _dsN(base + pa) + (pa ? '<small>' + base + (pa > 0 ? '+' : '') + pa + '</small>' : '');
       });
     } else
     box.innerHTML = DS_LANES.map(function (l) {
       var puu = _dsTeams[team][l], m = puu ? _dsM(puu) : null;
       var sel = _dsSel && _dsSel.team === team && _dsSel.lane === l ? ' sel' : '';
       if (!m) return '<div class="ds-slot empty' + sel + '" data-team="' + team + '" data-lane="' + l + '" onclick="dsSelSlot(\'' + team + '\',\'' + l + '\')"><span class="ds-ln">' + DS_LANE_KO[l] + '</span><span class="ds-empty">' + (sel ? '멤버를 고르세요' : '비어 있음') + '</span></div>';
-      var t = dsTierOf(m), sc = dsScore(m, l, t), pa = parseInt(_dsPAdv[puu], 10) || 0;
+      var t = dsTierOf(m), sc = dsScore(m, l, t), pa = (+_dsPAdv[puu] || 0);
       return '<div class="ds-slot filled' + sel + '" data-team="' + team + '" data-lane="' + l + '" onclick="dsSelSlot(\'' + team + '\',\'' + l + '\')">' +
         '<span class="ds-ln">' + DS_LANE_KO[l] + '</span>' +
         '<span class="ds-nm"><b>' + esc(m.riot_name || '') + '</b><i>#' + esc(m.riot_tag || '') + '</i></span>' +
         '<button type="button" class="ds-tierbtn' + (t.src === '수정' ? ' ov' : '') + '" style="--tc:' + (DS_TC[t.tier] || '#8A9597') + '" onclick="event.stopPropagation();dsTierEdit(\'' + puu + '\',this)" title="눌러서 티어 수정 (이 기기에서만)">' + esc(dsTierShort(t)) + '<small>' + esc(t.src) + '</small></button>' +
-        '<span class="ds-sc">' + (sc == null ? '?' : (sc + pa) + (pa ? '<small>' + sc + (pa > 0 ? '+' : '') + pa + '</small>' : '')) + '</span>' +
-        '<input class="ds-padv" type="number" inputmode="numeric" step="1" placeholder="adv" title="개인 advantage (예: -3 이면 이 사람 점수 3점 낮게)" value="' + (pa || '') + '" onclick="event.stopPropagation()" oninput="dsSetPAdv(\'' + puu + '\',this)">' +
+        '<span class="ds-sc">' + (sc == null ? '?' : _dsN(sc + pa) + (pa ? '<small>' + sc + (pa > 0 ? '+' : '') + pa + '</small>' : '')) + '</span>' +
+        '<input class="ds-padv" type="number" inputmode="decimal" step="any" placeholder="adv" title="개인 advantage (예: -3 이면 이 사람 점수 3점 낮게)" value="' + (pa || '') + '" onclick="event.stopPropagation()" oninput="dsSetPAdv(\'' + puu + '\',this)">' +
         '<button type="button" class="ds-rm" onclick="event.stopPropagation();doomSimRemove(\'' + team + '\',\'' + l + '\')" aria-label="빼기">×</button></div>';
     }).join('');
-    var s = dsTeamSum(team), adv = parseInt(_dsVal('ds-adv-' + team), 10) || 0;
+    var s = dsTeamSum(team), adv = (_dsF(_dsVal('ds-adv-' + team)) || 0);
     document.getElementById('ds-sum-' + team).textContent = s.sum + (s.miss ? '+?' : '');
-    document.getElementById('ds-final-' + team).textContent = (s.sum + adv);
-    var mt = document.getElementById('ds-mt-' + team); if (mt) mt.textContent = (s.sum + adv);
-    var cap0 = parseInt(_dsVal('ds-cap'), 10), lf = document.getElementById('ds-left-' + team);
-    if (lf) { lf.textContent = isFinite(cap0) ? (cap0 - s.sum >= 0 ? '한도까지 ' + (cap0 - s.sum) + '점' : '한도 ' + (s.sum - cap0) + '점 초과') : ''; lf.className = 'ds-team-left' + (isFinite(cap0) && s.sum > cap0 ? ' over' : ''); }
+    document.getElementById('ds-final-' + team).textContent = _dsN(s.sum + adv);
+    var mt = document.getElementById('ds-mt-' + team); if (mt) mt.textContent = _dsN(s.sum + adv);
+    var cap0 = _dsF(_dsVal('ds-cap')), lf = document.getElementById('ds-left-' + team);
+    if (lf) { lf.textContent = isFinite(cap0) ? (cap0 - s.sum >= 0 ? '한도까지 ' + _dsN(cap0 - s.sum) + '점' : '한도 ' + _dsN(s.sum - cap0) + '점 초과') : ''; lf.className = 'ds-team-left' + (isFinite(cap0) && s.sum > cap0 ? ' over' : ''); }
   });
   var hint = document.getElementById('ds-sel-hint');
   if (hint) hint.innerHTML = _dsSel ? '<b>' + (_dsSel.team === 'a' ? '팀 A' : '팀 B') + ' ' + DS_LANE_KO[_dsSel.lane] + '</b> 자리에 넣을 멤버를 누르세요' : '자리를 누른 뒤 멤버를 누르면 들어가요';
@@ -11401,11 +11462,11 @@ function dsRecTeam(team) { _dsRecTeam = team; _dsRecTeamUi(); dsRecRender(); _ds
 function _dsRecTeamUi() { document.querySelectorAll('#ds-rec-team button').forEach(function (b) { b.classList.toggle('on', b.dataset.v === _dsRecTeam); }); }
 function dsSetPref(lane, v) { _dsPref[lane] = v; dsRecRender(); _dsSaveState(); }
 function dsRecRender() {
-  var team = _dsRecTeam, s = dsTeamSum(team), cap = parseInt(_dsVal('ds-cap'), 10);
+  var team = _dsRecTeam, s = dsTeamSum(team), cap = _dsF(_dsVal('ds-cap'));
   var empty = DS_LANES.filter(function (l) { return !_dsTeams[team][l]; });
-  var cv = document.getElementById('ds-cap-view'); if (cv) cv.textContent = isFinite(cap) ? cap + '점' : '—';
+  var cv = document.getElementById('ds-cap-show'); if (cv) cv.textContent = isFinite(cap) ? cap + '점' : '—';
   var b = document.getElementById('ds-rec-budget');
-  if (b) b.innerHTML = '지금 ' + s.n + '명 <b>' + s.sum + '점</b>' + (isFinite(cap) ? ' · 남은 점수 <b class="' + (cap - s.sum < 0 ? 'neg' : '') + '">' + (cap - s.sum) + '점</b> (' + empty.length + '자리)' : ' · 위쪽에 이번 멸망전 한도를 넣어 주세요') + ' <span class="ds-dim">advantage 는 한도 계산에서 빼요</span>';
+  if (b) b.innerHTML = '지금 ' + s.n + '명 <b>' + s.sum + '점</b>' + (isFinite(cap) ? ' · 남은 점수 <b class="' + (cap - s.sum < 0 ? 'neg' : '') + '">' + _dsN(cap - s.sum) + '점</b> (' + empty.length + '자리)' : ' · 위쪽에 이번 멸망전 한도를 넣어 주세요') + ' <span class="ds-dim">advantage 는 한도 계산에서 빼요</span>';
   var box = document.getElementById('ds-rec-lanes'); if (!box) return;
   if (!empty.length) { box.innerHTML = '<div class="ds-none">빈 자리가 없어요. 자리를 비우면 추천해 드려요.</div>'; return; }
   box.innerHTML = empty.map(function (l) {
@@ -11421,7 +11482,7 @@ function _dsFilterBase(team) {
   var used = {}; DS_LANES.forEach(function (l) { if (_dsTeams[team][l]) used[_dsTeams[team][l]] = 1; if (noOther && _dsTeams[team === 'a' ? 'b' : 'a'][l]) used[_dsTeams[team === 'a' ? 'b' : 'a'][l]] = 1; });
   var now = Date.now() / 1000;
   return allData.filter(function (m) {
-    if (!m.puu_id || used[m.puu_id]) return false;
+    if (!m.puu_id || used[m.puu_id] || _dsExcl[m.puu_id]) return false;
     if ((m.cnt || 0) < games) return false;
     if (isFinite(days) && days > 0 && (!m.creation_timestamp || now - m.creation_timestamp > days * 86400)) return false;
     if (wr && (!(m.cnt > 0) || (m.win || 0) / m.cnt * 100 < wr)) return false;
@@ -11444,11 +11505,11 @@ function _dsLaneOk(m, lane, mode, D) {
 }
 async function dsRecommend() {
   var out = document.getElementById('ds-rec-out');
-  var team = _dsRecTeam, s = dsTeamSum(team), cap = parseInt(_dsVal('ds-cap'), 10);
+  var team = _dsRecTeam, s = dsTeamSum(team), cap = _dsF(_dsVal('ds-cap'));
   var empty = DS_LANES.filter(function (l) { return !_dsTeams[team][l]; });
   if (!empty.length) { out.innerHTML = '<div class="ds-none">빈 자리가 없어요.</div>'; return; }
   if (!isFinite(cap)) { out.innerHTML = '<div class="ds-none">위쪽 \'이번 멸망전 한도\' 에 몇 점까지인지 넣어 주세요.</div>'; document.getElementById('ds-cap').focus(); return; }
-  var budget = cap - s.sum;
+  var budget = _dsN(cap - s.sum);
   if (budget < 0) { out.innerHTML = '<div class="ds-none">이미 한도를 ' + (-budget) + '점 넘었어요.</div>'; return; }
   out.innerHTML = '<div class="ds-none">찾는 중…</div>';
   var mode = _dsVal('ds-f-lane');
@@ -11492,7 +11553,7 @@ async function dsRecommend() {
     for (var k = 0; k < L.c.length; k++) {
       var x = L.c[k];
       if (usedP[x.m.puu_id]) continue;
-      if (sum + x.s + minRest[i] > budget) continue;
+      if (sum + x.s + minRest[i] > budget + 1e-6) continue;
       usedP[x.m.puu_id] = 1; sel.push({ lane: L.lane, m: x.m, s: x.s });
       dfs(i + 1, sel, sum + x.s, obj + x.v, games + (x.m.cnt || 0), usedP);
       sel.pop(); delete usedP[x.m.puu_id];
@@ -11511,10 +11572,26 @@ async function dsRecommend() {
   out.innerHTML = '<div class="ds-rec-cnt">조합 ' + res.length + '개 · 남은 ' + budget + '점 기준</div>' + res.map(function (r, idx) {
     var rows = DS_LANES.filter(function (l) { return r.sel.some(function (x) { return x.lane === l; }); }).map(function (l) {
       var x = r.sel.find(function (y) { return y.lane === l; }), t = dsTierOf(x.m);
-      return '<div class="ds-rc-r"><span class="ds-ln">' + DS_LANE_KO[l] + '</span><span class="ds-nm"><b>' + esc(x.m.riot_name || '') + '</b><i>#' + esc(x.m.riot_tag || '') + '</i></span><span class="ds-t" style="color:' + (DS_TC[t.tier] || '#8A9597') + '">' + esc(dsTierShort(t)) + '</span><span class="ds-meta">' + (x.m.cnt || 0) + '판</span><span class="ds-sc sm">' + x.s + '</span></div>';
+      return '<div class="ds-rc-r"><span class="ds-ln">' + DS_LANE_KO[l] + '</span><span class="ds-nm"><b>' + esc(x.m.riot_name || '') + '</b><i>#' + esc(x.m.riot_tag || '') + '</i></span><span class="ds-t" style="color:' + (DS_TC[t.tier] || '#8A9597') + '">' + esc(dsTierShort(t)) + '</span><span class="ds-meta">' + (x.m.cnt || 0) + '판</span><span class="ds-sc sm">' + x.s + '</span><button type="button" class="ds-rc-x" title="이 유저를 추천에서 빼고 다시 찾기" onclick="dsExclAdd(\'' + x.m.puu_id + '\');dsRecommend()">빼기</button></div>';
     }).join('');
-    return '<div class="ds-rc"><div class="ds-rc-h"><b>#' + (idx + 1) + '</b><span>추가 ' + r.sum + '점 → 합계 <b>' + (s.sum + r.sum) + '</b> / ' + cap + '</span><button type="button" class="ds-btn primary sm" onclick="dsApplyRec(' + idx + ')">적용</button></div>' + rows + '</div>';
+    return '<div class="ds-rc"><div class="ds-rc-h"><b>#' + (idx + 1) + '</b><span>추가 ' + _dsN(r.sum) + '점 → 합계 <b>' + _dsN(s.sum + r.sum) + '</b> / ' + cap + '</span><button type="button" class="ds-btn primary sm" onclick="dsApplyRec(' + idx + ')">적용</button></div>' + rows + '</div>';
   }).join('');
+}
+// ── 추천에서 뺄 유저 ──
+function dsExclSearch() {
+  var q = (_dsVal('ds-excl-q') || '').toLowerCase().trim(), el = document.getElementById('ds-excl-found');
+  if (!q) { el.innerHTML = ''; return; }
+  var hits = allData.filter(function (m) { return m.puu_id && !_dsExcl[m.puu_id] && ((m.riot_name || '') + '#' + (m.riot_tag || '')).toLowerCase().indexOf(q) >= 0; }).slice(0, 6);
+  el.innerHTML = hits.length ? hits.map(function (m) { return '<button type="button" onclick="dsExclAdd(\'' + m.puu_id + '\')"><b>' + esc(m.riot_name || '') + '</b><i>#' + esc(m.riot_tag || '') + '</i><span>+ 빼기</span></button>'; }).join('') : '<div class="ds-dim" style="padding:4px 2px">검색 결과 없음</div>';
+}
+function dsExclAdd(puu) { _dsExcl[puu] = 1; document.getElementById('ds-excl-q').value = ''; document.getElementById('ds-excl-found').innerHTML = ''; dsExclRender(); _dsSaveState(); }
+function dsExclDel(puu) { delete _dsExcl[puu]; dsExclRender(); _dsSaveState(); }
+function dsExclClear() { _dsExcl = {}; dsExclRender(); _dsSaveState(); }
+function dsExclRender() {
+  var ids = Object.keys(_dsExcl), el = document.getElementById('ds-excl-list'); if (!el) return;
+  el.innerHTML = ids.map(function (puu) { var m = _dsM(puu); return '<span class="ds-chip">' + esc(m ? m.riot_name : puu.slice(0, 8)) + '<button type="button" onclick="dsExclDel(\'' + puu + '\')" aria-label="빼기 취소">×</button></span>'; }).join('');
+  document.getElementById('ds-excl-cnt').textContent = ids.length ? ids.length + '명' : '';
+  document.getElementById('ds-excl-clear').hidden = !ids.length;
 }
 function dsApplyRec(i) {
   var r = (window._dsRecRes || [])[i]; if (!r) return;
@@ -11573,7 +11650,7 @@ async function dsRunAi(team) {
   var fit = _dsFitLines(D), M = D.model || {};
   var rows = members.map(function (x) {
     var role = DS_ROLE[x.lane], p = RGLab.find(D, { name: x.m.riot_name, tag: x.m.riot_tag, puuid: x.m.puu_id });
-    var d0 = dsScore(x.m, x.lane), pa = parseInt(_dsPAdv[x.m.puu_id], 10) || 0, d = d0 == null ? null : d0 + pa, s = p ? RGLab.score(p, role) : null, f = fit[x.lane];
+    var d0 = dsScore(x.m, x.lane), pa = (+_dsPAdv[x.m.puu_id] || 0), d = d0 == null ? null : d0 + pa, s = p ? RGLab.score(p, role) : null, f = fit[x.lane];
     var exp = d != null && f && f.n >= 15 ? f.a + f.b * d : null;
     var r = p && p.roles ? p.roles[role] : null;
     return { lane: x.lane, role: role, m: x.m, p: p, d: d, d0: d0, pa: pa, slope: f && f.n >= 15 ? f.b : null, s: s, res: s != null && exp != null ? s - exp : null, pct: s != null ? RGLab.pct(D, role, s) : null, share: r ? r.role_share : null, wr: r ? r.role_wr : null, parts: p ? RGLab.parts(D, p, role, 2) : null };
@@ -11585,13 +11662,13 @@ async function dsRunAi(team) {
   var eff = rows.filter(function (r) { return r.res != null; }).reduce(function (a, r) { return a + r.res; }, 0);
   var ideal = Math.round(100 / (1 + Math.exp(-eff * 0.6)));
   // 이번 멸망전 한도와 비교: 같은 점수 평균 선수 직선으로 '한도를 꽉 채운 평균 팀' 전력을 만들어 비교
-  var tot0 = dsTeamSum(team), cap = parseInt(_dsVal('ds-cap'), 10), lim = null;
+  var tot0 = dsTeamSum(team), cap = _dsF(_dsVal('ds-cap')), lim = null;
   if (isFinite(cap) && cap > 0 && rows.length === 5 && rows.every(function (r) { return r.d != null && fit[r.lane] && fit[r.lane].n >= 15; }) && tot0.sum > 0) {
     var expAt = function (scale) { return rows.reduce(function (a, r) { var f = fit[r.lane]; return a + f.a + f.b * r.d * scale; }, 0); };
     var Sfull = expAt(cap / tot0.sum), Sown = expAt(1);
     var S = rows.reduce(function (a, r) { return a + (r.s != null ? r.s : (fit[r.lane].a + fit[r.lane].b * r.d)); }, 0);
     var sgm = function (x) { return 1 / (1 + Math.exp(-x / n)); };
-    lim = { cap: cap, used: tot0.sum, left: cap - tot0.sum,
+    lim = { cap: cap, used: tot0.sum, left: _dsN(cap - tot0.sum),
       lossPct: Math.round((0.5 - sgm(Sown - Sfull)) * 1000) / 10,   // 남긴 점수만큼 평균적으로 불리한 정도 (%p)
       vsFull: Math.round(sgm(S - Sfull) * 100) };                   // 한도를 꽉 채운 평균 팀 상대 승률
   }
@@ -11605,8 +11682,8 @@ async function dsRunAi(team) {
   chem.sort(function (a, b) { return Math.abs(b.w / b.g - .5) - Math.abs(a.w / a.g - .5); });
   // 문장
   var lines = [];
-  var tot = dsTeamSum(team), adv = parseInt(_dsVal('ds-adv-' + team), 10) || 0;
-  lines.push('합계 ' + tot.sum + '점' + (adv ? ' (advantage ' + (adv > 0 ? '+' : '') + adv + ' → ' + (tot.sum + adv) + '점)' : '') + ' 팀이에요. 같은 점수로 만든 평균 팀보다 ' + (eff > 0.25 ? '<b class="up">강한 편</b>' : eff < -0.25 ? '<b class="down">약한 편</b>' : '<b>비슷한 수준</b>') + '이에요 (점수 대비 전력 ' + (eff >= 0 ? '+' : '') + eff.toFixed(2) + ').');
+  var tot = dsTeamSum(team), adv = (_dsF(_dsVal('ds-adv-' + team)) || 0);
+  lines.push('합계 ' + tot.sum + '점' + (adv ? ' (advantage ' + (adv > 0 ? '+' : '') + adv + ' → ' + _dsN(tot.sum + adv) + '점)' : '') + ' 팀이에요. 같은 점수로 만든 평균 팀보다 ' + (eff > 0.25 ? '<b class="up">강한 편</b>' : eff < -0.25 ? '<b class="down">약한 편</b>' : '<b>비슷한 수준</b>') + '이에요 (점수 대비 전력 ' + (eff >= 0 ? '+' : '') + eff.toFixed(2) + ').');
   var rs = rows.filter(function (r) { return r.res != null; }).sort(function (a, b) { return b.res - a.res; });
   if (rs.length) {
     var top = rs[0], low = rs[rs.length - 1];
@@ -11636,7 +11713,7 @@ async function dsRunAi(team) {
       var s = p.roles[w.role].score; if (s <= (w.s || 0) + 0.15) return;
       if (!cand || s - (d - w.d) * 0.01 > cand.s) cand = { m: m, d: d, s: s };
     });
-    if (cand) swap = '<b>' + DS_LANE_KO[w.lane] + '</b> 자리를 <b>' + esc(cand.m.riot_name) + '</b>(으)로 바꾸면 점수는 ' + (cand.d === w.d ? '같고' : (w.d - cand.d) + '점 줄고') + ' 내전 전력은 +' + (cand.s - (w.s || 0)).toFixed(2) + ' 올라가요.';
+    if (cand) swap = '<b>' + DS_LANE_KO[w.lane] + '</b> 자리를 <b>' + esc(cand.m.riot_name) + '</b>(으)로 바꾸면 점수는 ' + (cand.d === w.d ? '같고' : _dsN(w.d - cand.d) + '점 줄고') + ' 내전 전력은 +' + (cand.s - (w.s || 0)).toFixed(2) + ' 올라가요.';
   }
   if (swap) lines.push(swap);
   if (lim) {
@@ -11721,6 +11798,7 @@ async function updateAllPeakTiers() {
   if (btn) { btn.disabled = true; btn.textContent = '⏳ 업데이트 중...'; }
   var total = allData.length;
   var done = 0, updated = 0, failed = 0;
+  var _peakSaveFail = '';
   for (var i = 0; i < allData.length; i++) {
     var m = allData[i];
     if (!m.puu_id) { done++; continue; }
@@ -11742,7 +11820,7 @@ async function updateAllPeakTiers() {
     // 10명마다 저장
     if (done % 10 === 0 || done === total) {
       try {
-        await fetch(WORKER_URL + '/peak-tiers-write', {
+        var _wr = await fetch(WORKER_URL + '/peak-tiers-write', {
           method: 'POST', headers: {'Content-Type':'application/json'},
           body: JSON.stringify({
             communityId: COMMUNITY_ID,
@@ -11752,7 +11830,9 @@ async function updateAllPeakTiers() {
             }, {})
           })
         });
-      } catch(e) {}
+        var _wj = await _wr.json().catch(function(){ return null; });
+        if (!_wr.ok || !_wj || !_wj.ok) _peakSaveFail = (_wj && _wj.error) || ('HTTP ' + _wr.status);
+      } catch(e) { _peakSaveFail = e.message || '저장 실패'; }
     }
     // Rate limit 방지
     await new Promise(function(r){ setTimeout(r, 100); });
@@ -11762,7 +11842,8 @@ async function updateAllPeakTiers() {
   try { localStorage.removeItem('peak_tiers_' + COMMUNITY_ID); } catch(e) {}
   renderPage();
   if (btn) { btn.disabled = false; btn.textContent = '최고티어 전체 업데이트'; }
-  alert('완료! 업데이트: ' + updated + '명, 실패: ' + failed + '명');
+  if (document.getElementById('doom-sim-view') && document.getElementById('doom-sim-view').style.display !== 'none' && typeof dsRender === 'function') { dsRender(); doomSimSearch(); }
+  alert('완료! 업데이트: ' + updated + '명, 실패: ' + failed + '명' + (_peakSaveFail ? '\n⚠ 저장 실패: ' + _peakSaveFail + ' (새로고침하면 예전 값이 보일 수 있어요)' : ''));
 }
 
 
@@ -13972,6 +14053,14 @@ function _syncMobileMenu() {
     var val = base + ' ' + r;
     return LABEL[val] ? val : null;
   }
+  // TIER_OPTIONS 값 → 짧은 표기 (CHALLENGER→C, GRANDMASTER→GM, MASTER→M, EMERALD III→E3 …)
+  var SHORT = { CHALLENGER:'C', GRANDMASTER:'GM', MASTER:'M', DIAMOND:'D', EMERALD:'E', PLATINUM:'P', GOLD:'G', SILVER:'S', BRONZE:'B', IRON:'I' };
+  var RNUM = { I:'1', II:'2', III:'3', IV:'4' };
+  function shortTier(v){
+    var p = String(v || '').trim().toUpperCase().split(/\s+/);
+    if (!p[0] || !SHORT[p[0]]) return String(v || '');
+    return SHORT[p[0]] + (p[1] ? (RNUM[p[1]] || p[1]) : '');
+  }
   function rows(){
     var byPuu = {}; (allData || []).forEach(function(m){ if (m.puu_id) byPuu[m.puu_id] = m; });
     var order = TIER_OPTIONS.map(function(t){ return t.value; });
@@ -13989,8 +14078,9 @@ function _syncMobileMenu() {
   window.ttExportCsv = function(){
     var list = rows();
     if (!list.length) return alert('내보낼 임시티어가 없습니다.');
-    var head = ['닉네임','태그','임시티어','LP','부여일','현재티어','puu_id'];
-    var lines = [head.join(',')].concat(list.map(function(r){ return [r.name, r.tag, r.tier, r.lp, r.at, r.cur, r.puu].map(csvCell).join(','); }));
+    // 형식: 닉네임#태그, 임시티어(짧게: C · GM · M · D1 · E3 …), LP, 부여일
+    var head = ['닉네임#태그','임시티어','LP','부여일'];
+    var lines = [head.join(',')].concat(list.map(function(r){ return [r.name + (r.tag ? '#' + r.tag : ''), shortTier(r.tier), r.lp, r.at].map(csvCell).join(','); }));
     var blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
     var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
     var d = new Date(); a.download = '임시티어_' + (COMMUNITY_ID || 'community') + '_' + d.getFullYear() + String(d.getMonth()+1).padStart(2,'0') + String(d.getDate()).padStart(2,'0') + '.csv';
@@ -14021,9 +14111,9 @@ function _syncMobileMenu() {
     if (data.length < 2) return alert('CSV에 내용이 없습니다.');
     var head = data[0].map(function(h){ return String(h).trim().toLowerCase(); });
     var col = function(){ for (var i = 0; i < arguments.length; i++) { var k = head.indexOf(arguments[i]); if (k >= 0) return k; } return -1; };
-    var cName = col('닉네임','소환사','name','riot_name'), cTag = col('태그','tag','riot_tag'), cTier = col('임시티어','임시 티어','tier','temp_tier');
+    var cName = col('닉네임#태그','닉네임','소환사','name','riot_name'), cTag = col('태그','tag','riot_tag'), cTier = col('임시티어','임시 티어','tier','temp_tier');
     var cLp = col('lp'), cAt = col('부여일','assignedat','date'), cPuu = col('puu_id','puuid','puu');
-    if (cTier < 0 || (cName < 0 && cPuu < 0)) return alert('CSV 머리줄에 "닉네임"(또는 puu_id)과 "임시티어" 열이 있어야 합니다.\n내보내기한 파일 형식을 그대로 쓰면 돼요.');
+    if (cTier < 0 || (cName < 0 && cPuu < 0)) return alert('CSV 머리줄에 "닉네임#태그"와 "임시티어" 열이 있어야 합니다.\n형식: 닉네임#태그, 임시티어(M · GM · C · D1 · E3 …), LP, 부여일\n내보내기한 파일 형식을 그대로 쓰면 돼요.');
     var byPuu = {}, byKey = {};
     (allData || []).forEach(function(m){ if (m.puu_id) { byPuu[m.puu_id] = m; byKey[(String(m.riot_name||'').trim() + '#' + String(m.riot_tag||'').trim()).toLowerCase()] = m; } });
     var today = new Date().toISOString().slice(0, 10);
