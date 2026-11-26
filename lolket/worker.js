@@ -2069,12 +2069,16 @@ async function _postTeamInfo(cid, matchId, text, env) {
   const botToken = env.DISCORD_BOT_TOKEN;
   if (!botToken) return { ok: false, error: 'BOT_TOKEN 없음' };
   const base = `${dbUrl}/communities/${cid}/matches/${matchId}`;
-  const [chR, mR, tpR] = await Promise.all([
+  const [chR, mR, tpR, achR, atR] = await Promise.all([
     fetch(`${dbUrl}/communities_info/${cid}/discordChannelId.json${authQ}`),
     fetch(`${base}/name.json${authQ}`),
     fetch(`${base}/discordTeamPost.json${authQ}`),
+    fetch(`${dbUrl}/communities_info/${cid}/discordAramChannelId.json${authQ}`),
+    fetch(`${base}/aramTeam.json${authQ}`),
   ]);
-  const channelId = chR.ok ? await chR.json() : null;
+  // 2단계에서 칼바람 내전으로 진행한 내전은 칼바람 내전 기록 채널(설정돼 있으면)로 따로 올려요
+  const aramCh = achR.ok ? await achR.json() : null, isAramTeam = atR.ok ? (await atR.json()) === true : false;
+  const channelId = (isAramTeam && aramCh) ? aramCh : (chR.ok ? await chR.json() : null);
   if (!channelId) return { ok: true, skipped: '내전 기록 채널 ID 없음' };
   if (!(mR.ok && await mR.json())) return { ok: false, error: '존재하지 않는 내전' };
   const old = (tpR.ok ? await tpR.json() : null) || {};
@@ -4665,6 +4669,18 @@ function _scFmt(ms) {
   if (!ms) return '미정';
   try { return new Date(ms).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul', month: 'numeric', day: 'numeric', weekday: 'short', hour: '2-digit', minute: '2-digit', hour12: false }); } catch (e) { return '미정'; }
 }
+// 같은 사람인지: 디스코드 ID(또는 dl: ID)가 같거나, 소환사 이름#태그가 같으면 같은 사람
+function _scSame(a, b) {
+  if (!a || !b) return false;
+  if (a.did && b.did && String(a.did) === String(b.did)) return true;
+  const k = m => m.name ? (String(m.name).trim() + '#' + String(m.tag || '').trim()).toLowerCase() : '';
+  return !!k(a) && k(a) === k(b);
+}
+// 두 스크림 로스터에 같이 들어가 있는 사람 (없으면 null)
+function _scOverlap(ra, rb) {
+  const B = Object.values(rb || {}).filter(Boolean);
+  return Object.values(ra || {}).filter(Boolean).find(m => B.some(x => _scSame(m, x))) || null;
+}
 function _scMem(p, l) { return { did: String(p.did), dc: p.dc !== false, name: p.name, tag: p.tag || '', tier: p.tier || '', src: p.src || null, score: p.scores ? (p.scores[l] != null ? p.scores[l] : null) : (p.score != null ? p.score : null) }; }
 // 팀 로스터 + 교체 인원 → 스크림 로스터 (교체된 자리는 sub:true + 원래 멤버 orig)
 function _scBuildRoster(team, subs, byDid) {
@@ -4696,6 +4712,7 @@ function _scRangeErr(s, total) {
 function _scClosedWhy(s) {
   const now = Date.now();
   if (s.status === 'matched') return '이미 성사된 스크림이에요';
+  if (s.status === 'ended') return '끝난 스크림이에요';
   if (s.status !== 'open') return '모집이 끝난 스크림이에요';
   if (s.recruitStart && now < s.recruitStart) return '아직 모집 기간이 아니에요';
   if (s.recruitEnd && now > s.recruitEnd) return '모집 기간이 끝났어요';
@@ -4707,7 +4724,7 @@ function _scLine(l, m) {
 }
 function _scPostContent(doom, s) {
   const L = [];
-  const st = s.status === 'matched' ? '✅ 성사' : (_scClosedWhy(s) ? '⏸ 모집 마감' : '🟢 모집 중');
+  const st = s.status === 'ended' ? '🏁 종료' : s.status === 'matched' ? '✅ 성사' : (_scClosedWhy(s) ? '⏸ 모집 마감' : '🟢 모집 중');
   L.push(`⚔️ **${s.name}**  ·  ${doom.name || '멸망전'}  ·  **${st}**`);
   L.push(`🛡️ **${s.teamName}** (${s.total}점) · 팀장 ${s.captain && s.captain.name || '-'}`);
   L.push(`⏰ 시작: **${_scFmt(s.startAt)}**`);
@@ -4717,8 +4734,8 @@ function _scPostContent(doom, s) {
   if (s.note) L.push(`⚠️ 특이사항 · 요구사항: ${String(s.note).slice(0, 300)}`);
   L.push('', `**${s.teamName}**`);
   _DM_LANES.forEach(l => L.push(_scLine(l, (s.roster || {})[l])));
-  if (s.status === 'matched' && s.match) {
-    L.push('', `✅ **성사 — ${s.teamName} vs ${s.match.name}** (${s.match.total}점)`);
+  if ((s.status === 'matched' || s.status === 'ended') && s.match) {
+    L.push('', `${s.status === 'ended' ? '🏁 **종료**' : '✅ **성사**'} — **${s.teamName} vs ${s.match.name}** (${s.match.total}점)`);
     _DM_LANES.forEach(l => L.push(_scLine(l, (s.match.roster || {})[l])));
   } else {
     const apps = s.apps || {}, ts = Object.values(apps.teams || {}).filter(Boolean), solo = apps.solo || {};
@@ -4790,9 +4807,10 @@ async function _scSoloApply(env, cid, doomId, scrimId, did, lane) {
   const s = await _dmRd(`${P}.json${authQ}`);
   if (!s) return { error: '없는 스크림이에요' };
   const why = _scClosedWhy(s); if (why) return { error: why };
-  if (Object.values(s.roster || {}).some(m => m && String(m.did) === String(did))) return { error: '이 스크림 팀 로스터에 있어서 개인 신청은 할 수 없어요' };
   const pool = await _dmLoadPool(env, cid);
   const p = pool.find(x => x.did === String(did));
+  // 상대(스크림을 연) 팀 로스터에 있는 사람은 개인 신청 불가
+  if (Object.values(s.roster || {}).some(m => _scSame(m, { did: String(did), name: p && p.name, tag: p && p.tag }))) return { error: '상대 팀(이 스크림을 연 팀) 로스터에 있어서 개인 신청은 할 수 없어요' };
   if (!p) return { error: '소환사 계정을 먼저 등록해 주세요. 포스트의 🎮 소환사 계정 등록 버튼으로 등록할 수 있어요' };
   const solo = (s.apps && s.apps.solo) || {};
   let moved = '';
@@ -4807,7 +4825,7 @@ async function _scSoloLeave(env, cid, doomId, scrimId, did) {
   const P = `${C}/doom_scrims/${doomId}/${scrimId}`;
   const s = await _dmRd(`${P}.json${authQ}`);
   if (!s) return { error: '없는 스크림이에요' };
-  if (s.status === 'matched') return { error: '이미 성사된 스크림이에요' };
+  if (s.status === 'matched' || s.status === 'ended') return { error: s.status === 'ended' ? '끝난 스크림이에요' : '이미 성사된 스크림이에요' };
   const solo = (s.apps && s.apps.solo) || {};
   const ls = _DM_LANES.filter(l => solo[l] && solo[l][did]);
   if (!ls.length) return { error: '이 스크림에 개인 신청한 기록이 없어요' };
@@ -5010,7 +5028,8 @@ async function handleDoom(request, env) {
     const allCh = cr.ok ? await cr.json() : [];
     const chans = allCh.filter(c => c.type === 15).sort((a, b) => a.position - b.position).map(c => ({ id: c.id, name: c.name }));
     const texts = allCh.filter(c => c.type === 0).sort((a, b) => a.position - b.position).map(c => ({ id: c.id, name: c.name }));
-    return json({ ok: true, roles, channels: chans, texts });
+    const cats = allCh.filter(c => c.type === 4).sort((a, b) => a.position - b.position).map(c => ({ id: c.id, name: c.name }));
+    return json({ ok: true, roles, channels: chans, texts, cats });
   }
   if (action === 'save') {
     if (!isAdmin) return json({ ok: false, error: '관리자 로그인이 필요해요' }, 403);
@@ -5031,6 +5050,10 @@ async function handleDoom(request, env) {
       scrimChannelName: String(x.scrimChannelName || '').slice(0, 60),
       matchChannelId: /^\d{5,25}$/.test(String(x.matchChannelId || '')) ? String(x.matchChannelId) : '',
       matchChannelName: String(x.matchChannelName || '').slice(0, 60),
+      voiceCategoryId: /^\d{5,25}$/.test(String(x.voiceCategoryId || '')) ? String(x.voiceCategoryId) : '',   // 팀 음성 채팅방을 만들 카테고리
+      voiceCategoryName: String(x.voiceCategoryName || '').slice(0, 60),
+      scrimVoiceCategoryId: /^\d{5,25}$/.test(String(x.scrimVoiceCategoryId || '')) ? String(x.scrimVoiceCategoryId) : '',   // 스크림 방(음성 3개)을 만들 카테고리
+      scrimVoiceCategoryName: String(x.scrimVoiceCategoryName || '').slice(0, 60),
       entryTerms: String(x.entryTerms || '').slice(0, 4000),   // 최종 출전 확정 주의사항 · 조건
       createdAt: prev ? prev.createdAt : Date.now(), updatedAt: Date.now(),
     });
@@ -5123,7 +5146,7 @@ async function handleDoom(request, env) {
     }
     return json({ ok: true, dm });
   }
-  if (action === 'team-save' || action === 'team-delete' || action === 'team-review' || action === 'team-role') {
+  if (action === 'team-save' || action === 'team-delete' || action === 'team-review' || action === 'team-role' || action === 'team-voice') {
     if (!dUser && !isAdmin) return json({ ok: false, error: '디스코드 로그인이 필요해요' }, 401);
     const d = await doomOf(body.doomId);
     if (!d) return json({ ok: false, error: '없는 멸망전이에요' }, 404);
@@ -5170,6 +5193,47 @@ async function handleDoom(request, env) {
       return { done: res.filter(Boolean).length, fail: res.filter(x => !x).length, kept: rids.length - targets.length, names, why };
     };
     // 관리자: 수락된 팀의 팀장에게 역할 다시 부여 (봇 권한 · 역할 순서를 고친 뒤 재시도용)
+    // 팀 음성 채팅방: 설정한 카테고리 안에 팀원만 들어갈 수 있는 음성 채널을 만들거나(이미 있으면 권한을 다시 맞춰요)
+    if (action === 'team-voice') {
+      if (!prev) return json({ ok: false, error: '없는 팀이에요' }, 404);
+      if (!isAdmin && !isCaptain) return json({ ok: false, error: '관리자 또는 그 팀 팀장만 만들 수 있어요' }, 403);
+      if (stOf(prev) !== 'approved') return json({ ok: false, error: '수락된 팀만 음성 채팅방을 만들 수 있어요' }, 400);
+      if (!BOT) return json({ ok: false, error: '디스코드 봇이 설정돼 있지 않아요' }, 400);
+      if (!d.voiceCategoryId) return json({ ok: false, error: '멸망전 설정에서 "팀 음성 채팅방 카테고리"를 먼저 골라 달라고 관리자에게 알려 주세요' }, 400);
+      const gid = await guildId(); if (!gid) return json({ ok: false, error: '커뮤니티에 디스코드 서버가 연결돼 있지 않아요' }, 400);
+      const H = { Authorization: 'Bot ' + BOT, 'Content-Type': 'application/json' };
+      // 팀원 (+ 멤버가 아닌 팀장) 중 디스코드 연동된 사람만 권한을 줄 수 있어요
+      const people = [], seen = {};
+      _DM_LANES.forEach(l => { const m = prev.members && prev.members[l]; if (m) people.push({ did: String(m.did || ''), name: m.name + (m.tag ? '#' + m.tag : ''), lane: l }); });
+      if (prev.captain && prev.captain.did && !people.some(p => p.did === String(prev.captain.did))) people.push({ did: String(prev.captain.did), name: prev.captain.name || '팀장', lane: 'cap' });
+      const ok = [], missing = [];
+      for (const p of people) {
+        if (seen[p.did]) continue; seen[p.did] = 1;
+        if (!/^\d{5,25}$/.test(p.did)) { missing.push({ name: p.name, why: 'nodc' }); continue; }
+        const r = await fetch(`https://discord.com/api/v10/guilds/${gid}/members/${p.did}`, { headers: H }).catch(() => null);
+        if (r && r.ok) ok.push(p); else missing.push({ name: p.name, why: r && r.status === 404 ? 'left' : 'nodc' });
+      }
+      const ALLOW = String((1 << 10) | (1 << 20) | (1 << 21) | (1 << 9) | (1 << 25));   // 채널 보기 · 연결 · 말하기 · 화면 공유 · 음성 감지
+      const BOT_ALLOW = String((1 << 10) | (1 << 20) | (1 << 4));                        // 봇: 보기 · 연결 · 채널 관리 (나중에 지우고 고치려고)
+      const appId = String(env.DISCORD_APP_ID || '1500717088984010883');
+      const ow = [{ id: gid, type: 0, deny: String((1 << 10) | (1 << 20)), allow: '0' }, { id: appId, type: 1, allow: BOT_ALLOW, deny: '0' }]
+        .concat(ok.map(p => ({ id: p.did, type: 1, allow: ALLOW, deny: '0' })));
+      const chName = ('🔊 ' + String(prev.name || '팀')).slice(0, 90);
+      let ch = null, created = false;
+      if (prev.voice && prev.voice.id) {
+        const r = await fetch(`https://discord.com/api/v10/channels/${prev.voice.id}`, { method: 'PATCH', headers: H, body: JSON.stringify({ name: chName, permission_overwrites: ow, parent_id: d.voiceCategoryId }) }).catch(() => null);
+        if (r && r.ok) ch = await r.json();
+        else if (r && r.status !== 404) { let m = ''; try { m = (await r.json()).message || ''; } catch (e) {} return json({ ok: false, error: '음성 채팅방 권한을 고치지 못했어요 — 봇에 "채널 관리" · "역할 관리" 권한이 있는지 확인해 주세요' + (m ? ' (' + m + ')' : '') }, 400); }
+      }
+      if (!ch) {
+        const r = await fetch(`https://discord.com/api/v10/guilds/${gid}/channels`, { method: 'POST', headers: H, body: JSON.stringify({ name: chName, type: 2, parent_id: d.voiceCategoryId, permission_overwrites: ow }) }).catch(() => null);
+        if (!r || !r.ok) { let m = ''; try { m = (await r.json()).message || ''; } catch (e) {} return json({ ok: false, error: '음성 채팅방을 만들지 못했어요 — 봇에 "채널 관리" · "역할 관리" 권한이 있는지, 카테고리가 아직 있는지 확인해 주세요' + (m ? ' (' + m + ')' : '') }, 400); }
+        ch = await r.json(); created = true;
+      }
+      const voice = { id: ch.id || (prev.voice && prev.voice.id), name: ch.name || chName, at: Date.now() };
+      await put(`${C}/doom_teams/${d.id}/${prev.id}/voice.json${authQ}`, voice);
+      return json({ ok: true, voice, created, url: `https://discord.com/channels/${gid}/${voice.id}`, granted: ok.map(p => p.name), missing });
+    }
     if (action === 'team-role') {
       if (!isAdmin) return json({ ok: false, error: '관리자 로그인이 필요해요' }, 403);
       if (!prev) return json({ ok: false, error: '없는 팀이에요' }, 404);
@@ -5183,6 +5247,8 @@ async function handleDoom(request, env) {
       await put(`${C}/doom_teams/${d.id}/${prev.id}.json${authQ}`, null);
       // 수락됐던 팀이면 팀장 역할 회수
       const role = stOf(prev) === 'approved' ? await capRoles(prev, false).catch(() => null) : null;
+      // 팀 음성 채팅방도 같이 지워요
+      if (prev.voice && prev.voice.id && BOT) { try { await fetch(`https://discord.com/api/v10/channels/${prev.voice.id}`, { method: 'DELETE', headers: { Authorization: 'Bot ' + BOT } }); } catch (e) {} }
       return json({ ok: true, role });
     }
     // 관리자: 신청 수락 · 거절 (신청자에게 디스코드 DM)
@@ -5191,11 +5257,7 @@ async function handleDoom(request, env) {
       if (!prev) return json({ ok: false, error: '없는 팀이에요' }, 404);
       const ok = body.decision === 'approve';
       if (!ok && body.decision !== 'reject') return json({ ok: false, error: 'bad decision' }, 400);
-      if (ok) {
-        // 수락할 때 다른 수락된 팀과 멤버가 겹치면 막기
-        const dup = _DM_LANES.map(l => prev.members && prev.members[l]).filter(Boolean).find(m => teams.some(x => x.id !== prev.id && stOf(x) === 'approved' && Object.values(x.members || {}).some(y => y && String(y.did) === String(m.did))));
-        if (dup) return json({ ok: false, error: dup.name + ' 님이 이미 다른 수락된 팀에 있어요' }, 400);
-      }
+      // 한 멤버가 여러 팀에 들어가는 것도 허용해요 (스크림에서 같은 사람이 양쪽에 서는 것만 막아요)
       const reason = ok ? '' : String(body.reason || '').trim().slice(0, 300);
       const upd = Object.assign({}, prev, { status: ok ? 'approved' : 'rejected', reviewedAt: Date.now(), rejectReason: reason || null, updatedAt: Date.now() });
       await put(`${C}/doom_teams/${d.id}/${prev.id}.json${authQ}`, upd);
@@ -5276,6 +5338,7 @@ async function handleDoom(request, env) {
       status: isAdmin ? (prev ? stOf(prev) : 'approved') : 'pending',
       rejectReason: isAdmin && prev ? (prev.rejectReason || null) : null,
       // 최종 출전 확정 상태는 팀을 고쳐도 그대로 둬요
+      voice: prev ? prev.voice || null : null,
       entry: prev ? prev.entry || null : null, entryReqAt: prev ? prev.entryReqAt || null : null, entryAt: prev ? prev.entryAt || null : null, entryNote: prev ? prev.entryNote || null : null,
     };
     await put(`${C}/doom_teams/${d.id}/${id}.json${authQ}`, team);
@@ -5290,10 +5353,8 @@ async function handleDoom(request, env) {
     const bad = (m, st) => json({ ok: false, error: m }, st || 400);
     if (action === 'scrim-list') {
       const all = await rd(`${SP}.json${authQ}`) || {};
-      const list = Object.values(all).filter(Boolean).sort((a, b) => {
-        const ao = a.status === 'open' ? 0 : 1, bo = b.status === 'open' ? 0 : 1;
-        return ao !== bo ? ao - bo : (a.startAt || 9e15) - (b.startAt || 9e15);
-      });
+      // 최신순: 시작 시간이 가장 과거인 스크림이 맨 뒤
+      const list = Object.values(all).filter(Boolean).sort((a, b) => (b.startAt || 0) - (a.startAt || 0));
       // 스크림 카드의 팀장 이름도 소환사 닉네임으로
       const caps = [];
       list.forEach(s => { caps.push(s.captain); if (s.match) caps.push(s.match.captain); Object.values((s.apps && s.apps.teams) || {}).forEach(a => a && caps.push(a.captain)); });
@@ -5308,6 +5369,13 @@ async function handleDoom(request, env) {
     const isHost = !!(s && dUser && s.captain && String(s.captain.did) === String(dUser.did));
     const sync = async () => { const f = await rd(`${SP}/${s.id}.json${authQ}`); if (f && f.threadId) await _scPost(env, cid, d, f); return f; };
     const byDidOf = async () => { const pool = await loadPool(), m = {}; pool.forEach(p => { m[p.did] = p; }); return m; };
+    // 스크림 방(음성 채널) 지우기 → 지운 개수
+    const delRooms = async (sc) => {
+      const rs = (Array.isArray(sc && sc.rooms) ? sc.rooms : Object.values((sc && sc.rooms) || {})).filter(r => r && r.id);
+      if (!BOT || !rs.length) return 0;
+      const res = await Promise.all(rs.map(r => fetch(`https://discord.com/api/v10/channels/${r.id}`, { method: 'DELETE', headers: { Authorization: 'Bot ' + BOT } }).then(x => x.ok || x.status === 404).catch(() => false)));
+      return res.filter(Boolean).length;
+    };
 
     if (action === 'scrim-save') {
       if (d.status === 'ended' && !isAdmin) return bad('끝난 멸망전이에요');
@@ -5357,7 +5425,46 @@ async function handleDoom(request, env) {
       if (!isAdmin && !isHost) return bad('스크림을 만든 팀장 또는 관리자만 지울 수 있어요', 403);
       await put(`${SP}/${s.id}.json${authQ}`, null);
       if (s.threadId && BOT) { try { await fetch(`https://discord.com/api/v10/channels/${s.threadId}`, { method: 'DELETE', headers: { Authorization: 'Bot ' + BOT } }); } catch (e) {} }
+      await delRooms(s);
       return json({ ok: true });
+    }
+    // 스크림 방: 성사된 스크림에서 연 팀장(또는 관리자)이 음성 채팅방 3개(대기실 · 우리 팀 · 상대 팀)를 만들어요. 누구나 들어갈 수 있어요
+    if (action === 'scrim-rooms') {
+      if (!isAdmin && !isHost) return bad('스크림을 연 팀장 또는 관리자만 만들 수 있어요', 403);
+      if (s.status !== 'matched' || !s.match) return bad('성사된 스크림에서만 방을 만들 수 있어요');
+      if (!BOT) return bad('디스코드 봇이 설정돼 있지 않아요');
+      if (!d.scrimVoiceCategoryId) return bad('멸망전 설정에서 "스크림 음성 채팅방 카테고리"를 먼저 골라 달라고 관리자에게 알려 주세요');
+      const gid = await guildId(); if (!gid) return bad('커뮤니티에 디스코드 서버가 연결돼 있지 않아요');
+      const H = { Authorization: 'Bot ' + BOT, 'Content-Type': 'application/json' };
+      const A = String(s.teamName || '팀'), B = String(s.match.name || '상대 팀');
+      const want = [{ key: 'lobby', name: `[스크림] ${A} vs ${B} 대기실` }, { key: 'host', name: A }, { key: 'opp', name: B }];
+      const have = Array.isArray(s.rooms) ? s.rooms : Object.values(s.rooms || {});
+      const rooms = [];
+      for (const w of want) {
+        const ex = have.find(r => r && r.key === w.key);
+        if (ex && ex.id) {   // 이미 있는 방은 그대로 (지워졌으면 다시 만들어요)
+          const r = await fetch(`https://discord.com/api/v10/channels/${ex.id}`, { headers: H }).catch(() => null);
+          if (r && r.ok) { rooms.push(ex); continue; }
+        }
+        const r = await fetch(`https://discord.com/api/v10/guilds/${gid}/channels`, { method: 'POST', headers: H, body: JSON.stringify({ name: w.name.slice(0, 100), type: 2, parent_id: d.scrimVoiceCategoryId }) }).catch(() => null);
+        if (!r || !r.ok) {
+          let m = ''; try { m = (await r.json()).message || ''; } catch (e) {}
+          if (rooms.length) await put(`${SP}/${s.id}/rooms.json${authQ}`, rooms);
+          return bad('스크림 방을 만들지 못했어요 — 봇에 "채널 관리" 권한이 있는지, 카테고리가 아직 있는지 확인해 주세요' + (m ? ' (' + m + ')' : ''));
+        }
+        const c = await r.json(); rooms.push({ key: w.key, id: c.id, name: c.name || w.name, url: `https://discord.com/channels/${gid}/${c.id}` });
+      }
+      await put(`${SP}/${s.id}/rooms.json${authQ}`, rooms);
+      return json({ ok: true, rooms });
+    }
+    // 스크림 종료: 상태를 "종료"로 바꾸고 스크림 방 3개를 지워요
+    if (action === 'scrim-end') {
+      if (!isAdmin && !isHost) return bad('스크림을 연 팀장 또는 관리자만 종료할 수 있어요', 403);
+      if (s.status !== 'matched') return bad(s.status === 'ended' ? '이미 끝난 스크림이에요' : '성사된 스크림만 종료할 수 있어요');
+      const n = await delRooms(s);
+      await patch(`${SP}/${s.id}.json${authQ}`, { status: 'ended', endedAt: Date.now(), rooms: null, updatedAt: Date.now() });
+      await sync();
+      return json({ ok: true, deleted: n });
     }
     if (action === 'scrim-solo' || action === 'scrim-solo-leave') {
       if (!dUser) return bad('디스코드 로그인이 필요해요', 401);
@@ -5372,7 +5479,7 @@ async function handleDoom(request, env) {
       if (!cap.ok) return bad(cap.reason, 403);
       if (cap.team.id === s.teamId) return bad('내 팀이 연 스크림이에요');
       if (action === 'scrim-team-cancel') {
-        if (s.status === 'matched') return bad('이미 성사된 스크림이에요');
+        if (s.status === 'matched' || s.status === 'ended') return bad(s.status === 'ended' ? '끝난 스크림이에요' : '이미 성사된 스크림이에요');
         await put(`${SP}/${s.id}/apps/teams/${cap.team.id}.json${authQ}`, null);
         await sync();
         return json({ ok: true });
@@ -5380,9 +5487,9 @@ async function handleDoom(request, env) {
       const why = _scClosedWhy(s); if (why) return bad(why);
       const subs = {}; _DM_LANES.forEach(l => { const v = body.subs && body.subs[l]; if (v) subs[l] = String(v); });
       const R = _scBuildRoster(cap.team, subs, await byDidOf()); if (R.error) return bad(R.error);
-      const hostDids = Object.values(s.roster || {}).map(m => m && String(m.did));
-      const dup = _DM_LANES.map(l => R.roster[l]).find(m => hostDids.indexOf(m.did) >= 0);
-      if (dup) return bad(dup.name + ' 님은 상대 스크림 팀 로스터에 있어요');
+      // 우리 팀 로스터(교체 인원 포함)에 상대 팀 로스터에 있는 사람이 있으면 신청 불가
+      const dup = _scOverlap(R.roster, s.roster);
+      if (dup) return bad(dup.name + ' 님이 상대 팀 로스터에도 있어서 신청할 수 없어요. 교체 인원으로 바꿔서 신청해 주세요');
       const re = _scRangeErr(s, R.total); if (re) return bad('스크림 점수 조건에 맞지 않아요 — ' + re);
       const prevApp = s.apps && s.apps.teams && s.apps.teams[cap.team.id];
       const app = { id: cap.team.id, teamId: cap.team.id, teamName: cap.team.name, teamColor: cap.team.color || '#4FA8FF', captain: cap.team.captain, roster: R.roster, base: R.base, bonus: R.bonus, total: R.total, at: prevApp && prevApp.at || Date.now(), updatedAt: Date.now() };
@@ -5410,6 +5517,9 @@ async function handleDoom(request, env) {
         const re = _scRangeErr(s, total); if (re && !body.force) return bad('스크림 점수 조건에 맞지 않아요 — ' + re);
         match = { type: 'solo', name: String(body.name || '').trim().slice(0, 24) || '개인 연합팀', color: '#B07CF0', captain: null, roster, base: total, bonus: 0, total };
       } else return bad('성사 방식을 골라 주세요');
+      // 신청 뒤에 로스터가 바뀌었을 수 있어서 성사 직전에 한 번 더 확인해요
+      const ov = _scOverlap(match.roster, s.roster);
+      if (ov) return bad(ov.name + ' 님이 양쪽 팀에 다 들어가 있어서 성사할 수 없어요');
       match.at = Date.now();
       const threadId = await _scMatchThread(env, d, s, match);
       if (threadId) match.threadId = threadId;

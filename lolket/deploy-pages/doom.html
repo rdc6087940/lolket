@@ -119,12 +119,22 @@ a{color:inherit}
 .st.sc-open{color:var(--ok);border-color:rgba(53,224,138,.4);background:rgba(53,224,138,.07)}
 .st.sc-closed{color:var(--muted);border-color:var(--line2)}
 .st.sc-matched{color:var(--gold);border-color:var(--gold-l);background:var(--gold-s)}
+.st.sc-ended{color:var(--muted);border-color:var(--line2);background:transparent}
+.rooms{margin-top:12px;border:1px solid var(--line2);background:var(--panel2);padding:14px 16px;border-radius:8px}
+.rooms .rh{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.rooms .rh b{font-size:14px}
+.rooms .rh .sp{flex:1}
+.rooms .rl{display:grid;gap:6px}
+.rooms .rl a{display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid var(--line2);border-radius:6px;background:#0A0E14;color:var(--text);text-decoration:none;font-size:13.5px;font-weight:700;transition:border-color .2s,transform .2s}
+.rooms .rl a:hover{border-color:var(--gold-l);transform:translateX(2px)}
+.rooms .rl a em{margin-left:auto;font-style:normal;font-size:11px;color:var(--gold);font-weight:700}
+.rooms .rl a.lobby{border-color:var(--gold-l);background:linear-gradient(90deg,rgba(240,198,97,.08),#0A0E14 60%)}
 .scgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px}
 .scard{position:relative;display:flex;flex-direction:column;gap:12px;padding:16px 18px;cursor:pointer;background:linear-gradient(160deg,var(--panel2),var(--panel));border:1px solid var(--line);
   clip-path:polygon(0 0,calc(100% - 18px) 0,100% 18px,100% 100%,0 100%);transition:transform .25s var(--ease),border-color .25s}
 .fade .scard,.view .scard{opacity:0;animation:cin .4s var(--ease) forwards}
 .scard:hover{transform:translateY(-3px);border-color:var(--gold-l)}
-.scard .nm{font:700 20px/1.25 var(--disp);letter-spacing:-.3px;word-break:keep-all}
+.scard .nm{font:700 20px/1.25 var(--disp);letter-spacing:-.3px;word-break:keep-all;min-height:2.5em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}   /* 제목 1줄 · 2줄이어도 카드 안 배치가 같게 2줄 높이로 맞춰요 */
 .vsrow{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
 .vsrow .side{display:flex;align-items:center;gap:9px;min-width:0}
 .vsrow .side.r{justify-content:flex-end;text-align:right}
@@ -136,7 +146,7 @@ a{color:inherit}
 .vsx{font:800 15px var(--num);color:var(--red);letter-spacing:1px}
 .emb.sm{width:32px;height:32px;font-size:14px}
 .emb.qm,.vswait .qm{background:linear-gradient(145deg,#2b3444,#1a212c);color:var(--muted)}
-.scard .foot{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--muted)}
+.scard .foot{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--muted);margin-top:auto}
 .scard .go{width:30px;height:30px;display:grid;place-items:center;border:1px solid var(--line2);color:var(--muted);transition:all .25s var(--ease)}
 .scard:hover .go{background:var(--gold);color:#1A1204;border-color:var(--gold)}
 .shead{border:1px solid var(--line);background:linear-gradient(110deg,#120F0A,#0C0E14 60%,#140A0E);padding:18px 20px;margin-bottom:16px}
@@ -344,6 +354,11 @@ label .dcm{margin:0 2px}
 .totbar em{font:600 12px var(--num);font-style:normal;color:var(--muted)}
 .rfoot{display:flex;flex-wrap:wrap;align-items:center;gap:8px;justify-content:flex-end;padding:10px 16px;border-top:1px solid var(--line);background:rgba(0,0,0,.18)}
 .rfoot:empty{display:none}
+/* 같은 줄 카드 높이가 달라도(신청 메모 등) 아래 버튼 줄이 항상 카드 바닥에 붙게 */
+.rgrid>.roster,.rgrid>.entry-wrap>.roster{display:flex;flex-direction:column}
+.rgrid>.roster>.rfoot,.rgrid>.entry-wrap>.roster>.rfoot{margin-top:auto}
+.rgrid>.entry-wrap{display:flex;flex-direction:column}
+.rgrid>.entry-wrap>.roster{flex:1}
 .rfoot .del{color:var(--dim);padding:0 8px}
 .rfoot .del:hover{color:#FF8A99}
 .legend{display:flex;flex-wrap:wrap;gap:8px 14px;margin-top:14px;font-size:12px;color:var(--muted)}
@@ -434,6 +449,10 @@ a.ad-img:hover{border-color:var(--gold-l);transform:translateY(-2px)}
 .mtag{font-style:normal;font-size:10.5px;font-weight:800;padding:1px 7px;border-radius:99px;background:rgba(176,124,240,.18);color:#CBA6F7;margin-left:6px;letter-spacing:0}
 .bnc{margin-top:14px}
 .shr{position:absolute!important;top:22px;right:22px;z-index:2}
+.vmiss{display:grid;gap:6px;margin-top:10px}
+.vmiss>div{display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid rgba(255,61,87,.35);background:rgba(255,61,87,.06);border-radius:6px}
+.vmiss b{font-size:13.5px}
+.vmiss span{margin-left:auto;font-size:11.5px;color:#FF8A99;font-weight:700}
 .ogc .ogwrap{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:16px;align-items:start}
 .ogprev{border-left:4px solid var(--gold);background:#2B2D31;border-radius:4px;padding:12px 14px 14px;max-width:440px;font-family:var(--kr)}
 .ogprev .s{font-size:11.5px;color:#B5BAC1}
@@ -972,6 +991,7 @@ if (/[?&]demo=/.test(location.search)) document.write('<script src="doom-demo.js
         if (st === 'approved') {
           if (S.isAdmin && t.entry === 'requested') acts += '<button class="btn sm danger" onclick="entryReview(\'' + t.id + '\',\'reject\')">출전 반려</button><button class="btn sm entrybtn" onclick="entryReview(\'' + t.id + '\',\'approve\')">🏆 출전 승인</button>';
           else if (S.isAdmin && t.entry === 'confirmed') acts += '<button class="btn sm ghost" onclick="entryReview(\'' + t.id + '\',\'revoke\')">출전 확정 취소</button>';
+          if (isCap && !S.isAdmin && d.status !== 'ended') acts += '<button class="btn sm" onclick="teamVoice(\'' + t.id + '\')">🔊 ' + (t.voice ? '음성 채팅방 권한 맞추기' : '음성 채팅방 만들기') + '</button>';
           if (isCap && d.status !== 'ended') {
             if (!t.entry) acts += '<button class="btn sm entrybtn" onclick="entryOpen(\'' + t.id + '\')">🏆 최종 출전 확정</button>';
             else if (t.entry === 'requested' && !S.isAdmin) acts += '<button class="btn sm" disabled>출전 확정 요청 중</button>';
@@ -1372,6 +1392,8 @@ if (/[?&]demo=/.test(location.search)) document.write('<script src="doom-demo.js
     var discord = '<div class="form">' +
       '<div class="f"><label>스크림 개설 가능 역할 (팀장)</label><div class="roles" id="ed-roles"><span class="note">디스코드 역할 불러오는 중…</span></div><div class="hint">이 디스코드 서버 역할이 있는 팀장만 스크림을 열 수 있어요. 아무것도 고르지 않으면 수락된 팀의 팀장 누구나 열 수 있어요. 개인 신청은 누구나 할 수 있고, 팀 단위 신청도 이 역할이 있는 팀장만 할 수 있어요.</div></div>' +
       '<div class="f"><label>스크림 디스코드 채널 (포럼)</label><select class="in" id="ed-ch"><option value="">불러오는 중…</option></select><div class="hint">스크림이 열리면 이 채널에 포스트가 자동으로 올라가요.</div></div>' +
+      '<div class="f"><label>팀 음성 채팅방 카테고리</label><select class="in" id="ed-vcat"><option value="">불러오는 중…</option></select><div class="hint">팀 수정 · 팀 카드의 "음성 채팅방 만들기"를 누르면 이 카테고리 안에 그 팀원만 들어갈 수 있는 음성 채널이 생겨요. 팀을 삭제하면 채널도 같이 지워져요. 봇에 "채널 관리" · "역할 관리" 권한이 필요해요.</div></div>' +
+      '<div class="f"><label>스크림 음성 채팅방 카테고리</label><select class="in" id="ed-svcat"><option value="">불러오는 중…</option></select><div class="hint">성사된 스크림에서 연 팀장이 "스크림 방 만들기"를 누르면 이 카테고리 안에 대기실 · 두 팀 방, 음성 채널 3개가 생겨요. 누구나 들어갈 수 있고, 스크림을 종료하면 지워져요.</div></div>' +
       '<div class="f"><label>성사 비공개 스레드 채널 (텍스트)</label><select class="in" id="ed-mch"><option value="">불러오는 중…</option></select><div class="hint">스크림이 성사되면 이 채널에 양 팀 참가자만 초대된 비공개 스레드를 만들어요. 봇에 "비공개 스레드 만들기" 권한이 필요해요. 정하지 않으면 DM만 보내요.</div></div></div>';
     var acts = '<div class="' + (inline ? 'factions' : 'mact') + '">' + (_ed.id ? '<button class="btn danger" onclick="delDoom()">멸망전 삭제</button><span class="sp"></span>' : '') + (inline ? '' : '<button class="btn ghost" onclick="closeModal()">취소</button>') + '<button class="btn gold" id="ed-save" onclick="saveDoom()">' + (_ed.id ? '설정 저장' : '만들기') + '</button></div>';
     if (inline) {
@@ -1388,10 +1410,16 @@ if (/[?&]demo=/.test(location.search)) document.write('<script src="doom-demo.js
       if (sel) sel.innerHTML = '<option value="">(아직 정하지 않음)</option>' + S.meta.channels.map(function (c) { return '<option value="' + c.id + '"' + (c.id === _ed.scrimChannelId ? ' selected' : '') + '>#' + esc(c.name) + '</option>'; }).join('');
       var msel = $('ed-mch');
       if (msel) msel.innerHTML = '<option value="">(정하지 않음 · DM만)</option>' + (S.meta.texts || []).map(function (c) { return '<option value="' + c.id + '"' + (c.id === _ed.matchChannelId ? ' selected' : '') + '>#' + esc(c.name) + '</option>'; }).join('');
+      var svsel = $('ed-svcat');
+      if (svsel) svsel.innerHTML = '<option value="">(정하지 않음 · 스크림 방 안 만듦)</option>' + (S.meta.cats || []).map(function (c) { return '<option value="' + c.id + '"' + (c.id === _ed.scrimVoiceCategoryId ? ' selected' : '') + '>📁 ' + esc(c.name) + '</option>'; }).join('');
+      var vsel = $('ed-vcat');
+      if (vsel) vsel.innerHTML = '<option value="">(정하지 않음 · 음성 채팅방 안 만듦)</option>' + (S.meta.cats || []).map(function (c) { return '<option value="' + c.id + '"' + (c.id === _ed.voiceCategoryId ? ' selected' : '') + '>📁 ' + esc(c.name) + '</option>'; }).join('');
     } catch (e) {
       var rr = $('ed-roles'); if (rr) rr.innerHTML = '<span class="note warn">' + esc(e.message) + '</span>';
       var sc = $('ed-ch'); if (sc) sc.innerHTML = '<option value="">불러오지 못함</option>';
       var mc = $('ed-mch'); if (mc) mc.innerHTML = '<option value="">불러오지 못함</option>';
+      var vc = $('ed-vcat'); if (vc) vc.innerHTML = '<option value="">불러오지 못함</option>';
+      var svc = $('ed-svcat'); if (svc) svc.innerHTML = '<option value="">불러오지 못함</option>';
     }
   };
   function drawRoles() {
@@ -1409,6 +1437,8 @@ if (/[?&]demo=/.test(location.search)) document.write('<script src="doom-demo.js
     _ed.name = $('ed-name').value; _ed.startDate = $('ed-s').value; _ed.endDate = $('ed-e').value; _ed.desc = $('ed-desc').value; _ed.entryTerms = $('ed-terms') ? $('ed-terms').value : (_ed.entryTerms || '');
     var sel = $('ed-ch'); if (sel && S.meta) { _ed.scrimChannelId = sel.value; var c = S.meta.channels.find(function (x) { return x.id === sel.value; }); _ed.scrimChannelName = c ? c.name : ''; }
     var msel = $('ed-mch'); if (msel && S.meta) { _ed.matchChannelId = msel.value; var mc = (S.meta.texts || []).find(function (x) { return x.id === msel.value; }); _ed.matchChannelName = mc ? mc.name : ''; }
+    var svsel = $('ed-svcat'); if (svsel && S.meta) { _ed.scrimVoiceCategoryId = svsel.value; var svc = (S.meta.cats || []).find(function (x) { return x.id === svsel.value; }); _ed.scrimVoiceCategoryName = svc ? svc.name : ''; }
+    var vsel = $('ed-vcat'); if (vsel && S.meta) { _ed.voiceCategoryId = vsel.value; var vc = (S.meta.cats || []).find(function (x) { return x.id === vsel.value; }); _ed.voiceCategoryName = vc ? vc.name : ''; }
     if (S.meta) _ed.scrimRoleNames = _ed.scrimRoleIds.map(function (id) { var r = (S.meta.roles || []).find(function (x) { return x.id === id; }); return r ? r.name : ''; }).filter(Boolean);
     var b = $('ed-save'); if (b) b.disabled = true;
     try {
@@ -1424,8 +1454,10 @@ if (/[?&]demo=/.test(location.search)) document.write('<script src="doom-demo.js
   };
 
   // ══ 스크림 ══
-  var SST = { open: '모집 중', closed: '모집 마감', matched: '성사' };
+  var SST = { open: '모집 중', closed: '모집 마감', matched: '성사', ended: '종료' };
+  function scDone(s) { return (s.status === 'matched' || s.status === 'ended') && !!s.match; }
   function scState(s) {
+    if (s.status === 'ended') return 'ended';
     if (s.status === 'matched') return 'matched';
     var now = Date.now();
     if (s.status !== 'open' || (s.recruitEnd && now > s.recruitEnd) || (s.recruitStart && now < s.recruitStart)) return 'closed';
@@ -1471,7 +1503,8 @@ if (/[?&]demo=/.test(location.search)) document.write('<script src="doom-demo.js
 
   function scrimsHtml() {
     if (S.sid) return scrimDetailHtml();
-    var d = S.doom, me = S.me, list = S.scrims || [];
+    // 최신순: 시작 시간이 늦은(최근 · 앞으로 할) 스크림이 앞, 가장 과거인 스크림이 맨 뒤
+    var d = S.doom, me = S.me, list = (S.scrims || []).slice().sort(function (a, b) { return (b.startAt || 0) - (a.startAt || 0); });
     var canMake = d.status !== 'ended' && (S.isAdmin || (me && me.scrim && me.scrim.ok));
     var msg = canMake ? '우리 팀 스크림을 열고 상대를 찾아보세요.' : !dc() && !S.isAdmin ? '스크림을 열거나 신청하려면 디스코드로 로그인해 주세요.' : '스크림은 디스코드 팀장 역할이 있는 팀장이 열 수 있어요. 개인 · 팀 신청은 각 스크림에서 할 수 있어요.';
     var h = '<div class="bar"><span class="msg"><i></i><span>' + msg + '</span></span><span class="sp"></span>' +
@@ -1480,10 +1513,10 @@ if (/[?&]demo=/.test(location.search)) document.write('<script src="doom-demo.js
     if (!list.length) return h + '<div class="soon"><div class="vs">VS</div><b>아직 열린 스크림이 없어요</b>팀장이 스크림을 열면 여기와 디스코드 스크림 채널에 올라가요.</div>';
     return h + '<div class="scgrid">' + list.map(function (s, i) {
       var st = scState(s), apps = s.apps || {}, nT = Object.keys(apps.teams || {}).length, nS = LANES.reduce(function (a, l) { return a + Object.keys((apps.solo || {})[l] || {}).length; }, 0);
-      var opp = s.status === 'matched' && s.match;
+      var opp = scDone(s) && s.match;
       return '<div class="scard" style="animation-delay:' + i * 40 + 'ms" onclick="go(\'#/d/' + d.id + '/scrims/' + s.id + '\')">' +
         '<div class="dtop"><span class="st sc-' + st + '">' + SST[st] + '</span><span class="sp"></span>' + fmtT(s.startAt) + '</div>' +
-        '<div class="nm">' + esc(s.name) + '</div>' +
+        '<div class="nm" title="' + esc(s.name) + '">' + esc(s.name) + '</div>' +
         '<div class="vsrow"><div class="side" style="--tc:' + esc(s.teamColor) + '"><span class="emb sm">' + esc(String(s.teamName).charAt(0)) + '</span><span><b>' + esc(s.teamName) + '</b><em>' + s.total + ' PTS</em></span></div><span class="vsx">VS</span>' +
         (opp ? '<div class="side r" style="--tc:' + esc(opp.color || '#B07CF0') + '"><span><b>' + esc(opp.name) + '</b><em>' + opp.total + ' PTS</em></span><span class="emb sm">' + esc(String(opp.name).charAt(0)) + '</span></div>' : '<div class="side r q"><span><b>상대 모집 중</b><em>팀 ' + nT + ' · 개인 ' + nS + '</em></span><span class="emb sm qm">?</span></div>') + '</div>' +
         '<div class="foot"><span>🎯 ' + rangeTxt(s) + '</span><span class="sp"></span><span class="go">' + ICON_ARROW + '</span></div></div>';
@@ -1505,10 +1538,22 @@ if (/[?&]demo=/.test(location.search)) document.write('<script src="doom-demo.js
       (s.desc ? '<div class="sdesc">' + esc(s.desc) + '</div>' : '') + (s.note ? '<div class="memo warnm"><b>특이사항 · 요구사항</b>' + esc(s.note) + '</div>' : '') + '</section>';
     // VS 보드
     h += '<div class="vsb">' + rosterCard(hostSide(s), { max: max }) + '<div class="vsmid"><span>VS</span></div>' +
-      (s.status === 'matched' && s.match ? rosterCard(s.match, { max: max, sub: s.match.type === 'solo' ? '개인 신청 조합' : null, cls: 'opp' })
+      (scDone(s) ? rosterCard(s.match, { max: max, sub: s.match.type === 'solo' ? '개인 신청 조합' : null, cls: 'opp' })
         : '<div class="vswait"><div class="qm">?</div><b>상대를 기다리는 중</b><span>팀 신청 ' + teams.length + ' · 개인 신청 ' + LANES.reduce(function (a, l) { return a + Object.keys(solo[l] || {}).length; }, 0) + '</span></div>') + '</div>';
+    if (s.status === 'ended') {
+      h += '<div class="bar"><span class="msg"><i></i><span>끝난 스크림이에요' + (s.endedAt ? ' · ' + fmtT(s.endedAt) : '') + '. 스크림 방은 지워졌어요.</span></span></div>';
+      return h;
+    }
     if (s.status === 'matched') {
       h += '<div class="bar"><span class="msg ok"><i></i><span>스크림이 성사됐어요' + (s.match && s.match.at ? ' · ' + fmtT(s.match.at) : '') + '. 참가자에게 디스코드 DM' + (s.match && s.match.threadId ? '과 비공개 스레드' : '') + '로 알렸어요.</span></span></div>';
+      // 스크림 방 (음성 채널 3개) · 종료 — 연 팀장 · 관리자
+      var rooms = Array.isArray(s.rooms) ? s.rooms : Object.values(s.rooms || {}), canRoom = host || S.isAdmin;
+      if (rooms.length || canRoom) {
+        var RK = { lobby: '대기실', host: '팀 방', opp: '팀 방' };
+        h += '<section class="rooms"><div class="rh"><b>🔊 스크림 방</b><span class="note">' + (rooms.length ? '누구나 들어갈 수 있어요' : '대기실 · 두 팀 방, 음성 채널 3개를 만들어요') + '</span><span class="sp"></span>' +
+          (canRoom ? (rooms.length < 3 ? '<button class="btn sm gold" id="sc-room" onclick="scRooms()">🔊 스크림 방 만들기</button>' : '') + '<button class="btn sm ghost" onclick="scEnd()">🏁 스크림 종료</button>' : '') + '</div>' +
+          (rooms.length ? '<div class="rl">' + rooms.map(function (r) { return '<a class="' + (r.key === 'lobby' ? 'lobby' : '') + '" href="' + esc(r.url || '#') + '" target="_blank" rel="noopener">🔊 ' + esc(r.name) + '<em>' + (RK[r.key] || '') + '</em></a>'; }).join('') + '</div>' : '') + '</section>';
+      }
       return h;
     }
     // 신청하기
@@ -1519,7 +1564,7 @@ if (/[?&]demo=/.test(location.search)) document.write('<script src="doom-demo.js
       '<div class="ab-solo"><span class="ab-l">개인 신청</span><div class="lanebtns">' + LANES.map(function (l) {
         return '<button class="lb' + (myLane === l ? ' on' : '') + '" onclick="scSolo(\'' + l + '\')"' + (why || inHost ? ' disabled' : '') + '>' + KO[l] + '<small>(개인)</small></button>';
       }).join('') + (myLane ? '<button class="btn sm ghost" onclick="scSoloLeave()">신청 취소</button>' : '') + '</div>' +
-      (inHost ? '<span class="note">이 스크림 팀 로스터에 있어서 개인 신청은 할 수 없어요.</span>' : '') + '</div>' +
+      (inHost ? '<span class="note">상대 팀(이 스크림을 연 팀) 로스터에 있어서 개인 신청은 할 수 없어요.</span>' : '') + '</div>' +
       '<div class="ab-team"><button class="btn gold cut" onclick="scTeamApply()"' + (why ? ' disabled' : '') + '>👑 팀 스크림 신청(팀장전용)</button></div></div></section>';
     // 팀 신청
     h += '<div class="sec-h"><h2>팀 신청</h2><span class="ln"></span><em>' + teams.length + ' TEAMS</em></div>';
@@ -1570,6 +1615,17 @@ if (/[?&]demo=/.test(location.search)) document.write('<script src="doom-demo.js
     var s = curScrim(); if (!s || !S.pk) return;
     if (!confirm('고른 5명으로 스크림을 확정할까요?\n뽑힌 사람들에게 디스코드 DM으로 알려 줘요.')) return;
     try { var j = await api('scrim-match', { doomId: S.doom.id, scrimId: s.id, type: 'solo', picks: S.pk.picks, name: S.pk.name }); S.pk = null; toast('스크림을 확정했어요 · DM ' + j.sent + '/' + j.total + '명' + (j.threadId ? ' · 비공개 스레드 생성' : '')); await reloadDetail(); }
+    catch (e) { toast(e.message, true); }
+  };
+  window.scRooms = async function () {
+    var s = curScrim(); if (!s) return; var b = $('sc-room'); if (b) { b.disabled = true; b.textContent = '만드는 중…'; }
+    try { var j = await api('scrim-rooms', { doomId: S.doom.id, scrimId: s.id }); s.rooms = j.rooms; toast('스크림 방 3개를 만들었어요'); renderPanel(true); }
+    catch (e) { toast(e.message, true); if (b) { b.disabled = false; b.textContent = '🔊 스크림 방 만들기'; } }
+  };
+  window.scEnd = async function () {
+    var s = curScrim(); if (!s) return;
+    if (!confirm('"' + s.name + '" 스크림을 종료할까요?\n스크림 방(음성 채널)이 있으면 모두 지워지고, 되돌릴 수 없어요.')) return;
+    try { var j = await api('scrim-end', { doomId: S.doom.id, scrimId: s.id }); toast('스크림을 종료했어요' + (j.deleted ? ' · 스크림 방 ' + j.deleted + '개 삭제' : '')); await reloadDetail(); }
     catch (e) { toast(e.message, true); }
   };
   window.scMatchTeam = async function (appId) {
@@ -1630,11 +1686,16 @@ if (/[?&]demo=/.test(location.search)) document.write('<script src="doom-demo.js
     return { did: String(o.did), name: o.name, tag: o.tag, tier: o.tier, src: o.src, score: o.score };
   }
   function seTotals() { var b = 0; LANES.forEach(function (l) { var m = seMember(l); b += (m && m.score) || 0; }); b = r2(b); var bo = Number(_se.team.bonus) || 0; return { base: b, bonus: bo, total: r2(b + bo) }; }
+  // 같은 사람인지 (디스코드 ID 또는 소환사 이름#태그)
+  function samePer(a, b) { if (!a || !b) return false; if (a.did && b.did && String(a.did) === String(b.did)) return true; var k = function (m) { return m.name ? (String(m.name).trim() + '#' + String(m.tag || '').trim()).toLowerCase() : ''; }; return !!k(a) && k(a) === k(b); }
+  function inHostRoster(m) { var s = _se && _se.mode === 'apply' && _se.scrimId ? curScrim() : null; return !!(s && m && Object.values(s.roster || {}).some(function (x) { return samePer(x, m); })); }
   function seRosterHtml() {
     return '<div class="slots">' + LANES.map(function (l) {
       var m = seMember(l); if (!m) return '';
+      var clash = inHostRoster(m);
       return '<div class="slotw' + (m.sub ? ' subd' : '') + '"><div class="slot ro"><span class="lt">' + EN[l] + '</span><span class="pn"><b>' + esc(m.name) + ' <small>#' + esc(m.tag || '') + '</small>' + dcMark(m) + (m.sub ? '<i class="src sub">교체</i>' : '') + '</b><span>' + esc(m.tier || '티어 없음') + (m.src ? '<i class="src ' + m.src + '">' + (SRC[m.src] || '') + '</i>' : '') + '</span>' +
-        (m.sub ? '<em class="orig">원래 ' + esc(m.orig.name) + '#' + esc(m.orig.tag || '') + ' · ' + esc(m.orig.tier || '티어 없음') + ' · ' + (m.orig.score != null ? m.orig.score : '—') + '점</em>' : '') + '</span>' +
+        (m.sub ? '<em class="orig">원래 ' + esc(m.orig.name) + '#' + esc(m.orig.tag || '') + ' · ' + esc(m.orig.tier || '티어 없음') + ' · ' + (m.orig.score != null ? m.orig.score : '—') + '점</em>' : '') +
+        (clash ? '<em class="orig" style="color:#FF8A99">⚠ 상대 팀 로스터에도 있어서 이대로는 신청할 수 없어요 — 교체해 주세요</em>' : '') + '</span>' +
         '<span class="sbtns"><button type="button" class="btn sm" onclick="seSwap(\'' + l + '\')">' + (m.sub ? '다시 고르기' : '교체') + '</button>' + (m.sub ? '<button type="button" class="btn sm ghost" onclick="seReset(\'' + l + '\')">원래대로</button>' : '') + '</span>' +
         '<span class="ps">' + (m.score != null ? m.score : '—') + '</span></div></div>';
     }).join('') + '</div>';
@@ -1650,7 +1711,7 @@ if (/[?&]demo=/.test(location.search)) document.write('<script src="doom-demo.js
     seSaveForm();
     var s = _se.scrimId ? curScrim() : null;
     var used = {}; LANES.forEach(function (x) { if (x !== l) { var m = seMember(x); if (m) used[m.did] = KO[x]; } });
-    var hostD = {}; if (_se.mode === 'apply' && s) LANES.forEach(function (x) { var m = s.roster[x]; if (m) hostD[m.did] = 1; });
+    var hostD = {}; if (_se.mode === 'apply' && s) LANES.forEach(function (x) { var m = s.roster[x]; if (m) { hostD[m.did] = 1; (S.pool || []).forEach(function (p) { if (samePer(p, m)) hostD[p.did] = 1; }); } });
     var orig = (_se.team.members || {})[l];
     openModal('<h2>' + KO[l] + ' 교체 인원</h2><div class="sub">원래 멤버: <b>' + esc(orig.name) + '</b> · 커뮤니티 멤버 누구나 고를 수 있어요.</div>' +
       '<input class="in" id="sp-q" placeholder="닉네임 · 디스코드 이름 검색" oninput="seDrawPick(\'' + l + '\')" autocomplete="off"><div class="plist" id="sp-list"></div>' +
@@ -1770,7 +1831,8 @@ if (/[?&]demo=/.test(location.search)) document.write('<script src="doom-demo.js
     var t = tid ? S.teams.find(function (x) { return x.id === tid; }) : null;
     _tm = { id: t ? t.id : null, name: t ? t.name : '', color: t ? t.color : COLORS[S.teams.length % COLORS.length], lanes: {}, adj: {},
       bonus: t ? (t.bonus || 0) : 0, bonusNote: t ? (t.bonusNote || '') : '', memo: t ? (t.memo || '') : '',
-      roleOk: !!(t && S.isAdmin && (t.status || 'approved') === 'approved' && t.captain && /^\d{5,25}$/.test(String(t.captain.did || ''))) };
+      roleOk: !!(t && S.isAdmin && (t.status || 'approved') === 'approved' && t.captain && /^\d{5,25}$/.test(String(t.captain.did || ''))),
+      voiceOk: !!(t && (t.status || 'approved') === 'approved'), voice: t && t.voice || null };
     LANES.forEach(function (l) { var m = t && t.members && t.members[l]; _tm.lanes[l] = m ? String(m.did) : ''; _tm.adj[l] = m && m.adj ? m.tier : ''; });
     if (!S.pool) openModal('<div class="mini-spin"></div>');
     try { if (!S.pool) { var pj = await api('pool'); S.pool = pj.pool; S.table = pj.table || []; fillTiers(); } } catch (e) { openModal('<h2>팀 신청</h2><div class="note warn">' + esc(e.message) + '</div><div class="mact"><button class="btn" onclick="closeModal()">닫기</button></div>'); return; }
@@ -1836,7 +1898,8 @@ if (/[?&]demo=/.test(location.search)) document.write('<script src="doom-demo.js
       '<div class="f"><label>팀 색</label><div class="colors">' + COLORS.map(function (c) { return '<button type="button" data-c="' + c + '" class="' + (c === _tm.color ? 'on' : '') + '" style="background:' + c + '" onclick="_tmColor(\'' + c + '\')" aria-label="팀 색"></button>'; }).join('') + '</div></div>' +
       '<div class="f"><label>로스터 (커뮤니티 멤버 누구나 · <i class="dcm">' + DC_SVG + '</i> = 디스코드 연동)</label><div class="slots">' + slots + '</div></div>' + bonusF +
       '<div class="totbar" id="tm-tot">' + totHtml(sm) + '</div>' + (apply ? memoF : '') + '</div>' +
-      '<div class="mact">' + (_tm.id ? '<button class="btn danger" onclick="delTeam()">' + (apply ? '신청 취소' : '팀 삭제') + '</button>' + (_tm.roleOk ? '<button class="btn" id="tm-role" onclick="regrantRole()" title="수락된 팀의 팀장에게 스크림 개설 가능 역할을 룽봇이 다시 붙여요">🛡️ 팀장 역할 다시 부여</button>' : '') + '<span class="sp"></span>' : '') + '<button class="btn ghost" onclick="closeModal()">취소</button><button class="btn gold" id="tm-save" onclick="saveTeam()"' + (sm.n === 5 ? '' : ' disabled') + '>' + (apply ? (_tm.id ? '다시 신청' : '신청하기') : (_tm.id ? '저장' : '팀 만들기')) + '</button></div>');
+      '<div class="mact">' + (_tm.id ? '<button class="btn danger" onclick="delTeam()">' + (apply ? '신청 취소' : '팀 삭제') + '</button>' + (_tm.roleOk ? '<button class="btn" id="tm-role" onclick="regrantRole()" title="수락된 팀의 팀장에게 스크림 개설 가능 역할을 룽봇이 다시 붙여요">🛡️ 팀장 역할 다시 부여</button>' : '') +
+        (_tm.voiceOk ? '<button class="btn" id="tm-voice" onclick="teamVoice(_tm.id, true)" title="설정한 카테고리 안에 이 팀원만 들어갈 수 있는 음성 채팅방을 만들어요. 이미 있으면 지금 팀원 기준으로 권한을 다시 맞춰요">🔊 ' + (_tm.voice ? '음성 채팅방 권한 맞추기' : '음성 채팅방 만들기') + '</button>' : '') + '<span class="sp"></span>' : '') + '<button class="btn ghost" onclick="closeModal()">취소</button><button class="btn gold" id="tm-save" onclick="saveTeam()"' + (sm.n === 5 ? '' : ' disabled') + '>' + (apply ? (_tm.id ? '다시 신청' : '신청하기') : (_tm.id ? '저장' : '팀 만들기')) + '</button></div>');
   }
   function totHtml(sm) {
     var b = Number(_tm.bonus) || 0;
@@ -1860,8 +1923,8 @@ if (/[?&]demo=/.test(location.search)) document.write('<script src="doom-demo.js
     var list = (S.pool || []).filter(function (p) { return !qv || (p.name + '#' + p.tag + ' ' + p.discordName).toLowerCase().indexOf(qv) >= 0; })
       .sort(function (a, b) { var am = a.mainLane === l ? 1 : 0, bm = b.mainLane === l ? 1 : 0; if (am !== bm) return bm - am; return (b.scores[l] || 0) - (a.scores[l] || 0); }).slice(0, 80);
     $('pk-list').innerHTML = list.length ? list.map(function (p) {
-      var tk = takenBy(p.did), us = used[p.did], dis = tk || us;
-      return '<button type="button" class="pi" onclick="pickSet(\'' + p.did + '\')"' + (dis ? ' disabled' : '') + '><span class="pn"><b>' + esc(p.name) + ' <small>#' + esc(p.tag) + '</small>' + dcMark(p) + '</b><small class="sub2">' + (isDc(p) ? esc(p.discordName || '디스코드 연동') : '디스코드 미연동') + (tk ? ' · ' + esc(tk) + ' 팀' : us ? ' · 이 팀 ' + us : '') + ' · ' + tierTxt(p) + '</small></span>' +
+      var tk = takenBy(p.did), us = used[p.did], dis = us;   // 다른 팀에 있어도 넣을 수 있어요 (표시만 해요)
+      return '<button type="button" class="pi" onclick="pickSet(\'' + p.did + '\')"' + (dis ? ' disabled' : '') + '><span class="pn"><b>' + esc(p.name) + ' <small>#' + esc(p.tag) + '</small>' + dcMark(p) + '</b><small class="sub2">' + (isDc(p) ? esc(p.discordName || '디스코드 연동') : '디스코드 미연동') + (us ? ' · 이 팀 ' + us : tk ? ' · ' + esc(tk) + ' 팀에도 있어요' : '') + ' · ' + tierTxt(p) + '</small></span>' +
         (p.mainLane ? '<span class="lanechip' + (p.mainLane === l ? ' main' : '') + '">' + (EN[p.mainLane] || p.mainLane) + '</span>' : '<span></span>') +
         (p.tier ? '<span class="ps">' + (p.scores[l] != null ? p.scores[l] : '—') + '</span>' : (p.riotPuuid ? '<span class="btn sm" style="grid-column:span 1" onclick="event.stopPropagation();curTier(\'' + p.did + '\')">티어</span>' : '<span class="note">없음</span>')) + '</button>';
     }).join('') : '<div class="note" style="padding:14px">찾는 사람이 없어요. 닉네임으로 검색해 보세요.</div>';
@@ -1878,6 +1941,26 @@ if (/[?&]demo=/.test(location.search)) document.write('<script src="doom-demo.js
       await api('team-save', { doomId: S.doom.id, team: { id: _tm.id, name: _tm.name, color: _tm.color, lanes: _tm.lanes, adj: _tm.adj, bonus: Number(_tm.bonus) || 0, bonusNote: _tm.bonusNote, memo: _tm.memo } });
       closeModal(); toast(S.isAdmin ? (_tm.id ? '팀을 저장했어요' : '팀을 만들었어요') : '팀을 신청했어요. 관리자가 수락하면 확정돼요'); S.pool = null; await reloadDetail();
     } catch (e) { if (b) b.disabled = false; toast(e.message, true); }
+  };
+  // 팀 음성 채팅방 만들기 · 권한 다시 맞추기
+  window.teamVoice = async function (tid, fromEdit) {
+    var b = fromEdit ? $('tm-voice') : null, old = b ? b.textContent : '';
+    if (b) { b.disabled = true; b.textContent = '만드는 중…'; }
+    try {
+      var j = await api('team-voice', { doomId: S.doom.id, team: { id: tid } });
+      var t = S.teams.find(function (x) { return x.id === tid; }); if (t) t.voice = j.voice; if (_tm && _tm.id === tid) _tm.voice = j.voice;
+      var head = j.created ? '팀 음성 채팅방을 만들었어요' : '음성 채팅방 권한을 지금 팀원 기준으로 다시 맞췄어요';
+      var link = j.url ? '<a class="btn gold" href="' + esc(j.url) + '" target="_blank" rel="noopener">디스코드에서 열기</a>' : '';
+      if (j.missing && j.missing.length) {
+        openModal('<h2>🔊 ' + head + '</h2><div class="note warn" style="margin-top:6px">아래 멤버는 ' + (j.missing.some(function (m) { return m.why === 'nodc'; }) ? '디스코드 연동이 안 돼 있어서' : '디스코드 서버에 없어서') + ' 음성 채팅방 참여 권한을 주지 못했어요.<br><b>관리자에게 따로 "' + esc(j.voice.name) + '" 음성 채팅방 참여 권한을 받아야 해요.</b></div>' +
+          '<div class="vmiss">' + j.missing.map(function (m) { return '<div><b>' + esc(m.name) + '</b><span>' + (m.why === 'left' ? '디스코드 서버에 없음' : '디스코드 미연동') + '</span></div>'; }).join('') + '</div>' +
+          (j.granted && j.granted.length ? '<div class="note" style="margin-top:10px">권한을 준 멤버: ' + j.granted.map(esc).join(', ') + '</div>' : '') +
+          '<div class="mact"><button class="btn" onclick="closeModal()">확인</button>' + link + '</div>');
+      } else if (fromEdit) toast(head + ' · 팀원 ' + (j.granted || []).length + '명');
+      else openModal('<h2>🔊 ' + head + '</h2><div class="note">팀원 ' + (j.granted || []).length + '명 모두 들어갈 수 있어요.</div><div class="mact"><button class="btn" onclick="closeModal()">닫기</button>' + link + '</div>');
+      if (b) { b.textContent = '🔊 음성 채팅방 권한 맞추기'; b.disabled = false; }
+      if (!fromEdit) await reloadDetail();
+    } catch (e) { toast(e.message, true); if (b) { b.disabled = false; b.textContent = old; } }
   };
   window.regrantRole = async function () {
     var b = $('tm-role'); if (b) { b.disabled = true; b.textContent = '부여하는 중…'; }

@@ -57,7 +57,7 @@
   var CHANNELS = [{ id: 'c1', name: '스크림-모집' }, { id: 'c2', name: '내전-공지' }], TEXTS = [{ id: 't1', name: '스크림-매칭' }, { id: 't2', name: '일반' }];
   function baseDoom(status) {
     return { id: 'd1', name: '겨울 멸망전', desc: '12월 한 달 동안 진행하는 멸망전이에요.\n팀 합계 점수 200점 이하 · 매주 토요일 본선', startDate: '2026-12-01', endDate: '2026-12-31',
-      status: status, entryTerms: '1. 참가비 1만 원을 본선 전날까지 입금해 주세요.\n2. 최종 출전이 확정되면 팀원을 바꿀 수 없어요.\n3. 본선 당일 10분 이상 지각하면 몰수패예요.\n4. 비매너 · 대리 적발 시 실격 처리돼요.', scrimRoleIds: ['r1'], scrimRoleNames: ['팀장'], scrimChannelId: 'c1', scrimChannelName: '스크림-모집', matchChannelId: 't1', matchChannelName: '스크림-매칭', createdAt: now - 7 * D };
+      status: status, entryTerms: '1. 참가비 1만 원을 본선 전날까지 입금해 주세요.\n2. 최종 출전이 확정되면 팀원을 바꿀 수 없어요.\n3. 본선 당일 10분 이상 지각하면 몰수패예요.\n4. 비매너 · 대리 적발 시 실격 처리돼요.', scrimRoleIds: ['r1'], scrimRoleNames: ['팀장'], scrimChannelId: 'c1', scrimChannelName: '스크림-모집', matchChannelId: 't1', matchChannelName: '스크림-매칭', voiceCategoryId: 'k1', voiceCategoryName: '멸망전 팀 음성', scrimVoiceCategoryId: 'k2', scrimVoiceCategoryName: '음성 채널', createdAt: now - 7 * D };
   }
   var T = {};
   function seedTeams(withPending) {
@@ -117,13 +117,13 @@
   function line(l, m) { return '`' + EN[l] + '` **' + m.name + '** · ' + (m.tier || '티어 없음') + ' · ' + m.score + '점' + (m.sub && m.orig ? ' 🔁 교체 (원래 ' + m.orig.name + ')' : ''); }
   function post(s) {
     var d = st.dooms.d1, L = [];
-    L.push('⚔️ **' + s.name + '** · ' + d.name + ' · **' + (s.status === 'matched' ? '✅ 성사' : '🟢 모집 중') + '**');
+    L.push('⚔️ **' + s.name + '** · ' + d.name + ' · **' + (s.status === 'ended' ? '🏁 종료' : s.status === 'matched' ? '✅ 성사' : '🟢 모집 중') + '**');
     L.push('🛡️ **' + s.teamName + '** (' + s.total + '점) · 팀장 ' + s.captain.name);
     L.push('⏰ 시작: **' + fmt(s.startAt) + '**');
     if (s.minScore !== '' || s.maxScore !== '') L.push('🎯 상대 합계 점수: ' + (s.minScore === '' ? '제한 없음' : s.minScore) + ' ~ ' + (s.maxScore === '' ? '제한 없음' : s.maxScore));
     if (s.note) L.push('⚠️ ' + s.note);
     L.push(''); LANES.forEach(function (l) { L.push(line(l, s.roster[l])); });
-    if (s.status === 'matched') { L.push('', '✅ **성사 — ' + s.teamName + ' vs ' + s.match.name + '**'); LANES.forEach(function (l) { L.push(line(l, s.match.roster[l])); }); }
+    if ((s.status === 'matched' || s.status === 'ended') && s.match) { L.push('', '✅ **성사 — ' + s.teamName + ' vs ' + s.match.name + '**'); LANES.forEach(function (l) { L.push(line(l, s.match.roster[l])); }); }
     else {
       var ts = Object.values(s.apps.teams || {}); L.push('', '👥 **팀 신청 ' + ts.length + '팀**'); ts.forEach(function (t) { L.push('• ' + t.teamName + ' (' + t.total + '점)'); });
       L.push('🙋 **개인 신청**'); LANES.forEach(function (l) { var xs = Object.values((s.apps.solo || {})[l] || {}); L.push('`' + EN[l] + '` ' + (xs.length ? xs.map(function (x) { return x.name + '(' + x.score + ')'; }).join(', ') : '—')); });
@@ -160,7 +160,15 @@
     me: function (b) { var u = me(); if (!u) return { user: null }; var d = st.dooms[b.doomId]; var cap = d ? capOf(d) : null; return { user: { did: u.did, name: u.name }, profile: { name: u.name, tag: u.tag || '' }, canCreate: true, reason: '', isAdmin: isAdmin, scrim: cap ? { ok: cap.ok, teamId: cap.team ? cap.team.id : null, reason: cap.reason } : null }; },
     pool: function () { return { pool: clone(POOL), table: clone(TABLE) }; },
     'refresh-cur': function () { return {}; },
-    'admin-meta': function () { return { roles: ROLES, channels: CHANNELS, texts: TEXTS }; },
+    'admin-meta': function () { return { roles: ROLES, channels: CHANNELS, texts: TEXTS, cats: [{ id: 'k1', name: '멸망전 팀 음성' }, { id: 'k2', name: '음성 채널' }] }; },
+    'team-voice': function (b) {
+      var d = st.dooms[b.doomId], t = st.teams[b.doomId][b.team.id];
+      if (!d.voiceCategoryId) err('멸망전 설정에서 "팀 음성 채팅방 카테고리"를 먼저 골라 달라고 관리자에게 알려 주세요');
+      var granted = [], missing = [];
+      LANES.forEach(function (l) { var m = t.members && t.members[l]; if (!m) return; if (/^\d+$/.test(String(m.did)) || /^u/.test(String(m.did))) granted.push(m.name + '#' + (m.tag || '')); else missing.push({ name: m.name + '#' + (m.tag || ''), why: 'nodc' }); });
+      var created = !t.voice; t.voice = { id: 'v_' + t.id, name: '🔊 ' + t.name, at: Date.now() };
+      return { voice: clone(t.voice), created: created, url: '', granted: granted, missing: missing };
+    },
     save: function (b) { var x = b.doom || {}; if (!String(x.name || '').trim()) err('멸망전 이름을 입력해 주세요'); var id = x.id || 'd1'; var prev = st.dooms[id] || {}; st.dooms[id] = Object.assign({}, prev, clone(x), { id: id, createdAt: prev.createdAt || Date.now() }); if (!st.teams[id]) st.teams[id] = {}; return { doom: clone(st.dooms[id]) }; },
     delete: function (b) { delete st.dooms[b.doomId]; delete st.teams[b.doomId]; return {}; },
     'team-save': function (b) {
@@ -228,6 +236,14 @@
       emit(post(s)); return { app: clone(s.apps.teams[cap.team.id]), again: again };
     },
     'scrim-team-cancel': function (b) { var d = st.dooms[b.doomId], s = st.scrims[d.id][b.scrimId], cap = capOf(d); delete s.apps.teams[cap.team.id]; emit(post(s)); return {}; },
+    'scrim-rooms': function (b) {
+      var s = st.scrims[b.doomId][b.scrimId], d = st.dooms[b.doomId];
+      if (s.status !== 'matched') err('성사된 스크림에서만 방을 만들 수 있어요');
+      if (!d.scrimVoiceCategoryId) err('멸망전 설정에서 "스크림 음성 채팅방 카테고리"를 먼저 골라 달라고 관리자에게 알려 주세요');
+      s.rooms = [{ key: 'lobby', id: 'r1', name: '[스크림] ' + s.teamName + ' vs ' + s.match.name + ' 대기실', url: '' }, { key: 'host', id: 'r2', name: s.teamName, url: '' }, { key: 'opp', id: 'r3', name: s.match.name, url: '' }];
+      return { rooms: clone(s.rooms) };
+    },
+    'scrim-end': function (b) { var s = st.scrims[b.doomId][b.scrimId]; if (s.status !== 'matched') err('성사된 스크림만 종료할 수 있어요'); var n = (s.rooms || []).length; s.status = 'ended'; s.endedAt = Date.now(); s.rooms = null; return { deleted: n }; },
     'scrim-match': function (b) {
       var s = st.scrims[b.doomId][b.scrimId], match;
       if (b.type === 'team') { var a = s.apps.teams[b.appId]; match = { type: 'team', name: a.teamName, color: a.teamColor, captain: a.captain, roster: a.roster, total: a.total }; }
@@ -247,7 +263,7 @@
   function soloApply(sid, lane) {
     var s = st.scrims.d1[sid], u = me(); if (!u) err('디스코드 로그인이 필요해요');
     if (s.status !== 'open') err('이미 성사된 스크림이에요');
-    if (Object.values(s.roster).some(function (m) { return m.did === u.did; })) err('이 스크림 팀 로스터에 있어서 개인 신청은 할 수 없어요');
+    if (Object.values(s.roster).some(function (m) { return m.did === u.did; })) err('상대 팀(이 스크림을 연 팀) 로스터에 있어서 개인 신청은 할 수 없어요');
     var moved = ''; LANES.forEach(function (l) { if (l !== lane && s.apps.solo[l] && s.apps.solo[l][u.did]) { delete s.apps.solo[l][u.did]; moved = l; } });
     (s.apps.solo[lane] = s.apps.solo[lane] || {})[u.did] = Object.assign(mem(u, lane), { at: Date.now() });
     emit(post(s)); return { moved: moved };

@@ -3748,7 +3748,7 @@ body:has(#btn-back.visible) #fab-trigger,body:has(#btn-back.visible) #fab-menu{d
   <label class="cm-official-toggle"><input type="checkbox" id="cm-official" onchange="_updateOfficialPreview(this.checked)"><span class="cm-official-toggle-slider"></span></label>
   <span style="font-size:12px;color:var(--text-muted);">공식 커뮤니티로 지정</span>
   <span class="official-badge" id="cm-official-preview" style="display:none;">공식</span>
-</div></div></details><details class="cm-sec" data-sec="discord"><summary><span class="cm-sec-ico">🤖</span><span class="cm-sec-txt"><span class="cm-sec-title">디스코드 봇 · 포럼</span><span class="cm-sec-desc">봇 연동 서버 · 내전 포스트 포럼 · 자동 공유 채널</span></span><span class=cm-sec-count></span><span class="cm-sec-chev">›</span></summary><div class="cm-sec-body"><div class="cm-field"><label class="cm-lbl">디스코드 서버 ID <span class="cm-sub">(봇 연동용)</span></label><input class="form-input" type="text" id="cm-discord-server-id" placeholder="예) 1499401481097449636" style="border-color:rgba(88,101,242,.3);"><span class="cm-hint">디스코드 봇 /내전참가 커맨드 연동에 사용됩니다. 서버 우클릭 → ID 복사</span></div><div class="cm-field"><label class="cm-lbl">⚔️ 내전 포럼 채널 ID <span class="cm-sub">(내전 생성 시 포럼 포스트 자동 등록)</span></label><input class="form-input" type="text" id="cm-discord-forum-channel" placeholder="예) 1234567890123456789" style="border-color:rgba(88,101,242,.3);"><span class="cm-hint">📋 내전이 생성될 때마다 해당 포럼 채널에 포스트가 자동으로 올라갑니다. 포럼 채널 우클릭 → ID 복사</span></div><div class="cm-field"><label class="cm-lbl">❄️ 칼바람 내전 포럼 채널 ID <span class="cm-sub">(선택)</span></label><input class="form-input" type="text" id="cm-discord-aram-forum-channel" placeholder="예) 1234567890123456789" style="border-color:rgba(125,211,252,.3);"><span class="cm-hint">1단계에서 칼바람을 ON 하면 내전 포럼의 포스트를 지우고 이 채널에 새로 올립니다. OFF 하면 다시 내전 포럼으로 옮깁니다.</span></div><div class="cm-field"><label class="cm-lbl">🔧 관리 메뉴 역할 ID <span class="cm-sub">(여러 개 가능)</span></label><div id="cm-admin-roles" class="cm-promo-roles"></div><button type="button" class="cm-promo-add" onclick="_cmAdminRoleAdd()">＋ 역할 추가</button><span class="cm-hint">내전 포스트의 "🔧 관리 메뉴" 버튼은 이 역할을 가진 사람만 열 수 있습니다 (본인 화면에만 내전 쫑 버튼이 보임). 서버 설정 → 역할 → 역할 우클릭 → ID 복사</span></div><div class="cm-field"><label class="cm-lbl">🎮 디스코드 내전 기록 채널 ID <span class="cm-sub">(내전 결과 자동 공유 · 4단계 팀 정보 자동 전송)</span> <button type="button" onclick="openDiscordGuideModal()" style="width:16px;height:16px;border-radius:50%;border:1px solid #7289DA;background:rgba(88,101,242,.15);color:#7289DA;font-size:9px;font-weight:700;cursor:pointer;line-height:1;padding:0;vertical-align:middle;flex-shrink:0;">?</button></label><input class="form-input" type="text" id="cm-discord-channel" placeholder="예) 1234567890123456789" style="border-color:rgba(88,101,242,.3);"><span class="cm-hint">값이 있으면 3단계 → 4단계로 넘어갈 때 룽잉봇이 팀 정보를 이 채널에 자동으로 올립니다. 3단계로 돌아갔다가 다시 4단계로 오면 올린 메시지를 새 팀 정보로 수정합니다.</span></div><div class="cm-field"><label class="cm-lbl">🔨 경매 어시스트 채널 ID <span class="cm-sub">(낙찰 시 자동 전송)</span></label><input class="form-input" type="text" id="cm-auction-assist-channel" placeholder="예) 1234567890123456789" style="border-color:rgba(88,101,242,.3);"></div></div></details><details class="cm-sec" data-sec="alarm"><summary><span class="cm-sec-ico">🔔</span><span class="cm-sec-txt"><span class="cm-sec-title">내전 시작 알림</span><span class="cm-sec-desc">시작 1시간 전 자동 알림 채널 · 문구</span></span><span class=cm-sec-count></span><span class="cm-sec-chev">›</span></summary><div class="cm-sec-body"><div class="cm-field"><label class="cm-lbl">디스코드 내전 알림 채널 ID <span class="cm-sub">(시작 1시간 전 자동 알림)</span></label><input class="form-input" type="text" id="cm-discord-alarm-channel" placeholder="예) 1234567890123456789" style="border-color:rgba(88,101,242,.3);"></div><div style="display:flex;flex-direction:column;gap:6px;background:rgba(88,101,242,.04);border:1px solid rgba(88,101,242,.12);border-radius:4px;padding:.6rem .75rem;">
+</div></div></details><details class="cm-sec" data-sec="discord"><summary><span class="cm-sec-ico">🤖</span><span class="cm-sec-txt"><span class="cm-sec-title">디스코드 봇 · 포럼</span><span class="cm-sec-desc">봇 연동 서버 · 내전 포스트 포럼 · 자동 공유 채널</span></span><span class=cm-sec-count></span><span class="cm-sec-chev">›</span></summary><div class="cm-sec-body"><div class="cm-field"><label class="cm-lbl">디스코드 서버 ID <span class="cm-sub">(봇 연동용)</span></label><input class="form-input" type="text" id="cm-discord-server-id" placeholder="예) 1499401481097449636" style="border-color:rgba(88,101,242,.3);"><span class="cm-hint">디스코드 봇 /내전참가 커맨드 연동에 사용됩니다. 서버 우클릭 → ID 복사</span></div><div class="cm-field"><label class="cm-lbl">⚔️ 내전 포럼 채널 ID <span class="cm-sub">(내전 생성 시 포럼 포스트 자동 등록)</span></label><input class="form-input" type="text" id="cm-discord-forum-channel" placeholder="예) 1234567890123456789" style="border-color:rgba(88,101,242,.3);"><span class="cm-hint">📋 내전이 생성될 때마다 해당 포럼 채널에 포스트가 자동으로 올라갑니다. 포럼 채널 우클릭 → ID 복사</span></div><div class="cm-field"><label class="cm-lbl">❄️ 칼바람 내전 포럼 채널 ID <span class="cm-sub">(선택)</span></label><input class="form-input" type="text" id="cm-discord-aram-forum-channel" placeholder="예) 1234567890123456789" style="border-color:rgba(125,211,252,.3);"><span class="cm-hint">1단계에서 칼바람을 ON 하면 내전 포럼의 포스트를 지우고 이 채널에 새로 올립니다. OFF 하면 다시 내전 포럼으로 옮깁니다.</span></div><div class="cm-field"><label class="cm-lbl">🔧 관리 메뉴 역할 ID <span class="cm-sub">(여러 개 가능)</span></label><div id="cm-admin-roles" class="cm-promo-roles"></div><button type="button" class="cm-promo-add" onclick="_cmAdminRoleAdd()">＋ 역할 추가</button><span class="cm-hint">내전 포스트의 "🔧 관리 메뉴" 버튼은 이 역할을 가진 사람만 열 수 있습니다 (본인 화면에만 내전 쫑 버튼이 보임). 서버 설정 → 역할 → 역할 우클릭 → ID 복사</span></div><div class="cm-field"><label class="cm-lbl">🎮 디스코드 내전 기록 채널 ID <span class="cm-sub">(내전 결과 자동 공유 · 4단계 팀 정보 자동 전송)</span> <button type="button" onclick="openDiscordGuideModal()" style="width:16px;height:16px;border-radius:50%;border:1px solid #7289DA;background:rgba(88,101,242,.15);color:#7289DA;font-size:9px;font-weight:700;cursor:pointer;line-height:1;padding:0;vertical-align:middle;flex-shrink:0;">?</button></label><input class="form-input" type="text" id="cm-discord-channel" placeholder="예) 1234567890123456789" style="border-color:rgba(88,101,242,.3);"><span class="cm-hint">값이 있으면 3단계 → 4단계로 넘어갈 때 룽잉봇이 팀 정보를 이 채널에 자동으로 올립니다. 3단계로 돌아갔다가 다시 4단계로 오면 올린 메시지를 새 팀 정보로 수정합니다.</span></div><div class="cm-field"><label class="cm-lbl">❄️ 칼바람 내전 기록 채널 ID <span class="cm-sub">(선택)</span></label><input class="form-input" type="text" id="cm-discord-aram-channel" placeholder="예) 1234567890123456789" style="border-color:rgba(125,211,252,.3);"><span class="cm-hint">2단계에서 "칼바람 내전"으로 진행한 내전은 4단계 팀 정보를 위 내전 기록 채널 대신 이 채널에 올립니다. 비워 두면 내전 기록 채널에 올립니다.</span></div><div class="cm-field"><label class="cm-lbl">🔨 경매 어시스트 채널 ID <span class="cm-sub">(낙찰 시 자동 전송)</span></label><input class="form-input" type="text" id="cm-auction-assist-channel" placeholder="예) 1234567890123456789" style="border-color:rgba(88,101,242,.3);"></div></div></details><details class="cm-sec" data-sec="alarm"><summary><span class="cm-sec-ico">🔔</span><span class="cm-sec-txt"><span class="cm-sec-title">내전 시작 알림</span><span class="cm-sec-desc">시작 1시간 전 자동 알림 채널 · 문구</span></span><span class=cm-sec-count></span><span class="cm-sec-chev">›</span></summary><div class="cm-sec-body"><div class="cm-field"><label class="cm-lbl">디스코드 내전 알림 채널 ID <span class="cm-sub">(시작 1시간 전 자동 알림)</span></label><input class="form-input" type="text" id="cm-discord-alarm-channel" placeholder="예) 1234567890123456789" style="border-color:rgba(88,101,242,.3);"></div><div style="display:flex;flex-direction:column;gap:6px;background:rgba(88,101,242,.04);border:1px solid rgba(88,101,242,.12);border-radius:4px;padding:.6rem .75rem;">
     <div style="display:flex;align-items:center;gap:8px;">
       <input type="checkbox" id="cm-alarm-everyone" style="width:14px;height:14px;accent-color:#7289DA;cursor:pointer;">
       <label for="cm-alarm-everyone" style="font-size:11px;color:var(--text-muted);cursor:pointer;">@everyone 태그 사용 <span style="color:var(--text-muted);font-size:9px;">(알림 전송 시 전체 멘션)</span></label>
@@ -12377,6 +12377,8 @@ document.getElementById('cm-name').value = '';
 document.getElementById('cm-desc').value = '';
 const dcInput2 = document.getElementById('cm-discord-channel');
 if (dcInput2) dcInput2.value = '';
+const aramCh2 = document.getElementById('cm-discord-aram-channel');
+if (aramCh2) aramCh2.value = '';
 const subThInput2 = document.getElementById('cm-sub-lane-threshold');
 if (subThInput2) subThInput2.value = '';
 _cmPromoRolesRender([]);
@@ -12421,6 +12423,8 @@ const forumInput = document.getElementById('cm-discord-forum-channel');
 if (forumInput) forumInput.value = c.discordForumChannelId || '';
 const aramForumInput = document.getElementById('cm-discord-aram-forum-channel');
 if (aramForumInput) aramForumInput.value = c.discordAramForumChannelId || '';
+const aramChInput = document.getElementById('cm-discord-aram-channel');
+if (aramChInput) aramChInput.value = c.discordAramChannelId || '';
 _cmPromoRolesRender(_promoRolesOf(c));
 _cmAdminRolesRender(c.discordAdminRoleIds);
 const promoChInput = document.getElementById('cm-discord-promo-channel');
@@ -12513,6 +12517,7 @@ try {
       discordServerId: discordServerId || null,
       discordForumChannelId: discordForumChannelId || null,
       discordAramForumChannelId: (document.getElementById('cm-discord-aram-forum-channel')?.value || '').trim() || null,
+      discordAramChannelId: (document.getElementById('cm-discord-aram-channel')?.value || '').trim() || null,   // 칼바람 내전(2단계) 기록 채널
       discordPromoRoles: _cmPromoRolesCollect(),
       discordPromoRoleId: null,
       discordAdminRoleIds: _cmAdminRolesCollect(),
@@ -15939,6 +15944,7 @@ _localVersion = remote._version || 0;
 var _ru = remote._updatedAt || 0;
 window._mSeen = window._mSeen || {};
 var _staleSnap = !!(_ru && window._mSeen[_ru] && _ru !== window._mLatestAt);
+var _remoteFull = remote;   // 비회원 관전 화면은 항상 원본 스냅샷 전체로 그려요 (단계 · 경매 정보가 빠지면 호가 버튼 · 잔여 포인트가 사라짐)
 if (_staleSnap) {
   console.warn('[sync] 예전 스냅샷 재전달 — 팀 · 대진표 정보는 로컬 유지', _ru, window._mLatestAt);
   remote = Object.assign({}, remote);
@@ -16040,8 +16046,8 @@ _rerenderCurrentScreen();
     }
   }
 })();
-// 유저 뷰도 실시간 업데이트
-if (currentScreen === 'screen-v') openUserView(remote);
+// 유저 뷰도 실시간 업데이트 (예전 스냅샷 재전달이면 지금 화면 유지)
+if (currentScreen === 'screen-v' && !_staleSnap) openUserView(_remoteFull);
 showSyncToast();
 }
 function _rerenderCurrentScreen() {
