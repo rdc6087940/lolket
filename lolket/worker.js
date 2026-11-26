@@ -713,6 +713,7 @@ const _WORKER = {
     }
     // ── 어드민 API ──
     if (path === '/admin-login' && request.method === 'POST') return handleLogin(request, env);
+    if (path === '/acct-check' && request.method === 'POST') return handleAcctCheck(request, env);   // 계정검사 (관리자 콘솔)
     if (path === '/system-connect-write' && request.method === 'POST') return handleConnectWrite(request, env);
     if (path === '/system-connect-cache-write' && request.method === 'POST') return handleConnectCacheWrite(request, env);
     if (path === '/admin-list' && request.method === 'POST') return handleAdminList(request, env);
@@ -1070,6 +1071,10 @@ const _WORKER = {
     // 밸투라고소: 진행자(시작·재전송·강제 집행·초기화) / 참여자(상태·동의·출석·투표·후보 제출·최종 확정)
     if (path === '/doom' && request.method === 'POST') {
       return handleDoom(request, env);
+    }
+    // 멸망전 링크 미리보기: 봇에게는 OG, 사람은 멸망전 페이지로 바로 이동
+    if (path === '/doom-og' && (request.method === 'GET' || request.method === 'HEAD')) {
+      return handleDoomOg(request, env);
     }
     if (path === '/balvote' && request.method === 'POST') {
       return handleBalVote(request, env);
@@ -2790,6 +2795,13 @@ async function handleDbWrite(request, env, ctx) {
     }
     if (/^communities\/[^/]+\/matches\/[^/]+\/balVote(\/|$)/.test(dbPath)) return json({ ok: false, error: '투표 데이터는 직접 쓸 수 없습니다' }, 403);
 
+    // ── 3·4단계 팀 정보 보호 ──
+    let _guarded = false;
+    if (isMatchRoot && writeData && typeof writeData === 'object' && !Array.isArray(writeData)) {
+      const g = await _matchTeamGuard(dbUrl, authQ, dbPath, writeData, session, request);
+      writeData = g.data; _guarded = g.guarded;
+    }
+
     const res = await fetch(fullUrl, {
       method: httpMethod,
       headers: { 'Content-Type': 'application/json' },
@@ -2798,6 +2810,14 @@ async function handleDbWrite(request, env, ctx) {
     const resText = await res.text();
     if (!res.ok) return json({ ok: false, error: 'DB 쓰기 실패: ' + res.status + ' ' + resText.slice(0,200) }, 500);
     if (resText === 'null') return json({ ok: false, error: 'Firebase Rules에 의해 거부됨' }, 403);
+    if (isMatchRoot) {
+      // 클라이언트가 "내가 본 최신 상태"를 알 수 있게 저장된 _updatedAt을 돌려줘요
+      const _upAt = writeData && writeData._updatedAt || null;
+      if (_guarded) return json({ ok: true, guarded: true, updatedAt: _upAt });
+      const _ft0 = _forumMembersTarget(dbPath, data);
+      if (_ft0 && ctx) ctx.waitUntil(updateForumPostMembers(_ft0.cid, _ft0.matchId, env));
+      return json({ ok: true, updatedAt: _upAt });
+    }
 
     // 내전 멤버 변경 시 포럼 포스트 참가자 현황 댓글 갱신
     const _ft = _forumMembersTarget(dbPath, data);
@@ -2825,6 +2845,49 @@ async function handleDbWrite(request, env, ctx) {
 
     return json({ ok: true });
   } catch(e) { return json({ ok: false, error: e.message }, 500); }
+}
+
+// ══ 내전 3·4단계 팀 정보 보호 ══
+// 원인: 내전 스냅샷은 통째로 저장(PATCH)돼서, 예전 상태를 들고 있는 다른 창 · 기기(1·2단계 화면, 팀이 빈 상태)가
+// 저장하면 지금 DB의 팀 정보가 빈 값으로 덮여 사라질 수 있어요.
+// 방지: 저장하려는 값이 팀을 "비우는" 경우에만 DB를 확인해서,
+//   ① 사용자가 직접 초기화한 게 아니고(_teamsClearedAt이 새로 바뀌지 않음)
+//   ② 저장하는 쪽이 최신 상태를 못 본 상태이거나(_baseUpdatedAt < DB _updatedAt), DB는 3단계 이상인데 1·2단계 화면에서 저장한 경우
+// 팀 · 단계 관련 값은 저장하지 않고 DB 값을 그대로 둬요. (멤버 등 나머지는 그대로 저장)
+// 막은 기록은 team_guard_log, 정상적으로 비워질 때는 직전 팀 정보를 team_backups에 남겨요.
+function _tgArr(v) { return Array.isArray(v) ? v.filter(Boolean) : (v && typeof v === 'object' ? Object.values(v).filter(Boolean) : []); }
+function _tgTeamCnt(v) { return _tgArr(v).reduce((n, t) => n + _tgArr(t && t.members).length, 0); }
+function _tgLaneCnt(v) { return _tgArr(v).reduce((n, t) => n + Object.values((t && t.slots) || {}).filter(Boolean).length, 0); }
+const _TG_STAGE_KEYS = ['_teams', '_laneTeams', '_matchType', '_currentScreen', 'status', '_normalPool', '_auctionPool', '_failedMembers', '_onSaleMember', '_auctionOrder', '_bracketRounds', '_resultMatches', '_extraMatches', '_teamsClearedAt'];
+async function _matchTeamGuard(dbUrl, authQ, dbPath, data, session, request) {
+  const out = Object.assign({}, data);
+  const base = Number(out._baseUpdatedAt) || 0, hasBase = '_baseUpdatedAt' in out;
+  delete out._baseUpdatedAt;   // 판단용 값이라 저장하지 않아요
+  const wipeT = '_teams' in out && _tgTeamCnt(out._teams) === 0;
+  const wipeL = '_laneTeams' in out && _tgLaneCnt(out._laneTeams) === 0;
+  if (!wipeT && !wipeL) return { data: out, guarded: false };
+  const rd = async (k) => { try { const r = await fetch(`${dbUrl}/${dbPath}/${k}.json${authQ}`); return r.ok ? await r.json() : null; } catch (e) { return null; } };
+  const [dT, dL, dUp, dClr, dScr, dSt] = await Promise.all(['_teams', '_laneTeams', '_updatedAt', '_teamsClearedAt', '_currentScreen', 'status'].map(rd));
+  const lostT = wipeT && _tgTeamCnt(dT) > 0, lostL = wipeL && _tgLaneCnt(dL) > 0;
+  if (!lostT && !lostL) return { data: out, guarded: false };
+  const intent = (Number(out._teamsClearedAt) || 0) > (Number(dClr) || 0);
+  const stale = hasBase && (Number(dUp) || 0) > base;
+  const inScr = String(out._currentScreen || ''), dbScr = String(dScr || '');
+  const regress = /^screen-(3|4|5)/.test(dbScr) && /^screen-(0|1|2)/.test(inScr);
+  const info = { at: Date.now(), who: session ? (session.id || '') + '(' + (session.role || '') + ')' : '', ua: String(request.headers.get('User-Agent') || '').slice(0, 160),
+    inScreen: inScr, inStatus: out.status || null, dbScreen: dbScr, dbStatus: dSt || null, base, dbUpdatedAt: dUp || null, stale, regress, intent,
+    teamMembers: _tgTeamCnt(dT), laneMembers: _tgLaneCnt(dL) };
+  const m = dbPath.match(/^communities\/([^/]+)\/matches\/([^/]+)$/), key = m ? m[1] + '/' + m[2] : 'x';
+  if (!intent && (stale || regress)) {
+    _TG_STAGE_KEYS.forEach(k => { delete out[k]; });
+    fetch(`${dbUrl}/team_guard_log/${key}/${info.at}.json${authQ}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(info) }).catch(() => {});
+    console.warn('[team-guard] 팀 정보 덮어쓰기 차단', key, JSON.stringify(info));
+    return { data: out, guarded: true };
+  }
+  // 정상적으로 비우는 경우(직접 초기화 등)도 직전 팀 정보를 남겨 둬요
+  fetch(`${dbUrl}/team_backups/${key}.json${authQ}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(Object.assign({ _teams: dT || null, _laneTeams: dL || null }, info)) }).catch(() => {});
+  return { data: out, guarded: false };
 }
 
 async function sendApplyEmail(env, data) {
@@ -3237,6 +3300,149 @@ async function handleSummoner(url, key) {
       soloLP: solo?.leaguePoints || 0, soloTier: solo?.tier || 'UNRANKED', soloDivision: solo?.rank || '',
       topChampions: topChamps.map(c => ({ championId: c.championId, masteryLevel: c.championLevel, masteryPoints: c.championPoints })) });
   } catch(e) { return json({ error: '서버 오류', detail: e.message }, 500); }
+}
+
+// ══ 계정검사 (관리자 콘솔): 한 계정의 최근 전적 + 타임라인을 모아 대리 · 위장티어 · 생배 정황을 찾는 데이터 ══
+//   POST /acct-check { token, masterToken, action }
+//     lookup  { riotId:'닉#태그', count }  → 계정 · 소환사 · 랭크 · 숙련도 · 매치 ID 목록
+//     matches { puuid, ids[≤8], timeline } → 판마다 분석용 요약(+타임라인 습관). 라이엇 429면 retryAfter 와 남은 ids 를 돌려줘요
+async function _acAuth(env, token, masterToken) {
+  const s = getSession(token);
+  if (s && (s.role === 'master' || s.role === 'admin')) return s;
+  const mt = masterToken || token;
+  if (mt && String(mt).startsWith('master:')) {
+    try {
+      const parts = String(mt).split(':'), id = parts[1], hash = parts.slice(2).join(':');
+      const authQ = env.FB_DB_SECRET ? '?auth=' + env.FB_DB_SECRET : '';
+      const r = await fetch(`${env.FB_DATABASE_URL}/superadmin.json${authQ}`);
+      const sa = r.ok ? await r.json() : null;
+      if (sa && sa.id === id) {
+        const withSalt = await sha256(sa.password + (env.PW_SALT || 'lolket_v1'));
+        if (sa.password === hash || withSalt === hash) return { id, role: 'master' };
+      }
+    } catch (e) {}
+  }
+  return null;
+}
+const _AC_KEEP_CH = ['soloKills', 'laneMinionsFirst10Minutes', 'jungleCsBefore10Minutes', 'maxCsAdvantageOnLaneOpponent', 'maxLevelLeadLaneOpponent', 'skillshotsHit', 'skillshotsDodged',
+  'killParticipation', 'damagePerMinute', 'goldPerMinute', 'visionScorePerMinute', 'controlWardsPlaced', 'wardTakedowns', 'teamDamagePercentage', 'turretPlatesTaken',
+  'earlyLaningPhaseGoldExpAdvantage', 'laningPhaseGoldExpAdvantage', 'abilityUses', 'enemyJungleMonsterKills', 'initialCrabCount', 'scuttleCrabKills', 'takedownsFirstXMinutes',
+  'effectiveHealAndShielding', 'outnumberedKills', 'bountyGold', 'epicMonsterSteals', 'dodgeSkillShotsSmallWindow', 'landSkillShotsEarlyGame', 'killsNearEnemyTurret', 'deathsByEnemyChamps'];
+const _AC_PINGS = ['allInPings', 'assistMePings', 'basicPings', 'commandPings', 'dangerPings', 'enemyMissingPings', 'enemyVisionPings', 'getBackPings', 'holdPings', 'needVisionPings', 'onMyWayPings', 'pushPings', 'visionClearedPings', 'retreatPings'];
+function _acCompact(m, tl, puuid) {
+  const info = m && m.info; if (!info) return null;
+  const ps = info.participants || [];
+  const me = ps.find(p => p.puuid === puuid); if (!me) return null;
+  const dur = info.gameDuration > 10000 ? Math.round(info.gameDuration / 1000) : info.gameDuration;
+  const team = ps.filter(p => p.teamId === me.teamId), foe = ps.filter(p => p.teamId !== me.teamId);
+  const teamKills = team.reduce((a, p) => a + (p.kills || 0), 0), teamDmg = team.reduce((a, p) => a + (p.totalDamageDealtToChampions || 0), 0);
+  const opp = me.teamPosition ? foe.find(p => p.teamPosition === me.teamPosition) : null;
+  const perks = me.perks || {}, st = perks.styles || [];
+  const ch = {}; const C = me.challenges || {};
+  _AC_KEEP_CH.forEach(k => { if (C[k] != null) ch[k] = typeof C[k] === 'number' ? Math.round(C[k] * 1000) / 1000 : C[k]; });
+  const pings = {}; _AC_PINGS.forEach(k => { if (me[k] != null) pings[k.replace('Pings', '')] = me[k]; });
+  const g = {
+    id: m.metadata.matchId, t: info.gameCreation, end: info.gameEndTimestamp || null, dur, q: info.queueId, ver: String(info.gameVersion || '').split('.').slice(0, 2).join('.'),
+    win: !!me.win, remake: !!me.gameEndedInEarlySurrender, ff: !!me.gameEndedInSurrender,
+    champ: me.championName, champId: me.championId, pos: me.teamPosition || me.individualPosition || '', lvl: me.champLevel,
+    k: me.kills, d: me.deaths, a: me.assists, cs: (me.totalMinionsKilled || 0) + (me.neutralMinionsKilled || 0), gold: me.goldEarned,
+    dmg: me.totalDamageDealtToChampions, taken: me.totalDamageTaken, mitig: me.damageSelfMitigated, vision: me.visionScore,
+    wp: me.wardsPlaced, wk: me.wardsKilled, cw: me.visionWardsBoughtInGame, obj: me.damageDealtToObjectives, heal: me.totalHeal,
+    fb: !!(me.firstBloodKill || me.firstBloodAssist), dk: me.doubleKills, tk: me.tripleKills, qk: me.quadraKills, pk: me.pentaKills,
+    teamKills, teamDmg, s1: me.summoner1Id, s2: me.summoner2Id, sc: [me.summoner1Casts || 0, me.summoner2Casts || 0],
+    casts: [me.spell1Casts || 0, me.spell2Casts || 0, me.spell3Casts || 0, me.spell4Casts || 0],
+    items: [me.item0, me.item1, me.item2, me.item3, me.item4, me.item5, me.item6],
+    rune: { key: st[0] && st[0].selections && st[0].selections[0] ? st[0].selections[0].perk : 0, p: st[0] ? st[0].style : 0, s: st[1] ? st[1].style : 0,
+      sel: st.flatMap(x => (x.selections || []).map(y => y.perk)), sh: perks.statPerks ? [perks.statPerks.offense, perks.statPerks.flex, perks.statPerks.defense] : [] },
+    pings, ch, sumLvl: me.summonerLevel || null,
+    opp: opp ? { champ: opp.championName, k: opp.kills, d: opp.deaths, a: opp.assists, cs: (opp.totalMinionsKilled || 0) + (opp.neutralMinionsKilled || 0), gold: opp.goldEarned, dmg: opp.totalDamageDealtToChampions, sumLvl: opp.summonerLevel || null } : null,
+    mates: team.filter(p => p.puuid !== puuid).map(p => ({ p: p.puuid, n: (p.riotIdGameName || p.summonerName || '') + (p.riotIdTagline ? '#' + p.riotIdTagline : ''), c: p.championName, pos: p.teamPosition })),
+    tl: null,
+  };
+  // 타임라인: 스킬 순서 · 구매 순서 · 되돌리기 · 와드 · 10/15분 지표 · 초반 동선
+  const ti = tl && tl.info;
+  if (ti && Array.isArray(ti.frames)) {
+    const pidOf = {}; (ti.participants || []).forEach(x => { pidOf[x.puuid] = x.participantId; });
+    const pid = pidOf[puuid] || ps.indexOf(me) + 1;
+    const opid = opp ? (pidOf[opp.puuid] || ps.indexOf(opp) + 1) : null;
+    const skills = [], buys = [], wards = {}, early = [];
+    let undo = 0, sold = 0, firstWard = null, deaths10 = 0, kills10 = 0, trinketSwap = null;
+    ti.frames.forEach(fr => (fr.events || []).forEach(e => {
+      const ts = Math.round((e.timestamp || 0) / 1000);
+      if (e.type === 'SKILL_LEVEL_UP' && e.participantId === pid && skills.length < 18) skills.push(e.skillSlot);
+      else if (e.type === 'ITEM_PURCHASED' && e.participantId === pid) { if (buys.length < 60) buys.push([e.itemId, ts]); }
+      else if (e.type === 'ITEM_UNDO' && e.participantId === pid) undo++;
+      else if (e.type === 'ITEM_SOLD' && e.participantId === pid) { sold++; if ((e.itemId === 3340) && trinketSwap == null) trinketSwap = ts; }
+      else if (e.type === 'WARD_PLACED' && e.creatorId === pid) { const k = e.wardType || 'X'; wards[k] = (wards[k] || 0) + 1; if (firstWard == null && k !== 'UNDEFINED') firstWard = ts; }
+      else if (e.type === 'CHAMPION_KILL' && ts <= 600) { if (e.victimId === pid) deaths10++; if (e.killerId === pid) kills10++; }
+    }));
+    const fAt = (min, id) => { const fr = ti.frames[min]; const p = fr && fr.participantFrames && fr.participantFrames[String(id)]; return p ? { cs: (p.minionsKilled || 0) + (p.jungleMinionsKilled || 0), g: p.totalGold, xp: p.xp, lv: p.level, x: p.position && p.position.x, y: p.position && p.position.y } : null; };
+    const at10 = fAt(10, pid), at15 = fAt(15, pid), o10 = opid ? fAt(10, opid) : null, o15 = opid ? fAt(15, opid) : null;
+    for (let mi = 1; mi <= 4; mi++) { const f = fAt(mi, pid); if (f) early.push([f.x, f.y]); }
+    const firstBack = (buys.find(b => b[1] > 90) || [])[1] || null;
+    g.tl = { skills: skills.join(''), buys, undo, sold, wards, firstWard, firstBack, deaths10, kills10, trinketSwap, early,
+      at10, at15, d10: at10 && o10 ? { cs: at10.cs - o10.cs, g: at10.g - o10.g, xp: at10.xp - o10.xp } : null, d15: at15 && o15 ? { cs: at15.cs - o15.cs, g: at15.g - o15.g, xp: at15.xp - o15.xp } : null };
+  }
+  return g;
+}
+async function handleAcctCheck(request, env) {
+  let body; try { body = await request.json(); } catch (e) { return json({ ok: false, error: '잘못된 요청' }, 400); }
+  const sess = await _acAuth(env, body.token, body.masterToken);
+  if (!sess) return json({ ok: false, error: '관리자 로그인이 필요해요' }, 401);
+  const key = env.RIOT_API_KEY; if (!key) return json({ ok: false, error: 'RIOT_API_KEY 가 없어요' }, 500);
+  const R = (u) => fetch(u, { headers: { 'X-Riot-Token': key } });
+  const retryOf = (r) => Math.max(1, parseInt(r.headers.get('Retry-After') || '10', 10) || 10);
+  if (body.action === 'lookup') {
+    const raw = String(body.riotId || '').trim(); const ix = raw.lastIndexOf('#');
+    if (ix < 1) return json({ ok: false, error: '닉네임#태그 형식으로 입력해 주세요' }, 400);
+    const name = raw.slice(0, ix).trim(), tag = raw.slice(ix + 1).trim();
+    const count = Math.max(10, Math.min(200, parseInt(body.count, 10) || 100));
+    const ar = await R(`https://asia.api.riotgames.com/riot/account/v1/accounts/by-riot-id/${encodeURIComponent(name)}/${encodeURIComponent(tag)}`);
+    if (ar.status === 429) return json({ ok: false, retryAfter: retryOf(ar), error: '라이엇 API 호출 한도에 걸렸어요' }, 429);
+    if (!ar.ok) return json({ ok: false, error: ar.status === 404 ? '계정을 찾지 못했어요' : '계정 조회 실패 (' + ar.status + ')' }, ar.status === 404 ? 404 : 502);
+    const acc = await ar.json(), pu = encodeURIComponent(acc.puuid);
+    const [sr, lr, mr] = await Promise.all([
+      R(`https://kr.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/${pu}`),
+      R(`https://kr.api.riotgames.com/lol/league/v4/entries/by-puuid/${pu}`),
+      R(`https://kr.api.riotgames.com/lol/champion-mastery/v4/champion-masteries/by-puuid/${pu}`),
+    ]);
+    const summ = sr.ok ? await sr.json() : null, leagues = lr.ok ? await lr.json() : [], mast = mr.ok ? await mr.json() : [];
+    // 매치 ID: 솔로랭크 먼저, 모자라면 일반(소환사의 협곡)으로 채워요 (자유랭크는 안 써요)
+    const idsOf = async (q, start, n) => { const r = await R(`https://asia.api.riotgames.com/lol/match/v5/matches/by-puuid/${pu}/ids?${q}start=${start}&count=${n}`); return r.ok ? await r.json() : []; };
+    let ids = [];
+    for (let st = 0; st < count; st += 100) { const got = await idsOf('queue=420&', st, Math.min(100, count - st)); ids = ids.concat(got); if (got.length < Math.min(100, count - st)) break; }
+    let extra = [];
+    if (ids.length < count) extra = await idsOf('type=normal&', 0, Math.min(100, count - ids.length));
+    const seen = {}; const all = ids.concat(extra).filter(x => !seen[x] && (seen[x] = 1));
+    all.sort((a, b) => Number(String(b).split('_')[1]) - Number(String(a).split('_')[1]));
+    return json({ ok: true, account: { puuid: acc.puuid, name: acc.gameName, tag: acc.tagLine },
+      summoner: summ ? { level: summ.summonerLevel, icon: summ.profileIconId, revision: summ.revisionDate } : null,
+      leagues: (leagues || []).map(e => ({ q: e.queueType, tier: e.tier, rank: e.rank, lp: e.leaguePoints, w: e.wins, l: e.losses, hot: !!e.hotStreak, fresh: !!e.freshBlood, vet: !!e.veteran })),
+      mastery: (mast || []).map(x => ({ c: x.championId, p: x.championPoints, lv: x.championLevel, last: x.lastPlayTime })),
+      ids: all.slice(0, count), rankedCount: ids.length });
+  }
+  if (body.action === 'matches') {
+    const puuid = String(body.puuid || ''); if (!puuid) return json({ ok: false, error: 'puuid 가 없어요' }, 400);
+    const ids = (Array.isArray(body.ids) ? body.ids : []).map(String).filter(x => /^[A-Z0-9]+_\d+$/.test(x)).slice(0, 8);
+    const wantTl = body.timeline !== false;
+    const authQ = env.FB_DB_SECRET ? '?auth=' + env.FB_DB_SECRET : '';
+    const ck = (id) => `${env.FB_DATABASE_URL}/acct_check_cache/${id}/${puuid.replace(/[.#$\[\]\/]/g, '_')}.json${authQ}`;
+    let retryAfter = 0; const items = [], pending = [], failed = [];
+    await Promise.all(ids.map(async (id) => {
+      // 끝난 경기는 바뀌지 않아서 한 번 정리한 결과를 저장해 두고 다시 써요
+      try { const c = await fetch(ck(id)); const cv = c.ok ? await c.json() : null; if (cv && (cv.tl || !wantTl)) { items.push(cv); return; } } catch (e) {}
+      const [mr, tr] = await Promise.all([R(`https://asia.api.riotgames.com/lol/match/v5/matches/${id}`), wantTl ? R(`https://asia.api.riotgames.com/lol/match/v5/matches/${id}/timeline`) : Promise.resolve(null)]);
+      if (mr.status === 429 || (tr && tr.status === 429)) { retryAfter = Math.max(retryAfter, retryOf(mr.status === 429 ? mr : tr)); pending.push(id); return; }
+      if (!mr.ok) { failed.push(id); return; }
+      const m = await mr.json(), t = tr && tr.ok ? await tr.json() : null;
+      const g = _acCompact(m, t, puuid);
+      if (!g) { failed.push(id); return; }
+      items.push(g);
+      try { await fetch(ck(id), { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(g) }); } catch (e) {}
+    }));
+    return json({ ok: true, items, pending, failed, retryAfter });
+  }
+  return json({ ok: false, error: '알 수 없는 요청' }, 400);
 }
 
 async function handleMatch(url, key) {
@@ -4350,24 +4556,51 @@ async function _dmTable(env, cid) {
 // 연동된 사람들 + 점수 계산용 티어 (임시 → 최고 → 현재)
 async function _dmLoadPool(env, cid) {
   const { C, authQ } = _dmBase(env, cid);
-  const [profiles, temps, peaks, cur, tbl] = await Promise.all([
+  const [profiles, temps, peaks, cur, tbl, nicks, dlc] = await Promise.all([
     _dmRd(`${C}/discord_profiles.json${authQ}`), _dmRd(`${C}/temp_tiers.json${authQ}`), _dmRd(`${C}/peak_tiers_cache.json${authQ}`),
-    _dmRd(`${C}/doom_tier_cache.json${authQ}`), _dmTable(env, cid),
+    _dmRd(`${C}/doom_tier_cache.json${authQ}`), _dmTable(env, cid), _dmRd(`${C}/nickname_current.json${authQ}`), _dmRd(`${C}/doom_tier_cache_dl.json${authQ}`),
   ]);
-  const list = [];
+  const key = (n, t) => (String(n || '').trim() + '#' + String(t || '').trim()).toLowerCase();
+  // 닉네임#태그 → 딥롤 puuid (디스코드 프로필에 딥롤 puuid 가 없어도 같은 사람으로 묶으려고)
+  const dlByName = {};
+  Object.entries(nicks || {}).forEach(([dl, nt]) => { if (typeof nt === 'string' && nt.indexOf('#') > 0 && !dlByName[nt.toLowerCase()]) dlByName[nt.toLowerCase()] = dl; });
+  // 티어: 임시 → 최고 → (딥롤에서 불러온 최고/현재) → 현재 솔랭
+  const tierOf = (dl, rp, highTier) => {
+    let ti = null;
+    const tt = dl && temps ? temps[dl] : null;
+    if (tt && (ti = _dmParseTier(tt))) return { ti, src: 'temp' };
+    if (dl && peaks && peaks[dl] && (ti = _dmParseTier(peaks[dl]))) return { ti, src: 'peak' };
+    if (highTier && (ti = _dmParseTier(highTier))) return { ti, src: 'peak' };
+    const dc = dl && dlc ? dlc[dl] : null;
+    if (dc && (ti = _dmParseTier(dc))) return { ti, src: dc.src === 'cur' ? 'cur' : 'peak' };
+    const cc = rp && cur ? cur[rp.replace(/[.#$\[\]\/]/g, '_')] : null;
+    if (cc && (ti = _dmParseTier(cc))) return { ti, src: 'cur' };
+    return { ti: null, src: null };
+  };
+  const list = [], usedDl = {}, usedName = {}, usedRp = {};
   Object.entries(profiles || {}).forEach(([did, p]) => {
     if (!p || !p.riotName) return;
-    const dl = p.dlPuuid || null, rp = p.riotPuuid || null;
-    let src = null, ti = null;
-    const tt = dl && temps ? temps[dl] : null;
-    if (tt && (ti = _dmParseTier(tt))) src = 'temp';
-    if (!ti && dl && peaks && peaks[dl] && (ti = _dmParseTier(peaks[dl]))) src = 'peak';
-    if (!ti && p.highTier && (ti = _dmParseTier(p.highTier))) src = 'peak';
-    const cc = rp && cur ? cur[rp.replace(/[.#$\[\]\/]/g, '_')] : null;
-    if (!ti && cc && (ti = _dmParseTier(cc))) src = 'cur';
+    const nk = key(p.riotName, p.riotTag), rp = p.riotPuuid || null;
+    const dl = p.dlPuuid || dlByName[nk] || null;
+    // 같은 롤 계정을 여러 디스코드 계정이 등록했으면 한 번만 보여요
+    if ((dl && usedDl[dl]) || usedName[nk] || (rp && usedRp[rp])) return;
+    if (dl) usedDl[dl] = 1; usedName[nk] = 1; if (rp) usedRp[rp] = 1;
+    const { ti, src } = tierOf(dl, rp, p.highTier);
     const scores = {}; _DM_LANES.forEach(l => { scores[l] = _dmScore(tbl, ti, l); });
-    list.push({ did: String(p.discordId || did), name: p.riotName, tag: p.riotTag || '', dlPuuid: dl, riotPuuid: rp, mainLane: p.mainLane || '', subLanes: p.subLanes || [], icon: p.icon || null,
-      discordName: p.discordName || '', tier: ti ? _dmTierLabel(ti) : '', src, scores, curAt: cc && cc.at || null });
+    list.push({ did: String(p.discordId || did), dc: true, name: p.riotName, tag: p.riotTag || '', dlPuuid: dl, riotPuuid: rp, mainLane: p.mainLane || '', subLanes: p.subLanes || [], icon: p.icon || null,
+      discordName: p.discordName || '', tier: ti ? _dmTierLabel(ti) : '', src, scores, tried: !!(dl && dlc && dlc[dl]) });
+  });
+  // 디스코드 연동이 없는 커뮤니티 멤버 (nickname_current: 딥롤 puuid → 닉네임#태그)
+  Object.entries(nicks || {}).forEach(([dl, nt]) => {
+    if (!dl || typeof nt !== 'string') return;
+    const ix = nt.lastIndexOf('#'); if (ix < 1) return;
+    const nk = nt.toLowerCase();
+    if (usedDl[dl] || usedName[nk]) return;   // 이미 디스코드 연동으로 나온 사람 · 같은 닉네임 중복은 빼요
+    usedDl[dl] = 1; usedName[nk] = 1;
+    const { ti, src } = tierOf(dl, null, null);
+    const scores = {}; _DM_LANES.forEach(l => { scores[l] = _dmScore(tbl, ti, l); });
+    list.push({ did: 'dl:' + dl, dc: false, name: nt.slice(0, ix), tag: nt.slice(ix + 1), dlPuuid: dl, riotPuuid: null, mainLane: '', subLanes: [], icon: null,
+      discordName: '', tier: ti ? _dmTierLabel(ti) : '', src, scores, tried: !!(dlc && dlc[dl]) });
   });
   return list;
 }
@@ -4379,24 +4612,72 @@ async function _dmLoadPool(env, cid) {
 const _SC_KO = { top: '탑', jg: '정글', mid: '미드', bot: '원딜', sup: '서폿' };
 const _SC_EN = { top: 'TOP', jg: 'JGL', mid: 'MID', bot: 'BOT', sup: 'SUP' };
 function _scSite(env) { return String(env.SITE_URL || 'https://roonging.com').replace(/\/$/, ''); }
-function _scUrl(env, cid, doomId, scrimId, sub) { return _scSite(env) + '/doom?cid=' + encodeURIComponent(cid) + '#/d/' + doomId + '/scrims/' + scrimId + (sub ? '/' + sub : ''); }
+// ── 멸망전 링크 미리보기 ── https://api.roonging.com/doom-og?cid=커뮤니티&d=멸망전ID
+// 디스코드 · 카톡 미리보기 봇은 이 주소의 OG(멸망전 이름 · 설명 · 설정한 이미지)를 읽고, 사람은 바로 멸망전 페이지로 넘어가요
+async function handleDoomOg(request, env) {
+  const url = new URL(request.url);
+  const cid = (url.searchParams.get('cid') || '').replace(/[^A-Za-z0-9_-]/g, '').slice(0, 80);
+  const did = (url.searchParams.get('d') || '').replace(/[^A-Za-z0-9_-]/g, '').slice(0, 80);
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+  let d = null;
+  if (cid && did) {
+    try {
+      const authQ = env.FB_DB_SECRET ? '?auth=' + env.FB_DB_SECRET : '';
+      const r = await fetch(`${env.FB_DATABASE_URL}/communities/${cid}/dooms/${did}.json${authQ}`);
+      d = r.ok ? await r.json() : null;
+    } catch (e) {}
+  }
+  const ST = { ready: '준비 중', open: '팀 모집 중', running: '진행 중', ended: '종료' };
+  const ogImage = (d && d.ogImage) || 'https://roonging.com/og-image-v2.png';
+  const ogTitle = d && d.name ? d.name + ' · 멸망전' : '멸망전 · 룽잉닷컴';
+  const line = d && d.desc ? String(d.desc).split('\n').map(s => s.trim()).filter(Boolean).slice(0, 2).join(' · ') : '';
+  const ogDesc = d ? ((ST[d.status] ? '[' + ST[d.status] + '] ' : '') + (line || '팀 신청 · 스크림 · 대회 안내')).slice(0, 200) : '룽잉닷컴 멸망전 — 팀 신청 · 스크림 · 대회 안내';
+  const target = _scSite(env) + '/doom' + (cid ? '?cid=' + encodeURIComponent(cid) + (did ? '&d=' + encodeURIComponent(did) : '') : '') + (did ? '#/d/' + did : '');
+  const html = `<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="룽잉닷컴">
+<meta property="og:url" content="${esc(url.toString())}">
+<meta property="og:title" content="${esc(ogTitle)}">
+<meta property="og:description" content="${esc(ogDesc)}">
+<meta property="og:image" content="${esc(ogImage)}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="theme-color" content="#F0C661">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="${esc(ogTitle)}">
+<meta name="twitter:description" content="${esc(ogDesc)}">
+<meta name="twitter:image" content="${esc(ogImage)}">
+<meta http-equiv="refresh" content="0; url=${esc(target)}">
+<title>${esc(ogTitle)}</title>
+</head>
+<body style="background:#06080C;color:#9AA3B2;font-family:sans-serif;text-align:center;padding-top:20vh">
+<p>멸망전 페이지로 이동하고 있어요… <a href="${esc(target)}" style="color:#F0C661">바로 가기</a></p>
+<script>location.replace(${JSON.stringify(target)});</script>
+</body>
+</html>`;
+  return new Response(request.method === 'HEAD' ? null : html, { headers: { 'Content-Type': 'text/html;charset=UTF-8', 'Cache-Control': 'public,max-age=300' } });
+}
+function _scUrl(env, cid, doomId, scrimId, sub) { return _scSite(env) + '/doom?cid=' + encodeURIComponent(cid) + '&d=' + encodeURIComponent(doomId) + '#/d/' + doomId + '/scrims/' + scrimId + (sub ? '/' + sub : ''); }
 function _scFmt(ms) {
   if (!ms) return '미정';
   try { return new Date(ms).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul', month: 'numeric', day: 'numeric', weekday: 'short', hour: '2-digit', minute: '2-digit', hour12: false }); } catch (e) { return '미정'; }
 }
-function _scMem(p, l) { return { did: String(p.did), name: p.name, tag: p.tag || '', tier: p.tier || '', src: p.src || null, score: p.scores ? (p.scores[l] != null ? p.scores[l] : null) : (p.score != null ? p.score : null) }; }
+function _scMem(p, l) { return { did: String(p.did), dc: p.dc !== false, name: p.name, tag: p.tag || '', tier: p.tier || '', src: p.src || null, score: p.scores ? (p.scores[l] != null ? p.scores[l] : null) : (p.score != null ? p.score : null) }; }
 // 팀 로스터 + 교체 인원 → 스크림 로스터 (교체된 자리는 sub:true + 원래 멤버 orig)
 function _scBuildRoster(team, subs, byDid) {
   const roster = {}, seen = {}; subs = subs || {};
   for (const l of _DM_LANES) {
     const o = (team.members || {})[l];
     if (!o) return { error: '팀 로스터가 비어 있어요' };
-    const om = { did: String(o.did), name: o.name, tag: o.tag || '', tier: o.tier || '', src: o.src || null, score: o.score != null ? o.score : null };
+    const om = { did: String(o.did), dc: o.dc != null ? !!o.dc : /^\d+$/.test(String(o.did)), name: o.name, tag: o.tag || '', tier: o.tier || '', src: o.src || null, score: o.score != null ? o.score : null };
     const sd = subs[l] ? String(subs[l]) : '';
     let m = om;
     if (sd && sd !== om.did) {
       const p = byDid[sd];
-      if (!p) return { error: '교체 인원은 소환사 등록된 사람만 고를 수 있어요' };
+      if (!p) return { error: '교체 인원은 커뮤니티 멤버 중에서 골라 주세요' };
       m = Object.assign(_scMem(p, l), { sub: true, orig: om });
     }
     if (seen[m.did]) return { error: m.name + ' 님이 두 라인에 들어가 있어요' };
@@ -4490,7 +4771,7 @@ async function _scSync(env, cid, doomId, scrimId) {
   if (doom && s && s.threadId) await _scPost(env, cid, doom, s);
 }
 async function _scDm(env, did, content, components) {
-  const BOT = env.DISCORD_BOT_TOKEN; if (!BOT || !did) return false;
+  const BOT = env.DISCORD_BOT_TOKEN; if (!BOT || !did || !/^\d+$/.test(String(did))) return false;
   const H = { Authorization: 'Bot ' + BOT, 'Content-Type': 'application/json' };
   try {
     const ch = await fetch('https://discord.com/api/v10/users/@me/channels', { method: 'POST', headers: H, body: JSON.stringify({ recipient_id: String(did) }) });
@@ -4570,7 +4851,7 @@ async function _scMatchThread(env, doom, s, match) {
     const th = await r.json();
     const ids = [];
     [s.captain && s.captain.did, match.captain && match.captain.did].concat(_DM_LANES.map(l => s.roster[l] && s.roster[l].did), _DM_LANES.map(l => match.roster[l] && match.roster[l].did))
-      .forEach(x => { if (x && ids.indexOf(String(x)) < 0) ids.push(String(x)); });
+      .forEach(x => { if (x && /^\d+$/.test(String(x)) && ids.indexOf(String(x)) < 0) ids.push(String(x)); });   // 디스코드 연동이 없는 사람은 초대 못 해요
     for (const id of ids) { try { await fetch(`https://discord.com/api/v10/channels/${th.id}/thread-members/${id}`, { method: 'PUT', headers: H }); } catch (e) {} }
     const side = (nm, ro) => `**${nm}**\n` + _DM_LANES.map(l => _scLine(l, ro[l])).join('\n');
     const content = `⚔️ **${s.name}** 스크림이 성사됐어요!\n⏰ 시작: **${_scFmt(s.startAt)}**\n\n` + side(s.teamName, s.roster) + '\n\n' + side(match.name, match.roster) +
@@ -4590,8 +4871,14 @@ async function handleDoom(request, env) {
   const C = `${dbUrl}/communities/${cid}`;
   const rd = async (url) => { try { const r = await fetch(url); return r.ok ? await r.json() : null; } catch (e) { return null; } };
   const put = (url, v) => fetch(url, { method: v === null ? 'DELETE' : 'PUT', headers: { 'Content-Type': 'application/json' }, body: v === null ? undefined : JSON.stringify(v) });
-  const session = getSession(request.headers.get('X-Session-Token') || body.token);
+  // 여러 페이지(멸망전 · 메인 · stats)의 로그인 토큰 중 이 커뮤니티 관리자 권한이 있는 걸 골라요.
+  // (예전엔 메인 페이지 토큰이 만료돼 있으면 멸망전에서 새로 로그인해도 그 만료 토큰이 먼저 쓰여 관리자가 안 됐음)
+  const _cand = [request.headers.get('X-Session-Token'), body.token].concat(Array.isArray(body.tokens) ? body.tokens.slice(0, 5) : [])
+    .filter((t, i, a) => typeof t === 'string' && t && t.length < 4000 && a.indexOf(t) === i);
+  const _sess = _cand.map(t => getSession(t)).filter(Boolean);
+  const session = _sess.find(s => s.role === 'master') || _sess.find(s => _dmIsAdmin(s, cid)) || _sess[0] || null;
   const isAdmin = _dmIsAdmin(session, cid);
+  const isMaster = !!(session && session.role === 'master');   // 후원 배너는 마스터만 설정해요
   const dUser = body.dtoken ? _dmVerifyDiscord(body.dtoken) : null;
   const BOT = env.DISCORD_BOT_TOKEN;
   const guildId = async () => {
@@ -4616,6 +4903,16 @@ async function handleDoom(request, env) {
     return Object.values(t).filter(Boolean).sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
   };
 
+  // 팀장 이름은 디스코드 닉네임 대신 소환사 닉네임으로 보여줘요
+  //   팀 멤버 중 같은 사람이 있으면 그 소환사 이름, 없으면 디스코드에 등록한 소환사 계정(discord_profiles.riotName)
+  const capSumm = async (caps, teamsForLookup) => {
+    const need = {}, nm = {};
+    (teamsForLookup || []).forEach(t => Object.values((t && t.members) || {}).forEach(m => { if (m && m.did && m.name) nm[String(m.did)] = m.name; }));
+    caps.forEach(c => { if (c && /^\d{5,25}$/.test(String(c.did || '')) && !nm[String(c.did)]) need[String(c.did)] = 1; });
+    await Promise.all(Object.keys(need).slice(0, 40).map(async did => { const p = await rd(`${C}/discord_profiles/${did}/riotName.json${authQ}`); if (p) nm[did] = String(p); }));
+    caps.forEach(c => { if (c && nm[String(c.did)]) { if (!c.dcName) c.dcName = c.name; c.name = nm[String(c.did)]; } });
+  };
+
   // ── 읽기 ──
   if (action === 'list') {
     const [ds, ts, name] = await Promise.all([rd(`${C}/dooms.json${authQ}`), rd(`${C}/doom_teams.json${authQ}`), rd(`${dbUrl}/communities_info/${cid}/name.json${authQ}`)]);
@@ -4630,7 +4927,8 @@ async function handleDoom(request, env) {
     const mine = (t) => dUser && t.captain && String(t.captain.did) === String(dUser.did);
     // 신청 메모는 관리자와 그 팀 팀장만 봐요
     const teams = (await teamsOf(d.id)).filter(t => t.status !== 'rejected' || isAdmin || mine(t)).map(t => (isAdmin || mine(t)) ? t : Object.assign({}, t, { memo: undefined }));
-    return json({ ok: true, doom: d, teams, isAdmin });
+    await capSumm(teams.map(t => t.captain), teams).catch(() => {});
+    return json({ ok: true, doom: d, teams, isAdmin, isMaster });
   }
   // 내 정보: 디스코드 로그인 · 연동 소환사 · 팀 개설 권한
   if (action === 'me') {
@@ -4672,6 +4970,33 @@ async function handleDoom(request, env) {
     return json({ ok: true, updated: out });
   }
 
+  // 티어 정보가 없는 멤버: 딥롤에서 최고티어(없으면 현재 티어)를 불러와 저장 (doom_tier_cache_dl/{딥롤 puuid})
+  if (action === 'refresh-dl') {
+    if (!dUser && !isAdmin) return json({ ok: false, error: '디스코드 로그인이 필요해요' }, 401);
+    const dls = (Array.isArray(body.dls) ? body.dls : []).map(String).filter(x => x && x.length <= 200 && !/[.#$\[\]\/]/.test(x)).slice(0, 8);
+    const tbl = await table(), out = {}, patch = {};
+    const D = ['', 'I', 'II', 'III', 'IV'], NODIV = ['MASTER', 'GRANDMASTER', 'CHALLENGER'];
+    await Promise.all(dls.map(async (dl) => {
+      let v = null;
+      try {
+        const r = await fetch(`https://b2c-api-cdn.deeplol.gg/summoner/summoner-realtime?platform_id=KR&summoner_id=&puu_id=${encodeURIComponent(dl)}`,
+          { headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://www.deeplol.gg/', 'Accept': 'application/json' } });
+        if (r.ok) {
+          const j = await r.json(), so = j && j.season_tier_info_dict && j.season_tier_info_dict.ranked_solo_5x5;
+          if (so && so.high_tier) v = { tier: String(so.high_tier), lp: +so.high_lp || 0, src: 'peak' };
+          else if (so && so.tier) { const t = String(so.tier).toUpperCase(); v = { tier: NODIV.indexOf(t) >= 0 ? t : t + (so.division ? ' ' + (D[so.division] || so.division) : ''), lp: +so.league_points || 0, src: 'cur' }; }
+        }
+      } catch (e) {}
+      const rec = v ? Object.assign(v, { at: Date.now() }) : { tier: 'UNRANKED', lp: 0, src: 'none', at: Date.now() };
+      patch[dl] = rec;
+      const ti = v ? _dmParseTier(v) : null, scores = {};
+      _DM_LANES.forEach(l => { scores[l] = _dmScore(tbl, ti, l); });
+      out[dl] = { tier: ti ? _dmTierLabel(ti) : '', src: ti ? (v.src === 'cur' ? 'cur' : 'peak') : null, scores };
+    }));
+    if (Object.keys(patch).length) { try { await fetch(`${C}/doom_tier_cache_dl.json${authQ}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(patch) }); } catch (e) {} }
+    return json({ ok: true, updated: out });
+  }
+
   // ── 관리자: 디스코드 역할 · 포럼 채널 목록 / 멸망전 저장 · 삭제 ──
   if (action === 'admin-meta') {
     if (!isAdmin) return json({ ok: false, error: '관리자 로그인이 필요해요' }, 403);
@@ -4706,10 +5031,57 @@ async function handleDoom(request, env) {
       scrimChannelName: String(x.scrimChannelName || '').slice(0, 60),
       matchChannelId: /^\d{5,25}$/.test(String(x.matchChannelId || '')) ? String(x.matchChannelId) : '',
       matchChannelName: String(x.matchChannelName || '').slice(0, 60),
+      entryTerms: String(x.entryTerms || '').slice(0, 4000),   // 최종 출전 확정 주의사항 · 조건
       createdAt: prev ? prev.createdAt : Date.now(), updatedAt: Date.now(),
     });
     await put(`${C}/dooms/${id}.json${authQ}`, d);
     return json({ ok: true, doom: d });
+  }
+  // 대회 안내 (관리자): 일정 · 상금 · 참가 조건 · 후원 목록
+  if (action === 'info-save') {
+    if (!isAdmin) return json({ ok: false, error: '관리자만 대회 안내를 수정할 수 있어요' }, 403);
+    const d = body.doomId && idOk(String(body.doomId)) ? await doomOf(body.doomId) : null;
+    if (!d) return json({ ok: false, error: '없는 멸망전이에요' }, 404);
+    const x = body.info || {};
+    const s = (v, n) => String(v == null ? '' : v).replace(/\r/g, '').trim().slice(0, n);
+    const L = (v) => (Array.isArray(v) ? v : (v && typeof v === 'object' ? Object.values(v) : [])).filter(Boolean);
+    const info = {
+      schedule: L(x.schedule).slice(0, 40).map(r => ({ when: s(r.when, 60), what: s(r.what, 60), note: s(r.note, 160), main: !!r.main })).filter(r => r.when || r.what),
+      mainTime: s(x.mainTime, 30),
+      scheduleNote: s(x.scheduleNote, 400),
+      prizes: L(x.prizes).slice(0, 12).map(r => ({ rank: [0, 1, 2, 3].indexOf(Number(r.rank)) >= 0 ? Number(r.rank) : 0, label: s(r.label, 30), amount: s(r.amount, 40), note: s(r.note, 100) })).filter(r => r.label || r.amount),
+      prizeNote: s(x.prizeNote, 160),
+      rules: L(x.rules).slice(0, 30).map(r => s(typeof r === 'object' ? r.text : r, 240)).filter(Boolean),
+      sponsors: L(x.sponsors).slice(0, 80).map(r => ({ target: s(r.target, 30), item: s(r.item, 100), cond: s(r.cond, 100), by: s(r.by, 30), anon: !!r.anon })).filter(r => r.item),
+      sponsorNote: s(x.sponsorNote, 240),
+      updatedAt: Date.now(),
+    };
+    await put(`${C}/dooms/${d.id}/info.json${authQ}`, info);
+    return json({ ok: true, info });
+  }
+  // 후원 배너 (멸망전마다 · 마스터 전용): GitHub doom_banners 폴더 이미지 + 링크
+  // 링크 미리보기(OG) 이미지 (관리자): GitHub doom_og 폴더 이미지
+  if (action === 'og-save') {
+    if (!isAdmin) return json({ ok: false, error: '관리자만 링크 미리보기를 설정할 수 있어요' }, 403);
+    const d = body.doomId && idOk(String(body.doomId)) ? await doomOf(body.doomId) : null;
+    if (!d) return json({ ok: false, error: '없는 멸망전이에요' }, 404);
+    const OGI = /^https:\/\/raw\.githubusercontent\.com\/rdc6087940\/lolket\/main\/lolket\/image%20asset\/doom_og\/[^?#\s]+$/;
+    const img = String(body.ogImage || '').trim();
+    if (img && !OGI.test(img)) return json({ ok: false, error: 'GitHub doom_og 폴더의 이미지만 쓸 수 있어요' }, 400);
+    await put(`${C}/dooms/${d.id}/ogImage.json${authQ}`, img || null);
+    return json({ ok: true, ogImage: img || null });
+  }
+  if (action === 'banners-save') {
+    if (!isMaster) return json({ ok: false, error: '마스터 관리자만 배너를 설정할 수 있어요' }, 403);
+    const d = body.doomId && idOk(String(body.doomId)) ? await doomOf(body.doomId) : null;
+    if (!d) return json({ ok: false, error: '없는 멸망전이에요' }, 404);
+    const IMG = /^https:\/\/raw\.githubusercontent\.com\/rdc6087940\/lolket\/main\/lolket\/image%20asset\/doom_banners\/[^?#]+$/;
+    const banners = (Array.isArray(body.banners) ? body.banners : []).slice(0, 30).map(b => ({
+      img: String(b && b.img || ''), name: String(b && b.name || '').slice(0, 80),
+      link: /^https?:\/\/[^\s]+$/.test(String(b && b.link || '').trim()) ? String(b.link).trim().slice(0, 500) : '',
+    })).filter(b => IMG.test(b.img));
+    await put(`${C}/dooms/${d.id}/banners.json${authQ}`, banners.length ? banners : null);
+    return json({ ok: true, banners });
   }
   if (action === 'delete') {
     if (!isAdmin) return json({ ok: false, error: '관리자 로그인이 필요해요' }, 403);
@@ -4719,7 +5091,39 @@ async function handleDoom(request, env) {
   }
 
   // ── 팀 개설 · 수정 · 삭제 ──
-  if (action === 'team-save' || action === 'team-delete' || action === 'team-review') {
+  // ── 최종 출전 확정: 팀장 요청(주의사항 동의) → 관리자 승인 / 반려 / 취소 ──
+  if (action === 'entry-request' || action === 'entry-review') {
+    const d = await doomOf(body.doomId);
+    if (!d) return json({ ok: false, error: '없는 멸망전이에요' }, 404);
+    const tid = String((body.team && body.team.id) || '');
+    const t = idOk(tid) ? await rd(`${C}/doom_teams/${d.id}/${tid}.json${authQ}`) : null;
+    if (!t) return json({ ok: false, error: '없는 팀이에요' }, 404);
+    const P = `${C}/doom_teams/${d.id}/${t.id}`;
+    const patch = (v) => fetch(`${P}.json${authQ}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(v) });
+    if (action === 'entry-request') {
+      if (!dUser || !t.captain || String(t.captain.did) !== String(dUser.did)) return json({ ok: false, error: '팀장만 요청할 수 있어요' }, 403);
+      if ((t.status || 'approved') !== 'approved') return json({ ok: false, error: '수락된 팀만 출전 확정을 요청할 수 있어요' }, 400);
+      if (d.status === 'ended') return json({ ok: false, error: '끝난 멸망전이에요' }, 400);
+      if (t.entry === 'confirmed') return json({ ok: false, error: '이미 최종 출전이 확정된 팀이에요' }, 400);
+      if (body.agree !== true) return json({ ok: false, error: '주의사항에 동의해 주세요' }, 400);
+      await patch({ entry: 'requested', entryReqAt: Date.now(), entryNote: null });
+      return json({ ok: true });
+    }
+    if (!isAdmin) return json({ ok: false, error: '관리자 로그인이 필요해요' }, 403);
+    const dec = body.decision;
+    if (dec === 'approve') await patch({ entry: 'confirmed', entryAt: Date.now(), entryNote: null });
+    else if (dec === 'reject') await patch({ entry: null, entryNote: String(body.reason || '').trim().slice(0, 300) || null });
+    else if (dec === 'revoke') await patch({ entry: null, entryAt: null, entryNote: null });
+    else return json({ ok: false, error: 'bad decision' }, 400);
+    let dm = false;
+    if (dec !== 'revoke' && BOT && t.captain && /^\d+$/.test(String(t.captain.did))) {
+      dm = await _scDm(env, t.captain.did, dec === 'approve'
+        ? `🏆 **${d.name}** — **${t.name}** 팀의 **최종 출전이 확정**됐어요!`
+        : `❌ **${d.name}** — **${t.name}** 팀의 최종 출전 확정 요청이 반려됐어요.` + (body.reason ? `\n📝 사유: ${String(body.reason).slice(0, 300)}` : '') + `\n조건을 확인한 뒤 다시 요청할 수 있어요.`);
+    }
+    return json({ ok: true, dm });
+  }
+  if (action === 'team-save' || action === 'team-delete' || action === 'team-review' || action === 'team-role') {
     if (!dUser && !isAdmin) return json({ ok: false, error: '디스코드 로그인이 필요해요' }, 401);
     const d = await doomOf(body.doomId);
     if (!d) return json({ ok: false, error: '없는 멸망전이에요' }, 404);
@@ -4730,11 +5134,56 @@ async function handleDoom(request, env) {
     if (t.id && !prev) return json({ ok: false, error: '없는 팀이에요' }, 404);
     const isCaptain = prev && dUser && prev.captain && String(prev.captain.did) === String(dUser.did);
     const stOf = (x) => x.status || 'approved';
+    // 수락된 팀의 팀장에게 "스크림 개설 가능 역할"을 디스코드에서 붙이거나 빼요
+    //   봇에 "역할 관리" 권한이 있고, 서버 역할 목록에서 봇 역할이 그 역할보다 위에 있어야 해요
+    const capRoles = async (team, add) => {
+      const rids = (Array.isArray(d.scrimRoleIds) ? d.scrimRoleIds : Object.values(d.scrimRoleIds || {})).map(String).filter(v => /^\d{5,25}$/.test(v));
+      const did = String(team && team.captain && team.captain.did || '');
+      if (!rids.length) return { skip: 'norole' };
+      if (!BOT || !/^\d{5,25}$/.test(did)) return { skip: 'nodc' };
+      const gid = await guildId(); if (!gid) return { skip: 'noguild' };
+      let keep = [];
+      if (!add) {
+        // 다른 멸망전에서 같은 역할로 아직 수락된 팀의 팀장이면 그 역할은 빼지 않아요
+        try {
+          const [allT, allD] = await Promise.all([rd(`${C}/doom_teams.json${authQ}`), rd(`${C}/dooms.json${authQ}`)]);
+          Object.entries(allT || {}).forEach(([did2, ts]) => {
+            if (did2 === d.id) return;
+            const dd = (allD || {})[did2]; if (!dd || dd.status === 'ended') return;
+            const still = Object.values(ts || {}).some(x => x && (x.status || 'approved') === 'approved' && x.captain && String(x.captain.did) === did);
+            if (still) keep = keep.concat((Array.isArray(dd.scrimRoleIds) ? dd.scrimRoleIds : Object.values(dd.scrimRoleIds || {})).map(String));
+          });
+        } catch (e) {}
+      }
+      const targets = rids.filter(r => keep.indexOf(r) < 0);
+      let why = '';
+      const res = await Promise.all(targets.map(rid => fetch(`https://discord.com/api/v10/guilds/${gid}/members/${did}/roles/${rid}`, {
+        method: add ? 'PUT' : 'DELETE', headers: { Authorization: 'Bot ' + BOT, 'X-Audit-Log-Reason': encodeURIComponent('멸망전 ' + d.name + ' · ' + (team.name || '') + ' 팀 ' + (add ? '수락' : '삭제')) },
+      }).then(async r => {
+        if (r.ok) return true;
+        // 실패 이유 (디스코드 오류 코드)
+        let code = 0; try { code = (await r.json()).code || 0; } catch (e) {}
+        why = why || (code === 50013 ? 'perm' : code === 10007 ? 'member' : code === 10011 ? 'role' : 'etc:' + r.status + (code ? '/' + code : ''));
+        return false;
+      }).catch(() => false)));
+      const names = (Array.isArray(d.scrimRoleNames) ? d.scrimRoleNames : Object.values(d.scrimRoleNames || {}));
+      return { done: res.filter(Boolean).length, fail: res.filter(x => !x).length, kept: rids.length - targets.length, names, why };
+    };
+    // 관리자: 수락된 팀의 팀장에게 역할 다시 부여 (봇 권한 · 역할 순서를 고친 뒤 재시도용)
+    if (action === 'team-role') {
+      if (!isAdmin) return json({ ok: false, error: '관리자 로그인이 필요해요' }, 403);
+      if (!prev) return json({ ok: false, error: '없는 팀이에요' }, 404);
+      if (stOf(prev) !== 'approved') return json({ ok: false, error: '수락된 팀만 역할을 부여할 수 있어요' }, 400);
+      const role = await capRoles(prev, true).catch(() => null);
+      return json({ ok: true, role });
+    }
     if (action === 'team-delete') {
       if (!prev) return json({ ok: false, error: '없는 팀이에요' }, 404);
       if (!isAdmin && !(isCaptain && stOf(prev) !== 'approved')) return json({ ok: false, error: isCaptain ? '수락된 팀은 관리자만 삭제할 수 있어요' : '팀장 또는 관리자만 삭제할 수 있어요' }, 403);
       await put(`${C}/doom_teams/${d.id}/${prev.id}.json${authQ}`, null);
-      return json({ ok: true });
+      // 수락됐던 팀이면 팀장 역할 회수
+      const role = stOf(prev) === 'approved' ? await capRoles(prev, false).catch(() => null) : null;
+      return json({ ok: true, role });
     }
     // 관리자: 신청 수락 · 거절 (신청자에게 디스코드 DM)
     if (action === 'team-review') {
@@ -4750,6 +5199,8 @@ async function handleDoom(request, env) {
       const reason = ok ? '' : String(body.reason || '').trim().slice(0, 300);
       const upd = Object.assign({}, prev, { status: ok ? 'approved' : 'rejected', reviewedAt: Date.now(), rejectReason: reason || null, updatedAt: Date.now() });
       await put(`${C}/doom_teams/${d.id}/${prev.id}.json${authQ}`, upd);
+      // 수락하면 팀장에게 스크림 개설 가능 역할을 자동으로 붙여요
+      const role = ok ? await capRoles(prev, true).catch(() => null) : null;
       let dm = false;
       if (BOT && prev.captain && prev.captain.did) {
         try {
@@ -4767,10 +5218,11 @@ async function handleDoom(request, env) {
           }
         } catch (e) {}
       }
-      return json({ ok: true, team: upd, dm });
+      return json({ ok: true, team: upd, dm, role });
     }
     if (prev && !isAdmin && !isCaptain) return json({ ok: false, error: '팀장 또는 관리자만 수정할 수 있어요' }, 403);
     if (prev && !isAdmin && stOf(prev) === 'approved') return json({ ok: false, error: '수락된 팀은 관리자만 수정할 수 있어요' }, 403);
+    const _capProf = (!prev && dUser) ? await rd(`${C}/discord_profiles/${dUser.did}.json${authQ}`) : null;
     if (!prev && !isAdmin) {
       // 신청 자격: 디스코드 로그인 + 소환사 등록 (역할 조건 없음, 관리자가 수락해야 확정)
       const prof = await rd(`${C}/discord_profiles/${dUser.did}.json${authQ}`);
@@ -4790,12 +5242,14 @@ async function handleDoom(request, env) {
       const did = String(lanes[l] || '');
       if (!did) return json({ ok: false, error: '5개 라인을 모두 채워 주세요' }, 400);
       const p = byDid[did];
-      if (!p) return json({ ok: false, error: '디스코드 연동(소환사 등록)이 된 사람만 넣을 수 있어요' }, 400);
+      if (!p) return json({ ok: false, error: '커뮤니티 멤버 목록에 없는 사람이에요' }, 400);
       if (seen[did]) return json({ ok: false, error: p.name + ' 님이 두 라인에 들어가 있어요' }, 400);
       seen[did] = 1;
-      const other = teams.find(x => x.id !== (prev && prev.id) && stOf(x) !== 'rejected' && Object.values(x.members || {}).some(m => m && String(m.did) === did));
+      // 같은 사람이 디스코드 연동 전(dl:)/후(디스코드 ID)로 따로 들어가지 않게 딥롤 puuid 로도 비교해요
+      if (p.dlPuuid && Object.values(members).some(m => m && m.dlPuuid === p.dlPuuid)) return json({ ok: false, error: p.name + ' 님이 두 라인에 들어가 있어요' }, 400);
+      const other = teams.find(x => x.id !== (prev && prev.id) && stOf(x) !== 'rejected' && Object.values(x.members || {}).some(m => m && (String(m.did) === did || (p.dlPuuid && m.dlPuuid === p.dlPuuid))));
       if (other) return json({ ok: false, error: p.name + ' 님은 이미 ' + other.name + ' 팀이에요' }, 400);
-      const base = { did, name: p.name, tag: p.tag, dlPuuid: p.dlPuuid, riotPuuid: p.riotPuuid, tier: p.tier, src: p.src, score: p.scores[l] };
+      const base = { did, dc: p.dc !== false, name: p.name, tag: p.tag, dlPuuid: p.dlPuuid, riotPuuid: p.riotPuuid, tier: p.tier, src: p.src, score: p.scores[l] };
       let adj = null;
       if (isAdmin) {
         const ti = adjIn[l] ? _dmParseTier(String(adjIn[l]).slice(0, 40)) : null;
@@ -4816,11 +5270,13 @@ async function handleDoom(request, env) {
     const COLORS = ['#4FA8FF', '#FF6B7A', '#3CE085', '#E8C26A', '#B07CF0', '#FF9F43', '#2BD9C5', '#F368E0'];
     const team = {
       id, name, color: COLORS.indexOf(t.color) >= 0 ? t.color : (prev && prev.color) || COLORS[teams.length % COLORS.length],
-      captain: prev ? prev.captain : (dUser ? { did: dUser.did, name: dUser.name } : { did: '', name: '관리자' }),
+      captain: prev ? prev.captain : (dUser ? { did: dUser.did, name: (_capProf && _capProf.riotName) || dUser.name } : { did: '', name: '관리자' }),
       members, base: base5, bonus: bonus || 0, bonusNote: bonus ? bonusNote : '', memo, total, createdAt: prev ? prev.createdAt : Date.now(), updatedAt: Date.now(),
       // 관리자가 만들거나 고치면 바로 수락 · 신청자가 신청 / 대기 · 거절된 팀을 고치면 대기
       status: isAdmin ? (prev ? stOf(prev) : 'approved') : 'pending',
       rejectReason: isAdmin && prev ? (prev.rejectReason || null) : null,
+      // 최종 출전 확정 상태는 팀을 고쳐도 그대로 둬요
+      entry: prev ? prev.entry || null : null, entryReqAt: prev ? prev.entryReqAt || null : null, entryAt: prev ? prev.entryAt || null : null, entryNote: prev ? prev.entryNote || null : null,
     };
     await put(`${C}/doom_teams/${d.id}/${id}.json${authQ}`, team);
     return json({ ok: true, team });
@@ -4838,6 +5294,10 @@ async function handleDoom(request, env) {
         const ao = a.status === 'open' ? 0 : 1, bo = b.status === 'open' ? 0 : 1;
         return ao !== bo ? ao - bo : (a.startAt || 9e15) - (b.startAt || 9e15);
       });
+      // 스크림 카드의 팀장 이름도 소환사 닉네임으로
+      const caps = [];
+      list.forEach(s => { caps.push(s.captain); if (s.match) caps.push(s.match.captain); Object.values((s.apps && s.apps.teams) || {}).forEach(a => a && caps.push(a.captain)); });
+      await capSumm(caps.filter(Boolean), await teamsOf(d.id).catch(() => [])).catch(() => {});
       return json({ ok: true, scrims: list });
     }
     if (!dUser && !isAdmin) return bad('디스코드 로그인이 필요해요', 401);

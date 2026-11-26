@@ -138,6 +138,97 @@ body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg-darkest); c
 .toggle-on { background: rgba(10,200,185,.12); border: 1px solid rgba(10,200,185,.4); color: var(--blue); }
 .toggle-off { background: transparent; border: 1px solid var(--border); color: var(--muted); }
 
+/* 🕵️ 계정검사 */
+.ac-form{display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap;background:var(--bg-panel);border:1px solid var(--border);border-radius:4px;padding:1rem 1.1rem;margin-bottom:1rem}
+.ac-form .form-group{margin-bottom:0}
+.ac-form .form-input{height:36px}
+.ac-chk{display:flex;align-items:center;gap:6px;height:36px;font-size:12px;color:var(--white);cursor:pointer}
+.ac-btn{height:36px;padding:0 18px;border-radius:3px;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;letter-spacing:1px;cursor:pointer}
+.ac-btn:disabled{opacity:.4;cursor:not-allowed}
+.ac-help{font-size:11.5px;color:var(--muted);line-height:1.6;flex-basis:100%}
+#ac-prog{display:none;background:var(--bg-panel);border:1px solid var(--border);border-radius:4px;padding:.8rem 1rem;margin-bottom:1rem}
+.ac-prog-t{display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px}
+.ac-prog-t b{font-family:'Rajdhani',sans-serif;color:var(--blue)}
+.ac-bar{height:6px;background:var(--bg-dark);border-radius:3px;overflow:hidden}
+.ac-bar i{display:block;height:100%;background:var(--blue);transition:width .3s}
+.ac-prog-w{margin-top:6px;font-size:11.5px;color:var(--gold)}
+.ac-sum{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) 220px;gap:1rem;align-items:center;background:var(--bg-panel);border:1px solid var(--border-gold);border-radius:4px;padding:1rem 1.2rem}
+.ac-acc{display:flex;align-items:center;gap:12px;min-width:0}
+.ac-acc img{width:52px;height:52px;border-radius:6px;border:1px solid var(--border-gold)}
+.ac-acc b{display:block;font-size:18px}
+.ac-acc b small{color:var(--muted);font-weight:400;margin-left:3px;font-size:13px}
+.ac-acc span{display:block;font-size:11.5px;color:var(--muted);margin-top:3px}
+.ac-lgs{display:flex;flex-direction:column;gap:6px}
+.ac-lg{display:flex;align-items:baseline;gap:8px;font-size:12px}
+.ac-lg span{color:var(--muted);width:56px;flex-shrink:0}
+.ac-lg b{color:var(--gold)}
+.ac-lg em{font-style:normal;color:var(--muted)}
+.ac-score{text-align:right}
+.ac-score b{font-family:'Bebas Neue',sans-serif;font-size:40px;line-height:1;letter-spacing:2px}
+.ac-score span{display:block;font-family:'Rajdhani',sans-serif;font-weight:700;letter-spacing:1px}
+.ac-gauge{height:6px;background:var(--bg-dark);border-radius:3px;overflow:hidden;margin-bottom:6px}
+.ac-gauge i{display:block;height:100%}
+.ac-score.v1 b,.ac-score.v1 span{color:var(--blue)} .ac-score.v1 i{background:var(--blue)}
+.ac-score.v2 b,.ac-score.v2 span{color:var(--gold)} .ac-score.v2 i{background:var(--gold)}
+.ac-score.v3 b,.ac-score.v3 span{color:#E8873A} .ac-score.v3 i{background:#E8873A}
+.ac-score.v4 b,.ac-score.v4 span{color:#E05050} .ac-score.v4 i{background:#E05050}
+.ac-note{font-size:11.5px;color:var(--muted);margin-top:.5rem;line-height:1.6}
+.ac-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:.75rem}
+.ac-chip{padding:4px 11px;border-radius:2px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:11.5px;cursor:pointer}
+.ac-chip.on{border-color:var(--gold);color:var(--gold);background:rgba(200,170,110,.08)}
+.ac-fs{display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:8px}
+.ac-f{background:var(--bg-panel);border:1px solid var(--border);border-left:3px solid var(--muted);border-radius:3px;padding:.75rem .9rem;cursor:pointer;transition:border-color .15s,background .15s}
+.ac-f:hover{background:#10223a}
+.ac-f.ref{opacity:.7;border-left-color:var(--border)}
+.ac-f.ref .ac-sev{background:rgba(91,100,116,.18);color:var(--muted)}
+.ac-f.nog{cursor:default}.ac-f.nog:hover{background:var(--bg-panel)}
+.ac-f.on{border-color:var(--blue);background:rgba(10,200,185,.06)}
+.ac-f.s3{border-left-color:#E05050}.ac-f.s2{border-left-color:#E8873A}.ac-f.s1{border-left-color:var(--gold-dim)}
+.ac-f-h{display:flex;align-items:baseline;gap:7px;flex-wrap:wrap}
+.ac-f-h b{font-size:13.5px;flex-basis:100%;margin-top:3px}
+.ac-f-h em{font-style:normal;font-size:10.5px;color:var(--muted)}
+.ac-sev{font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;padding:1px 7px;border-radius:2px}
+.s3 .ac-sev{background:rgba(224,80,80,.15);color:#E05050}.s2 .ac-sev{background:rgba(232,135,58,.15);color:#E8873A}.s1 .ac-sev{background:rgba(200,170,110,.12);color:var(--gold)}
+.ac-f-d{font-size:12px;color:#B8B2A6;line-height:1.65;margin-top:5px}
+.ac-f-g{font-size:11px;color:var(--muted);margin-top:6px}
+.ac-f-g u{color:var(--blue);text-decoration:none;margin-left:6px}
+.ac-empty{padding:1.5rem;text-align:center;color:var(--muted);font-size:12.5px;border:1px dashed var(--border);border-radius:4px}
+.ac-chart{position:relative;background:var(--bg-panel);border:1px solid var(--border);border-radius:4px;padding:.75rem 1rem}
+.ac-svg{display:block;width:100%;height:auto}
+#ac-perf{height:220px}
+.ac-grid{stroke:rgba(255,255,255,.05);stroke-width:1}
+.ac-axis0{stroke:rgba(255,255,255,.22);stroke-width:1}
+.ac-sep{stroke:rgba(200,170,110,.18);stroke-width:1;stroke-dasharray:3 3}
+.ac-tk{fill:var(--muted);font-size:10px;font-family:'Rajdhani',sans-serif}
+.ac-ma{fill:none;stroke:var(--gold);stroke-width:2}
+.ac-dot{stroke:var(--bg-panel);stroke-width:2}
+.ac-dot.w{fill:var(--blue)}.ac-dot.l{fill:#7A5A9A}
+.ac-dot.hl{stroke:#fff;stroke-width:2}
+.ac-dot.dim{opacity:.25}
+.ac-legend{display:flex;flex-wrap:wrap;gap:14px;font-size:11px;color:var(--muted);margin-bottom:6px}
+.ac-legend i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+.ac-legend i.w{background:var(--blue)}.ac-legend i.l{background:#7A5A9A}.ac-legend i.ma{width:14px;height:2px;border-radius:0;background:var(--gold);vertical-align:3px}
+.ac-lg-n{margin-left:auto}
+.ac-tip{position:absolute;display:none;pointer-events:none;background:#071423;border:1px solid var(--border-gold);border-radius:3px;padding:7px 10px;font-size:11.5px;line-height:1.6;width:220px;z-index:5}
+.ac-tip .ac-ci{vertical-align:-4px}
+.tw{color:var(--blue)}.tl{color:#E05050}
+.ac-two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:1rem;margin-top:1.5rem;align-items:start}
+.ac-two>div>.ac-svg{background:var(--bg-panel);border:1px solid var(--border);border-radius:4px;padding:.5rem}
+.ac-hb{fill:var(--blue)}
+.ac-hb.odd{fill:#E05050}
+.ac-days{background:var(--bg-panel);border:1px solid var(--border);border-radius:4px;max-height:320px;overflow:auto}
+.ac-day{display:grid;grid-template-columns:80px 70px minmax(0,1fr) 80px 54px;gap:8px;align-items:center;padding:6px 10px;font-size:11.5px;border-bottom:1px solid rgba(30,45,64,.5)}
+.ac-day.warm{background:rgba(232,135,58,.06)}.ac-day.hot{background:rgba(224,80,80,.09)}
+.ac-dd{font-weight:500}.ac-dn,.ac-df{color:var(--muted)}
+.ac-dp i{display:inline-block;width:7px;height:7px;border-radius:50%;margin:0 3px 0 6px}
+.ac-dz{color:#E05050;font-weight:700;text-align:right}
+.ac-gt td,.ac-gt th{white-space:nowrap;padding:7px 10px}
+.ac-gt tr.hl td{background:rgba(10,200,185,.08)}
+.ac-gt tr.dim td{opacity:.45}
+.ac-cn{display:flex;align-items:center;gap:6px}
+.ac-ci{border-radius:3px;vertical-align:middle}
+@media (max-width:1100px){.ac-sum{grid-template-columns:1fr}.ac-score{text-align:left}.ac-two{grid-template-columns:1fr}.ac-fs{grid-template-columns:1fr}}
+
 /* 반응형 */
 @media (max-width: 900px) { .stat-grid { grid-template-columns: repeat(2, 1fr); } }
 </style>
@@ -189,6 +280,9 @@ body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg-darkest); c
     </div>
     <div class="nav-item" onclick="switchTab('connect')">
       <span class="nav-icon">🔍</span> 소속 분석
+    </div>
+    <div class="nav-item" onclick="switchTab('acct')">
+      <span class="nav-icon">🕵️</span> 계정검사
     </div>
     <div class="nav-item" onclick="switchTab('cron')">
       <span class="nav-icon">⚡</span> 수동 실행
@@ -280,6 +374,20 @@ body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg-darkest); c
       </div>
 
       <!-- ⚡ 수동 실행 -->
+      <!-- 🕵️ 계정검사 -->
+      <div class="tab-panel" id="tab-acct">
+        <div class="ac-form">
+          <div class="form-group" style="flex:1;min-width:220px;"><label class="form-label">라이엇 ID</label><input class="form-input" id="ac-id" placeholder="닉네임#태그" autocomplete="off" onkeydown="if(event.key==='Enter')acStart()"></div>
+          <div class="form-group"><label class="form-label">분석 판수</label><select class="form-input" id="ac-count"><option value="50">최근 50판</option><option value="100" selected>최근 100판</option><option value="200">최근 200판</option></select></div>
+          <label class="ac-chk"><input type="checkbox" id="ac-tl" checked> 타임라인까지 (스킬 순서 · 구매 순서 · 10분 지표)</label>
+          <button class="ac-btn btn-blue" id="ac-go" onclick="acStart()">검사 시작</button>
+          <button class="ac-btn btn-red" id="ac-stop" style="display:none" onclick="acStop()">중지</button>
+          <div class="ac-help">솔로랭크를 먼저 모으고 모자라면 일반(협곡)으로 채워요. 자유랭크는 쓰지 않아요. 점멸 키 위치 · 액티브 아이템 칸 · 라인 · 챔피언 폭 · 실력 급변 · 시간대 · 핑 습관 · 듀오 · 판수 대비 티어를 비교해서, 평소와 다른 판이 특정 날짜나 세션에 몰려 있는지 찾아요. 빌드 · 룬 · 스킬 순서 같은 운영 차이는 챔피언마다 바뀔 수 있어서 점수에 넣지 않고 참고로만 보여 줘요. 주 라인이 다른 것 자체는 문제 삼지 않고, 다른 라인을 갈 때만 연승 · 고승률이 나오는 경우만 잡아요. 한 번 받은 경기는 저장해 두어서 다시 검사하면 빨라요.</div>
+        </div>
+        <div id="ac-prog"></div>
+        <div id="ac-out"></div>
+      </div>
+
       <div class="tab-panel" id="tab-cron">
         <div class="section">
           <div class="section-title">⚡ Cron 함수 수동 실행</div>
@@ -577,7 +685,7 @@ function switchTab(tab) {
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('tab-' + tab).classList.add('active');
-  const titles = {dashboard:'대시보드',communities:'커뮤니티 관리',operators:'운영진 관리',system:'시스템 설정',cron:'수동 실행'};
+  const titles = {dashboard:'대시보드',communities:'커뮤니티 관리',operators:'운영진 관리',system:'시스템 설정',cron:'수동 실행',connect:'소속 분석',acct:'계정검사'};
   document.getElementById('topbar-title').textContent = titles[tab] || tab;
   event.currentTarget.classList.add('active');
   if (tab === 'dashboard') loadDashboard();
@@ -1761,6 +1869,492 @@ async function runCron(type) {
     btn.disabled = false;
     btn.textContent = '실행';
   }
+}
+
+// ══════════ 🕵️ 계정검사: 대리 · 위장티어 · 생배 정황 분석 ══════════
+const AC = { run: 0, dd: null, data: null, games: [], acc: null, report: null, view: 'all', sel: null };
+const AC_SR = [400, 420, 430, 490, 700];   // 소환사의 협곡 큐만 분석 (일반 · 솔랭 · 빠른대전 · 격전) · 자유랭크는 안 써요
+const AC_POS = { TOP: '탑', JUNGLE: '정글', MIDDLE: '미드', BOTTOM: '원딜', UTILITY: '서폿', '': '?' };
+const AC_POS_C = { TOP: '#E0A458', JUNGLE: '#5BC27A', MIDDLE: '#5AA9F0', BOTTOM: '#E06C75', UTILITY: '#B48EE8', '': '#5B6474' };
+const AC_Q = { 400: '일반', 420: '솔랭', 430: '일반', 490: '빠른대전', 700: '격전' };
+const AC_SPELL = { 1: '정화', 3: '탈진', 4: '점멸', 6: '유체화', 7: '회복', 11: '강타', 12: '순간이동', 13: '총명', 14: '점화', 21: '방어막', 32: '표식' };
+const AC_TIERS = ['IRON', 'BRONZE', 'SILVER', 'GOLD', 'PLATINUM', 'EMERALD', 'DIAMOND', 'MASTER', 'GRANDMASTER', 'CHALLENGER'];
+const AC_TIER_KO = { IRON: '아이언', BRONZE: '브론즈', SILVER: '실버', GOLD: '골드', PLATINUM: '플래티넘', EMERALD: '에메랄드', DIAMOND: '다이아몬드', MASTER: '마스터', GRANDMASTER: '그랜드마스터', CHALLENGER: '챌린저' };
+// 티어별 대략적인 평균 분당 CS (탑 · 미드 · 원딜 기준, 티어 대비 실력 비교용)
+const AC_CSPM = { IRON: 4.9, BRONZE: 5.3, SILVER: 5.7, GOLD: 6.1, PLATINUM: 6.5, EMERALD: 6.8, DIAMOND: 7.2, MASTER: 7.6, GRANDMASTER: 7.9, CHALLENGER: 8.2 };
+const AC_SKILL = { 1: 'Q', 2: 'W', 3: 'E', 4: 'R' };
+
+function acEsc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]); }
+function acDay(t) { const d = new Date(t + 9 * 3600000); return d.toISOString().slice(0, 10); }
+function acHour(t) { return new Date(t + 9 * 3600000).getUTCHours(); }
+function acFmtDay(k) { const d = new Date(k + 'T00:00:00Z'); return (d.getUTCMonth() + 1) + '.' + d.getUTCDate() + ' (' + '일월화수목금토'[d.getUTCDay()] + ')'; }
+function acFmtT(t) { const d = new Date(t + 9 * 3600000); return (d.getUTCMonth() + 1) + '.' + d.getUTCDate() + ' ' + ('0' + d.getUTCHours()).slice(-2) + ':' + ('0' + d.getUTCMinutes()).slice(-2); }
+function acMean(a) { return a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0; }
+function acSd(a) { if (a.length < 2) return 0; const m = acMean(a); return Math.sqrt(a.reduce((x, y) => x + (y - m) * (y - m), 0) / (a.length - 1)); }
+function acPct(n) { return Math.round(n * 100) + '%'; }
+function acR(n, d) { const p = Math.pow(10, d || 1); return Math.round(n * p) / p; }
+const acSleep = ms => new Promise(r => setTimeout(r, ms));
+
+// ── 데이터 드래곤 (아이템 · 챔피언 · 룬 이름과 종류) ──
+async function acLoadDD() {
+  if (AC.dd) return AC.dd;
+  const vs = await (await fetch('https://ddragon.leagueoflegends.com/api/versions.json')).json();
+  const v = vs[0], base = 'https://ddragon.leagueoflegends.com/cdn/' + v;
+  const [it, ch, ru] = await Promise.all([fetch(base + '/data/ko_KR/item.json').then(r => r.json()), fetch(base + '/data/ko_KR/champion.json').then(r => r.json()), fetch(base + '/data/ko_KR/runesReforged.json').then(r => r.json())]);
+  const items = {}, champ = {}, champById = {}, runes = {};
+  Object.keys(it.data).forEach(id => {
+    const x = it.data[id], tags = x.tags || [], desc = x.description || '';
+    items[id] = { name: x.name, gold: (x.gold && x.gold.total) || 0, boots: tags.indexOf('Boots') >= 0, cons: tags.indexOf('Consumable') >= 0, trinket: tags.indexOf('Trinket') >= 0,
+      active: /<active>/i.test(desc) && tags.indexOf('Trinket') < 0 && tags.indexOf('Consumable') < 0 && id !== '2055',
+      legend: !(x.into && x.into.length) && ((x.gold && x.gold.total) || 0) >= 2200 && tags.indexOf('Boots') < 0 && tags.indexOf('Consumable') < 0 && tags.indexOf('Trinket') < 0 };
+  });
+  Object.keys(ch.data).forEach(k => { const x = ch.data[k]; champ[k] = x.name; champById[x.key] = { id: k, name: x.name }; });
+  (ru || []).forEach(t => { runes[t.id] = t.name; (t.slots || []).forEach(s => (s.runes || []).forEach(r => { runes[r.id] = r.name; })); });
+  AC.dd = { v, base, items, champ, champById, runes };
+  return AC.dd;
+}
+function acChampName(k) { return (AC.dd && AC.dd.champ[k]) || k; }
+function acChampIcon(k, sz) { return AC.dd ? '<img class="ac-ci" style="width:' + (sz || 20) + 'px;height:' + (sz || 20) + 'px" src="' + AC.dd.base + '/img/champion/' + acEsc(k) + '.png" alt="" title="' + acEsc(acChampName(k)) + '" loading="lazy">' : acEsc(k); }
+function acItemName(id) { const x = AC.dd && AC.dd.items[id]; return x ? x.name : String(id); }
+
+// ── 수집 ──
+async function acCall(body) {
+  const r = await fetch(WORKER_URL + '/acct-check', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(Object.assign({ token: _token, masterToken: _masterToken }, body)) });
+  let j = {}; try { j = await r.json(); } catch (e) {}
+  if (r.status === 429 || j.retryAfter && !j.ok) { const e = new Error(j.error || '호출 한도'); e.retry = j.retryAfter || 10; throw e; }
+  if (!j.ok) throw new Error(j.error || ('요청 실패 ' + r.status));
+  return j;
+}
+function acProg(t, done, total, wait) {
+  const el = document.getElementById('ac-prog'); if (!el) return;
+  el.style.display = 'block';
+  el.innerHTML = '<div class="ac-prog-t"><span>' + acEsc(t) + '</span><b>' + (total ? done + ' / ' + total : '') + '</b></div><div class="ac-bar"><i style="width:' + (total ? Math.round(done / total * 100) : 5) + '%"></i></div>' + (wait ? '<div class="ac-prog-w">라이엇 API 호출 한도에 걸려서 ' + wait + '초 기다리는 중이에요… (자동으로 이어서 받아요)</div>' : '');
+}
+async function acStart() {
+  const id = document.getElementById('ac-id').value.trim();
+  if (!id || id.indexOf('#') < 1) { toast('닉네임#태그 형식으로 입력해 주세요', 'err'); return; }
+  const count = parseInt(document.getElementById('ac-count').value, 10) || 100, wantTl = document.getElementById('ac-tl').checked;
+  const run = ++AC.run;
+  document.getElementById('ac-go').disabled = true; document.getElementById('ac-stop').style.display = '';
+  document.getElementById('ac-out').innerHTML = '';
+  try {
+    acProg('기본 데이터 불러오는 중…', 0, 0);
+    await acLoadDD();
+    let acc;
+    for (;;) { try { acc = await acCall({ action: 'lookup', riotId: id, count }); break; } catch (e) { if (!e.retry) throw e; for (let s = e.retry; s > 0; s--) { if (run !== AC.run) return; acProg('계정 찾는 중…', 0, 0, s); await acSleep(1000); } } }
+    if (run !== AC.run) return;
+    AC.acc = acc;
+    const ids = acc.ids.slice(), got = [];
+    let queue = ids.slice();
+    while (queue.length) {
+      if (run !== AC.run) return;
+      const batch = queue.splice(0, 8);
+      acProg('전적' + (wantTl ? ' · 타임라인' : '') + ' 받는 중…', got.length, ids.length);
+      let j;
+      try { j = await acCall({ action: 'matches', puuid: acc.account.puuid, ids: batch, timeline: wantTl }); }
+      catch (e) { if (e.retry) { queue = batch.concat(queue); for (let s = e.retry; s > 0; s--) { if (run !== AC.run) return; acProg('전적 받는 중…', got.length, ids.length, s); await acSleep(1000); } continue; } throw e; }
+      (j.items || []).forEach(g => got.push(g));
+      if (j.pending && j.pending.length) {
+        queue = j.pending.concat(queue);
+        const w = j.retryAfter || 10;
+        for (let s = w; s > 0; s--) { if (run !== AC.run) return; acProg('전적 받는 중…', got.length, ids.length, s); await acSleep(1000); }
+      }
+    }
+    acProg('분석 중…', got.length, ids.length);
+    AC.raw = got;
+    acAnalyze();
+    document.getElementById('ac-prog').style.display = 'none';
+  } catch (e) {
+    acProg('실패: ' + e.message, 0, 0);
+    toast(e.message, 'err');
+  } finally {
+    if (run === AC.run) { document.getElementById('ac-go').disabled = false; document.getElementById('ac-stop').style.display = 'none'; }
+  }
+}
+function acStop() { AC.run++; document.getElementById('ac-go').disabled = false; document.getElementById('ac-stop').style.display = 'none'; acProg('중지했어요', 0, 0); if (AC.raw && AC.raw.length) {} }
+
+// ── 분석 ──
+// 라벨이 섞여 있을 때, 소수 라벨이 특정 세션/날짜에 몰려 있는지 (몰려 있으면 다른 사람이 했을 정황)
+function acClusterTest(games, labelOf, minMinor) {
+  const lab = games.map(g => ({ g, l: labelOf(g) })).filter(x => x.l != null && x.l !== '');
+  if (lab.length < 6) return null;
+  const cnt = {}; lab.forEach(x => { cnt[x.l] = (cnt[x.l] || 0) + 1; });
+  const keys = Object.keys(cnt).sort((a, b) => cnt[b] - cnt[a]);
+  if (keys.length < 2) return null;
+  const major = keys[0], minorN = lab.length - cnt[major];
+  if (minorN < (minMinor || 3)) return null;
+  // 세션(90분 이상 쉬면 새 세션) 단위로 소수 라벨이 그 세션의 대부분인지
+  let pureMinor = 0;
+  const bySes = {}; lab.forEach(x => { (bySes[x.g._ses] = bySes[x.g._ses] || []).push(x.l); });
+  lab.forEach(x => { if (x.l === major) return; const arr = bySes[x.g._ses]; const same = arr.filter(y => y !== major).length; if (arr.length >= 2 && same / arr.length >= 0.7) pureMinor++; });
+  const days = {}; lab.forEach(x => { if (x.l !== major) days[x.g._day] = (days[x.g._day] || 0) + 1; });
+  return { major, cnt, keys, minorN, total: lab.length, share: minorN / lab.length, purity: pureMinor / minorN, minorGames: lab.filter(x => x.l !== major).map(x => x.g), days };
+}
+function acBySes(games) {
+  let ses = 0, prev = 0;
+  games.forEach(g => { if (prev && g.t - prev > 90 * 60000) ses++; g._ses = ses; prev = g.end || (g.t + g.dur * 1000); });
+}
+function acPerfZ(games) {
+  // 같은 라인끼리 비교한 종합 실력 지표 (z 점수 평균)
+  const by = {}; games.forEach(g => { (by[g.pos || '?'] = by[g.pos || '?'] || []).push(g); });
+  const metrics = [['kda', g => Math.log(1 + g._kda)], ['dmg', g => g._dmgShare], ['kp', g => g._kp], ['gpm', g => g._gpm], ['cs', g => g.pos === 'UTILITY' ? null : g._cspm], ['vis', g => g._vspm], ['d10', g => g.tl && g.tl.d10 ? g.tl.d10.g : null], ['solo', g => g.ch && g.ch.soloKills != null ? g.ch.soloKills : null]];
+  Object.keys(by).forEach(p => {
+    const arr = by[p];
+    const st = {}; metrics.forEach(([k, f]) => { const v = arr.map(f).filter(x => x != null && isFinite(x)); st[k] = { m: acMean(v), s: acSd(v) || 1, n: v.length }; });
+    arr.forEach(g => { const zs = []; metrics.forEach(([k, f]) => { const v = f(g); if (v != null && isFinite(v) && st[k].n >= 4) zs.push((v - st[k].m) / st[k].s); }); g._perf = zs.length ? acMean(zs) : 0; });
+  });
+}
+function acAnalyze() {
+  const dd = AC.dd, acc = AC.acc;
+  const all = (AC.raw || []).filter(g => g && AC_SR.indexOf(g.q) >= 0 && !g.remake && g.dur >= 300).sort((a, b) => a.t - b.t);
+  all.forEach(g => {
+    const min = g.dur / 60;
+    g._day = acDay(g.t); g._hour = acHour(g.t); g._min = min;
+    g._kda = (g.k + g.a) / Math.max(1, g.d); g._cspm = g.cs / min; g._gpm = g.gold / min; g._vspm = g.vision / min;
+    g._dmgShare = g.teamDmg ? g.dmg / g.teamDmg : 0; g._kp = g.teamKills ? (g.k + g.a) / g.teamKills : 0;
+    g._flash = g.s1 === 4 ? 'D' : g.s2 === 4 ? 'F' : null;
+    g._spells = [g.s1, g.s2].slice().sort().join('+');
+    const acts = []; (g.items || []).slice(0, 6).forEach((id, i) => { if (id && dd.items[id] && dd.items[id].active) acts.push({ id, slot: i + 1 }); });
+    g._acts = acts;
+    const cwi = (g.items || []).slice(0, 6).indexOf(2055); g._cw = cwi >= 0 ? cwi + 1 : null;
+    const tl = g.tl;
+    if (tl) {
+      const sk = String(tl.skills || '').split('').map(Number);
+      g._open = sk.slice(0, 3).map(x => AC_SKILL[x]).join('');
+      const c = { 1: 0, 2: 0, 3: 0 }, order = [];
+      sk.forEach(x => { if (c[x] != null) { c[x]++; if (c[x] === 5 && order.indexOf(x) < 0) order.push(x); } });
+      [1, 2, 3].forEach(x => { if (order.indexOf(x) < 0 && sk.length >= 9) order.push(x); });
+      g._max = sk.length >= 9 ? order.slice(0, 2).map(x => AC_SKILL[x]).join('>') : null;
+      const legend = (tl.buys || []).find(b => dd.items[b[0]] && dd.items[b[0]].legend);
+      g._first = legend ? legend[0] : null; g._firstT = legend ? legend[1] : null;
+      const boots = (tl.buys || []).filter(b => dd.items[b[0]] && dd.items[b[0]].boots && dd.items[b[0]].gold >= 900).map(b => b[0]);
+      g._boots = boots.length ? boots[boots.length - 1] : null;
+      g._start = (tl.buys || []).filter(b => b[1] <= 70 && !(dd.items[b[0]] && dd.items[b[0]].trinket)).map(b => b[0]).sort().join(',');
+      g._undo = tl.undo || 0;
+      // 정글 첫 동선 (2분 위치를 우리 팀 기준으로 돌려서 위쪽/아래쪽)
+      if (g.pos === 'JUNGLE' && tl.early && tl.early[1] && tl.early[1][0] != null) {
+        let x = tl.early[1][0], y = tl.early[1][1];
+        const sx = tl.early[0][0], sy = tl.early[0][1];
+        if (sx + sy > 14870) { x = 14870 - x; y = 14870 - y; }   // 레드 팀이면 맵을 돌려서 우리 팀 기준으로
+        g._path = y > x ? '위쪽 시작' : '아래쪽 시작';
+      }
+    }
+  });
+  acBySes(all);
+  acPerfZ(all);
+  AC.games = all;
+  AC.report = acRules(all, acc);
+  AC.sel = null;
+  acRender();
+}
+function acRules(G, acc) {
+  const F = [];   // { sev 1~3, cat, title, desc, games[], days{} }
+  const dd = AC.dd;
+  const add = (sev, cat, title, desc, games, extra) => F.push(Object.assign({ sev, cat, title, desc, games: (games || []).map(g => g.id), days: Array.from(new Set((games || []).map(g => g._day))) }, extra || {}));
+  const ranked = G.filter(g => g.q === 420);
+  const main = (acc.leagues || []).find(e => e.q === 'RANKED_SOLO_5x5') || null;   // 솔로랭크만 봐요
+  const lvl = acc.summoner ? acc.summoner.level : null;
+  const tIdx = main ? AC_TIERS.indexOf(main.tier) : -1;
+  const dayList = Array.from(new Set(G.map(g => g._day)));
+
+  // 1) 계정 · 랭크 (판수 대비 티어, 레벨, 승률)
+  if (main) {
+    const tot = main.w + main.l;
+    const wr2 = tot ? main.w / tot : 0;
+    const tierTxt = (AC_TIER_KO[main.tier] || main.tier) + (tIdx < 7 ? ' ' + main.rank : '') + ' ' + main.lp + 'LP';
+    if (tIdx >= 6 && tot < 80 && wr2 >= 0.6) add(3, '랭크 · 계정', '판수에 비해 티어가 가파르게 높아요', '이번 시즌 ' + tot + '판(' + main.w + '승 ' + main.l + '패, 승률 ' + acPct(wr2) + ')만에 ' + tierTxt + '. 적은 판수 · 높은 승률로 다이아 이상에 오른 건 대리 또는 부계정(생배) 정황이에요.', []);
+    else if (tIdx >= 5 && tot < 60 && wr2 >= 0.6) add(2, '랭크 · 계정', '판수에 비해 티어가 빠르게 올랐어요', tot + '판(승률 ' + acPct(wr2) + ')만에 ' + tierTxt + '.', []);
+    if (wr2 >= 0.65 && tot >= 30) add(tot >= 60 ? 3 : 2, '랭크 · 계정', '시즌 승률이 비정상적으로 높아요', tot + '판 승률 ' + acPct(wr2) + ' (' + tierTxt + '). 프로/대리 계정에서 흔한 수치예요.', []);
+    if (lvl != null && ((tIdx >= 6 && lvl < 80) || (tIdx >= 7 && lvl < 150) || (tIdx >= 5 && lvl < 50))) add(3, '랭크 · 계정', '계정 레벨이 낮은데 티어가 높아요', '소환사 레벨 ' + lvl + '에 ' + tierTxt + '. 새로 만든 계정을 높은 실력으로 올리는 생배 · 부계정 정황이에요.', []);
+    if (main.vet === false && main.fresh && wr2 >= 0.6 && tot < 100) add(1, '랭크 · 계정', '최근에 이 티어에 막 올라왔어요', '라이엇 표시상 이 티어에 새로 진입한 상태(freshBlood)이고 승률이 높아요.', []);
+  }
+  const mastTot = (acc.mastery || []).reduce((a, x) => a + x.p, 0);
+  if (main && tIdx >= 6 && mastTot < 300000) add(2, '랭크 · 계정', '숙련도 총합이 티어에 비해 너무 적어요', '전체 챔피언 숙련도 합이 ' + Math.round(mastTot / 1000) + 'k점이에요. 오래 한 계정이 아닌데 높은 티어라면 부계정 · 생배 정황이에요.', []);
+
+  // 2) 점멸 위치 (D/F)
+  const fl = acClusterTest(G, g => g._flash, 3);
+  if (fl) {
+    const minor = fl.keys[1], strong = fl.purity >= 0.6 || Object.keys(fl.days).length <= Math.max(2, Math.ceil(dayList.length * 0.3));
+    add(strong ? 3 : 2, '조작 습관', '점멸 키 위치가 바뀌는 판이 있어요 (' + fl.major + ' ' + fl.cnt[fl.major] + '판 · ' + minor + ' ' + fl.minorN + '판)',
+      '평소엔 점멸을 ' + fl.major + '에 두는데 ' + fl.minorN + '판은 ' + minor + '에 뒀어요.' + (strong ? ' 이 판들이 특정 날짜 · 같은 시간대에 몰려 있어서, 다른 사람이 같은 계정으로 했을 가능성이 높아요.' : ' 날짜에 고르게 섞여 있어서 챔피언마다 바꾸는 습관일 수도 있어요.'), fl.minorGames, { label: 'flash' });
+  }
+  // 3) 액티브 아이템 · 제어 와드 칸 위치
+  const actLab = g => g._acts.length ? String(g._acts[0].slot <= 3 ? '윗줄(' + g._acts.map(a => a.slot).join(',') + ')' : '아랫줄(' + g._acts.map(a => a.slot).join(',') + ')').replace(/\(.*\)/, '') : null;
+  const ac = acClusterTest(G, actLab, 3);
+  if (ac) add(ac.purity >= 0.6 ? 2 : 1, '조작 습관', '액티브 아이템을 넣는 칸이 달라요', '액티브 아이템을 평소엔 인벤토리 ' + ac.major + '에 두는데 ' + ac.minorN + '판은 ' + ac.keys.slice(1).join(' · ') + '에 뒀어요. 키 습관(1~3 / 5~7)이 다른 사람일 정황이에요.' + (ac.purity >= 0.6 ? ' 특정 세션에 몰려 있어요.' : ''), ac.minorGames, { label: 'act' });
+  const cw = acClusterTest(G, g => g._cw ? (g._cw <= 3 ? '윗줄' : '아랫줄') : null, 3);
+  if (cw) add(cw.purity >= 0.6 ? 2 : 1, '조작 습관', '제어 와드를 넣는 칸이 달라요', '제어 와드를 평소엔 ' + cw.major + '에 두는데 ' + cw.minorN + '판은 ' + cw.keys.slice(1).join(' · ') + '에 뒀어요.', cw.minorGames, { label: 'cw' });
+  const slotExact = acClusterTest(G, g => g._acts.length ? String(g._acts[0].slot) : null, 4);
+  if (slotExact && slotExact.purity >= 0.7 && slotExact.share >= 0.2) add(1, '조작 습관', '첫 액티브 아이템 칸 번호가 세션마다 달라요', '평소 ' + slotExact.major + '번 칸, 다른 세션엔 ' + slotExact.keys.slice(1).join(' · ') + '번 칸.', slotExact.minorGames);
+
+  // 4) 같은 챔피언인데 빌드 · 룬 · 스킬 순서 · 스펠이 다른 판
+  const byChamp = {}; G.forEach(g => { (byChamp[g.champ] = byChamp[g.champ] || []).push(g); });
+  Object.keys(byChamp).forEach(c => {
+    const arr = byChamp[c]; if (arr.length < 4) return;
+    const tests = [
+      ['스킬 마스터 순서', g => g._max, x => x],
+      ['1~3레벨 스킬 순서', g => g._open, x => x],
+      ['핵심 룬', g => g.rune && g.rune.key || null, x => dd.runes[x] || x],
+      ['첫 완성 아이템', g => g._first, x => acItemName(x)],
+      ['신발', g => g._boots, x => acItemName(x)],
+      ['소환사 주문 조합', g => g._spells, x => String(x).split('+').map(s => AC_SPELL[s] || s).join('+')],
+      ['시작 아이템', g => g._start || null, x => String(x).split(',').map(acItemName).join('+')],
+    ];
+    tests.forEach(([nm, f0, show]) => {
+      const f = g => { const v = f0(g); return v == null || v === '' || v === 0 ? null : String(v); };   // 숫자 ID도 문자열로 비교
+      const lab = arr.map(f).filter(Boolean);
+      if (lab.length < 4) return;
+      const cnt = {}; lab.forEach(x => { cnt[x] = (cnt[x] || 0) + 1; });
+      const keys = Object.keys(cnt).sort((a, b) => cnt[b] - cnt[a]);
+      if (keys.length < 2) return;
+      const minor = arr.filter(g => f(g) && f(g) !== keys[0]);
+      if (minor.length < 2 || minor.length / lab.length < 0.25) return;
+      // 다른 판들이 특정 날짜에 몰려 있는지
+      const ds = {}; minor.forEach(g => { ds[g._day] = 1; });
+      const majDays = {}; arr.filter(g => f(g) === keys[0]).forEach(g => { majDays[g._day] = 1; });
+      const sep = Object.keys(ds).filter(d => !majDays[d]).length / Object.keys(ds).length;
+      const sev = 1;
+      if (sep < 0.6 && (nm === '시작 아이템' || nm === '신발' || nm === '소환사 주문 조합')) return;
+      add(sev, '빌드 · 운영 습관', acChampName(c) + ' — 판마다 다른 ' + nm,
+        acChampName(c) + ' ' + arr.length + '판 중 ' + cnt[keys[0]] + '판은 ' + show(keys[0]) + ', ' + minor.length + '판은 ' + keys.slice(1).map(k => show(k) + '(' + cnt[k] + ')').join(' · ') + '.' + (sep >= 0.6 ? ' 다르게 한 판들이 평소와 다른 날짜에 몰려 있어요.' : ''), minor, { champ: c });
+    });
+  });
+  // 5) 정글 동선
+  const jp = acClusterTest(G.filter(g => g.pos === 'JUNGLE'), g => g._path || null, 3);
+  if (jp && jp.purity >= 0.6) add(1, '빌드 · 운영 습관', '정글 첫 동선 방향이 세션마다 달라요', '평소 ' + jp.major + ' ' + jp.cnt[jp.major] + '판, 다른 세션엔 ' + jp.keys.slice(1).join(' · ') + ' ' + jp.minorN + '판.', jp.minorGames);
+  // 6) 되돌리기 · 장신구 교체 · 와드 습관
+  const ud = acClusterTest(G.filter(g => g.tl), g => g._undo > 0 ? '되돌리기 씀' : '안 씀', 3);
+  if (ud && ud.purity >= 0.7) add(1, '빌드 · 운영 습관', '상점 되돌리기(Undo) 습관이 세션마다 달라요', ud.major + ' ' + ud.cnt[ud.major] + '판 · ' + ud.keys[1] + ' ' + ud.minorN + '판. 사람마다 고정된 습관이라 세션별로 갈리면 참고할 만해요.', ud.minorGames);
+  const tw = acClusterTest(G.filter(g => g.tl), g => (g.tl.buys || []).some(b => b[0] === 3364) ? '렌즈로 바꿈' : '안 바꿈', 3);
+  if (tw && tw.purity >= 0.7) add(1, '빌드 · 운영 습관', '장신구(렌즈) 교체 습관이 세션마다 달라요', tw.major + ' ' + tw.cnt[tw.major] + '판 · ' + tw.keys[1] + ' ' + tw.minorN + '판.', tw.minorGames);
+
+  // 7) 라인: 주 라인이 다른 것 자체는 흔해서 문제 삼지 않고, "다른 라인을 갈 때만 갑자기 연승 · 고승률"인 경우만 잡아요
+  const dayPos = {};
+  G.forEach(g => { const d = dayPos[g._day] = dayPos[g._day] || { n: 0, p: {}, w: 0, games: [] }; d.n++; d.p[g.pos] = (d.p[g.pos] || 0) + 1; if (g.win) d.w++; d.games.push(g); });
+  const posCnt = {}; G.forEach(g => { posCnt[g.pos] = (posCnt[g.pos] || 0) + 1; });
+  const mainPos = Object.keys(posCnt).sort((a, b) => posCnt[b] - posCnt[a])[0];
+  const mainG = G.filter(g => g.pos === mainPos), offG = G.filter(g => g.pos !== mainPos);
+  const mainWr = mainG.length ? mainG.filter(g => g.win).length / mainG.length : 0;
+  if (offG.length >= 4 && mainG.length >= 5) {
+    // (1) 다른 라인으로 연달아 한 판들 안에서의 연승
+    let run = [], bestRun = null;
+    const flush = () => { if (!run.length) return; let s = 0, b = 0, bi = -1; run.forEach((g, i) => { if (g.win) { s++; if (s > b) { b = s; bi = i; } } else s = 0; }); if (b && (!bestRun || b > bestRun.n)) bestRun = { n: b, games: run.slice(bi - b + 1, bi + 1) }; run = []; };
+    G.forEach(g => { if (g.pos !== mainPos) run.push(g); else flush(); }); flush();
+    if (bestRun && bestRun.n >= 5) {
+      const gs = bestRun.games, ps = Array.from(new Set(gs.map(g => g.pos))).map(p => AC_POS[p]).join(' · ');
+      add(bestRun.n >= 7 ? 3 : 2, '라인 · 챔피언 폭', '평소 라인이 아닌 ' + ps + ' 라인에서 ' + bestRun.n + '연승했어요',
+        acFmtT(gs[0].t) + ' ~ ' + acFmtT(gs[gs.length - 1].t) + ' 동안 주 라인(' + AC_POS[mainPos] + ', 승률 ' + acPct(mainWr) + ')이 아닌 ' + ps + ' 라인에서만 ' + bestRun.n + '연승 · 평균 KDA ' + acR(acMean(gs.map(g => g._kda))) + '. 다른 라인을 잘하는 사람이 대신 했을 정황이에요.', gs);
+    }
+    // (2) 다른 라인을 간 날(그날 70% 이상이 다른 라인)의 승률이 평소보다 확 높음
+    const offDays = Object.keys(dayPos).filter(k => { const d = dayPos[k], top = Object.keys(d.p).sort((a, b) => d.p[b] - d.p[a])[0]; return d.n >= 3 && top !== mainPos && d.p[top] / d.n >= 0.7; });
+    const odG = offDays.flatMap(k => dayPos[k].games);
+    if (odG.length >= 5) {
+      const wr = odG.filter(g => g.win).length / odG.length;
+      if (wr - mainWr >= 0.25 && wr >= 0.7) add(wr >= 0.85 ? 3 : 2, '라인 · 챔피언 폭', '다른 라인을 간 날만 승률이 확 높아요',
+        offDays.map(k => acFmtDay(k) + ' ' + Object.keys(dayPos[k].p).filter(p => p !== mainPos).map(p => AC_POS[p]).join('·') + ' ' + dayPos[k].n + '판 ' + dayPos[k].w + '승').join(' · ') + '. 이날들 승률 ' + acPct(wr) + ' (주 라인 ' + AC_POS[mainPos] + ' 승률 ' + acPct(mainWr) + ').', odG);
+    }
+  }
+  // 8) 챔피언 폭 변화 (앞쪽 vs 뒤쪽)
+  if (G.length >= 20) {
+    const h = Math.floor(G.length / 2), A = G.slice(0, h), B = G.slice(h);
+    const ca = new Set(A.map(g => g.champ)), cb = new Set(B.map(g => g.champ));
+    const inter = Array.from(ca).filter(x => cb.has(x)).length, uni = new Set(Array.from(ca).concat(Array.from(cb))).size;
+    const jac = inter / uni;
+    if (jac < 0.2) add(2, '라인 · 챔피언 폭', '챔피언 폭이 통째로 바뀌었어요', '앞쪽 ' + A.length + '판(' + acFmtDay(A[0]._day) + '~)과 뒤쪽 ' + B.length + '판(' + acFmtDay(B[0]._day) + '~)의 챔피언이 겹치는 비율이 ' + acPct(jac) + '예요. 앞: ' + Array.from(ca).slice(0, 8).map(acChampName).join(', ') + ' / 뒤: ' + Array.from(cb).slice(0, 8).map(acChampName).join(', '), B.filter(g => !ca.has(g.champ)));
+  }
+  // 숙련도 낮은 챔피언으로 고성능
+  const mast = {}; (acc.mastery || []).forEach(m => { const c = dd.champById[m.c]; if (c) mast[c.id] = m.p; });
+  const lowM = Object.keys(byChamp).filter(c => byChamp[c].length >= 3 && (mast[c] || 0) < 30000).map(c => ({ c, gs: byChamp[c], wr: byChamp[c].filter(g => g.win).length / byChamp[c].length, perf: acMean(byChamp[c].map(g => g._perf)) })).filter(x => x.wr >= 0.65 || x.perf >= 0.6);
+  if (lowM.length) add(2, '라인 · 챔피언 폭', '숙련도가 거의 없는 챔피언을 너무 잘해요', lowM.map(x => acChampName(x.c) + ' ' + x.gs.length + '판 승률 ' + acPct(x.wr) + ' (숙련도 ' + Math.round((mast[x.c] || 0) / 1000) + 'k)').join(' · ') + '. 원래 그 챔피언을 하던 다른 사람이 했을 정황이에요.', lowM.flatMap(x => x.gs));
+  // 처음 보는 챔피언 첫 판부터 잘함
+  const seen = {}, firstGood = [];
+  G.forEach(g => { if (!seen[g.champ]) { seen[g.champ] = 1; if ((mast[g.champ] || 0) < 15000 && g.win && g._perf >= 1 && g._kda >= 4) firstGood.push(g); } });
+  if (firstGood.length >= 3) add(1, '라인 · 챔피언 폭', '처음 해 보는 챔피언인데 첫 판부터 잘한 판이 많아요', firstGood.length + '판: ' + firstGood.slice(0, 6).map(g => acChampName(g.champ) + ' ' + g.k + '/' + g.d + '/' + g.a).join(', '), firstGood);
+
+  // 9) 실력 급변 (변화 시점) · 유독 잘한 날
+  if (G.length >= 20) {
+    let best = null;
+    for (let i = 8; i <= G.length - 8; i++) {
+      const a = G.slice(0, i).map(g => g._perf), b = G.slice(i).map(g => g._perf);
+      const sd = Math.sqrt((acSd(a) ** 2 + acSd(b) ** 2) / 2) || 1, d = (acMean(b) - acMean(a)) / sd;
+      if (!best || Math.abs(d) > Math.abs(best.d)) best = { i, d };
+    }
+    if (best && Math.abs(best.d) >= 0.8) {
+      const A = G.slice(0, best.i), B = G.slice(best.i), wa = A.filter(g => g.win).length / A.length, wb = B.filter(g => g.win).length / B.length;
+      add(Math.abs(best.d) >= 1.2 ? 3 : 2, '실력 변동', (best.d > 0 ? '어느 시점부터 실력이 확 올랐어요' : '어느 시점부터 실력이 확 떨어졌어요') + ' (' + acFmtT(B[0].t) + ' 전후)',
+        '이전 ' + A.length + '판 승률 ' + acPct(wa) + ' · KDA ' + acR(acMean(A.map(g => g._kda))) + ' · 분당 CS ' + acR(acMean(A.map(g => g._cspm))) + ' → 이후 ' + B.length + '판 승률 ' + acPct(wb) + ' · KDA ' + acR(acMean(B.map(g => g._kda))) + ' · 분당 CS ' + acR(acMean(B.map(g => g._cspm))) + '. 같은 사람의 자연스러운 성장으로 보기 어려운 폭이에요 (효과 크기 ' + acR(Math.abs(best.d)) + ').', best.d > 0 ? B : A, { split: B[0].t });
+    }
+  }
+  const dayPerf = Object.keys(dayPos).map(k => ({ day: k, n: dayPos[k].n, w: dayPos[k].w, perf: acMean(dayPos[k].games.map(g => g._perf)), games: dayPos[k].games }));
+  const hot = dayPerf.filter(x => x.n >= 3 && (x.perf >= 0.8 || (x.w / x.n >= 0.85 && x.n >= 5)));
+  if (hot.length && hot.length <= Math.max(3, dayList.length * 0.35)) add(hot.some(x => x.perf >= 1.1) ? 3 : 2, '실력 변동', '특정 날짜에만 실력이 확 좋아요', hot.map(x => acFmtDay(x.day) + ' ' + x.n + '판 ' + x.w + '승 (평소보다 실력 지표 +' + acR(x.perf) + 'σ)').join(' · ') + '.', hot.flatMap(x => x.games));
+  // 연승
+  let streak = 0, bestS = 0, sEnd = -1;
+  ranked.forEach((g, i) => { if (g.win) { streak++; if (streak > bestS) { bestS = streak; sEnd = i; } } else streak = 0; });
+  if (bestS >= 8) add(bestS >= 11 ? 3 : 2, '실력 변동', '랭크 ' + bestS + '연승이 있어요', acFmtT(ranked[sEnd - bestS + 1].t) + ' ~ ' + acFmtT(ranked[sEnd].t) + ' 랭크 ' + bestS + '연승. 대리 기간에 자주 보이는 패턴이에요.', ranked.slice(sEnd - bestS + 1, sEnd + 1));
+  // 라인전 압살
+  const d10 = G.filter(g => g.tl && g.tl.d10 && g.pos !== 'JUNGLE' && g.pos !== 'UTILITY');
+  if (d10.length >= 8) {
+    const mg = acMean(d10.map(g => g.tl.d10.g)), mc = acMean(d10.map(g => g.tl.d10.cs));
+    if (mg >= 700 || mc >= 12) add(2, '실력 변동', '라인전에서 상대를 압도해요', '10분 맞라이너 대비 평균 골드 ' + (mg > 0 ? '+' : '') + Math.round(mg) + ' · CS ' + (mc > 0 ? '+' : '') + acR(mc) + ' (' + d10.length + '판). 같은 티어 상대로는 드문 차이라 실제 실력이 티어보다 높을 정황이에요.', d10.filter(g => g.tl.d10.g >= 1000));
+  }
+  // 10) 티어 대비 실력 (위장티어 · 대리로 올린 계정)
+  if (main) {
+    const lan = ranked.filter(g => ['TOP', 'MIDDLE', 'BOTTOM'].indexOf(g.pos) >= 0);
+    if (lan.length >= 8) {
+      const cs = acMean(lan.map(g => g._cspm)), base = AC_CSPM[main.tier] || 6;
+      const kda = acMean(lan.map(g => g._kda)), wr = lan.filter(g => g.win).length / lan.length;
+      if (cs - base >= 1.1 && (kda >= 3.5 || wr >= 0.6)) add(3, '티어 대비 실력', '티어에 비해 실력이 너무 높아요 (위장티어 정황)', (AC_TIER_KO[main.tier] || main.tier) + ' 평균 분당 CS 약 ' + base + '인데 이 계정은 ' + acR(cs) + ' · KDA ' + acR(kda) + ' · 승률 ' + acPct(wr) + ' (라인 ' + lan.length + '판). 실제 실력이 훨씬 높은 사람이 낮은 티어 계정을 쓰는 정황이에요.', lan);
+      if (base - cs >= 1.2 && wr <= 0.47) add(3, '티어 대비 실력', '티어에 비해 실력이 너무 낮아요 (대리로 올린 계정 정황)', (AC_TIER_KO[main.tier] || main.tier) + ' 평균 분당 CS 약 ' + base + '인데 최근 ' + acR(cs) + ' · 승률 ' + acPct(wr) + '. 다른 사람이 올려 준 티어를 본인이 유지하지 못하는 정황이에요.', lan);
+    }
+  }
+  // 11) 시간대
+  const hrs = Array(24).fill(0); G.forEach(g => { hrs[g._hour]++; });
+  // 판수가 많은 시간부터 모아서 전체의 70%를 채우는 시간대 = 평소 시간대, 거기서 2시간 이상 떨어진 판 = 드문 시간대
+  const order = hrs.map((n, h) => [h, n]).sort((a, b) => b[1] - a[1]), mainH = []; let acc80 = 0;
+  for (const [h, n] of order) { if (acc80 >= G.length * 0.7 || !n) break; mainH.push(h); acc80 += n; }
+  const hDist = (a, b) => Math.min(Math.abs(a - b), 24 - Math.abs(a - b));
+  const isOdd = h => !mainH.some(m => hDist(m, h) <= 1);
+  AC._oddHour = isOdd;
+  const odd = G.filter(g => isOdd(g._hour));
+  if (odd.length >= 4) {
+    const wrO = odd.filter(g => g.win).length / odd.length, wrN = G.filter(g => odd.indexOf(g) < 0).filter(g => g.win).length / Math.max(1, G.length - odd.length);
+    const perfO = acMean(odd.map(g => g._perf));
+    const sev = (wrO - wrN >= 0.2 || perfO >= 0.6) ? 2 : 1;
+    add(sev, '접속 패턴', '평소와 다른 시간대에 한 판들이 있어요', '평소 거의 안 하는 시간(' + Array.from(new Set(odd.map(g => g._hour))).sort((a, b) => a - b).map(h => h + '시').join(', ') + ')에 ' + odd.length + '판. 이 판들 승률 ' + acPct(wrO) + ' (나머지 ' + acPct(wrN) + ')' + (perfO >= 0.6 ? ', 실력 지표도 평소보다 높아요' : '') + '.', odd);
+  }
+  // 오래 쉬었다가 돌아옴
+  for (let i = 1; i < G.length; i++) {
+    const gap = (G[i].t - G[i - 1].t) / 86400000;
+    if (gap >= 14) {
+      const before = G.slice(Math.max(0, i - 10), i), after = G.slice(i, i + 10);
+      const dp = acMean(after.map(g => g._perf)) - acMean(before.map(g => g._perf));
+      add(Math.abs(dp) >= 0.6 ? 2 : 1, '접속 패턴', Math.round(gap) + '일 쉬었다가 다시 시작했어요 (' + acFmtDay(G[i]._day) + ')', '공백 전후 10판 실력 지표 차이 ' + (dp > 0 ? '+' : '') + acR(dp) + 'σ. 계정 공유 · 판매 후 다른 사람이 시작했을 때 자주 보여요.' + (Math.abs(dp) < 0.6 ? ' (차이는 크지 않아요)' : ''), after);
+    }
+  }
+  // 12) 핑 습관
+  const pv = g => { const p = g.pings || {}, m = g._min; return ['allIn', 'assistMe', 'basic', 'command', 'enemyMissing', 'enemyVision', 'getBack', 'hold', 'needVision', 'onMyWay', 'push', 'visionCleared', 'retreat', 'danger'].map(k => (p[k] || 0) / m); };
+  const pg = G.filter(g => g.pings && Object.keys(g.pings).length);
+  if (pg.length >= 10) {
+    const tot = pg.map(g => pv(g).reduce((a, b) => a + b, 0)), mT = acMean(tot), sT = acSd(tot) || 1;
+    const all = pv(pg[0]).map((_, i) => acMean(pg.map(g => pv(g)[i])));
+    const cos = (a, b) => { const d = a.reduce((s, x, i) => s + x * b[i], 0), na = Math.sqrt(a.reduce((s, x) => s + x * x, 0)), nb = Math.sqrt(b.reduce((s, x) => s + x * x, 0)); return na && nb ? d / na / nb : 1; };
+    const odd2 = [];
+    Object.keys(dayPos).forEach(k => {
+      const gs = pg.filter(g => g._day === k); if (gs.length < 3) return;
+      const v = all.map((_, i) => acMean(gs.map(g => pv(g)[i]))), c = cos(v, all), z = (acMean(gs.map((g) => pv(g).reduce((a, b) => a + b, 0))) - mT) / sT;
+      if (c < 0.75 || Math.abs(z) >= 1.3) odd2.push({ k, c, z, gs });
+    });
+    if (odd2.length && odd2.length <= Math.max(2, Object.keys(dayPos).length * 0.4)) add(2, '조작 습관', '핑 찍는 습관이 다른 날이 있어요', odd2.map(x => acFmtDay(x.k) + ' (' + (x.z > 0 ? '핑 많음' : x.z < -1 ? '핑 적음' : '핑 종류 다름') + ', 유사도 ' + acPct(Math.max(0, x.c)) + ')').join(' · ') + '. 핑 양과 종류는 사람마다 꽤 일정해요.', odd2.flatMap(x => x.gs));
+  }
+  // 13) 스킬 사용 빈도 (같은 챔피언)
+  Object.keys(byChamp).forEach(c => {
+    const arr = byChamp[c].filter(g => g.casts && g.casts.some(Boolean)); if (arr.length < 5) return;
+    const per = arr.map(g => g.casts.slice(0, 3).reduce((a, b) => a + b, 0) / g._min), m = acMean(per), s = acSd(per) || 1;
+    const out = arr.filter((g, i) => Math.abs(per[i] - m) / s >= 1.8);
+    if (out.length >= 2 && out.length / arr.length <= 0.4) add(1, '조작 습관', acChampName(c) + ' — 스킬 쓰는 빈도가 확 다른 판', acChampName(c) + ' 평소 분당 스킬 ' + acR(m) + '회, 다른 판: ' + out.map(g => acR(g.casts.slice(0, 3).reduce((a, b) => a + b, 0) / g._min) + '회').join(', ') + '.', out, { champ: c });
+  });
+  // 14) 듀오
+  const mates = {};
+  G.forEach(g => (g.mates || []).forEach(m => { const x = mates[m.p] = mates[m.p] || { n: m.n, games: [] }; x.games.push(g); }));
+  Object.keys(mates).map(p => mates[p]).filter(x => x.games.length >= 3).forEach(x => {
+    const wr = x.games.filter(g => g.win).length / x.games.length, rest = G.filter(g => x.games.indexOf(g) < 0), wr2 = rest.filter(g => g.win).length / Math.max(1, rest.length);
+    const perf = acMean(x.games.map(g => g._perf));
+    const sev = (wr - wr2 >= 0.25 && x.games.length >= 4) || perf >= 0.7 ? 2 : 1;
+    add(sev, '듀오', '자주 같이 한 사람: ' + x.n + ' (' + x.games.length + '판)', '같이 한 판 승률 ' + acPct(wr) + ' / 나머지 ' + acPct(wr2) + (perf >= 0.5 ? ', 같이 한 판에서 실력 지표도 높아요' : '') + '. 듀오 대리(같이 큐 돌리며 올려 주기) 정황인지 확인해 보세요.', x.games, { mate: x.n });
+  });
+  // 빌드 · 운영은 챔피언마다 바뀔 수 있어서 참고로만 보여 줘요 (심각도 낮음 · 점수에 안 넣음)
+  F.forEach(f => { if (f.cat === '빌드 · 운영 습관') { f.sev = 1; f.ref = true; } });
+  // 정리: 심각도 높은 순, 참고 항목은 맨 뒤
+  F.sort((a, b) => (a.ref ? 1 : 0) - (b.ref ? 1 : 0) || b.sev - a.sev);
+  // 날짜별 의심 점수
+  const dayScore = {}; F.forEach(f => { if (f.ref) return; f.days.forEach(d => { dayScore[d] = (dayScore[d] || 0) + f.sev; }); });
+  const score = Math.min(100, Math.round(F.reduce((a, f) => a + (f.ref ? 0 : f.sev === 3 ? 16 : f.sev === 2 ? 8 : 3), 0)));
+  return { findings: F, dayScore, score, dayPos, hrs, main, lvl, mastTot };
+}
+
+// ── 화면 ──
+function acVerdict(s) { return s >= 70 ? ['강한 의심', 'v4'] : s >= 45 ? ['의심', 'v3'] : s >= 20 ? ['주의', 'v2'] : ['특이점 적음', 'v1']; }
+function acRender() {
+  const out = document.getElementById('ac-out'), R = AC.report, G = AC.games, acc = AC.acc;
+  if (!G.length) { out.innerHTML = '<div class="ac-empty">분석할 소환사의 협곡 경기가 없어요.</div>'; return; }
+  const v = acVerdict(R.score), m = R.main;
+  const wr = G.filter(g => g.win).length / G.length;
+  const leagues = (acc.leagues || []).filter(e => e.q === 'RANKED_SOLO_5x5').map(e => '<div class="ac-lg"><span>솔로랭크</span><b>' + (AC_TIER_KO[e.tier] || e.tier) + (AC_TIERS.indexOf(e.tier) < 7 ? ' ' + e.rank : '') + ' · ' + e.lp + 'LP</b><em>' + e.w + '승 ' + e.l + '패 (' + acPct(e.w / Math.max(1, e.w + e.l)) + ')</em></div>').join('') || '<div class="ac-lg"><span>솔로랭크</span><b>배치 전 / 기록 없음</b></div>';
+  const cats = {}; R.findings.forEach(f => { cats[f.cat] = (cats[f.cat] || 0) + 1; });
+  let h = '<div class="ac-sum"><div class="ac-acc">' + (acc.summoner ? '<img src="' + AC.dd.base + '/img/profileicon/' + acc.summoner.icon + '.png" alt="">' : '') +
+    '<div><b>' + acEsc(acc.account.name) + '<small>#' + acEsc(acc.account.tag) + '</small></b><span>레벨 ' + (acc.summoner ? acc.summoner.level : '?') + ' · 숙련도 합 ' + Math.round(R.mastTot / 1000) + 'k · 분석 ' + G.length + '판 (' + acFmtDay(G[0]._day) + ' ~ ' + acFmtDay(G[G.length - 1]._day) + ', 승률 ' + acPct(wr) + ')</span></div></div>' +
+    '<div class="ac-lgs">' + leagues + '</div>' +
+    '<div class="ac-score ' + v[1] + '"><div class="ac-gauge"><i style="width:' + R.score + '%"></i></div><b>' + R.score + '</b><span>' + v[0] + '</span></div></div>' +
+    '<div class="ac-note">점수는 아래 정황을 모아 계산한 참고값이에요. 정황은 증거가 아니라 "확인해 볼 만한 이상한 점"이에요. 판정 전에 해당 판들을 직접 열어 보세요.</div>';
+  // 정황 목록
+  const nRef = R.findings.filter(f => f.ref).length;
+  h += '<div class="section-title" style="margin-top:1.5rem">의심 정황 ' + (R.findings.length - nRef) + '개' + (nRef ? ' · 참고 ' + nRef + '개' : '') + '</div>';
+  h += '<div class="ac-chips"><button class="ac-chip' + (AC.view === 'all' ? ' on' : '') + '" onclick="acSetView(\'all\')">전체 ' + R.findings.length + '</button>' + Object.keys(cats).map(c => '<button class="ac-chip' + (AC.view === c ? ' on' : '') + '" onclick="acSetView(\'' + c + '\')">' + c + ' ' + cats[c] + '</button>').join('') + '</div>';
+  const fs = R.findings.filter(f => AC.view === 'all' || f.cat === AC.view);
+  h += fs.length ? '<div class="ac-fs">' + fs.map((f, i) => {
+    const gi = R.findings.indexOf(f);
+    return '<div class="ac-f s' + f.sev + (f.ref ? ' ref' : '') + (AC.sel === gi ? ' on' : '') + (f.games.length ? '' : ' nog') + '"' + (f.games.length ? ' onclick="acSel(' + gi + ')"' : '') + '><div class="ac-f-h"><span class="ac-sev">' + (f.ref ? '참고' : ['', '낮음', '보통', '높음'][f.sev]) + '</span><em>' + acEsc(f.cat) + '</em><b>' + acEsc(f.title) + '</b></div><div class="ac-f-d">' + acEsc(f.desc) + '</div>' +
+      (f.games.length ? '<div class="ac-f-g">관련 ' + f.games.length + '판' + (f.days.length ? ' · ' + f.days.slice(0, 6).map(acFmtDay).join(', ') + (f.days.length > 6 ? ' 외' : '') : '') + ' <u>' + (AC.sel === gi ? '표시 끄기' : '아래 표에서 보기') + '</u></div>' : '') + '</div>';
+  }).join('') + '</div>' : '<div class="ac-empty">이 분류에는 정황이 없어요.</div>';
+  // 차트: 판별 실력 지표
+  h += '<div class="section-title" style="margin-top:1.75rem">판별 실력 지표 · 시간 순</div>' + acPerfChart();
+  h += '<div class="ac-two"><div><div class="section-title">시간대별 판수 (KST)</div>' + acHourChart() + '</div><div><div class="section-title">날짜별 요약</div>' + acDayTable() + '</div></div>';
+  h += '<div class="section-title" style="margin-top:1.5rem">전체 경기' + (AC.sel != null ? ' · <span style="color:var(--blue)">선택한 정황 관련 판 강조</span>' : '') + '</div>' + acGameTable();
+  out.innerHTML = h;
+  acBindChart();
+}
+function acSetView(v) { AC.view = v; acRender(); }
+function acSel(i) { AC.sel = AC.sel === i ? null : i; acRender(); if (AC.sel != null) { const t = document.getElementById('ac-games'); if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' }); } }
+function acSelIds() { return AC.sel != null && AC.report.findings[AC.sel] ? AC.report.findings[AC.sel].games : null; }
+function acPerfChart() {
+  const G = AC.games, W = 1000, H = 220, pl = 36, pr = 10, pt = 12, pb = 26;
+  const ys = G.map(g => g._perf), lo = Math.min(-2, Math.min.apply(null, ys)), hi = Math.max(2, Math.max.apply(null, ys));
+  const X = i => pl + (W - pl - pr) * (G.length === 1 ? 0.5 : i / (G.length - 1)), Y = v => pt + (H - pt - pb) * (1 - (v - lo) / (hi - lo));
+  const sel = acSelIds();
+  let s = '<svg class="ac-svg" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" id="ac-perf">';
+  [-2, -1, 0, 1, 2].forEach(v => { s += '<line x1="' + pl + '" x2="' + (W - pr) + '" y1="' + Y(v) + '" y2="' + Y(v) + '" class="' + (v === 0 ? 'ac-axis0' : 'ac-grid') + '"/><text x="' + (pl - 6) + '" y="' + (Y(v) + 3) + '" class="ac-tk" text-anchor="end">' + (v > 0 ? '+' : '') + v + '</text>'; });
+  // 날짜 경계
+  let prevDay = null, lastLbl = -999;
+  G.forEach((g, i) => { if (g._day !== prevDay) { if (prevDay) s += '<line x1="' + X(i - 0.5) + '" x2="' + X(i - 0.5) + '" y1="' + pt + '" y2="' + (H - pb) + '" class="ac-sep"/>'; if (X(i) - lastLbl > 48) { s += '<text x="' + X(i) + '" y="' + (H - 8) + '" class="ac-tk">' + acFmtDay(g._day).replace(/ \(.\)/, '') + '</text>'; lastLbl = X(i); } prevDay = g._day; } });
+  // 5판 이동 평균
+  const ma = G.map((g, i) => acMean(G.slice(Math.max(0, i - 4), i + 1).map(x => x._perf)));
+  s += '<path d="' + ma.map((v, i) => (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(v).toFixed(1)).join('') + '" class="ac-ma"/>';
+  G.forEach((g, i) => { const hl = sel && sel.indexOf(g.id) >= 0; s += '<circle cx="' + X(i).toFixed(1) + '" cy="' + Y(g._perf).toFixed(1) + '" r="' + (hl ? 6 : 4) + '" class="ac-dot ' + (g.win ? 'w' : 'l') + (hl ? ' hl' : '') + (sel && !hl ? ' dim' : '') + '" data-i="' + i + '"/>'; });
+  s += '</svg>';
+  return '<div class="ac-chart"><div class="ac-legend"><span><i class="w"></i>승</span><span><i class="l"></i>패</span><span><i class="ma"></i>5판 이동 평균</span><span class="ac-lg-n">0 = 이 계정의 같은 라인 평균 · 위로 갈수록 평소보다 잘한 판</span></div>' + s + '<div class="ac-tip" id="ac-tip"></div></div>';
+}
+function acBindChart() {
+  const svg = document.getElementById('ac-perf'), tip = document.getElementById('ac-tip'); if (!svg) return;
+  svg.addEventListener('mousemove', e => {
+    const r = svg.getBoundingClientRect(), G = AC.games, x = (e.clientX - r.left) / r.width * 1000;
+    let bi = 0, bd = 1e9; G.forEach((g, i) => { const gx = 36 + (1000 - 46) * (G.length === 1 ? 0.5 : i / (G.length - 1)); const d = Math.abs(gx - x); if (d < bd) { bd = d; bi = i; } });
+    const g = G[bi]; if (!g) return;
+    tip.style.display = 'block';
+    tip.style.left = Math.min(r.width - 230, Math.max(0, e.clientX - r.left + 12)) + 'px'; tip.style.top = (e.clientY - r.top + 10) + 'px';
+    tip.innerHTML = '<b>' + acFmtT(g.t) + ' · ' + (AC_Q[g.q] || g.q) + '</b><div>' + acChampIcon(g.champ, 18) + ' ' + acEsc(acChampName(g.champ)) + ' · ' + AC_POS[g.pos] + ' · <span class="' + (g.win ? 'tw' : 'tl') + '">' + (g.win ? '승' : '패') + '</span></div><div>' + g.k + '/' + g.d + '/' + g.a + ' · CS ' + acR(g._cspm) + '/분 · 딜 ' + acPct(g._dmgShare) + '</div><div>실력 지표 ' + (g._perf > 0 ? '+' : '') + acR(g._perf, 2) + 'σ</div>';
+  });
+  svg.addEventListener('mouseleave', () => { tip.style.display = 'none'; });
+}
+function acHourChart() {
+  const hrs = AC.report.hrs, mx = Math.max.apply(null, hrs) || 1, W = 480, H = 140, pb = 18, bw = W / 24;
+  let s = '<svg class="ac-svg" viewBox="0 0 ' + W + ' ' + H + '">';
+  hrs.forEach((n, h) => { const bh = (H - pb - 6) * n / mx; s += '<rect x="' + (h * bw + 1.5) + '" y="' + (H - pb - bh) + '" width="' + (bw - 3) + '" height="' + Math.max(0, bh) + '" rx="2" class="ac-hb' + (n && AC._oddHour && AC._oddHour(h) ? ' odd' : '') + '"><title>' + h + '시 · ' + n + '판</title></rect>'; if (h % 3 === 0) s += '<text x="' + (h * bw + bw / 2) + '" y="' + (H - 5) + '" class="ac-tk" text-anchor="middle">' + h + '</text>'; });
+  return s + '</svg><div class="ac-note">빨간 막대: 평소 시간대(판수 70%가 몰린 시간 ±1시간)에서 벗어난 시간</div>';
+}
+function acDayTable() {
+  const R = AC.report, days = Object.keys(R.dayPos).sort().reverse();
+  return '<div class="ac-days">' + days.map(k => {
+    const d = R.dayPos[k], sc = R.dayScore[k] || 0, gs = d.games;
+    const fl = {}; gs.forEach(g => { if (g._flash) fl[g._flash] = (fl[g._flash] || 0) + 1; });
+    return '<div class="ac-day' + (sc >= 6 ? ' hot' : sc >= 3 ? ' warm' : '') + '"><span class="ac-dd">' + acFmtDay(k) + '</span><span class="ac-dn">' + d.n + '판 ' + d.w + '승</span><span class="ac-dp">' + Object.keys(d.p).map(p => '<i style="background:' + AC_POS_C[p] + '" title="' + AC_POS[p] + '"></i>' + AC_POS[p] + d.p[p]).join(' ') + '</span><span class="ac-df">점멸 ' + (Object.keys(fl).map(k2 => k2 + fl[k2]).join('/') || '-') + '</span><span class="ac-dz">' + (sc ? '정황 ' + sc : '') + '</span></div>';
+  }).join('') + '</div>';
+}
+function acGameTable() {
+  const sel = acSelIds(), G = AC.games.slice().reverse();
+  const rows = (sel ? G.filter(g => sel.indexOf(g.id) >= 0).concat(G.filter(g => sel.indexOf(g.id) < 0)) : G);
+  return '<div class="table-wrap" id="ac-games" style="overflow:auto"><table class="data-table ac-gt"><thead><tr><th>시간</th><th>큐</th><th>챔피언</th><th>라인</th><th>결과</th><th>K/D/A</th><th>CS/분</th><th>딜 비중</th><th>10분 골드차</th><th>실력</th><th>점멸</th><th>액티브 칸</th><th>스킬</th><th>첫 템</th><th>룬</th></tr></thead><tbody>' +
+    rows.map(g => { const hl = sel && sel.indexOf(g.id) >= 0; return '<tr class="' + (hl ? 'hl' : sel ? 'dim' : '') + '"><td>' + acFmtT(g.t) + '</td><td>' + (AC_Q[g.q] || g.q) + '</td><td class="ac-cn">' + acChampIcon(g.champ, 20) + acEsc(acChampName(g.champ)) + '</td><td>' + AC_POS[g.pos] + '</td><td class="' + (g.win ? 'tw' : 'tl') + '">' + (g.win ? '승' : '패') + '</td><td>' + g.k + '/' + g.d + '/' + g.a + '</td><td>' + acR(g._cspm) + '</td><td>' + acPct(g._dmgShare) + '</td><td>' + (g.tl && g.tl.d10 ? (g.tl.d10.g > 0 ? '+' : '') + g.tl.d10.g : '-') + '</td><td class="' + (g._perf >= 1 ? 'tw' : g._perf <= -1 ? 'tl' : '') + '">' + (g._perf > 0 ? '+' : '') + acR(g._perf, 1) + '</td><td>' + (g._flash || '-') + '</td><td>' + (g._acts.map(a => a.slot).join(',') || '-') + '</td><td>' + (g._max || '-') + '</td><td>' + (g._first ? acEsc(acItemName(g._first)) : '-') + '</td><td>' + acEsc((AC.dd.runes[g.rune && g.rune.key] || '-')) + '</td></tr>'; }).join('') + '</tbody></table></div>';
 }
 
 </script>

@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#06080C">
+<title>멸망전 참가자 가이드 · 룽잉닷컴</title>
+<link rel="icon" href="favicon.png">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+</head>
+<body>
+<script>
+var U = function () { return window.GUIDE_UTIL; };
+window.GUIDE = {
+  id: 'player',
+  title: '멸망전 참가자 가이드',
+  sub: '팀장 · 참가자용 — 실제 멸망전 화면을 직접 눌러 보며 배워요',
+  intro: '오른쪽 화면은 실제 멸망전 페이지와 똑같이 움직이는 체험 화면이에요. 디스코드 쪽에서 일어나는 일(포스트 · DM · 비공개 스레드)도 옆에 같이 보여 드려요. 여기서 한 건 실제로 저장되지 않아요.',
+  other: { label: '운영자 가이드 →', href: 'doom-guide-admin' },
+  doomHref: 'doom',
+  chapters: [
+    { id: 'login', title: '로그인 · 소환사 등록', desc: '처음 한 번만 하면 돼요', who: '모든 참가자', role: 'guest', seed: 'teams', start: '/d/d1',
+      intro: '멸망전 페이지는 디스코드 계정으로 로그인해요. 스크림 개인 신청을 하려면 소환사 계정도 등록해 둬야 해요.',
+      notes: [{ kind: 'note', head: '# 내전-공지 · 룽봇 포스트', content: '내전 · 스크림 포스트 아래에 있는 **🎮 소환사 계정 등록** 버튼으로 라이엇 ID를 등록할 수 있어요.', buttons: [[{ label: '🎮 소환사 계정 등록', style: 2, id: 'register' }]] }],
+      outro: '로그인하면 30일 동안 유지돼요. 다른 기기에서는 다시 로그인해 주세요.',
+      steps: [
+        { t: '멸망전 페이지', d: 'stats 페이지 오른쪽 위 금색 "멸망전" 버튼(모바일은 ☰ 메뉴)으로 들어와요. 로그인 전에는 팀과 스크림을 구경만 할 수 있어요.', act: [['focus', '.bar']] },
+        { t: '디스코드 로그인', d: '오른쪽 위 "디스코드 로그인"을 누르면 디스코드 승인 화면으로 갔다가 다시 돌아와요. 오른쪽 위에 내 디스코드 이름이 뜨면 로그인된 거예요.', act: [['click', '.chip.dc'], ['wait', 600]], focus: '.chip.dc' },
+        { t: '소환사 계정 등록', d: '디스코드의 룽봇 포스트에서 "🎮 소환사 계정 등록"을 눌러 라이엇 ID와 주 라인을 등록해요. 한 번만 하면 돼요.\n등록하면 팀원 목록에 디스코드 아이콘이 붙고, 스크림 개인 신청도 할 수 있어요.', act: [['dclick', 'D:register']] },
+      ] },
+    { id: 'apply', title: '팀 신청하기', desc: '팀장 — 팀원 고르기 · 메모', who: '팀장', role: 'newcap', seed: 'teams', start: '/d/d1',
+      intro: '팀장이 팀 이름과 5명의 로스터를 정해서 신청해요. 관리자가 수락하면 팀이 확정돼요.',
+      outro: '수락되면 디스코드 DM으로 알려 드려요. 수락된 뒤에는 팀을 고칠 수 없으니, 바꿀 게 있으면 운영진에게 말해 주세요.',
+      steps: [
+        { t: '"팀 신청"을 눌러요', d: '디스코드로 로그인돼 있으면 팀 탭 오른쪽 위에 "팀 신청" 버튼이 보여요. 한 사람이 멸망전마다 팀 하나만 신청할 수 있어요.', act: [['click', '.bar >> text:팀 신청']] },
+        { t: '팀 이름 · 팀 색', d: '팀 색은 팀 카드와 스크림 화면에 쓰여요.', act: [['type', '#tm-name', '골드 타이거'], ['click', '.colors button@3']] },
+        { t: '라인을 눌러 팀원을 골라요', d: '라인 칸을 누르면 커뮤니티 멤버 목록이 떠요. 닉네임으로 검색해서 골라요.\n디스코드 연동이 안 된 멤버도 고를 수 있어요. 이미 다른 팀에 있는 사람은 회색으로 막혀 있어요.', act: [['click', '.slot@0'], ['type', '#pk-q', '청룡'], ['click', '#pk-list .pi:not([disabled])@0']] },
+        { t: '나머지 라인도 채워요', d: '5개 라인을 모두 채워야 신청할 수 있어요.', hold: 1000, act: [
+          ['click', '.slot@1'], ['type', '#pk-q', '백호'], ['click', '#pk-list .pi:not([disabled])@0'],
+          ['click', '.slot@2'], ['type', '#pk-q', '주작'], ['click', '#pk-list .pi:not([disabled])@0'],
+          ['click', '.slot@3'], ['type', '#pk-q', '정글러버'], ['click', '#pk-list .pi:not([disabled])@0'],
+          ['click', '.slot@4'], ['type', '#pk-q', '민트초코'], ['click', '#pk-list .pi:not([disabled])@0']] },
+        { t: '점수 확인', d: '점수는 커뮤니티 내전 점수표로 계산돼요. 티어는 임시티어 → 최고티어 → 현재 솔랭 순서로 적용되고, 어떤 티어를 썼는지 작은 표시로 나와요.\n디스코드 아이콘 = 디스코드 연동된 팀원', act: [['focus', '.slots']] },
+        { t: '관리자에게 전할 메모', d: '티어나 점수가 잘못 나왔거나, 특수룰로 점수를 더 받아야 하면 여기에 적어요. 관리자가 보고 고쳐 줘요. 관리자와 나만 볼 수 있어요.', act: [['type', '#tm-memo', '정글러버 최고티어가 실제로는 다이아2예요.']] },
+        { t: '신청하기', d: '신청한 팀은 "수락 대기" 상태로 모두에게 보여요. 수락 전에는 "수정"으로 고치거나 신청을 취소할 수 있어요.', act: [['click', 'text:신청하기']], focus: '.roster.pending' },
+        { t: '관리자가 수락하면 DM이 와요', d: '수락되면 디스코드 DM으로 알려 주고, 팀 카드의 "수락 대기" 표시가 사라져요.', act: [['sim', 'approve-mine'], ['dfocus', 'DC:dm']] },
+      ] },
+    { id: 'rejected', title: '거절됐을 때', desc: '사유 확인 · 다시 신청', who: '팀장', role: 'newcap', seed: 'rejected', start: '/d/d1',
+      intro: '거절되면 사유가 DM으로 오고, 팀 카드에도 표시돼요. 고쳐서 다시 신청하면 돼요.',
+      outro: '다시 신청하면 다시 "수락 대기"가 돼요.',
+      steps: [
+        { t: '거절 사유', d: '거절된 팀은 나와 관리자에게만 보이고, 카드에 거절 사유가 나와요.', act: [['focus', '.roster.rejected']] },
+        { t: '"고쳐서 다시 신청"', d: '사유를 보고 팀원을 바꿔요. 예: 미드를 다른 사람으로', act: [['click', 'text:고쳐서 다시 신청'], ['click', '.slot@2'], ['type', '#pk-q', '라떼'], ['click', '#pk-list .pi:not([disabled])@0']], focus: '#tm-tot' },
+        { t: '다시 신청', d: '', act: [['click', '#tm-save']], focus: '.roster.pending' },
+      ] },
+    { id: 'entry', title: '최종 출전 확정 요청', desc: '팀장 — 주의사항 동의 · 요청', who: '팀장', role: 'captain', seed: 'teams', start: '/d/d1',
+      intro: '팀이 수락된 뒤, 참가비 납부 같은 출전 조건을 갖췄으면 "최종 출전 확정"을 요청해요. 관리자가 승인하면 대회 출전이 확정돼요.',
+      outro: '최종 출전 확정 팀은 팀 목록 맨 앞에 금색으로 빛나는 카드로 나와요. 반려되면 사유가 DM으로 오고, 조건을 갖춘 뒤 다시 요청할 수 있어요.',
+      steps: [
+        { t: '"🏆 최종 출전 확정"을 눌러요', d: '수락된 내 팀 카드에 팀장에게만 보이는 버튼이에요.', act: [['click', '.entrybtn@0']] },
+        { t: '주의사항 · 조건 읽기', d: '운영진이 정한 출전 주의사항과 조건이 나와요. 참가비, 팀원 변경 제한, 지각 규칙 같은 내용이니 꼭 읽어 주세요.', act: [['focus', '.terms']] },
+        { t: '"네 동의합니다" 체크', d: '체크해야 "최종 출전 확정" 버튼이 눌려요.', act: [['click', '#en-ok']], focus: '#en-go' },
+        { t: '요청 보내기', d: '요청하면 팀 카드에 "최종 출전 확정 요청 중"이 표시되고, 관리자가 확인해요.', act: [['click', '#en-go']], focus: '.etag.req' },
+        { t: '승인되면 DM이 와요', d: '관리자가 승인하면 디스코드 DM으로 알려 줘요.', act: [['sim', 'entry-approve-mine'], ['dfocus', 'DC:dm']] },
+        { t: '맨 앞 · 강조 표시', d: '최종 출전 확정 팀은 팀 목록 맨 앞으로 올라오고, 금색 빛 효과와 "🏆 최종 출전 확정" 리본이 붙어요.', act: [['focus', '.entry-wrap']] },
+      ] },
+    { id: 'make', title: '스크림 열기', desc: '팀장 역할 — 교체 인원 · 디스코드 포스트', who: '팀장 (스크림 역할)', role: 'captain', seed: 'scrims', start: '/d/d1/scrims', posts: true,
+      intro: '디스코드에서 스크림 개설 역할을 받은 팀장은 우리 팀 스크림을 열고 상대를 모집할 수 있어요.',
+      outro: '스크림이 열리면 디스코드 포스트로 개인 · 팀 신청을 받아요. 성사시키는 방법은 "내 스크림 성사시키기" 장에서 볼 수 있어요.',
+      steps: [
+        { t: '스크림 탭', d: '스크림 개설 역할 + 수락된 팀의 팀장이면 "스크림 만들기" 버튼이 보여요. 역할이 없으면 보이지 않아요.', act: [['focus', 'text:스크림 만들기']] },
+        { t: '"스크림 만들기"', d: '', act: [['click', 'text:스크림 만들기']] },
+        { t: '이름 · 모집 기간 · 시작 시간', d: '모집 마감이 지나면 신청 버튼이 자동으로 꺼져요.', act: [['type', '#sf-name', '토요일 오후 스크림'], ['type', '#sf-re', function () { return U().dt(2, 18); }], ['type', '#sf-st', function () { return U().dt(3, 21); }]] },
+        { t: '진행 설명 · 특이사항', d: '진행 방식과 상대에게 바라는 점을 적어요. 디스코드 포스트와 성사 DM에 그대로 나가요.', act: [['type', '#sf-desc', '3판 2선승 · 토너먼트 드래프트'], ['type', '#sf-note', '정시 시작 · 음성 필수']] },
+        { t: '상대 점수 조건 (선택)', d: '상대 팀 합계 점수가 이 범위 안이어야 신청 · 성사할 수 있어요. 비우면 제한이 없어요.', act: [['type', '#sf-min', '165'], ['type', '#sf-max', '190']] },
+        { t: '시간 안 되는 팀원은 교체', d: '"교체"를 눌러 다른 커뮤니티 멤버로 바꿔요. 바꾼 자리에는 보라색 "교체" 표시와 원래 멤버가 작게 나와요.', act: [['click', '.slotw@2 >> text:교체'], ['type', '#sp-q', '백호'], ['click', '#sp-list .pi:not([disabled])@0']], focus: '.slotw@2' },
+        { t: '만들기 → 디스코드 포스트', d: '만들면 스크림 포럼 채널에 포스트가 자동으로 올라가요 (오른쪽). 포스트의 버튼으로 개인 · 팀 신청을 받아요.', act: [['click', '#sf-save'], ['wait', 600], ['dfocus', 'DC:post:']] },
+      ] },
+    { id: 'solo', title: '개인으로 스크림 신청', desc: '라인 버튼 하나로', who: '모든 참가자', role: 'player', seed: 'scrims', start: '/d/d1/scrims/s1', posts: true,
+      intro: '팀이 없어도, 우리 팀이 아니어도 원하는 라인으로 스크림에 개인 신청을 할 수 있어요. 내전 참여처럼요.',
+      outro: '뽑히면 디스코드 DM과 비공개 스레드로 알려 드려요.',
+      steps: [
+        { t: '디스코드 스크림 포스트', d: '스크림 포럼 채널의 포스트에 신청 현황과 신청 버튼이 있어요.', act: [['dfocus', 'DC:post:s1']] },
+        { t: '라인 버튼으로 신청', d: '"정글(개인)"처럼 원하는 라인을 눌러요. 나만 보이는 답장으로 신청 결과와 내 점수가 와요. 한 사람은 한 라인만 신청돼요.', act: [['dclick', 'D:sc_solo:s1:jg']], focus: 'DC:post:s1' },
+        { t: '웹에서도 똑같이', d: '스크림 상세 화면의 "스크림 신청"에서도 라인 버튼으로 신청할 수 있어요. 지금 신청한 라인은 초록색으로 켜져 있어요.', act: [['focus', '.applyb']] },
+        { t: '라인 바꾸기', d: '다른 라인을 누르면 그쪽으로 옮겨져요.', act: [['click', '.lb@2']] },
+        { t: '팀 신청 버튼은 팀장 전용', d: '팀장 역할이 없는 사람이 "👑 팀 스크림 신청"을 누르면 "팀장만 가능합니다"라고 나와요.', act: [['dclick', 'D:sc_team:s1']], focus: 'DC:post:s1' },
+        { t: '신청 취소', d: '포스트의 "❌ 개인 신청 취소"나 웹의 "신청 취소"로 취소해요.', act: [['click', '.applyb >> text:신청 취소']] },
+      ] },
+    { id: 'team', title: '팀으로 스크림 신청', desc: '팀장 전용 — VS 화면에서 교체', who: '팀장 (스크림 역할)', role: 'captain', seed: 'scrims', start: '/d/d1/scrims/s1', posts: true,
+      intro: '다른 팀이 연 스크림에 우리 팀으로 도전해요. 시간 안 되는 팀원은 교체해서 신청할 수 있어요.',
+      outro: '상대 팀장이 우리 팀을 고르면 디스코드 DM과 비공개 스레드로 알려 드려요.',
+      steps: [
+        { t: '"👑 팀 스크림 신청(팀장전용)"', d: '포스트의 팀장 전용 버튼을 누르면, 팀장이면 나만 보이는 답장으로 신청 페이지 링크가 와요.', act: [['dclick', 'D:sc_team:s1']], focus: 'DC:post:s1' },
+        { t: '링크를 열면 VS 화면', d: '왼쪽은 상대 스크림 팀, 오른쪽은 우리 팀이에요.', act: [['dclick', 'D:#/d/d1/scrims/s1/apply'], ['wait', 800]], focus: '.vsm' },
+        { t: '교체할 팀원 바꾸기', d: '우리 팀에서 시간이 안 되는 사람 옆 "교체"를 눌러 다른 사람으로 바꿔요.', act: [['click', '.vsm .slotw@0 >> text:교체'], ['type', '#sp-q', '백호'], ['click', '#sp-list .pi:not([disabled])@0']], focus: '.vsm .slotw@0' },
+        { t: '점수 조건 확인', d: '교체 인원까지 합친 우리 팀 합계가 상대가 정한 범위 안이어야 신청할 수 있어요. 벗어나면 버튼이 꺼지고 이유가 빨간색으로 나와요.', act: [['focus', '.mbox .totbar']] },
+        { t: '스크림 신청하기', d: '신청하면 디스코드 포스트의 팀 신청 목록에 우리 팀이 올라가요. 같은 화면에서 고치거나 취소할 수 있어요.', act: [['click', '#ap-go'], ['wait', 500], ['dfocus', 'DC:post:s1']] },
+      ] },
+    { id: 'match', title: '내 스크림 성사시키기', desc: '팀 신청 고르기 · 개인 조합', who: '스크림을 연 팀장', role: 'captain', seed: 'mine', start: '/d/d1/scrims/s2', posts: true,
+      intro: '내가 연 스크림에 들어온 신청 중에서 상대를 골라요. 팀 신청을 고르거나, 개인 신청자로 상대 팀을 만들 수 있어요.',
+      outro: '성사되면 상대에게 DM이 가고, 양 팀만 들어가는 비공개 스레드가 만들어져요. 디스코드 포스트도 "성사"로 바뀌어요.',
+      steps: [
+        { t: '들어온 신청', d: '팀 신청은 팀 카드로, 개인 신청은 라인별 목록으로 나와요. 점수 조건 충족 여부도 같이 보여요.', act: [['focus', '.rgrid']] },
+        { t: '개인 신청자로 팀 만들기', d: '라인마다 한 명씩 누르면 아래에 상대 팀이 만들어지고 합계가 나와요.', act: [['click', '.lcol@0 >> .sapp@0'], ['click', '.lcol@1 >> .sapp@0'], ['click', '.lcol@2 >> .sapp@0'], ['click', '.lcol@3 >> .sapp@0'], ['click', '.lcol@4 >> .sapp@0']], focus: '#composer' },
+        { t: '…또는 팀 신청을 골라요', d: '팀 신청을 고르면 바로 성사돼요. 이번엔 퍼플 레인 팀과 성사시켜 볼게요.', act: [['click', 'text:이 팀과 성사']], focus: '.vsb' },
+        { t: '디스코드 알림', d: '신청한 팀장에게 DM이 가고(개인 조합이면 뽑힌 5명 모두), 양 팀만 초대된 비공개 스레드가 만들어져요.', act: [['dfocus', 'DC:thread']] },
+      ] },
+  ],
+};
+</script>
+<script src="doom-guide.js"></script>
+</body>
+</html>
