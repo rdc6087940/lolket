@@ -225,7 +225,7 @@
       var p = post(st.scrims[d.id][id]); p.fresh = !s; emit(p);
       return { scrim: clone(st.scrims[d.id][id]), posted: true };
     },
-    'scrim-delete': function (b) { delete st.scrims[b.doomId][b.scrimId]; emit({ kind: 'post-delete', id: b.scrimId }); return {}; },
+    'scrim-delete': function (b) { if (!isAdmin) err('스크림 삭제는 관리자만 할 수 있어요'); delete st.scrims[b.doomId][b.scrimId]; emit({ kind: 'post-delete', id: b.scrimId }); return {}; },
     'scrim-solo': function (b) { return soloApply(b.scrimId, b.lane); },
     'scrim-solo-leave': function (b) { var s = st.scrims.d1[b.scrimId], u = me(); LANES.forEach(function (l) { if (s.apps.solo[l]) delete s.apps.solo[l][u.did]; }); emit(post(s)); return {}; },
     'scrim-team-apply': function (b) {

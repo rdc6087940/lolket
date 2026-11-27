@@ -7548,8 +7548,37 @@ function _teamPostData() {
 }
 async function goToStage4(){
 // 라인 고정 내전이면 laneTeams → teams 변환
+// (내전 종류 값이 동기화 중에 비거나 바뀌어도, 지금 라인 고정 팀 짜기 화면에서 넘어가는 거면 라인 팀으로 변환해요)
+_diagEv('stage4-start', { mt: matchType, tm: _diagCnt(teams), ln: _diagLaneCnt(laneTeams) });
+if (matchType !== 'lane' && currentScreen === 'screen-3-lane' && laneTeams && laneTeams.length) {
+  console.warn('[stage4] 라인 고정 화면인데 내전 종류 값이', matchType, '→ lane 으로 맞춤');
+  _diag('stage4-matchtype-drift', '라인 고정 화면인데 내전 종류 값이 "' + matchType + '" 이라 lane 으로 맞춤');
+  matchType = 'lane';
+}
 if (matchType === 'lane' && typeof convertLaneTeamsToTeams === 'function') {
   convertLaneTeamsToTeams();
+}
+// ── 4단계 진입 전 팀 확인 ──
+// 이 화면의 팀 정보가 비어 있으면(동기화 문제 등) 빈 팀으로 넘어가서 대진표가 비고 DB 팀까지 지워졌어요.
+// 멤버가 있는 팀이 2팀 미만이면 DB의 최신 팀으로 다시 불러오고, 그래도 없으면 넘어가지 않아요.
+var _liveTeams = function (a) { return (a || []).filter(function (t) { return t && (t.members || []).filter(Boolean).length > 0; }).length; };
+if (_liveTeams(teams) < 2) {
+  console.warn('[stage4] 넘어가려는 팀이 비어 있음', JSON.stringify((teams || []).map(function (t) { return t && (t.members || []).length; })));
+  var _fresh = null;
+  try { if (match && match.id && window._fb && window._fb.fbGet) _fresh = await window._fb.fbGet('communities/' + window._currentCommunityId + '/matches/' + match.id); } catch (e) {}
+  var _dbTeams = _fresh ? _normTeams(_fresh._teams) : [];
+  if (_liveTeams(_dbTeams) < 2 && _fresh && _fresh._laneTeams) {
+    _dbTeams = (Array.isArray(_fresh._laneTeams) ? _fresh._laneTeams : Object.values(_fresh._laneTeams || {})).filter(Boolean).map(function (t) { return { id: t.id, name: t.name, members: LANE_SLOTS.map(function (sl) { return t.slots && t.slots[sl]; }).filter(Boolean), captainId: null }; });
+  }
+  if (_liveTeams(_dbTeams) >= 2) {
+    _diag('stage4-empty-teams', '4단계 진입 시 이 화면의 팀이 비어 있어 DB 팀으로 복구', { dbTeams: _diagCnt(_dbTeams) });
+    teams = _dbTeams;
+    toast('이 화면의 팀 정보가 비어 있어서 저장된 팀 정보로 다시 불러왔어요', 'err');
+  } else {
+    _diag('stage4-blocked', '4단계 진입 시 이 화면과 DB 모두 팀이 비어 있어 진입을 막음', { dbScreen: _fresh && _fresh._currentScreen, dbMatchType: _fresh && _fresh._matchType });
+    toast('멤버가 있는 팀이 2팀 이상 있어야 4단계로 넘어갈 수 있어요. 3단계 팀 구성을 확인해 주세요', 'err');
+    return;
+  }
 }
 // 4단계 진입 시 채팅 Firebase 구독 즉시 해제 (연결/다운로드 차단)
 if (typeof window._chatDetachFn === 'function') window._chatDetachFn();
@@ -7565,6 +7594,7 @@ var _bracket4 = bracketRounds;
 showScreen('screen-4');
 if (_tm4(teams) === 0 && _tm4(_teams4) > 0) {
   console.warn('[stage4] 4단계 진입 중 팀이 비워짐 → 넘어가기 직전 팀으로 복구');
+  _diag('stage4-teams-wiped', '4단계로 넘어가는 사이(저장 대기 중)에 팀이 비워져 직전 팀으로 복구');
   teams = _teams4;
   bracketRounds = (_bracket4 && _bracket4.length) ? _bracket4 : buildSingleElim([...teams].sort(function () { return Math.random() - .5; }));
   try { drawBracket(); } catch (e) {}
@@ -7583,6 +7613,7 @@ _postTeamInfoToDiscord();
 if (_arNew) {
   _workerWrite('auto_results/' + match.id, { cid: match.communityId || window._currentCommunityId, at: match.autoResultAt }).catch(function(){});
 }
+if (!bracketRounds.length) _diag('stage4-empty-bracket', '4단계로 넘어갔는데 대진표가 비어 있음');
 toast('4단계 대진표가 생성되었습니다', 'ok');
 }
 let dragMemberId=null;
@@ -15944,6 +15975,8 @@ _localVersion = remote._version || 0;
 var _ru = remote._updatedAt || 0;
 window._mSeen = window._mSeen || {};
 var _staleSnap = !!(_ru && window._mSeen[_ru] && _ru !== window._mLatestAt);
+_diagEv(_staleSnap ? 'remote-stale' : 'remote', { u: _ru, v: remote._version || 0, rs: remote._currentScreen || '', mt: remote._matchType || '', tm: _diagCnt(_normTeams(remote._teams)), ln: _diagLaneCnt(Array.isArray(remote._laneTeams) ? remote._laneTeams : Object.values(remote._laneTeams || {})) });
+var _tmBefore = (typeof teams !== 'undefined' && teams) ? _diagCnt(teams).reduce(function (a, b) { return a + Math.max(0, b); }, 0) : 0;
 var _remoteFull = remote;   // 비회원 관전 화면은 항상 원본 스냅샷 전체로 그려요 (단계 · 경매 정보가 빠지면 호가 버튼 · 잔여 포인트가 사라짐)
 if (_staleSnap) {
   console.warn('[sync] 예전 스냅샷 재전달 — 팀 · 대진표 정보는 로컬 유지', _ru, window._mLatestAt);
@@ -16046,6 +16079,8 @@ _rerenderCurrentScreen();
     }
   }
 })();
+// 다른 곳에서 온 업데이트로 이 화면의 팀이 통째로 비었으면 기록
+try { var _tmAfter = _diagCnt(teams).reduce(function (a, b) { return a + Math.max(0, b); }, 0); if (_tmBefore > 0 && _tmAfter === 0 && /^screen-(3|4|5)/.test(currentScreen)) _diag('remote-cleared-teams', '원격 업데이트로 이 화면의 팀이 비워짐', { before: _tmBefore, remoteU: _ru, remoteScreen: _remoteFull._currentScreen || '' }); } catch (e) {}
 // 유저 뷰도 실시간 업데이트 (예전 스냅샷 재전달이면 지금 화면 유지)
 if (currentScreen === 'screen-v' && !_staleSnap) openUserView(_remoteFull);
 showSyncToast();
@@ -16314,9 +16349,11 @@ _teamsClearedAt: window._mClearedAt || 0,
 };
 window._mLastSentAt = _now;
 window._mSeen = window._mSeen || {}; window._mSeen[_now] = 1; window._mLatestAt = _now;
+_diagEv('save', { u: _now, mt: matchType, tm: _diagCnt(snapshot._teams), ln: _diagLaneCnt(snapshot._laneTeams), br: (snapshot._bracketRounds || []).length });
 var _wr = null;
 try {
   _wr = await dbUpsert(snapshot);
+  if (_wr && _wr.guarded) _diagEv('save-guarded', { u: _now });
   if (_wr && _wr.guarded) _reloadAfterTeamGuard();
   else if (_wr && _wr.updatedAt) window._mBaseAt = Math.max(window._mBaseAt || 0, _wr.updatedAt);
 } catch(e) {
@@ -16327,6 +16364,37 @@ try {
   }
   throw e;
 }
+}
+// ── 이상 상황 자동 기록 (진행자가 직접 알려 주지 않아도 원인을 볼 수 있게) ──
+// 최근 동기화 기록을 40개까지 들고 있다가, 이상한 상황이 생기면 그 순간 상태와 함께 서버(diag_logs)에 남겨요.
+window._diagRing = window._diagRing || [];
+function _diagEv(t, o) {
+  try { var e = Object.assign({ t: t, at: Date.now(), scr: typeof currentScreen !== 'undefined' ? currentScreen : '' }, o || {}); window._diagRing.push(e); if (window._diagRing.length > 40) window._diagRing.splice(0, window._diagRing.length - 40); } catch (e2) {}
+}
+function _diagCnt(a) { try { return (a || []).map(function (t) { return t ? ((t.members || []).filter(Boolean).length) : -1; }); } catch (e) { return null; } }
+function _diagLaneCnt(a) { try { return (a || []).map(function (t) { return t && t.slots ? Object.values(t.slots).filter(Boolean).length : -1; }); } catch (e) { return null; } }
+function _diagState() {
+  var g = function (f) { try { return f(); } catch (e) { return null; } };
+  return {
+    screen: g(function () { return currentScreen; }), matchType: g(function () { return matchType; }), status: g(function () { return match && match.status; }),
+    teams: g(function () { return _diagCnt(teams); }), laneTeams: g(function () { return _diagLaneCnt(laneTeams); }), bracket: g(function () { return bracketRounds.length; }),
+    members: g(function () { return members.length; }), results: g(function () { return resultMatches.length; }),
+    flags: g(function () { return { aram: !!match.aramTeam, balvote: !!match.balVoteMode, random: !!match.randomTeam, editLock: !!_editLock }; }),
+    sync: { latest: window._mLatestAt || 0, base: window._mBaseAt || 0, sent: window._mLastSentAt || 0, cleared: window._mClearedAt || 0, ver: g(function () { return _localVersion; }) },
+    online: navigator.onLine, vis: document.visibilityState,
+  };
+}
+var _diagLast = {};
+function _diag(kind, msg, extra) {
+  try {
+    if (!match || !match.id || !window._currentCommunityId) return;
+    var k = match.id + ':' + kind; if (_diagLast[k] && Date.now() - _diagLast[k] < 60000) return;   // 같은 종류는 1분에 한 번만
+    _diagLast[k] = Date.now();
+    var st = _diagState(); if (extra) st.extra = extra;
+    var ver = (document.getElementById('app-version') || {}).textContent || (typeof APP_VERSION !== 'undefined' ? APP_VERSION : '');
+    console.warn('[diag]', kind, msg, st);
+    fetch(RIOT_PROXY_URL + '/diag-log', { method: 'POST', headers: _getHeaders(), body: JSON.stringify({ cid: window._currentCommunityId, matchId: match.id, kind: kind, msg: msg, ver: ver, state: st, events: window._diagRing.slice(-40) }), keepalive: true }).catch(function () {});
+  } catch (e) {}
 }
 // ── 3·4단계 팀 정보 보호 ──
 // 이 창이 예전 상태(빈 팀)를 들고 있어서 서버가 팀 덮어쓰기를 막았으면, DB의 최신 내전을 다시 불러와요
@@ -16339,6 +16407,7 @@ async function _reloadAfterTeamGuard() {
     var fresh = await window._fb.fbGet('communities/' + window._currentCommunityId + '/matches/' + id);
     if (!fresh || !match || match.id !== id) return;
     var scr = (fresh.status === '내전 종료' || fresh._currentScreen === 'screen-5') ? 'screen-5' : (fresh._currentScreen || 'screen-1');
+    _diag('team-guard-reload', '서버가 이 창의 팀 덮어쓰기를 막고 최신 상태로 다시 불러옴', { dbScreen: fresh._currentScreen, dbTeams: _diagCnt(_normTeams(fresh._teams)), dbLane: _diagLaneCnt(Array.isArray(fresh._laneTeams) ? fresh._laneTeams : Object.values(fresh._laneTeams || {})) });
     _localVersion = 0;
     restoreMatch(Object.assign({}, fresh, { id: id, _currentScreen: scr }));
     toast('다른 창에서 진행된 팀 정보가 있어서 최신 상태로 다시 불러왔어요', 'err');
@@ -16437,6 +16506,8 @@ if (matchType === 'lane') {
   else renderLaneBuilder();
 }
 if (bracketRounds.length > 0) drawBracket();
+else if (screen === 'screen-4' && (isAdmin || isMaster)) setTimeout(function () { _diag('open-empty-bracket', '4단계 내전을 열었는데 대진표가 비어 있음', { dbTeams: _diagCnt(_normTeams(snapshot._teams)), dbScreen: snapshot._currentScreen, dbMatchType: snapshot._matchType || null }); }, 0);
+_diagEv('restore', { u: snapshot._updatedAt || 0, rs: snapshot._currentScreen || '', mt: snapshot._matchType || '' });
 renderResultMatches();
 _updateDiscordShareBtn();
 restorePips(screen);

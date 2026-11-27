@@ -1072,6 +1072,10 @@ const _WORKER = {
     if (path === '/doom' && request.method === 'POST') {
       return handleDoom(request, env);
     }
+    // 내전 진행 중 이상 상황 자동 기록 (팀 정보 사라짐 · 빈 대진표 등) → diag_logs/{cid}/{matchId}/{시각}
+    if (path === '/diag-log' && request.method === 'POST') {
+      return handleDiagLog(request, env);
+    }
     // 멸망전 링크 미리보기: 봇에게는 OG, 사람은 멸망전 페이지로 바로 이동
     if (path === '/doom-og' && (request.method === 'GET' || request.method === 'HEAD')) {
       return handleDoomOg(request, env);
@@ -4616,6 +4620,34 @@ async function _dmLoadPool(env, cid) {
 const _SC_KO = { top: '탑', jg: '정글', mid: '미드', bot: '원딜', sup: '서폿' };
 const _SC_EN = { top: 'TOP', jg: 'JGL', mid: 'MID', bot: 'BOT', sup: 'SUP' };
 function _scSite(env) { return String(env.SITE_URL || 'https://roonging.com').replace(/\/$/, ''); }
+// ── 내전 이상 상황 자동 기록 ──
+// 진행자 화면에서 팀이 비거나 대진표가 비는 등 이상한 상황이 생기면 그 순간의 상태와 최근 동기화 기록을 남겨요.
+// 저장: diag_logs/{커뮤니티}/{내전ID}/{시각_랜덤} (기록 하나 최대 30KB, 내전 하나에 최근 기록 위주로 보면 돼요)
+async function handleDiagLog(request, env) {
+  let body = {}; try { body = await request.json(); } catch (e) { return json({ ok: false }, 400); }
+  const cid = String(body.cid || '').replace(/[^A-Za-z0-9_-]/g, '').slice(0, 80);
+  const mid = String(body.matchId || '').replace(/[^A-Za-z0-9_-]/g, '').slice(0, 80);
+  const kind = String(body.kind || '').replace(/[^A-Za-z0-9_-]/g, '').slice(0, 40);
+  if (!cid || !mid || !kind) return json({ ok: false, error: 'cid · matchId · kind 필요' }, 400);
+  const session = getSession(request.headers.get('X-Session-Token') || '');
+  const rec = {
+    at: Date.now(), kind,
+    msg: String(body.msg || '').slice(0, 300),
+    who: session ? (session.id || '') + '(' + (session.role || '') + ')' : '',
+    ua: String(request.headers.get('User-Agent') || '').slice(0, 200),
+    ver: String(body.ver || '').slice(0, 40),
+    state: body.state && typeof body.state === 'object' ? body.state : null,
+    events: Array.isArray(body.events) ? body.events.slice(-40) : null,
+  };
+  let txt = JSON.stringify(rec);
+  if (txt.length > 30000) { rec.events = rec.events ? rec.events.slice(-10) : null; txt = JSON.stringify(rec); }
+  if (txt.length > 30000) { rec.state = { cut: true }; txt = JSON.stringify(rec); }
+  const authQ = env.FB_DB_SECRET ? '?auth=' + env.FB_DB_SECRET : '';
+  const key = rec.at + '_' + Math.random().toString(36).slice(2, 6);
+  try { await fetch(`${env.FB_DATABASE_URL}/diag_logs/${cid}/${mid}/${key}.json${authQ}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: txt }); } catch (e) {}
+  console.warn('[diag]', cid, mid, kind, rec.msg);
+  return json({ ok: true });
+}
 // ── 멸망전 링크 미리보기 ── https://api.roonging.com/doom-og?cid=커뮤니티&d=멸망전ID
 // 디스코드 · 카톡 미리보기 봇은 이 주소의 OG(멸망전 이름 · 설명 · 설정한 이미지)를 읽고, 사람은 바로 멸망전 페이지로 넘어가요
 async function handleDoomOg(request, env) {
@@ -4812,6 +4844,9 @@ async function _scSoloApply(env, cid, doomId, scrimId, did, lane) {
   // 상대(스크림을 연) 팀 로스터에 있는 사람은 개인 신청 불가
   if (Object.values(s.roster || {}).some(m => _scSame(m, { did: String(did), name: p && p.name, tag: p && p.tag }))) return { error: '상대 팀(이 스크림을 연 팀) 로스터에 있어서 개인 신청은 할 수 없어요' };
   if (!p) return { error: '소환사 계정을 먼저 등록해 주세요. 포스트의 🎮 소환사 계정 등록 버튼으로 등록할 수 있어요' };
+  // 티어 · 점수를 못 읽으면 신청을 받지 않고 이유를 알려줘요 (한 번 딥롤에서 직접 다시 읽어 봐요)
+  const tr = await _scEnsureTier(env, cid, p, lane);
+  if (tr.error) return { error: tr.error };
   const solo = (s.apps && s.apps.solo) || {};
   let moved = '';
   for (const l of _DM_LANES) if (l !== lane && solo[l] && solo[l][did]) { moved = l; await _dmPut(`${P}/apps/solo/${l}/${did}.json${authQ}`, null); }
@@ -4819,6 +4854,44 @@ async function _scSoloApply(env, cid, doomId, scrimId, did, lane) {
   const m = Object.assign(_scMem(p, lane), { at: prev && prev.at || Date.now() });
   await _dmPut(`${P}/apps/solo/${lane}/${did}.json${authQ}`, m);
   return { ok: true, scrim: s, member: m, moved, again: !!prev };
+}
+// 개인 신청자의 티어 · 점수 확인: 저장된 정보가 없으면 딥롤에서 다시 읽고, 그래도 없으면 원인을 담은 오류를 돌려줘요
+async function _scEnsureTier(env, cid, p, lane) {
+  if (p.tier && p.scores && p.scores[lane] != null) return { ok: true };
+  const { C, authQ } = _dmBase(env, cid);
+  const who = (p.name || '?') + (p.tag ? '#' + p.tag : '');
+  const H = { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://www.deeplol.gg/', 'Accept': 'application/json' };
+  const D = ['', 'I', 'II', 'III', 'IV'], NODIV = ['MASTER', 'GRANDMASTER', 'CHALLENGER'];
+  let dl = p.dlPuuid || null, v = null, apiFail = false;
+  // ① 딥롤 계정 ID가 없으면 소환사 이름#태그로 찾기
+  if (!dl) {
+    try {
+      const r = await fetch(`https://b2c-api-cdn.deeplol.gg/summoner/summoner?riot_id_name=${encodeURIComponent(p.name || '')}&riot_id_tag_line=${encodeURIComponent(p.tag || 'KR1')}&platform_id=KR`, { headers: H });
+      if (r.ok) { const j = await r.json(); dl = j && j.summoner_basic_info_dict && j.summoner_basic_info_dict.puu_id || null; } else if (r.status >= 500 || r.status === 429) apiFail = true;
+    } catch (e) { apiFail = true; }
+    if (!dl) return { error: apiFail
+      ? '딥롤에서 소환사 정보를 불러오지 못해 티어를 확인할 수 없어요 (딥롤 일시 오류). 잠시 후 다시 신청해 주세요'
+      : `등록된 소환사 "${who}"를 딥롤에서 찾지 못해 티어를 확인할 수 없어요. 소환사 이름 · 태그가 맞는지 확인하고 🎮 소환사 계정 등록으로 다시 등록해 주세요` };
+  }
+  // ② 솔로랭크 티어 읽기 (최고 티어 우선, 없으면 현재 티어)
+  try {
+    const r = await fetch(`https://b2c-api-cdn.deeplol.gg/summoner/summoner-realtime?platform_id=KR&summoner_id=&puu_id=${encodeURIComponent(dl)}`, { headers: H });
+    if (r.ok) {
+      const j = await r.json(), so = j && j.season_tier_info_dict && j.season_tier_info_dict.ranked_solo_5x5;
+      if (so && so.high_tier) v = { tier: String(so.high_tier), lp: +so.high_lp || 0, src: 'peak' };
+      else if (so && so.tier) { const t = String(so.tier).toUpperCase(); v = { tier: NODIV.indexOf(t) >= 0 ? t : t + (so.division ? ' ' + (D[so.division] || so.division) : ''), lp: +so.league_points || 0, src: 'cur' }; }
+    } else apiFail = true;
+  } catch (e) { apiFail = true; }
+  if (!v && apiFail) return { error: `딥롤에서 "${who}" 티어 정보를 불러오지 못했어요 (딥롤 일시 오류). 잠시 후 다시 신청해 주세요` };
+  const ti = v ? _dmParseTier(v) : null;
+  try { await fetch(`${C}/doom_tier_cache_dl/${dl}.json${authQ}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(v ? Object.assign({}, v, { at: Date.now() }) : { tier: 'UNRANKED', lp: 0, src: 'none', at: Date.now() }) }); } catch (e) {}
+  if (!ti) return { error: `"${who}" 계정은 솔로랭크 티어 기록이 없어(언랭) 점수를 계산할 수 없어요. 관리자에게 임시 티어 등록을 요청한 뒤 다시 신청해 주세요` };
+  const tbl = await _dmTable(env, cid), sc = _dmScore(tbl, ti, lane);
+  if (sc == null) return { error: `"${who}" 티어(${_dmTierLabel(ti)})는 확인했지만 커뮤니티 점수표에 이 티어 점수가 없어 점수를 계산할 수 없어요. 관리자에게 문의해 주세요` };
+  // 다시 읽은 티어로 신청 정보 채우기
+  p.tier = _dmTierLabel(ti); p.src = v.src === 'cur' ? 'cur' : 'peak'; p.dlPuuid = dl;
+  p.scores = p.scores || {}; _DM_LANES.forEach(l => { p.scores[l] = _dmScore(tbl, ti, l); });
+  return { ok: true, refreshed: true };
 }
 async function _scSoloLeave(env, cid, doomId, scrimId, did) {
   const { C, authQ } = _dmBase(env, cid);
@@ -5422,7 +5495,7 @@ async function handleDoom(request, env) {
       return json({ ok: true, scrim: cur, posted: !!tid, noChannel: !d.scrimChannelId });
     }
     if (action === 'scrim-delete') {
-      if (!isAdmin && !isHost) return bad('스크림을 만든 팀장 또는 관리자만 지울 수 있어요', 403);
+      if (!isAdmin) return bad('스크림 삭제는 관리자만 할 수 있어요', 403);
       await put(`${SP}/${s.id}.json${authQ}`, null);
       if (s.threadId && BOT) { try { await fetch(`https://discord.com/api/v10/channels/${s.threadId}`, { method: 'DELETE', headers: { Authorization: 'Bot ' + BOT } }); } catch (e) {} }
       await delRooms(s);

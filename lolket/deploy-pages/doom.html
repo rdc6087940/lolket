@@ -1532,7 +1532,7 @@ if (/[?&]demo=/.test(location.search)) document.write('<script src="doom-demo.js
     var solo = apps.solo || {}, did = myDid();
     var max = maxOf([hostSide(s), s.match].concat(teams));
     var h = back + '<section class="shead"><div class="dtop"><span class="st sc-' + st + '">' + SST[st] + '</span><span class="sp"></span>' +
-      (mng ? '<button class="btn sm" onclick="scEdit(\'' + s.id + '\')">수정</button><button class="btn sm ghost" onclick="scDelete(\'' + s.id + '\')">삭제</button>' : (S.isAdmin ? '<button class="btn sm ghost" onclick="scDelete(\'' + s.id + '\')">삭제</button>' : '')) + '</div>' +
+      (mng ? '<button class="btn sm" onclick="scEdit(\'' + s.id + '\')">수정</button>' : '') + (S.isAdmin ? '<button class="btn sm ghost" onclick="scDelete(\'' + s.id + '\')">삭제</button>' : '') + '</div>' +
       '<h2 class="disp">' + esc(s.name) + '</h2>' +
       '<div class="sinfo"><div><span>시작</span><b>' + fmtT(s.startAt) + '</b></div><div><span>모집 기간</span><b>' + fmtT(s.recruitStart) + ' ~ ' + fmtT(s.recruitEnd) + '</b></div><div><span>상대 점수 조건</span><b>' + rangeTxt(s) + '</b></div><div><span>개설</span><b>' + esc((s.captain && s.captain.name) || '-') + '</b></div></div>' +
       (s.desc ? '<div class="sdesc">' + esc(s.desc) + '</div>' : '') + (s.note ? '<div class="memo warnm"><b>특이사항 · 요구사항</b>' + esc(s.note) + '</div>' : '') + '</section>';
