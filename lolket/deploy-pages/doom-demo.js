@@ -240,7 +240,7 @@
       var s = st.scrims[b.doomId][b.scrimId], d = st.dooms[b.doomId];
       if (s.status !== 'matched') err('성사된 스크림에서만 방을 만들 수 있어요');
       if (!d.scrimVoiceCategoryId) err('멸망전 설정에서 "스크림 음성 채팅방 카테고리"를 먼저 골라 달라고 관리자에게 알려 주세요');
-      s.rooms = [{ key: 'lobby', id: 'r1', name: '[스크림] ' + s.teamName + ' vs ' + s.match.name + ' 대기실', url: '' }, { key: 'host', id: 'r2', name: s.teamName, url: '' }, { key: 'opp', id: 'r3', name: s.match.name, url: '' }];
+      s.rooms = [{ key: 'sep', id: 'r0', name: '══════ [스크림] ' + s.teamName + ' vs ' + s.match.name + ' ══════', url: '' }, { key: 'lobby', id: 'r1', name: '[스크림] ' + s.teamName + ' vs ' + s.match.name + ' 대기실', url: '' }, { key: 'host', id: 'r2', name: s.teamName, url: '' }, { key: 'opp', id: 'r3', name: s.match.name, url: '' }];
       return { rooms: clone(s.rooms) };
     },
     'scrim-end': function (b) { var s = st.scrims[b.doomId][b.scrimId]; if (s.status !== 'matched') err('성사된 스크림만 종료할 수 있어요'); var n = (s.rooms || []).length; s.status = 'ended'; s.endedAt = Date.now(); s.rooms = null; return { deleted: n }; },

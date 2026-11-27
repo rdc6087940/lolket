@@ -1547,11 +1547,12 @@ if (/[?&]demo=/.test(location.search)) document.write('<script src="doom-demo.js
     if (s.status === 'matched') {
       h += '<div class="bar"><span class="msg ok"><i></i><span>스크림이 성사됐어요' + (s.match && s.match.at ? ' · ' + fmtT(s.match.at) : '') + '. 참가자에게 디스코드 DM' + (s.match && s.match.threadId ? '과 비공개 스레드' : '') + '로 알렸어요.</span></span></div>';
       // 스크림 방 (음성 채널 3개) · 종료 — 연 팀장 · 관리자
-      var rooms = Array.isArray(s.rooms) ? s.rooms : Object.values(s.rooms || {}), canRoom = host || S.isAdmin;
+      var allRooms = Array.isArray(s.rooms) ? s.rooms : Object.values(s.rooms || {}), canRoom = host || S.isAdmin;
+      var rooms = allRooms.filter(function (r) { return r && r.key !== 'sep'; });   // 구분선은 목록에 안 보여요
       if (rooms.length || canRoom) {
         var RK = { lobby: '대기실', host: '팀 방', opp: '팀 방' };
         h += '<section class="rooms"><div class="rh"><b>🔊 스크림 방</b><span class="note">' + (rooms.length ? '누구나 들어갈 수 있어요' : '대기실 · 두 팀 방, 음성 채널 3개를 만들어요') + '</span><span class="sp"></span>' +
-          (canRoom ? (rooms.length < 3 ? '<button class="btn sm gold" id="sc-room" onclick="scRooms()">🔊 스크림 방 만들기</button>' : '') + '<button class="btn sm ghost" onclick="scEnd()">🏁 스크림 종료</button>' : '') + '</div>' +
+          (canRoom ? (rooms.length < 3 || !allRooms.some(function (r) { return r && r.key === 'sep'; }) ? '<button class="btn sm gold" id="sc-room" onclick="scRooms()">🔊 스크림 방 만들기</button>' : '') + '<button class="btn sm ghost" onclick="scEnd()">🏁 스크림 종료</button>' : '') + '</div>' +
           (rooms.length ? '<div class="rl">' + rooms.map(function (r) { return '<a class="' + (r.key === 'lobby' ? 'lobby' : '') + '" href="' + esc(r.url || '#') + '" target="_blank" rel="noopener">🔊 ' + esc(r.name) + '<em>' + (RK[r.key] || '') + '</em></a>'; }).join('') + '</div>' : '') + '</section>';
       }
       return h;

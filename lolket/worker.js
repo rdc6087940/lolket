@@ -497,15 +497,23 @@ const _WORKER = {
       const authQ = env.FB_DB_SECRET ? '?auth=' + env.FB_DB_SECRET : '';
       const r = await fetch(`${env.FB_DATABASE_URL}/communities/${cid}/discord_profiles.json${authQ}`).catch(() => null);
       const all = r && r.ok ? (await r.json().catch(() => null) || {}) : {};
-      const list = [];
+      const list = [], mains = [];
       for (const p of Object.values(all)) {
-        if (!p || !p.riotName || !p.subAccounts) continue;
-        const subs = Object.values(p.subAccounts).filter(a => a && a.riotName).map(a => ({ name: a.riotName, tag: a.riotTag || '', riotPuuid: a.riotPuuid || '' }));
+        if (!p || !p.riotName) continue;
+        // 본계정으로 고를 수 있는 계정 목록 (관리자 수동 연동용 · 디스코드 소환사 계정 등록한 사람)
+        mains.push({ name: p.riotName, tag: p.riotTag || '', dlPuuid: p.dlPuuid || '' });
+        if (!p.subAccounts) continue;
+        const subs = Object.values(p.subAccounts).filter(a => a && a.riotName).map(a => ({ name: a.riotName, tag: a.riotTag || '', riotPuuid: a.riotPuuid || '', manual: !!a.manual }));
         if (!subs.length) continue;
         list.push({ name: p.riotName, tag: p.riotTag || '', riotPuuid: p.riotPuuid || '', dlPuuid: p.dlPuuid || '', subs });
       }
-      return new Response(JSON.stringify({ ok: true, list }), { status: 200, headers: { ...CORS, 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'public, max-age=60' } });
+      return new Response(JSON.stringify({ ok: true, list, mains }), { status: 200, headers: { ...CORS, 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': url.searchParams.get('fresh') ? 'no-store' : 'public, max-age=60' } });
     }
+    // 내전 디스코드 음성방 (대기실 · 대진 확정 · 정리) / 토너먼트 코드 목록
+    if (path === '/match-discord' && request.method === 'POST') return handleMatchDiscord(request, env);
+    if (path === '/tcodes' && request.method === 'POST') return handleTcodes(request, env);
+    // 관리자: 부계정 수동 연동 · 해제 (전적 페이지)
+    if (path === '/sub-accounts-edit' && request.method === 'POST') return handleSubAccountsEdit(request, env);
     // 게임 상세 분석 (타임라인·빌드 요약본)
     if (path === '/match-detail' && request.method === 'GET') return handleMatchDetail(url, env);
     // 출석 확인: 참여자들이 어느 음성 채널에 있는지
@@ -1767,7 +1775,8 @@ async function _autoResultForMatch(cid, matchId, env, opts) {
       if (um.length === 1 && up.length === 1) {
         const x = um[0], p = up[0];
         const known = knownPuus.has(p.puuid) || knownNames.has(_arKey(p.riotIdGameName, p.riotIdTagline));
-        if (!known && x._prof && p.puuid && p.puuid !== x._prof.p.riotPuuid) subAdds.push({ did: x._prof.did, p, matchId: g.mid });
+        const blocked = x._prof && x._prof.p && x._prof.p.subBlock && x._prof.p.subBlock[_subKey(p.puuid)];   // 관리자가 해제한 부계정
+        if (!known && !blocked && x._prof && p.puuid && p.puuid !== x._prof.p.riotPuuid) subAdds.push({ did: x._prof.did, p, matchId: g.mid });
       }
     });
     const win = (g.data.info.teams || []).find(t => t.win);
@@ -1821,6 +1830,7 @@ async function _autoResultForMatch(cid, matchId, env, opts) {
     _version: (m._version || 0) + 1,
     _updatedAt: now,
   });
+  if (w.ok) await mdClean(env, cid, matchId, 'auto-result').catch(() => {});   // 자동 결과 저장으로 내전 종료 → 음성방 정리 · 코드 반납
   // 포럼 포스트에 결과 카드 댓글 달기/수정
   const card = w.ok ? await postCard({ ...m, _resultMatches: merged, status: '내전 종료' }) : null;
   // 새 경기 상세 분석 요약본 미리 저장 — 남는 예산으로만 (못 하면 처음 열 때 만들어짐)
@@ -2793,8 +2803,9 @@ async function handleDbWrite(request, env, ctx) {
     const httpMethod = isMatchRoot ? 'PATCH' : 'PUT';
     // discordForumThread(포럼 포스트/참가자 현황 댓글 정보)는 서버만 관리 → 웹 스냅샷의 오래된 값으로 덮어쓰지 않음
     let writeData = data;
-    if (isMatchRoot && data && typeof data === 'object' && !Array.isArray(data) && ('discordForumThread' in data || 'discordTeamPost' in data || 'fullNotified' in data || 'attendanceCall' in data || 'balVote' in data)) {
+    if (isMatchRoot && data && typeof data === 'object' && !Array.isArray(data) && ('discordForumThread' in data || 'discordTeamPost' in data || 'fullNotified' in data || 'attendanceCall' in data || 'balVote' in data || 'discordRooms' in data)) {
       writeData = Object.assign({}, data);
+      delete writeData.discordRooms; // 내전 음성방 정보도 서버만 관리
       delete writeData.discordForumThread;
       delete writeData.discordTeamPost; // 4단계 팀 정보 메시지 정보도 서버만 관리
       delete writeData.attendanceCall; // 출석 현황도 서버(디스코드 버튼)만 관리
@@ -2819,6 +2830,11 @@ async function handleDbWrite(request, env, ctx) {
     if (!res.ok) return json({ ok: false, error: 'DB 쓰기 실패: ' + res.status + ' ' + resText.slice(0,200) }, 500);
     if (resText === 'null') return json({ ok: false, error: 'Firebase Rules에 의해 거부됨' }, 403);
     if (isMatchRoot) {
+      // 내전 종료 · 쫑 → 음성방 정리 · 토너먼트 코드 반납 (방이 없으면 아무 일도 안 해요)
+      if (writeData && (writeData.status === '내전 종료' || writeData.status === '내전 쫑')) {
+        const _mm = dbPath.match(/^communities\/([^/]+)\/matches\/([^/]+)$/);
+        if (_mm) { const _p = mdClean(env, _mm[1], _mm[2], 'end').catch(() => {}); if (ctx) ctx.waitUntil(_p); }
+      }
       // 클라이언트가 "내가 본 최신 상태"를 알 수 있게 저장된 _updatedAt을 돌려줘요
       const _upAt = writeData && writeData._updatedAt || null;
       if (_guarded) return json({ ok: true, guarded: true, updatedAt: _upAt });
@@ -3032,10 +3048,12 @@ async function handleDbDelete(request, env, ctx) {
     console.log('[matchDelete]', dbPath, 'DB에서 찾은 포스트:', [..._threadIds].join(',') || '없음');
   }
 
+  const _delRooms = _matchDelM ? await _mdJ(`${dbUrl}/${dbPath}/discordRooms.json${authQ}`) : null;
   try {
     // DB 삭제를 먼저 함 — 포스트 검색이 호출 한도(50회)를 다 써도 내전 삭제는 되도록
     const res = await fetch(`${dbUrl}/${dbPath}.json${authQ}`, { method: 'DELETE' });
     if (!res.ok) return json({ ok: false, error: 'DB 삭제 실패: ' + res.status }, 500);
+    if (_matchDelM) { const _p = mdClean(env, _matchDelM[1], _matchDelM[2], 'delete', _delRooms || {}).catch(() => {}); if (ctx) ctx.waitUntil(_p); else await _p; }
     // 저장된 스레드 ID가 없으면 포럼 채널에서 이 내전의 포스트를 찾아봄 (버튼 custom_id에 matchId가 들어 있음)
     if (_matchDelM && !_threadIds.size && env.DISCORD_BOT_TOKEN) {
       const found = await _findForumThreadForMatch(env, _matchDelM[1], _matchDelM[2]).catch(e => { console.log('[matchDelete] 포스트 검색 오류', e.message); return null; });
@@ -4620,6 +4638,303 @@ async function _dmLoadPool(env, cid) {
 const _SC_KO = { top: '탑', jg: '정글', mid: '미드', bot: '원딜', sup: '서폿' };
 const _SC_EN = { top: 'TOP', jg: 'JGL', mid: 'MID', bot: 'BOT', sup: 'SUP' };
 function _scSite(env) { return String(env.SITE_URL || 'https://roonging.com').replace(/\/$/, ''); }
+// ══════════════════════════════════════════════════════════════
+// 내전 디스코드 음성방 자동 세팅 + 토너먼트 코드 돌려쓰기
+//  · 내전 생성 → 지정 카테고리에 "구분선(잠금 음성 채널)" + "전체 대기실" + 대기실 채팅에 "🧹 내전 정리" 버튼
+//  · 4단계 "대진 확정(디스코드 세팅)" → 팀 음성방 생성 + 대진마다 코드 3개를 두 팀 방 채팅에 올림 (다시 누르면 지우고 다시 세팅 · 30초 쿨타임)
+//  · 내전 정리 버튼 / 내전 종료 · 쫑 · 삭제 → 만든 방 전부 삭제 + 코드 "사용 가능"으로 반납
+//  · 코드 목록: tcodes/{cid}/{키} = { code, status: 'free'|'used', matchId, matchName, label, since, addedAt }
+//    6시간 넘게 "사용 중"인 코드는 정리를 깜빡한 걸로 보고 자동으로 다시 씀
+// 저장: communities/{cid}/matches/{id}/discordRooms = { sep, lobby, lobbyMsg, teams: [{ id, teamId, name }], setupAt, short }
+// ══════════════════════════════════════════════════════════════
+const _MD_STALE = 6 * 3600 * 1000, _MD_COOL = 30 * 1000;
+function _mdArr(v) { return Array.isArray(v) ? v.filter(Boolean) : (v && typeof v === 'object' ? Object.values(v).filter(Boolean) : []); }
+function _mdEnv(env, cid) {
+  const authQ = env.FB_DB_SECRET ? '?auth=' + env.FB_DB_SECRET : '';
+  const db = env.FB_DATABASE_URL;
+  return { authQ, db, ci: `${db}/communities_info/${cid}`, mt: (id) => `${db}/communities/${cid}/matches/${id}`, tc: `${db}/tcodes/${cid}` };
+}
+async function _mdJ(url) { try { const r = await fetch(url); return r.ok ? await r.json() : null; } catch (e) { return null; } }
+async function _dcApi(env, method, path, body) {
+  try {
+    const r = await fetch('https://discord.com/api/v10' + path, { method, headers: Object.assign({ Authorization: 'Bot ' + env.DISCORD_BOT_TOKEN }, body ? { 'Content-Type': 'application/json' } : {}), body: body ? JSON.stringify(body) : undefined });
+    let j = null; try { j = await r.json(); } catch (e) {}
+    return { ok: r.ok, status: r.status, j };
+  } catch (e) { return { ok: false, status: 0, j: null }; }
+}
+async function _mdSaveRooms(env, cid, matchId, rooms) {
+  const E = _mdEnv(env, cid);
+  await fetch(`${E.mt(matchId)}/discordRooms.json${E.authQ}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(rooms || null) }).catch(() => {});
+}
+// ── 토너먼트 코드 (ETag로 동시에 두 내전이 같은 코드를 가져가지 않게) ──
+function _tcKey(code) { return String(code).replace(/[^A-Za-z0-9_-]/g, '_').slice(0, 120); }
+async function _tcMutate(env, cid, fn) {
+  const E = _mdEnv(env, cid);
+  for (let i = 0; i < 5; i++) {
+    const g = await fetch(`${E.tc}.json${E.authQ}`, { headers: { 'X-Firebase-ETag': 'true' } });
+    const etag = g.headers.get('ETag'); const cur = (g.ok ? await g.json() : null) || {};
+    const res = fn(cur);
+    if (res === false) return { ok: true, data: cur };
+    const p = await fetch(`${E.tc}.json${E.authQ}`, { method: 'PUT', headers: Object.assign({ 'Content-Type': 'application/json' }, etag ? { 'if-match': etag } : {}), body: JSON.stringify(cur) });
+    if (p.ok) return { ok: true, data: cur, res };
+    if (p.status !== 412) return { ok: false, error: '코드 목록 저장 실패 (' + p.status + ')' };
+  }
+  return { ok: false, error: '코드 목록이 동시에 바뀌고 있어요. 잠시 후 다시 시도해 주세요' };
+}
+const _tcFree = (c, now) => c && typeof c === 'object' && c.code && (c.status !== 'used' || !c.since || now - c.since > _MD_STALE);
+// 코드 순서: 등록한 순서 고정 (커서는 tcodes/{cid}/_cursor 에 마지막으로 내준 코드 키)
+const _tcOrdered = (cur) => Object.entries(cur).filter(([k, c]) => k !== '_cursor' && c && typeof c === 'object' && c.code).sort((a, b) => ((a[1].addedAt || 0) - (b[1].addedAt || 0)) || (a[0] < b[0] ? -1 : 1));
+async function _tcRelease(env, cid, matchId) {
+  return _tcMutate(env, cid, (cur) => {
+    let n = 0;
+    _tcOrdered(cur).forEach(([, c]) => { if (c.status === 'used' && c.matchId === matchId) { c.status = 'free'; c.matchId = null; c.matchName = null; c.label = null; c.since = null; n++; } });
+    return n ? n : false;
+  });
+}
+async function _tcAlloc(env, cid, matchId, matchName, labels) {
+  const now = Date.now();
+  return _tcMutate(env, cid, (cur) => {
+    // 이 내전이 쓰던 코드는 먼저 반납
+    const all = _tcOrdered(cur);
+    all.forEach(([, c]) => { if (c.status === 'used' && c.matchId === matchId) { c.status = 'free'; c.matchId = null; c.matchName = null; c.label = null; c.since = null; } });
+    // 돌려쓰기: 마지막으로 내준 코드 다음부터 순서대로 (중간에 반납된 앞쪽 코드는 한 바퀴 돌고 나서 다시 써요)
+    //   예) 1·2·3 사용 → 다른 내전 4·5·6 → 첫 내전 정리로 1·2·3 반납 → 다음 내전은 7·8·9
+    const n = all.length, ci = all.findIndex(([k]) => k === cur._cursor);
+    const out = []; let taken = 0, last = cur._cursor || null;
+    for (let i = 0; i < n && taken < labels.length; i++) {
+      const [k, c] = all[(ci + 1 + i) % n];
+      if (!_tcFree(c, now)) continue;
+      c.status = 'used'; c.matchId = matchId; c.matchName = matchName; c.label = labels[taken]; c.since = now; c.lastUsed = now;
+      out.push(c.code); taken++; last = k;
+    }
+    while (out.length < labels.length) out.push(null);
+    if (last) cur._cursor = last;
+    return out;
+  });
+}
+// ── 채널 ──
+async function _mdGuild(env, cid) {
+  const E = _mdEnv(env, cid); const ci = await _mdJ(`${E.ci}.json${E.authQ}`) || {};
+  return { ci, gid: ci.discordGuildId || ci.discordServerId || null, cat: ci.discordMatchVoiceCategoryId || null, cname: ci.name || '커뮤니티' };
+}
+async function _mdDel(env, ids) { await Promise.all(ids.filter(Boolean).map(id => _dcApi(env, 'DELETE', `/channels/${id}`))); }
+async function _mdVoice(env, gid, cat, name, overwrites) {
+  const r = await _dcApi(env, 'POST', `/guilds/${gid}/channels`, Object.assign({ name: String(name).slice(0, 100), type: 2, parent_id: cat }, overwrites ? { permission_overwrites: overwrites } : {}));
+  return r.ok && r.j ? r.j.id : null;
+}
+// 구분선 → 대기실 → 팀방 순서로 붙여 놓기 (같은 카테고리의 다른 내전 방들과 섞이지 않게)
+async function _mdReorder(env, gid, cat, rooms) {
+  const all = await _dcApi(env, 'GET', `/guilds/${gid}/channels`);
+  if (!all.ok || !Array.isArray(all.j)) return;
+  const mine = [rooms.sep, rooms.lobby].concat(_mdArr(rooms.teams).map(t => t.id)).filter(Boolean);
+  const inCat = all.j.filter(c => c.parent_id === cat && c.type === 2).sort((a, b) => a.position - b.position || (a.id < b.id ? -1 : 1));
+  const ids = inCat.map(c => c.id), at = ids.indexOf(rooms.sep);
+  const others = ids.filter(id => mine.indexOf(id) < 0);
+  const head = at >= 0 ? others.filter(id => ids.indexOf(id) < at) : others;
+  const tail = at >= 0 ? others.filter(id => ids.indexOf(id) > at) : [];
+  const order = head.concat(mine.filter(id => ids.indexOf(id) >= 0)).concat(tail);
+  const base = inCat.length ? Math.min.apply(null, inCat.map(c => c.position)) : 0;
+  await _dcApi(env, 'PATCH', `/guilds/${gid}/channels`, order.map((id, i) => ({ id, position: base + i })));
+}
+async function _mdEnsureBase(env, cid, matchId, G, m, rooms) {
+  rooms = rooms || {};
+  const name = m && m.name || '내전';
+  const alive = async (id) => id && (await _dcApi(env, 'GET', `/channels/${id}`)).ok;
+  if (!(await alive(rooms.sep))) rooms.sep = await _mdVoice(env, G.gid, G.cat, `══════ ${name} ══════`, [{ id: G.gid, type: 0, deny: String(1 << 20), allow: '0' }]);
+  if (!(await alive(rooms.lobby))) {
+    rooms.lobby = await _mdVoice(env, G.gid, G.cat, `🔊 ${name} 대기실`);
+    if (rooms.lobby) {
+      const msg = await _dcApi(env, 'POST', `/channels/${rooms.lobby}/messages`, {
+        content: `🎙️ **${name}** 내전 대기실이에요.\n내전 시작 전에 여기로 모여 주세요. 대진이 확정되면 팀별 음성방이 생기고, 각 팀 음성방 채팅에 토너먼트 코드가 올라와요.\n\n🧹 내전이 끝나면 관리자가 아래 버튼으로 이 내전의 음성방을 정리해요.`,
+        components: [{ type: 1, components: [{ type: 2, style: 4, label: '🧹 내전 정리', custom_id: `mdclean__${cid}__${matchId}` }] }],
+      });
+      rooms.lobbyMsg = msg.ok && msg.j ? msg.j.id : null;
+    }
+  }
+  return rooms;
+}
+// 내전 생성 시: 구분선 + 대기실
+async function mdLobby(env, cid, matchId) {
+  if (!env.DISCORD_BOT_TOKEN) return { ok: false, error: '봇 없음' };
+  const G = await _mdGuild(env, cid); if (!G.gid || !G.cat) return { ok: false, skip: true };
+  const E = _mdEnv(env, cid); const m = await _mdJ(`${E.mt(matchId)}.json${E.authQ}`);
+  if (!m) return { ok: false, error: '없는 내전' };
+  if (m.discordRooms && m.discordRooms.cleaned) return { ok: true, skip: 'cleaned' };
+  const rooms = await _mdEnsureBase(env, cid, matchId, G, m, m.discordRooms || {});
+  await _mdSaveRooms(env, cid, matchId, rooms);
+  await _mdReorder(env, G.gid, G.cat, rooms);
+  return { ok: !!(rooms.sep && rooms.lobby), rooms };
+}
+// 4단계 대진 확정: 팀방 + 코드
+async function mdSetup(env, cid, matchId) {
+  if (!env.DISCORD_BOT_TOKEN) return { ok: false, error: '디스코드 봇이 설정돼 있지 않아요' };
+  const G = await _mdGuild(env, cid);
+  if (!G.gid) return { ok: false, error: '커뮤니티 설정에 디스코드 서버 ID가 없어요' };
+  if (!G.cat) return { ok: false, error: '커뮤니티 설정 → 디스코드 봇 · 포럼에서 "내전 음성방 카테고리 ID"를 먼저 넣어 주세요' };
+  const E = _mdEnv(env, cid); const m = await _mdJ(`${E.mt(matchId)}.json${E.authQ}`);
+  if (!m) return { ok: false, error: '없는 내전이에요' };
+  let rooms = Object.assign({}, m.discordRooms || {});
+  if (rooms.setupAt && Date.now() - rooms.setupAt < _MD_COOL) return { ok: false, error: `방금 세팅했어요. ${Math.ceil((_MD_COOL - (Date.now() - rooms.setupAt)) / 1000)}초 뒤에 다시 눌러 주세요`, cool: true };
+  // 대진: 양쪽 팀이 다 정해졌고 아직 승자가 없는 경기
+  const teams = _mdArr(m._teams).filter(t => _mdArr(t.members).length);
+  if (teams.length < 2) return { ok: false, error: '팀이 2팀 이상 있어야 해요' };
+  const tname = (t) => (t && (t.name || ('팀 ' + t.id))) || '';
+  const tidOf = (t) => t && (t.id != null ? String(t.id) : tname(t));
+  const games = [];
+  _mdArr(m._bracketRounds).forEach((r, ri) => _mdArr(r).forEach((g) => { if (g && g.a && g.b && !g.winner) games.push({ a: g.a, b: g.b, ri }); }));
+  if (!games.length) return { ok: false, error: '지금 진행할 대진이 없어요 (양쪽 팀이 정해지고 승자가 없는 대진)' };
+  // 기존 팀방 지우기 → 이 내전 코드 반납은 배정 때 같이 처리
+  await _mdDel(env, _mdArr(rooms.teams).map(t => t.id));
+  rooms.teams = [];
+  rooms = await _mdEnsureBase(env, cid, matchId, G, m, rooms);
+  // 코드 배정 (대진 수 × 3)
+  const labels = []; games.forEach((g, gi) => [1, 2, 3].forEach(n => labels.push(`${tname(g.a)} vs ${tname(g.b)} · ${n}세트`)));
+  const al = await _tcAlloc(env, cid, matchId, m.name || '내전', labels);
+  if (!al.ok) return { ok: false, error: al.error };
+  const codes = al.res || [];
+  const short = codes.filter(c => !c).length;
+  // 팀방 만들기 (대진표 순서)
+  const order = []; games.forEach(g => [g.a, g.b].forEach(t => { if (order.indexOf(tidOf(t)) < 0) order.push(tidOf(t)); }));
+  teams.forEach(t => { if (order.indexOf(tidOf(t)) < 0) order.push(tidOf(t)); });
+  const byId = {}; teams.forEach(t => { byId[tidOf(t)] = t; });
+  games.forEach(g => { if (!byId[tidOf(g.a)]) byId[tidOf(g.a)] = g.a; if (!byId[tidOf(g.b)]) byId[tidOf(g.b)] = g.b; });
+  for (const tid of order) {
+    const t = byId[tid]; const id = await _mdVoice(env, G.gid, G.cat, `🎮 ${tname(t)}`);
+    if (id) rooms.teams.push({ id, teamId: tid, name: tname(t) });
+  }
+  // 코드 메시지
+  const head = `⚔️ **[${G.cname}] 내전** · ${m.name || ''}`;
+  for (const r of rooms.teams) {
+    const mine = games.map((g, gi) => ({ g, gi })).filter(x => tidOf(x.g.a) === r.teamId || tidOf(x.g.b) === r.teamId);
+    let content;
+    if (!mine.length) content = `${head}\n**${r.name}** — 이번 라운드는 대기(부전승)예요. 다음 대진이 정해지면 관리자가 "대진 확정"을 다시 눌러 코드를 보내 줘요.`;
+    else content = head + '\n' + mine.map(({ g, gi }) => {
+      const cs = [0, 1, 2].map(k => codes[gi * 3 + k]);
+      return `**${tname(g.a)} vs ${tname(g.b)}**\n` + cs.map((c, k) => `${k + 1}세트  ` + (c ? '`' + c + '`' : '⚠️ 코드 부족 — 관리자에게 알려 주세요')).join('\n');
+    }).join('\n\n') + '\n\n롤 클라이언트 → 플레이 → 🏆 아이콘(토너먼트 코드 입력)에 위 코드를 넣어 주세요.';
+    await _dcApi(env, 'POST', `/channels/${r.id}/messages`, { content: content.slice(0, 1990) });
+  }
+  if (short && rooms.lobby) await _dcApi(env, 'POST', `/channels/${rooms.lobby}/messages`, { content: `⚠️ 토너먼트 코드가 **${short}개** 부족해요. 룽잉닷컴 커뮤니티 설정 → 토너먼트 코드에서 코드를 추가한 뒤 "대진 확정"을 다시 눌러 주세요.` });
+  rooms.setupAt = Date.now(); rooms.short = short; rooms.cleaned = null;
+  await _mdSaveRooms(env, cid, matchId, rooms);
+  await _mdReorder(env, G.gid, G.cat, rooms);
+  return { ok: true, rooms: rooms.teams.length, games: games.length, codes: codes.filter(Boolean).length, short };
+}
+// 정리: 방 전부 삭제 + 코드 반납 (rooms 를 넘기면 그걸로 — 내전 삭제 때)
+async function mdClean(env, cid, matchId, reason, roomsGiven) {
+  const E = _mdEnv(env, cid);
+  const rooms = roomsGiven || (await _mdJ(`${E.mt(matchId)}/discordRooms.json${E.authQ}`));
+  const ids = rooms ? [rooms.sep, rooms.lobby].concat(_mdArr(rooms.teams).map(t => t.id)).filter(Boolean) : [];
+  if (ids.length && env.DISCORD_BOT_TOKEN) await _mdDel(env, ids);
+  const rel = await _tcRelease(env, cid, matchId).catch(() => null);
+  if (!roomsGiven && rooms && ids.length) await _mdSaveRooms(env, cid, matchId, { cleaned: Date.now(), reason: reason || '' });
+  return { ok: true, deleted: ids.length, released: rel && typeof rel.res === 'number' ? rel.res : 0 };
+}
+function _mdAdminOk(session, cid) { return !!session && (session.role === 'master' || (session.role === 'admin' && (!session.communityId || session.communityId === cid))); }
+// 웹: POST /match-discord  { cid, matchId, op: 'lobby' | 'setup' | 'clean' }
+async function handleMatchDiscord(request, env) {
+  let b = {}; try { b = await request.json(); } catch (e) { return json({ ok: false, error: 'bad request' }, 400); }
+  const cid = String(b.cid || ''), matchId = String(b.matchId || '');
+  if (!/^[A-Za-z0-9_-]+$/.test(cid) || !/^[A-Za-z0-9_-]+$/.test(matchId)) return json({ ok: false, error: 'cid · matchId 필요' }, 400);
+  if (b.op === 'lobby') return json(await mdLobby(env, cid, matchId));   // 내전 생성 직후 (있으면 그대로)
+  const session = getSession(request.headers.get('X-Session-Token') || '');
+  if (!_mdAdminOk(session, cid)) return json({ ok: false, error: '관리자 로그인이 필요해요' }, 403);
+  if (b.op === 'setup') { const r = await mdSetup(env, cid, matchId); return json(r, r.ok ? 200 : (r.cool ? 429 : 400)); }
+  if (b.op === 'clean') return json(await mdClean(env, cid, matchId, 'web'));
+  return json({ ok: false, error: 'op 없음' }, 400);
+}
+// 웹(커뮤니티 설정): POST /tcodes { cid, op: 'list' | 'add' | 'remove' | 'release', codes: [...] }
+async function handleTcodes(request, env) {
+  let b = {}; try { b = await request.json(); } catch (e) { return json({ ok: false, error: 'bad request' }, 400); }
+  const cid = String(b.cid || '');
+  if (!/^[A-Za-z0-9_-]+$/.test(cid)) return json({ ok: false, error: 'cid 필요' }, 400);
+  const session = getSession(request.headers.get('X-Session-Token') || '');
+  if (!_mdAdminOk(session, cid)) return json({ ok: false, error: '관리자 로그인이 필요해요' }, 403);
+  const E = _mdEnv(env, cid), now = Date.now();
+  const view = (cur) => Object.entries(cur || {}).filter(([, c]) => c && c.code).map(([k, c]) => ({ key: k, code: c.code, status: c.status === 'used' ? (now - (c.since || 0) > _MD_STALE ? 'stale' : 'used') : 'free', matchId: c.matchId || null, matchName: c.matchName || '', label: c.label || '', since: c.since || null, addedAt: c.addedAt || 0 }))
+    .sort((a, b) => (a.addedAt - b.addedAt) || (a.key < b.key ? -1 : 1));
+  if (b.op === 'list') return json({ ok: true, codes: view(await _mdJ(`${E.tc}.json${E.authQ}`)) });
+  const list = (Array.isArray(b.codes) ? b.codes : []).map(x => String(x || '').trim()).filter(Boolean).slice(0, 500);
+  let info = {};
+  const r = await _tcMutate(env, cid, (cur) => {
+    if (b.op === 'add') {
+      let add = 0, dup = 0, bad = 0;
+      list.forEach(code => {
+        if (!/^[A-Za-z0-9][A-Za-z0-9_-]{5,119}$/.test(code)) { bad++; return; }
+        const k = _tcKey(code); if (cur[k]) { dup++; return; }
+        cur[k] = { code, status: 'free', addedAt: now + add }; add++;
+      });
+      info = { add, dup, bad }; return add ? add : false;
+    }
+    if (b.op === 'remove') { let n = 0; list.forEach(k => { if (cur[k]) { delete cur[k]; n++; } }); info = { removed: n }; return n ? n : false; }
+    if (b.op === 'release') { let n = 0; list.forEach(k => { const c = cur[k]; if (c && c.status === 'used') { c.status = 'free'; c.matchId = null; c.matchName = null; c.label = null; c.since = null; n++; } }); info = { released: n }; return n ? n : false; }
+    return false;
+  });
+  if (!r.ok) return json({ ok: false, error: r.error }, 500);
+  return json(Object.assign({ ok: true, codes: view(r.data) }, info));
+}
+
+// ── 부계정 수동 연동 · 해제 (관리자) ──
+// body: { cid, op: 'link' | 'unlink', main: { name, tag }, sub: { name, tag } }
+//   link  : 본계정(디스코드 소환사 계정 등록한 사람)의 부계정 목록에 추가. 다른 본계정에 연결돼 있었으면 옮겨요
+//   unlink: 부계정 목록에서 빼고, 5단계 자동 기록이 다시 붙이지 않게 막아 둬요(subBlock)
+function _subKey(puu) { return encodeURIComponent(String(puu || '')).replace(/[.#$\[\]]/g, '_'); }
+async function handleSubAccountsEdit(request, env) {
+  let b = {}; try { b = await request.json(); } catch (e) { return json({ ok: false, error: 'bad request' }, 400); }
+  const cid = String(b.cid || '');
+  if (!/^[A-Za-z0-9_-]+$/.test(cid)) return json({ ok: false, error: 'cid 없음' }, 400);
+  const session = getSession(request.headers.get('X-Session-Token') || '');
+  if (!session || !(session.role === 'master' || (session.role === 'admin' && (!session.communityId || session.communityId === cid)))) return json({ ok: false, error: '관리자 로그인이 필요해요' }, 403);
+  const op = b.op === 'unlink' ? 'unlink' : b.op === 'link' ? 'link' : '';
+  if (!op) return json({ ok: false, error: 'op 없음' }, 400);
+  const K = (n, t) => (String(n || '').trim() + '#' + String(t || '').trim()).toLowerCase();
+  const main = b.main || {}, sub = b.sub || {};
+  const mk = K(main.name, main.tag), sk = K(sub.name, sub.tag);
+  if (!main.name || !sub.name) return json({ ok: false, error: '본계정과 부계정을 모두 골라 주세요' }, 400);
+  if (mk === sk) return json({ ok: false, error: '같은 계정은 연동할 수 없어요' }, 400);
+  const authQ = env.FB_DB_SECRET ? '?auth=' + env.FB_DB_SECRET : '';
+  const base = `${env.FB_DATABASE_URL}/communities/${cid}/discord_profiles`;
+  const all = await fetch(`${base}.json${authQ}`).then(r => r.ok ? r.json() : null).catch(() => null) || {};
+  const ents = Object.entries(all).filter(([, p]) => p && p.riotName);
+  const mainEnt = ents.find(([, p]) => K(p.riotName, p.riotTag) === mk);
+  if (!mainEnt) return json({ ok: false, error: `"${main.name}#${main.tag || ''}"은(는) 디스코드 소환사 계정 등록이 안 된 계정이라 본계정으로 쓸 수 없어요` }, 400);
+  const [mainDid, mainP] = mainEnt;
+  const subsOf = (p) => Object.entries((p && p.subAccounts) || {}).filter(([, a]) => a && a.riotName);
+  const who = (session.id || '') + '(' + (session.role || '') + ')';
+  if (op === 'unlink') {
+    const hit = subsOf(mainP).filter(([, a]) => K(a.riotName, a.riotTag) === sk);
+    if (!hit.length) return json({ ok: false, error: '이 본계정에 연동된 부계정이 아니에요' }, 400);
+    for (const [k, a] of hit) {
+      await fetch(`${base}/${mainDid}/subAccounts/${k}.json${authQ}`, { method: 'DELETE' }).catch(() => {});
+      const bk = a.riotPuuid ? _subKey(a.riotPuuid) : k;
+      await fetch(`${base}/${mainDid}/subBlock/${bk}.json${authQ}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: a.riotName, tag: a.riotTag || '', at: Date.now(), by: who }) }).catch(() => {});
+    }
+    return json({ ok: true });
+  }
+  // link
+  if (ents.some(([, p]) => K(p.riotName, p.riotTag) === sk)) return json({ ok: false, error: `"${sub.name}#${sub.tag || ''}"은(는) 다른 사람이 디스코드 본계정으로 등록한 계정이라 부계정으로 연동할 수 없어요` }, 400);
+  let puu = '';
+  try {
+    const r = await fetch(`https://asia.api.riotgames.com/riot/account/v1/accounts/by-riot-id/${encodeURIComponent(String(sub.name).trim())}/${encodeURIComponent(String(sub.tag || 'KR1').trim())}`, { headers: { 'X-Riot-Token': env.RIOT_API_KEY || '' } });
+    if (r.status === 404) return json({ ok: false, error: `"${sub.name}#${sub.tag || ''}" 라이엇 계정을 찾지 못했어요. 소환사명 · 태그를 확인해 주세요` }, 400);
+    if (r.ok) { const j = await r.json(); puu = j && j.puuid || ''; }
+  } catch (e) {}
+  if (!puu) return json({ ok: false, error: '라이엇 계정 확인에 실패했어요. 잠시 후 다시 시도해 주세요' }, 502);
+  if (mainP.riotPuuid && mainP.riotPuuid === puu) return json({ ok: false, error: '본계정과 같은 계정이에요' }, 400);
+  // 다른 본계정에 연결돼 있으면 거기서 빼요
+  let moved = '';
+  for (const [did, p] of ents) {
+    if (did === mainDid) continue;
+    for (const [k, a] of subsOf(p)) if (a.riotPuuid === puu || K(a.riotName, a.riotTag) === sk) {
+      await fetch(`${base}/${did}/subAccounts/${k}.json${authQ}`, { method: 'DELETE' }).catch(() => {}); moved = p.riotName + '#' + (p.riotTag || '');
+    }
+  }
+  const key = _subKey(puu);
+  await fetch(`${base}/${mainDid}/subAccounts/${key}.json${authQ}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ riotName: String(sub.name).trim(), riotTag: String(sub.tag || '').trim(), riotPuuid: puu, addedAt: Date.now(), manual: true, by: who }) });
+  await fetch(`${base}/${mainDid}/subBlock/${key}.json${authQ}`, { method: 'DELETE' }).catch(() => {});
+  return json({ ok: true, moved });
+}
 // ── 내전 이상 상황 자동 기록 ──
 // 진행자 화면에서 팀이 비거나 대진표가 비는 등 이상한 상황이 생기면 그 순간의 상태와 최근 동기화 기록을 남겨요.
 // 저장: diag_logs/{커뮤니티}/{내전ID}/{시각_랜덤} (기록 하나 최대 30KB, 내전 하나에 최근 기록 위주로 보면 돼요)
@@ -5509,7 +5824,8 @@ async function handleDoom(request, env) {
       const gid = await guildId(); if (!gid) return bad('커뮤니티에 디스코드 서버가 연결돼 있지 않아요');
       const H = { Authorization: 'Bot ' + BOT, 'Content-Type': 'application/json' };
       const A = String(s.teamName || '팀'), B = String(s.match.name || '상대 팀');
-      const want = [{ key: 'lobby', name: `[스크림] ${A} vs ${B} 대기실` }, { key: 'host', name: A }, { key: 'opp', name: B }];
+      // 구분선(잠긴 음성 채널) → 대기실 → 두 팀 방
+      const want = [{ key: 'sep', name: `══════ [스크림] ${A} vs ${B} ══════`, lock: true }, { key: 'lobby', name: `[스크림] ${A} vs ${B} 대기실` }, { key: 'host', name: A }, { key: 'opp', name: B }];
       const have = Array.isArray(s.rooms) ? s.rooms : Object.values(s.rooms || {});
       const rooms = [];
       for (const w of want) {
@@ -5518,7 +5834,7 @@ async function handleDoom(request, env) {
           const r = await fetch(`https://discord.com/api/v10/channels/${ex.id}`, { headers: H }).catch(() => null);
           if (r && r.ok) { rooms.push(ex); continue; }
         }
-        const r = await fetch(`https://discord.com/api/v10/guilds/${gid}/channels`, { method: 'POST', headers: H, body: JSON.stringify({ name: w.name.slice(0, 100), type: 2, parent_id: d.scrimVoiceCategoryId }) }).catch(() => null);
+        const r = await fetch(`https://discord.com/api/v10/guilds/${gid}/channels`, { method: 'POST', headers: H, body: JSON.stringify(Object.assign({ name: w.name.slice(0, 100), type: 2, parent_id: d.scrimVoiceCategoryId }, w.lock ? { permission_overwrites: [{ id: gid, type: 0, deny: String(1 << 20), allow: '0' }] } : {})) }).catch(() => null);
         if (!r || !r.ok) {
           let m = ''; try { m = (await r.json()).message || ''; } catch (e) {}
           if (rooms.length) await put(`${SP}/${s.id}/rooms.json${authQ}`, rooms);
@@ -5527,6 +5843,9 @@ async function handleDoom(request, env) {
         const c = await r.json(); rooms.push({ key: w.key, id: c.id, name: c.name || w.name, url: `https://discord.com/channels/${gid}/${c.id}` });
       }
       await put(`${SP}/${s.id}/rooms.json${authQ}`, rooms);
+      // 같은 카테고리의 다른 스크림 방과 섞이지 않게 구분선 아래로 모아요
+      const _rk = k => (rooms.find(x => x.key === k) || {}).id;
+      try { await _mdReorder(env, gid, d.scrimVoiceCategoryId, { sep: _rk('sep'), lobby: _rk('lobby'), teams: [{ id: _rk('host') }, { id: _rk('opp') }] }); } catch (e) {}
       return json({ ok: true, rooms });
     }
     // 스크림 종료: 상태를 "종료"로 바꾸고 스크림 방 3개를 지워요
@@ -7406,6 +7725,23 @@ async function handleDiscordInteraction(request, env, ctx) {
     if (customId.startsWith('mdel_no__')) {
       return _updateComponentMsg('내전 삭제를 취소했습니다.', []);
     }
+    // ── 대기실 "🧹 내전 정리" 버튼 (관리 메뉴 역할만) ──
+    if (customId.startsWith('mdclean__')) {
+      const { cid, matchId } = _splitCidMatch(customId, 'mdclean__');
+      const chk = await _adminRoleCheck(interaction, cid, env);
+      if (!chk.ok) return discordReply(chk.msg, true);
+      return _ephemeralComponents('🧹 이 내전의 음성방(구분선 · 대기실 · 팀방)을 모두 지우고 토너먼트 코드를 반납할까요?\n방에 있는 사람은 연결이 끊겨요.', [
+        { type: 1, components: [{ type: 2, style: 4, label: '정리하기', custom_id: `mdclean_yes__${cid}__${matchId}` }, { type: 2, style: 2, label: '취소', custom_id: `mdclean_no__${cid}__${matchId}` }] },
+      ]);
+    }
+    if (customId.startsWith('mdclean_no__')) return _updateComponentMsg('정리를 취소했어요.', []);
+    if (customId.startsWith('mdclean_yes__')) {
+      const { cid, matchId } = _splitCidMatch(customId, 'mdclean_yes__');
+      const chk = await _adminRoleCheck(interaction, cid, env);
+      if (!chk.ok) return _updateComponentMsg(chk.msg, []);
+      ctx.waitUntil(mdClean(env, cid, matchId, 'button').catch(e => console.log('[mdclean]', e.message)));
+      return _updateComponentMsg('🧹 음성방을 정리하고 토너먼트 코드를 반납하는 중이에요. (이 방도 곧 지워져요)', []);
+    }
     if (customId.startsWith('mdel_yes__')) {
       const { cid, matchId } = _splitCidMatch(customId, 'mdel_yes__');
       const chk = await _adminRoleCheck(interaction, cid, env);
@@ -9212,8 +9548,10 @@ async function _doMatchDelete(cid, matchId, env) {
     const found = await _findForumThreadForMatch(env, cid, matchId).catch(() => null);
     if (found) tids.add(String(found));
   }
+  const _rooms = await _mdJ(`${base}/discordRooms.json${authQ}`);
   const del = await fetch(`${base}.json${authQ}`, { method: 'DELETE' });
   if (!del.ok) return { ok:false, error:'DB 삭제 실패: ' + del.status };
+  await mdClean(env, cid, matchId, 'delete', _rooms || {}).catch(() => {});   // 삭제 → 음성방 정리 · 코드 반납
   await Promise.all([
     fetch(`${dbUrl}/match_alarms/${matchId}.json${authQ}`, { method: 'DELETE' }).catch(() => {}),
     fetch(`${dbUrl}/match_index/${matchId}.json${authQ}`, { method: 'DELETE' }).catch(() => {}),
@@ -9242,6 +9580,7 @@ async function _doJjong(cid, matchId, env) {
     body: JSON.stringify({ jjong: true, jjongAt: now, status: '내전 쫑', _version: (m._version || 0) + 1, _updatedAt: now }),
   });
   if (!pr.ok) return { ok:false, msg:'❌ 저장 실패 (' + pr.status + ')' };
+  await mdClean(env, cid, matchId, 'jjong').catch(() => {});   // 쫑 → 음성방 정리 · 코드 반납
   if (!m.communityId) m.communityId = cid;
   const text = await _jjongMentionText(m, env);
   const r = await _mentionInForumPost(cid, matchId, text, env);

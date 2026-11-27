@@ -903,6 +903,34 @@ tr.has-bg-effect td {
 #stats-body tr.sub-row td:nth-child(2){padding-left:28px!important}
 #stats-body tr.sub-row[hidden],.mc-sub[hidden]{display:none!important}
 .mc.mc-sub{margin-left:18px;border-left:2px solid rgba(167,139,250,.45)!important}
+/* 부계정 수동 연동 (관리자) */
+.sl-btn{padding:3px 5px;border-radius:2px;border:1px solid rgba(167,139,250,.35);background:transparent;color:#A78BFA;font-size:10px;cursor:pointer;transition:background .15s}
+.sl-btn:hover{background:rgba(167,139,250,.12)}
+#sl-ov{position:fixed;inset:0;z-index:9000;background:rgba(3,6,10,.72);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:16px;animation:slfade .18s ease}
+@keyframes slfade{from{opacity:0}to{opacity:1}}
+#sl-box{width:min(460px,100%);max-height:calc(100vh - 32px);overflow:auto;background:var(--panel,#0F1620);border:1px solid rgba(167,139,250,.35);border-radius:8px;padding:20px 20px 16px;font-family:'IBM Plex Sans KR',sans-serif;color:var(--text,#E6EAF0);box-shadow:0 24px 60px -20px rgba(0,0,0,.8);animation:slup .22s cubic-bezier(.22,1,.36,1)}
+@keyframes slup{from{transform:translateY(10px);opacity:0}to{transform:none;opacity:1}}
+#sl-box h3{margin:0 0 4px;font-size:16px;font-weight:800;display:flex;align-items:center;gap:8px}
+#sl-box h3 .x{margin-left:auto;background:none;border:0;color:var(--muted,#8A93A3);font-size:18px;cursor:pointer}
+.sl-sub{font-size:12px;color:var(--muted,#8A93A3);margin-bottom:14px;line-height:1.55}
+.sl-sec{margin-top:14px}
+.sl-sec>b{display:block;font-size:12px;color:#A78BFA;letter-spacing:.5px;margin-bottom:8px}
+.sl-row{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--border-subtle,#1F2A38);border-radius:6px;background:rgba(255,255,255,.02);margin-bottom:6px;font-size:13px}
+.sl-row .n{font-weight:700}.sl-row .t{color:var(--muted,#8A93A3)}
+.sl-row .tag{font-size:10px;padding:0 6px;border-radius:999px;background:rgba(167,139,250,.12);color:#A78BFA;font-weight:700}
+.sl-row .sp{flex:1}
+.sl-act{padding:4px 10px;border-radius:4px;border:1px solid rgba(167,139,250,.45);background:rgba(167,139,250,.1);color:#C4B5FD;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap}
+.sl-act:hover{background:rgba(167,139,250,.2)}
+.sl-act.danger{border-color:rgba(255,90,110,.45);background:rgba(255,90,110,.08);color:#FF8A99}
+.sl-act:disabled{opacity:.5;cursor:default}
+.sl-in{width:100%;box-sizing:border-box;height:36px;padding:0 10px;border-radius:6px;border:1px solid var(--border-subtle,#1F2A38);background:#0A0E14;color:inherit;font:inherit;font-size:13px;outline:none}
+.sl-in:focus{border-color:rgba(167,139,250,.6)}
+.sl-list{margin-top:8px;max-height:220px;overflow:auto}
+.sl-list .sl-row{cursor:pointer}
+.sl-list .sl-row:hover{border-color:rgba(167,139,250,.5)}
+.sl-empty{font-size:12px;color:var(--muted,#8A93A3);padding:10px;text-align:center;border:1px dashed var(--border-subtle,#1F2A38);border-radius:6px}
+.sl-msg{margin-top:12px;font-size:12px;min-height:16px}
+.sl-msg.err{color:#FF8A99}.sl-msg.ok{color:#5EEAD4}
 
 /* 멸망전 화면에서는 캘린더 플로팅 버튼 숨김 (데스크톱 포함) */
 body:has(#doom-sim-view[style*="display: block"]) #cal-float-btn,body:has(#doom-sim-view:not([style*="display: none"]):not([style*="display:none"])) #cal-float-btn{display:none!important}
@@ -2323,12 +2351,14 @@ function applyAll(){
 // ── 본계정-부계정 계층 (5단계 게임 결과로 찾은 부계정, 디스코드 소환사 계정 등록 기준) ──
 var _subMainOf = {};          // 부계정 deeplol puu_id → 본계정 puu_id
 var _subOpen = new Set();     // 펼친 본계정 puu_id
-async function loadSubAccounts() {
+var _subMains = [], _subList = [];   // 본계정으로 고를 수 있는 계정 · 본계정별 부계정 목록 (관리자 수동 연동용)
+async function loadSubAccounts(fresh) {
   if (!COMMUNITY_ID) return;
   try {
-    var r = await fetch(WORKER_URL + '/sub-accounts?cid=' + encodeURIComponent(COMMUNITY_ID));
+    var r = await fetch(WORKER_URL + '/sub-accounts?cid=' + encodeURIComponent(COMMUNITY_ID) + (fresh ? '&fresh=' + Date.now() : ''));
     var j = await r.json();
     if (!j || !j.ok) return;
+    _subMains = j.mains || []; _subList = j.list || [];
     var key = function (n, t) { return (String(n || '').trim() + '#' + String(t || '').trim()).toLowerCase(); };
     var byKey = {}, byPuu = {};
     allData.forEach(function (m) { if (m.riot_name) byKey[key(m.riot_name, m.riot_tag)] = m; if (m.puu_id) byPuu[m.puu_id] = m; });
@@ -2341,10 +2371,98 @@ async function loadSubAccounts() {
         if (row && row.puu_id && row.puu_id !== main.puu_id) map[row.puu_id] = main.puu_id;
       });
     });
+    var changed = JSON.stringify(_subMainOf) !== JSON.stringify(map);
     _subMainOf = map;
-    if (Object.keys(map).length) applyAll();
+    if (changed || fresh) applyAll();
   } catch (e) { console.warn('[sub-accounts]', e); }
 }
+// ── 관리자: 부계정 수동 연동 · 해제 ──
+var _slRow = null;
+function _slKey(n, t) { return (String(n || '').trim() + '#' + String(t || '').trim()).toLowerCase(); }
+function _slFind(puu) {
+  var hit = null;
+  allData.forEach(function (m) { if (m.puu_id === puu) hit = m; });
+  return hit;
+}
+function _slMainEntryOf(m) {   // 이 계정이 디스코드 등록 본계정이면 그 항목
+  var k = _slKey(m.riot_name, m.riot_tag);
+  return _subMains.find(function (x) { return (x.dlPuuid && x.dlPuuid === m.puu_id) || _slKey(x.name, x.tag) === k; }) || null;
+}
+function _slSubsOf(main) {
+  var k = _slKey(main.name, main.tag);
+  var e = _subList.find(function (x) { return _slKey(x.name, x.tag) === k; });
+  return e ? (e.subs || []) : [];
+}
+function _slClose() { var o = document.getElementById('sl-ov'); if (o) o.remove(); }
+window.openSubLink = function (puu) {
+  var m = _slFind(puu); if (!m) return;
+  _slRow = m; _slClose();
+  document.body.insertAdjacentHTML('beforeend', '<div id="sl-ov" onclick="if(event.target===this)_slClose()"><div id="sl-box"></div></div>');
+  _slDraw();
+};
+function _slDraw(msg, ok) {
+  var box = document.getElementById('sl-box'); if (!box || !_slRow) return;
+  var m = _slRow, me = esc(m.riot_name) + ' <span class="t">#' + esc(m.riot_tag) + '</span>';
+  var mainPuu = _subMainOf[m.puu_id], mainRow = mainPuu ? _slFind(mainPuu) : null;
+  var mainEnt = _slMainEntryOf(m);
+  var h = '<h3>🔗 부계정 연동 <button class="x" onclick="_slClose()">✕</button></h3><div class="sl-sub"><b>' + me + '</b><br>';
+  if (mainRow) {
+    h += '이 계정은 <b>' + esc(mainRow.riot_name) + '#' + esc(mainRow.riot_tag) + '</b>의 부계정으로 연동돼 있어요.</div>' +
+      '<div class="sl-row"><span class="n">' + esc(mainRow.riot_name) + '</span><span class="t">#' + esc(mainRow.riot_tag) + '</span><span class="tag">본계정</span><span class="sp"></span><button class="sl-act danger" onclick="_slDo(\'unlink\',' + _slArg(mainRow.riot_name, mainRow.riot_tag) + ',' + _slArg(m.riot_name, m.riot_tag) + ',this)">연동 해제</button></div>';
+  } else if (mainEnt) {
+    var subs = _slSubsOf(mainEnt);
+    h += '디스코드로 등록된 본계정이에요. 부계정을 추가하거나 뺄 수 있어요.</div>' +
+      '<div class="sl-sec"><b>연동된 부계정 ' + subs.length + '개</b>' + (subs.length ? subs.map(function (x) {
+        return '<div class="sl-row"><span class="n">' + esc(x.name) + '</span><span class="t">#' + esc(x.tag) + '</span>' + (x.manual ? '<span class="tag">수동</span>' : '<span class="tag">자동</span>') + '<span class="sp"></span><button class="sl-act danger" onclick="_slDo(\'unlink\',' + _slArg(mainEnt.name, mainEnt.tag) + ',' + _slArg(x.name, x.tag) + ',this)">해제</button></div>';
+      }).join('') : '<div class="sl-empty">아직 연동된 부계정이 없어요</div>') + '</div>' +
+      '<div class="sl-sec"><b>부계정 추가</b><input class="sl-in" id="sl-q" placeholder="소환사명#태그 검색 (목록에 없으면 그대로 입력)" oninput="_slSearch(\'sub\')" autocomplete="off"><div class="sl-list" id="sl-list"></div></div>';
+  } else {
+    h += '본계정을 고르면 이 계정이 그 사람의 부계정으로 묶여요. 본계정은 디스코드에서 소환사 계정을 등록한 사람만 고를 수 있어요.</div>' +
+      '<div class="sl-sec"><b>본계정 고르기</b><input class="sl-in" id="sl-q" placeholder="본계정 소환사명 검색" oninput="_slSearch(\'main\')" autocomplete="off"><div class="sl-list" id="sl-list"></div></div>';
+  }
+  h += '<div class="sl-msg' + (msg ? (ok ? ' ok' : ' err') : '') + '" id="sl-msg">' + (msg ? esc(msg) : '') + '</div>';
+  box.innerHTML = h;
+  if (document.getElementById('sl-q')) { _slSearch(mainEnt ? 'sub' : 'main'); document.getElementById('sl-q').focus(); }
+}
+function _slArg(n, t) {   // onclick="..." 안에 넣을 JS 문자열 인자 (따옴표 · 특수문자 안전하게)
+  var j = function (v) { return "'" + String(v || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'") + "'"; };
+  return (j(n) + ',' + j(t)).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+window._slSearch = function (mode) {
+  var el = document.getElementById('sl-list'), q = (document.getElementById('sl-q').value || '').trim().toLowerCase();
+  if (!el) return;
+  var m = _slRow, myK = _slKey(m.riot_name, m.riot_tag), rows = [];
+  if (mode === 'main') {
+    rows = _subMains.filter(function (x) { return _slKey(x.name, x.tag) !== myK && (!q || _slKey(x.name, x.tag).indexOf(q) >= 0); }).slice(0, 30)
+      .map(function (x) { return { n: x.name, t: x.tag, act: '본계정으로' }; });
+  } else {
+    var mainK = {}; _subMains.forEach(function (x) { mainK[_slKey(x.name, x.tag)] = 1; });
+    var seen = {};
+    allData.forEach(function (r) {
+      var k = _slKey(r.riot_name, r.riot_tag); if (seen[k] || k === myK || mainK[k] || _subMainOf[r.puu_id]) return; seen[k] = 1;
+      if (!q || k.indexOf(q) >= 0) rows.push({ n: r.riot_name, t: r.riot_tag, act: '부계정으로' });
+    });
+    rows = rows.slice(0, 30);
+    var typed = /^(.+)#(.+)$/.exec((document.getElementById('sl-q').value || '').trim());
+    if (typed && !rows.some(function (r) { return _slKey(r.n, r.t) === _slKey(typed[1], typed[2]); })) rows.unshift({ n: typed[1].trim(), t: typed[2].trim(), act: '직접 입력 연동' });
+  }
+  el.innerHTML = rows.length ? rows.map(function (r) {
+    var a = mode === 'main' ? _slArg(r.n, r.t) + ',' + _slArg(m.riot_name, m.riot_tag) : _slArg(_slRow.riot_name, _slRow.riot_tag) + ',' + _slArg(r.n, r.t);
+    return '<div class="sl-row"><span class="n">' + esc(r.n) + '</span><span class="t">#' + esc(r.t) + '</span><span class="sp"></span><button class="sl-act" onclick="_slDo(\'link\',' + a + ',this)">' + r.act + '</button></div>';
+  }).join('') : '<div class="sl-empty">' + (mode === 'main' ? '찾는 본계정이 없어요 (디스코드 소환사 계정 등록한 사람만 나와요)' : '검색 결과가 없어요. 소환사명#태그를 그대로 입력하면 연동할 수 있어요') + '</div>';
+};
+window._slDo = async function (op, mn, mt, sn, st, btn) {
+  if (op === 'unlink' && !confirm(sn + '#' + st + ' 부계정 연동을 해제할까요?\n해제한 계정은 5단계 자동 기록이 다시 붙이지 않아요.')) return;
+  if (btn) btn.disabled = true;
+  try {
+    var r = await fetch(WORKER_URL + '/sub-accounts-edit', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Session-Token': _statsAdminToken },
+      body: JSON.stringify({ cid: COMMUNITY_ID, op: op, main: { name: mn, tag: mt }, sub: { name: sn, tag: st } }) });
+    var j = await r.json().catch(function () { return {}; });
+    if (!r.ok || !j.ok) throw new Error(j.error || ('실패 (' + r.status + ')'));
+    await loadSubAccounts(true);
+    _slDraw(op === 'link' ? (sn + '#' + st + ' → ' + mn + '#' + mt + ' 부계정으로 연동했어요' + (j.moved ? ' (' + j.moved + '에서 옮김)' : '')) : (sn + '#' + st + ' 연동을 해제했어요'), true);
+  } catch (e) { _slDraw(e.message, false); }
+};
 function _subToggleHtml(m) {
   var n = (m._subRows || []).length;
   if (!n) return '';
@@ -2412,6 +2530,7 @@ function _statsRowHtml(m, rank, subOf){
             style="padding:3px 7px;border-radius:2px;border:1px solid rgba(10,200,185,.3);background:rgba(10,200,185,.06);color:var(--blue);font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;letter-spacing:.5px;cursor:pointer;white-space:nowrap;">
             상세
           </button>
+          ${isStatsAdmin()?'<button class="sl-btn" onclick="event.stopPropagation();openSubLink(\''+m.puu_id+'\')" title="부계정 연동 · 해제 (관리자)">🔗</button>':''}
           ${_statsAdminRole==='master'?'<button class="effect-pick-btn" data-puu="'+m.puu_id+'" data-name="'+esc(m.riot_name||m.name||'')+'" style="padding:3px 5px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--muted);font-size:10px;cursor:pointer;" title="이펙트 설정">✨</button><button class="bg-effect-pick-btn" data-puu="'+m.puu_id+'" data-name="'+esc(m.riot_name||m.name||'')+'" style="padding:3px 5px;border-radius:2px;border:1px solid var(--border-subtle);background:transparent;color:var(--muted);font-size:10px;cursor:pointer;" title="배경 이펙트">🎨</button>':''}
         </div>
       </td>
