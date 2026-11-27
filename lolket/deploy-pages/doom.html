@@ -423,13 +423,13 @@ textarea.in{height:auto;min-height:90px;padding:10px 12px;resize:vertical}
 .pi .ps{font-size:17px}
 
 /* 후원 배너 (PC 양옆) */
-.adside{position:fixed;top:92px;z-index:15;width:160px;height:min(600px,calc(100vh - 112px));display:none}
-.adside.l{left:calc(50% - 590px - 28px - 160px)}
-.adside.r{right:calc(50% - 590px - 28px - 160px)}
+.adside{position:fixed;top:92px;z-index:15;height:min(600px,calc(100vh - 112px));aspect-ratio:160/600;width:auto;display:none}   /* 항상 160:600 비율 (화면이 낮으면 비율 그대로 작아져요) */
+.adside.l{right:calc(50% + 590px + 28px)}
+.adside.r{left:calc(50% + 590px + 28px)}
 @media (min-width:1560px){.adside.on{display:block;animation:fin .4s var(--ease) both}}
-.ad-img{position:relative;display:block;width:100%;height:100%;overflow:hidden;border:1px solid var(--line2);background:var(--panel);border-radius:6px}
-a.ad-img{transition:border-color .2s,transform .2s var(--ease)}
-a.ad-img:hover{border-color:var(--gold-l);transform:translateY(-2px)}
+.ad-img{position:relative;display:block;width:100%;height:100%;overflow:hidden;box-shadow:0 0 0 1px var(--line2);background:var(--panel);border-radius:6px}   /* 테두리가 이미지 자리를 먹지 않게 바깥 선으로 */
+a.ad-img{transition:box-shadow .2s,transform .2s var(--ease)}
+a.ad-img:hover{box-shadow:0 0 0 1px var(--gold-l);transform:translateY(-2px)}
 .ad-img img{display:block;width:100%;height:100%;object-fit:cover}
 .ad-tag{position:absolute;right:6px;top:6px;padding:0 5px;border-radius:3px;background:rgba(0,0,0,.6);color:#C9CFD8;font:700 9px var(--num);letter-spacing:1px}
 .ad-empty{position:relative;overflow:hidden;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:22px 14px;text-align:center;

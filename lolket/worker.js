@@ -5382,8 +5382,7 @@ async function handleDoom(request, env) {
       seen[did] = 1;
       // 같은 사람이 디스코드 연동 전(dl:)/후(디스코드 ID)로 따로 들어가지 않게 딥롤 puuid 로도 비교해요
       if (p.dlPuuid && Object.values(members).some(m => m && m.dlPuuid === p.dlPuuid)) return json({ ok: false, error: p.name + ' 님이 두 라인에 들어가 있어요' }, 400);
-      const other = teams.find(x => x.id !== (prev && prev.id) && stOf(x) !== 'rejected' && Object.values(x.members || {}).some(m => m && (String(m.did) === did || (p.dlPuuid && m.dlPuuid === p.dlPuuid))));
-      if (other) return json({ ok: false, error: p.name + ' 님은 이미 ' + other.name + ' 팀이에요' }, 400);
+      // 다른 팀에 이미 있는 멤버도 넣을 수 있어요 (스크림에서 같은 사람이 양쪽에 서는 것만 막아요)
       const base = { did, dc: p.dc !== false, name: p.name, tag: p.tag, dlPuuid: p.dlPuuid, riotPuuid: p.riotPuuid, tier: p.tier, src: p.src, score: p.scores[l] };
       let adj = null;
       if (isAdmin) {
