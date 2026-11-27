@@ -431,6 +431,12 @@ textarea.in{height:auto;min-height:90px;padding:10px 12px;resize:vertical}
 a.ad-img{transition:box-shadow .2s,transform .2s var(--ease)}
 a.ad-img:hover{box-shadow:0 0 0 1px var(--gold-l);transform:translateY(-2px)}
 .ad-img img{display:block;width:100%;height:100%;object-fit:contain}   /* 절대 안 잘리게: 160:600이면 꽉 차고, 비율이 조금 달라도 잘리지 않아요 */
+.ad-car{position:relative;width:100%;height:100%}
+.ad-slide{position:absolute;inset:0;opacity:0;visibility:hidden;transform:scale(.985);transition:opacity .9s ease,transform 1.2s var(--ease),visibility 0s linear .9s}
+.ad-slide.on{opacity:1;visibility:visible;transform:none;transition:opacity .9s ease,transform 1.2s var(--ease),visibility 0s}
+.ad-dots{position:absolute;left:0;right:0;bottom:-14px;display:flex;justify-content:center;gap:5px}
+.ad-dots i{width:5px;height:5px;border-radius:50%;background:var(--line2);transition:background .3s,width .3s}
+.ad-dots i.on{width:14px;border-radius:3px;background:var(--gold)}
 .ad-tag{position:absolute;right:6px;top:6px;padding:0 5px;border-radius:3px;background:rgba(0,0,0,.6);color:#C9CFD8;font:700 9px var(--num);letter-spacing:1px}
 .ad-empty{position:relative;overflow:hidden;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:22px 14px;text-align:center;
   border:1px solid var(--line2);border-radius:8px;background:linear-gradient(180deg,rgba(240,198,97,.10),rgba(240,198,97,0) 38%),linear-gradient(0deg,rgba(255,61,87,.07),transparent 40%),var(--panel)}
@@ -1133,20 +1139,44 @@ if (/[?&]demo=/.test(location.search)) document.write('<script src="doom-demo.js
     var img = '<img src="' + esc(b.img) + '" alt="' + esc(b.name || '후원 광고') + '" loading="lazy"><span class="ad-tag">AD</span>';
     return b.link ? '<a class="ad-img" href="' + esc(b.link) + '" target="_blank" rel="noopener sponsored">' + img + '</a>' : '<div class="ad-img">' + img + '</div>';
   }
+  // 배너 캐러셀: 들어올 때마다 섞은 뒤 왼쪽 · 오른쪽에 반반씩 나눠(중복 없이) 각자 천천히 돌려요
+  var AD_EVERY = 7000, _adTimers = [], _adKey = '';
+  function adStop() { _adTimers.forEach(clearInterval); _adTimers = []; }
+  function adSide(el, list, delay) {
+    if (!list.length) { el.innerHTML = adHtml(null); return; }
+    el.innerHTML = '<div class="ad-car">' + list.map(function (b, i) { return '<div class="ad-slide' + (i ? '' : ' on') + '">' + adHtml(b) + '</div>'; }).join('') +
+      (list.length > 1 ? '<div class="ad-dots">' + list.map(function (b, i) { return '<i class="' + (i ? '' : 'on') + '"></i>'; }).join('') + '</div>' : '') + '</div>';
+    if (list.length < 2) return;
+    var idx = 0, hover = false, car = el.firstChild;
+    car.addEventListener('mouseenter', function () { hover = true; });
+    car.addEventListener('mouseleave', function () { hover = false; });
+    var step = function () {
+      if (hover || document.hidden) return;
+      var sl = car.querySelectorAll('.ad-slide'), dt = car.querySelectorAll('.ad-dots i');
+      sl[idx].classList.remove('on'); if (dt[idx]) dt[idx].classList.remove('on');
+      idx = (idx + 1) % sl.length;
+      sl[idx].classList.add('on'); if (dt[idx]) dt[idx].classList.add('on');
+    };
+    // 왼쪽 · 오른쪽이 동시에 바뀌지 않게 오른쪽은 반 박자 늦게 시작
+    var t0 = setTimeout(function () { step(); _adTimers.push(setInterval(step, AD_EVERY)); }, AD_EVERY + delay);
+    _adTimers.push(t0);
+  }
   function renderAds() {
     var L = $('ad-l'), R = $('ad-r');
-    if (DEMO || S.view !== 'detail' || !S.doom) { L.classList.remove('on'); R.classList.remove('on'); return; }
+    if (DEMO || S.view !== 'detail' || !S.doom) { L.classList.remove('on'); R.classList.remove('on'); adStop(); _adKey = ''; return; }
     var bs = (S.doom.banners || []).filter(function (b) { return b && b.img; });
     var key = S.doom.id + ':' + bs.map(function (b) { return b.img; }).join('|');
-    if (!_adPick[key]) {   // 이 멸망전에 들어올 때마다 섞어서 왼쪽 · 오른쪽에 서로 다른 배너
+    if (!_adPick[key]) {   // 이 멸망전에 들어올 때마다 섞어서 왼쪽 · 오른쪽에 번갈아 나눠요 (같은 배너가 양쪽에 동시에 나오지 않음)
       var sh = bs.slice(); for (var i = sh.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), t = sh[i]; sh[i] = sh[j]; sh[j] = t; }
-      _adPick[key] = [sh[0] || null, sh[1] || null];
+      _adPick[key] = [sh.filter(function (x, k) { return k % 2 === 0; }), sh.filter(function (x, k) { return k % 2 === 1; })];
     }
-    L.innerHTML = adHtml(_adPick[key][0]); R.innerHTML = adHtml(_adPick[key][1]);
     L.classList.add('on'); R.classList.add('on');
+    if (_adKey === key && L.firstChild) return;   // 같은 멸망전 화면을 다시 그릴 때는 돌고 있는 그대로 둬요
+    _adKey = key; adStop();
+    adSide(L, _adPick[key][0], 0); adSide(R, _adPick[key][1], AD_EVERY / 2);
   }
   // 상세 화면을 벗어날 때마다 다시 섞어요
-  window.addEventListener('hashchange', function () { if (!/^#\/d\//.test(location.hash)) _adPick = {}; });
+  window.addEventListener('hashchange', function () { if (!/^#\/d\//.test(location.hash)) { _adPick = {}; _adKey = ''; } });
 
   // ── 설정 탭: 배너 관리 (마스터 전용) ──
   var _bn = null, _ghImgs = null;
