@@ -449,6 +449,23 @@ a.ad-img:hover{box-shadow:0 0 0 1px var(--gold-l);transform:translateY(-2px)}
 .mtag{font-style:normal;font-size:10.5px;font-weight:800;padding:1px 7px;border-radius:99px;background:rgba(176,124,240,.18);color:#CBA6F7;margin-left:6px;letter-spacing:0}
 .bnc{margin-top:14px}
 .shr{position:absolute!important;top:22px;right:22px;z-index:2}
+/* 🔥 현재 스크림 진행중 (성사 · 종료 전 · 시작 후 3시간 이내) */
+.live-scrim{isolation:isolate;border-color:rgba(255,120,40,.65)!important;box-shadow:0 0 0 1px rgba(255,120,40,.35),0 14px 36px -18px rgba(255,90,20,.75)!important}
+.flame{position:absolute;left:0;right:0;bottom:0;height:75%;pointer-events:none;z-index:-1;overflow:hidden;border-radius:inherit;-webkit-mask-image:linear-gradient(0deg,#000 35%,transparent);mask-image:linear-gradient(0deg,#000 35%,transparent)}
+.flame i{position:absolute;bottom:-34%;width:46%;height:100%;border-radius:50% 50% 42% 42%;background:radial-gradient(ellipse at 50% 88%,rgba(255,214,110,.42),rgba(255,120,40,.26) 38%,rgba(255,50,20,0) 70%);filter:blur(12px);animation:flick 1.7s ease-in-out infinite alternate;transform-origin:50% 100%}
+.flame i:nth-child(1){left:-8%;animation-duration:1.45s}
+.flame i:nth-child(2){left:27%;animation-duration:1.95s;animation-delay:-.6s;height:115%}
+.flame i:nth-child(3){left:62%;animation-duration:1.6s;animation-delay:-1.1s}
+@keyframes flick{0%{transform:translateY(0) scale(1,1);opacity:.7}45%{transform:translateY(-5%) scale(.94,1.1);opacity:1}100%{transform:translateY(-1%) scale(1.04,.94);opacity:.8}}
+.ember{position:absolute;bottom:6%;width:3px;height:3px;border-radius:50%;background:#FFC46B;box-shadow:0 0 6px #FF8A3D;opacity:0;animation:ember 2.8s linear infinite}
+@keyframes ember{0%{transform:translateY(0);opacity:0}15%{opacity:.9}100%{transform:translateY(-120px) translateX(10px);opacity:0}}
+.livetag{display:inline-flex;align-items:center;gap:6px;padding:3px 10px 3px 8px;border-radius:999px;font:800 11px var(--kr);letter-spacing:-.1px;color:#1A0A02;background:linear-gradient(100deg,#FFD36E,#FF8A3D 55%,#FF5A36);box-shadow:0 0 0 1px rgba(255,160,80,.5),0 4px 16px -4px rgba(255,100,30,.8);animation:livepulse 1.8s ease-in-out infinite;white-space:nowrap}
+.livetag em{font-style:normal;font-weight:700;opacity:.8}
+@keyframes livepulse{0%,100%{box-shadow:0 0 0 1px rgba(255,160,80,.5),0 4px 16px -4px rgba(255,100,30,.8)}50%{box-shadow:0 0 0 3px rgba(255,160,80,.25),0 6px 22px -4px rgba(255,100,30,1)}}
+.liverow{margin:0 16px 10px 18px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.liverow small{font-size:11.5px;color:#FFB27A;font-weight:700}
+.scard .livetag{margin-left:8px}
+@media (prefers-reduced-motion:reduce){.flame i,.ember,.livetag{animation:none}}
 .vmiss{display:grid;gap:6px;margin-top:10px}
 .vmiss>div{display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid rgba(255,61,87,.35);background:rgba(255,61,87,.06);border-radius:6px}
 .vmiss b{font-size:13.5px}
@@ -1000,10 +1017,13 @@ if (/[?&]demo=/.test(location.search)) document.write('<script src="doom-demo.js
       }
       if (S.isAdmin) acts = '<button class="btn sm ghost del" onclick="adminDelTeam(\'' + t.id + '\')" title="삭제"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>삭제</button><span class="sp"></span>' + acts;
       var ent = st === 'approved' && t.entry === 'confirmed';
-      return (ent ? '<div class="entry-wrap">' : '') + '<article class="roster ' + st + (ent ? ' entry' : '') + '" style="--tc:' + esc(t.color) + ';animation-delay:' + (anim ? i * 45 : 0) + 'ms">' +
+      var live = st === 'approved' ? liveScrimOfTeam(t.id) : null, liveVs = live ? (String(live.teamId) === String(t.id) ? live.match && live.match.name : live.teamName) : '';
+      return (ent ? '<div class="entry-wrap">' : '') + '<article class="roster ' + st + (ent ? ' entry' : '') + (live ? ' live-scrim' : '') + '" style="--tc:' + esc(t.color) + ';animation-delay:' + (anim ? i * 45 : 0) + 'ms">' +
+        (live ? flameFx() : '') +
         (ent ? '<i class="fx"></i><span class="ribbon entry">🏆 최종 출전 확정</span>' : STT[st] ? '<span class="ribbon ' + st + '">' + STT[st] + '</span>' : '') +
         '<header class="rhead"><span class="emb">' + esc(String(t.name || '?').charAt(0)) + '</span><div class="rname"><b>' + esc(t.name) + '</b><small>팀장 <b class="' + (isCap ? 'me' : '') + '">' + esc((t.captain && t.captain.name) || '-') + '</b></small></div>' +
         '<div class="rtot"><b>' + (t.total != null ? t.total : '—') + '</b><span>PTS</span></div></header>' +
+        (live ? '<div class="liverow"><span class="livetag" title="' + esc(live.name) + '">🔥 현재 스크림 진행중</span><small>vs ' + esc(liveVs || '상대 팀') + ' · ' + fmtT(live.startAt) + ' 시작</small></div>' : '') +
         (st === 'rejected' && t.rejectReason ? '<div class="rj">거절 사유 · ' + esc(t.rejectReason) + '</div>' : '') +
         (st === 'approved' && t.entry === 'requested' && (S.isAdmin || isCap) ? '<div style="margin:0 16px 10px 18px"><span class="etag req">⏳ 최종 출전 확정 요청 중</span></div>' : '') +
         (st === 'approved' && !t.entry && t.entryNote && (S.isAdmin || isCap) ? '<div class="ej">출전 확정 반려 사유 · ' + esc(t.entryNote) + '</div>' : '') +
@@ -1455,6 +1475,12 @@ if (/[?&]demo=/.test(location.search)) document.write('<script src="doom-demo.js
 
   // ══ 스크림 ══
   var SST = { open: '모집 중', closed: '모집 마감', matched: '성사', ended: '종료' };
+  // 🔥 진행 중인 스크림: 성사됐고, 종료 전이고, 시작 시간이 지났고 3시간 이내
+  function scLive(s) { var now = Date.now(); return !!(s && s.status === 'matched' && s.match && s.startAt && now >= s.startAt && now < s.startAt + 3 * 3600 * 1000); }
+  function liveScrimOfTeam(tid) {
+    return (S.scrims || []).filter(scLive).find(function (s) { return String(s.teamId) === String(tid) || (s.match && s.match.type === 'team' && String(s.match.teamId) === String(tid)); }) || null;
+  }
+  function flameFx() { return '<span class="flame" aria-hidden="true"><i></i><i></i><i></i><b class="ember" style="left:18%;animation-delay:.2s"></b><b class="ember" style="left:46%;animation-delay:1.1s"></b><b class="ember" style="left:74%;animation-delay:1.9s"></b></span>'; }
   function scDone(s) { return (s.status === 'matched' || s.status === 'ended') && !!s.match; }
   function scState(s) {
     if (s.status === 'ended') return 'ended';
@@ -1514,8 +1540,9 @@ if (/[?&]demo=/.test(location.search)) document.write('<script src="doom-demo.js
     return h + '<div class="scgrid">' + list.map(function (s, i) {
       var st = scState(s), apps = s.apps || {}, nT = Object.keys(apps.teams || {}).length, nS = LANES.reduce(function (a, l) { return a + Object.keys((apps.solo || {})[l] || {}).length; }, 0);
       var opp = scDone(s) && s.match;
-      return '<div class="scard" style="animation-delay:' + i * 40 + 'ms" onclick="go(\'#/d/' + d.id + '/scrims/' + s.id + '\')">' +
-        '<div class="dtop"><span class="st sc-' + st + '">' + SST[st] + '</span><span class="sp"></span>' + fmtT(s.startAt) + '</div>' +
+      var lv = scLive(s);
+      return '<div class="scard' + (lv ? ' live-scrim' : '') + '" style="animation-delay:' + i * 40 + 'ms" onclick="go(\'#/d/' + d.id + '/scrims/' + s.id + '\')">' + (lv ? flameFx() : '') +
+        '<div class="dtop"><span class="st sc-' + st + '">' + SST[st] + '</span>' + (lv ? '<span class="livetag">🔥 현재 스크림 진행중</span>' : '') + '<span class="sp"></span>' + fmtT(s.startAt) + '</div>' +
         '<div class="nm" title="' + esc(s.name) + '">' + esc(s.name) + '</div>' +
         '<div class="vsrow"><div class="side" style="--tc:' + esc(s.teamColor) + '"><span class="emb sm">' + esc(String(s.teamName).charAt(0)) + '</span><span><b>' + esc(s.teamName) + '</b><em>' + s.total + ' PTS</em></span></div><span class="vsx">VS</span>' +
         (opp ? '<div class="side r" style="--tc:' + esc(opp.color || '#B07CF0') + '"><span><b>' + esc(opp.name) + '</b><em>' + opp.total + ' PTS</em></span><span class="emb sm">' + esc(String(opp.name).charAt(0)) + '</span></div>' : '<div class="side r q"><span><b>상대 모집 중</b><em>팀 ' + nT + ' · 개인 ' + nS + '</em></span><span class="emb sm qm">?</span></div>') + '</div>' +
