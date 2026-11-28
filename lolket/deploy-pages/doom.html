@@ -2,7 +2,17 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"><!--rg-nozoom-->
+<script>
+/* 모바일 확대 막기: 두 손가락 확대 · 두 번 톡 확대 · 입력칸 누를 때 자동 확대 */
+(function(){
+  document.addEventListener('gesturestart', function(e){ e.preventDefault(); }, { passive: false });   // 아이폰 사파리 두 손가락 확대
+  document.addEventListener('touchmove', function(e){ if (e.touches && e.touches.length > 1) e.preventDefault(); }, { passive: false });
+  // 두 번 톡 확대는 touch-action:manipulation 으로 막아요 (빠르게 여러 번 누르는 버튼은 그대로 동작)
+})();
+</script>
+<style>html{touch-action:manipulation;-webkit-text-size-adjust:100%;text-size-adjust:100%}</style>
+
 <meta name="theme-color" content="#06080C">
 <title>멸망전 · 룽잉닷컴</title>
 <link rel="icon" href="favicon.png">
@@ -34,6 +44,9 @@ a{color:inherit}
 .top{position:sticky;top:0;z-index:50;background:rgba(6,8,12,.82);backdrop-filter:blur(12px) saturate(1.2);-webkit-backdrop-filter:blur(12px) saturate(1.2);border-bottom:1px solid var(--line)}
 .top::after{content:'';position:absolute;left:0;right:0;bottom:-1px;height:1px;background:linear-gradient(90deg,transparent,var(--gold-l),transparent)}
 .top-in{max-width:1180px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:10px}
+.back-st{flex-shrink:0;display:inline-flex;align-items:center;gap:2px;height:34px;padding:0 12px 0 8px;margin-right:2px;border-radius:8px;border:1px solid var(--line2);background:var(--panel);color:var(--text);font-size:13px;font-weight:700;text-decoration:none;transition:background .15s,transform .15s}
+.back-st:hover{border-color:#3a4558}.back-st:active{transform:scale(.95)}
+.back-st[hidden]{display:none}
 .brand{display:flex;align-items:center;gap:10px;text-decoration:none;min-width:0;cursor:pointer}
 .logo{width:34px;height:34px;flex-shrink:0;display:grid;place-items:center;color:#1A1204;background:linear-gradient(135deg,#FFE29A,var(--gold) 45%,var(--gold2));clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%)}
 .brand-t{min-width:0}
@@ -120,6 +133,7 @@ a{color:inherit}
 .st.sc-closed{color:var(--muted);border-color:var(--line2)}
 .st.sc-matched{color:var(--gold);border-color:var(--gold-l);background:var(--gold-s)}
 .st.sc-ended{color:var(--muted);border-color:var(--line2);background:transparent}
+.st.sc-canceled{color:#FF8A8A;border-color:rgba(255,107,107,.35);background:rgba(255,107,107,.06)}
 .rooms{margin-top:12px;border:1px solid var(--line2);background:var(--panel2);padding:14px 16px;border-radius:8px}
 .rooms .rh{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
 .rooms .rh b{font-size:14px}
@@ -471,6 +485,7 @@ a.ad-img:hover{box-shadow:0 0 0 1px var(--gold-l);transform:translateY(-2px)}
 .liverow{margin:0 16px 10px 18px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .liverow small{font-size:11.5px;color:#FFB27A;font-weight:700}
 .scard .livetag{margin-left:8px}
+.scard.sc-dim{filter:brightness(.86)}   /* 모집 마감 · 종료된 스크림은 아주 살짝 어둡게 */
 @media (prefers-reduced-motion:reduce){.flame i,.ember,.livetag{animation:none}}
 .vmiss{display:grid;gap:6px;margin-top:10px}
 .vmiss>div{display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid rgba(255,61,87,.35);background:rgba(255,61,87,.06);border-radius:6px}
@@ -693,9 +708,94 @@ a.ad-img:hover{box-shadow:0 0 0 1px var(--gold-l);transform:translateY(-2px)}
 }
 @media (prefers-reduced-motion:reduce){*,*::before{animation:none!important;transition:none!important}.dcard,.roster{opacity:1}}
 </style>
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="룽잉닷컴">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<script src="/pwa.js" defer></script>
+<style id="rg-page-transition">
+/* 페이지 이동을 부드럽게: 같은 사이트 안에서 다른 페이지로 갈 때 이전 화면은 살짝 사라지고 새 화면이 떠오르듯 나타나요
+   (크롬 · 엣지 126+, 사파리 18.2+ 지원 / 지원하지 않는 브라우저는 지금처럼 바로 바뀜) */
+@view-transition{navigation:auto}
+::view-transition-old(root){animation:rgVtOut .16s ease-in both}
+::view-transition-new(root){animation:rgVtIn .34s cubic-bezier(.2,.8,.2,1) both}
+@keyframes rgVtOut{to{opacity:0}}
+@keyframes rgVtIn{from{opacity:0;transform:translateY(10px)}}
+@media (prefers-reduced-motion:reduce){::view-transition-group(*),::view-transition-old(*),::view-transition-new(*){animation:none!important}}
+
+/* ══ 최종 라인업 ══ */
+.lu-head{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;margin:4px 0 16px}
+.lu-head .eb{display:block;font:800 11.5px var(--num);letter-spacing:2px;color:var(--gold);text-transform:uppercase}
+.lu-head h2{margin:4px 0 0;font-family:var(--disp);font-size:26px;font-weight:800;letter-spacing:-.4px}
+.lu-prog{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
+.lu-prog b{font:800 22px var(--num);color:var(--gold)}
+.lu-prog i{display:block;width:150px;height:6px;border-radius:3px;background:var(--line2);overflow:hidden}
+.lu-prog em{display:block;height:100%;background:linear-gradient(90deg,var(--gold),#FFB347);transition:width .6s var(--ease)}
+.lu-dots{display:none}
+.lu-list{display:flex;flex-direction:column;gap:10px}
+.lu-row{position:relative;display:grid;grid-template-columns:52px 84px minmax(150px,210px) repeat(5,minmax(0,1fr));align-items:center;gap:12px;padding:12px 14px 12px 10px;border-radius:16px;background:linear-gradient(90deg,color-mix(in srgb,var(--tc) 13%,var(--panel)),var(--panel) 42%);box-shadow:0 0 0 1px var(--line);animation:luIn .45s var(--ease) both}
+.lu-row:nth-child(2){animation-delay:.05s}.lu-row:nth-child(3){animation-delay:.1s}.lu-row:nth-child(4){animation-delay:.15s}.lu-row:nth-child(n+5){animation-delay:.2s}
+@keyframes luIn{from{opacity:0;transform:translateY(8px)}}
+.lu-no{font:italic 900 28px var(--num);color:var(--tc);text-align:center}
+.lu-logo{position:relative;flex-shrink:0;width:84px;height:84px;border-radius:14px;overflow:hidden;display:grid;place-items:center;background:radial-gradient(120% 120% at 30% 20%,color-mix(in srgb,var(--tc) 38%,#0B0F16),#0B0F16 72%);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--tc) 40%,transparent)}
+.lu-logo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1}
+.lu-logo b{font:900 34px var(--disp);color:var(--tc)}
+.lu-logo.q{border:1.5px dashed #34405A;background:transparent;box-shadow:none;font:900 38px var(--num);color:#34405A}
+.lu-tn{min-width:0;display:flex;flex-direction:column;gap:3px;align-items:flex-start}
+.lu-tn b{font-family:var(--disp);font-size:18px;font-weight:800;line-height:1.25;overflow-wrap:anywhere}
+.lu-tn small{font-size:12px;color:var(--muted)}
+.lu-lgbtn{margin-top:4px;height:26px;padding:0 10px;border:1px solid var(--line2);border-radius:7px;background:var(--panel2);color:var(--muted);font-size:11.5px;font-weight:700;cursor:pointer}
+.lu-lgbtn:hover{color:var(--text);border-color:#3a4558}
+.lu-pl{min-width:0;display:flex;flex-direction:column;gap:3px;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.035)}
+.lu-pl .ln{font-size:10.5px;font-weight:800;color:var(--muted)}
+.lu-pl .nm{font-size:13.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lu-pl .nm i{font-style:normal;font-size:11px;color:var(--dim);margin-left:1px}
+.lu-pl .nm.dim{color:var(--dim)}
+.lu-pl .lu-tier{align-self:flex-start}
+.lu-tier{flex-shrink:0;font:800 11px var(--num);padding:2px 7px;border-radius:6px;background:color-mix(in srgb,var(--c) 15%,transparent);color:var(--c);white-space:nowrap}
+.lu-row.lu-q{background:var(--panel);box-shadow:none;border:1.5px dashed var(--line2);animation:none}
+.lu-row.lu-q .lu-no{color:#2E3A4E}.lu-row.lu-q .lu-tn b,.lu-row.lu-q .lu-tn small{color:#3A4558}
+.lu-row.lu-q .lu-pl{background:rgba(255,255,255,.015)}.lu-row.lu-q .nm.q{font:900 18px var(--num);color:#34405A}
+.lu-row.lu-q.next{border-color:var(--gold-l)}.lu-row.lu-q.next .lu-tn small{color:var(--gold)}
+.lu-wall{display:none}
+@media (max-width:1100px){.lu-row{grid-template-columns:44px 68px minmax(120px,170px) repeat(5,minmax(0,1fr));gap:8px}.lu-logo{width:68px;height:68px}.lu-no{font-size:22px}}
+/* 모바일: 로고가 큰 카드 2열 */
+@media (max-width:760px){
+  .lu-list{display:none}
+  .lu-head{margin-bottom:10px}.lu-head h2{font-size:22px}
+  .lu-prog{margin-left:0;width:100%}.lu-prog i{flex:1}
+  .lu-dots{display:flex;gap:4px;margin:0 0 12px}.lu-dots i{flex:1;max-width:28px;height:5px;border-radius:3px;background:var(--line2)}.lu-dots i.on{background:linear-gradient(90deg,var(--gold),#FFB347)}
+  .lu-wall{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .lu-tile{position:relative;border-radius:18px;overflow:hidden;background:var(--panel);box-shadow:0 0 0 1px var(--line);display:flex;flex-direction:column;animation:luIn .45s var(--ease) both}
+  .lu-tile .art{position:relative;aspect-ratio:1/1;display:grid;place-items:center;background:radial-gradient(90% 90% at 50% 30%,color-mix(in srgb,var(--tc) 42%,#0B0F16),#07090D 76%)}
+  .lu-logo.big{position:absolute;inset:0;width:auto;height:auto;border-radius:0;background:none;box-shadow:none}
+  .lu-logo.big b{font-size:64px}
+  .lu-tile .no{position:absolute;top:10px;left:11px;z-index:2;font:900 12px var(--num);color:rgba(255,255,255,.8);text-shadow:0 1px 4px rgba(0,0,0,.6)}
+  .lu-tile .ok{position:absolute;top:9px;right:9px;z-index:2;font-size:10.5px;font-weight:800;padding:2px 7px;border-radius:999px;background:rgba(10,30,20,.72);color:var(--ok)}
+  .lu-tile .tn{position:absolute;left:0;right:0;bottom:0;z-index:2;padding:26px 10px 8px;background:linear-gradient(transparent,rgba(5,7,10,.92));font-family:var(--disp);font-size:14.5px;font-weight:800;line-height:1.25;overflow-wrap:anywhere}
+  .lu-tile .mem{padding:8px 8px 10px;display:flex;flex-direction:column;gap:4px}
+  .lu-tile .mem div{display:flex;align-items:center;gap:5px;font-size:12px;min-width:0}
+  .lu-tile .mem .ln{width:24px;flex-shrink:0;font-size:10px;font-weight:800;color:var(--muted)}
+  .lu-tile .mem .nm{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+  .lu-tile .lu-tier{font-size:9.5px;padding:1px 5px}
+  .lu-tadm{padding:0 8px 10px}.lu-tadm .lu-lgbtn{width:100%;margin:0}
+  .lu-tile.lu-q{animation:none}
+  .lu-tile.lu-q .art{background:repeating-linear-gradient(135deg,#0C1118 0 12px,#0A0E14 12px 24px)}
+  .lu-tile.lu-q .no{color:#34405A;text-shadow:none}
+  .lu-tile.lu-q .qq{font:900 64px var(--num);color:#253044}
+  .lu-tile.lu-q .mem div{color:#34405A}.lu-tile.lu-q .mem .nm.lu-bar{height:8px;border-radius:4px;background:#161D28;flex:1}
+  .lu-tile.next{box-shadow:0 0 0 1.5px var(--gold-l),0 0 26px -8px rgba(240,198,97,.35)}
+  .lu-tile.next .qq{color:#5A4A22}.lu-tile.next .lab{position:absolute;bottom:10px;left:0;right:0;text-align:center;font-size:11.5px;font-weight:800;color:var(--gold)}
+}
+.ghgrid.lg .ghi img{aspect-ratio:1/1;object-fit:cover;width:100%}
+@media (prefers-reduced-motion:reduce){.lu-row,.lu-tile{animation:none}}
+</style>
 </head>
 <body>
 <header class="top"><div class="top-in">
+  <a class="back-st" id="back-st" href="#" hidden aria-label="커뮤니티 전적 페이지로 돌아가기"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg><span>전적</span></a>
   <a class="brand" href="#/" onclick="go('#/');return false;">
     <span class="logo"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 17.5L3 6V3h3l11.5 11.5"/><path d="M13 19l6-6"/><path d="M16 16l4 4"/><path d="M19 21l2-2"/></svg></span>
     <span class="brand-t"><b>멸망전</b><small id="cname">ROONGING</small></span>
@@ -720,6 +820,20 @@ if (/[?&]demo=/.test(location.search)) document.write('<script src="doom-demo.js
   var REDIRECT = location.origin + '/doom';   // 디스코드 개발자 포털에 등록한 주소와 같아야 해요
   var q = new URLSearchParams(location.search);
   var CID = q.get('cid') || (DEMO ? 'demo' : '');
+  // 전적 페이지에서 왔으면 돌아갈 주소를 기억해 둬요 (주소가 바뀌거나 디스코드 로그인 후에도 남게)
+  (function () {
+    if (DEMO || !CID) return;
+    var K = 'doom_back_' + CID, from = q.get('from') || '';
+    try {
+      if (/^\/stats(\.html)?\?[^<>"']*$/.test(from) && from.indexOf('cid=' + encodeURIComponent(CID)) >= 0) localStorage.setItem(K, from);
+      var back = localStorage.getItem(K);
+      var go = function () {
+        var a = document.getElementById('back-st'); if (!a || !back) return;
+        a.href = back; a.hidden = false;
+      };
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', go); else go();
+    } catch (e) {}
+  })();
   var LANES = ['top', 'jg', 'mid', 'bot', 'sup'];
   var KO = { top: '탑', jg: '정글', mid: '미드', bot: '원딜', sup: '서폿' };
   var EN = { top: 'TOP', jg: 'JGL', mid: 'MID', bot: 'BOT', sup: 'SUP' };
@@ -839,7 +953,7 @@ if (/[?&]demo=/.test(location.search)) document.write('<script src="doom-demo.js
   async function route() {
     if (!location.hash && q.get('d')) history.replaceState(history.state, '', location.pathname + location.search + '#/d/' + q.get('d'));
     var h = location.hash || '#/';
-    var m = h.match(/^#\/d\/([A-Za-z0-9_-]+)(?:\/(info|teams|scrims|settings)(?:\/([A-Za-z0-9_-]+)(?:\/(apply))?)?)?/);
+    var m = h.match(/^#\/d\/([A-Za-z0-9_-]+)(?:\/(info|teams|lineup|scrims|settings)(?:\/([A-Za-z0-9_-]+)(?:\/(apply))?)?)?/);
     if (!CID) { $('app').innerHTML = '<div class="empty view"><b>커뮤니티 정보가 없어요</b>룽잉닷컴 stats 화면의 "멸망전" 버튼으로 들어와 주세요.</div>'; return; }
     var seq = ++_seq;
     syncAddr(m ? m[1] : '');
@@ -929,7 +1043,7 @@ if (/[?&]demo=/.test(location.search)) document.write('<script src="doom-demo.js
   }
 
   // ── 상세 ──
-  function tabsList() { var t = (showInfoTab() ? [['info', '대회 안내', '']] : []).concat([['teams', '팀', nApproved()], ['scrims', '스크림', (S.scrims || []).filter(function (x) { return x.status === 'open'; }).length || '']]); if (S.isAdmin) t.push(['settings', '설정', '']); return t; }
+  function tabsList() { var t = (showInfoTab() ? [['info', '대회 안내', '']] : []).concat([['teams', '팀', nApproved()]]).concat(showLineupTab() ? [['lineup', '최종 라인업', luTeams().length + '/' + luSlots()]] : []).concat([['scrims', '스크림', (S.scrims || []).filter(function (x) { return scState(x) === 'open'; }).length || '']]); if (S.isAdmin) t.push(['settings', '설정', '']); return t; }
   function heroHtml() {
     var d = S.doom;
     return (DEMO ? '' : '<button type="button" class="btn sm shr" onclick="copyDoomLink()" title="이 멸망전 링크 복사 (미리보기 이미지 포함)">🔗 링크 복사</button>') + '<span class="st ' + d.status + '">' + ST[d.status] + '</span><h1 class="disp">' + esc(d.name) + '</h1>' + (d.desc ? '<div class="desc">' + esc(d.desc) + '</div>' : '') +
@@ -954,6 +1068,7 @@ if (/[?&]demo=/.test(location.search)) document.write('<script src="doom-demo.js
     setTimeout(renderAds, 0);
     if (S.tab === 'settings' && !S.isAdmin) S.tab = 'teams';
     if (S.tab === 'info' && !showInfoTab()) S.tab = 'teams';
+    if (S.tab === 'lineup' && !showLineupTab()) S.tab = 'teams';
     $('app').innerHTML = '<div class="' + (anim ? 'view' : '') + '"><button class="back" onclick="go(\'#/\')">← 멸망전 목록</button>' +
       '<section class="dhero" id="dhero">' + heroHtml() + '</section><nav class="tabs" id="tabs">' + tabsHtml() + '</nav><div id="panel"></div></div>';
     var ind = $('tab-ind'); if (ind) { ind.style.transition = 'none'; moveInd(); void ind.offsetWidth; ind.style.transition = ''; }
@@ -962,6 +1077,7 @@ if (/[?&]demo=/.test(location.search)) document.write('<script src="doom-demo.js
   function switchTab(tab) {
     if (tab === 'settings' && !S.isAdmin) tab = 'teams';
     if (tab === 'info' && !showInfoTab()) tab = 'teams';
+    if (tab === 'lineup' && !showLineupTab()) tab = 'teams';
     if (tab === S.tab) return;
     S.tab = tab;
     document.querySelectorAll('#tabs .tab').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-t') === tab); });
@@ -973,6 +1089,7 @@ if (/[?&]demo=/.test(location.search)) document.write('<script src="doom-demo.js
     if (S.tab === 'settings' && S.isAdmin) { p.innerHTML = ''; editDoom(S.doom, p); return; }
     if (S.tab === 'info') { p.innerHTML = infoHtml(); return; }
     if (S.tab === 'scrims') { p.innerHTML = scrimsHtml(); maybeApply(); return; }
+    if (S.tab === 'lineup') { p.innerHTML = lineupHtml(); return; }
     p.innerHTML = teamsHtml(anim);
   }
   // 디스코드 연동 표시 (예전 팀 데이터는 dc 칸이 없어서 숫자 ID면 연동으로 봐요)
@@ -1021,7 +1138,7 @@ if (/[?&]demo=/.test(location.search)) document.write('<script src="doom-demo.js
           }
         }
       }
-      if (S.isAdmin) acts = '<button class="btn sm ghost del" onclick="adminDelTeam(\'' + t.id + '\')" title="삭제"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>삭제</button><span class="sp"></span>' + acts;
+      if (S.isAdmin) acts = '<button class="btn sm ghost del" onclick="adminDelTeam(\'' + t.id + '\')" title="' + (st === 'approved' ? '해체' : '삭제') + '"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>' + (st === 'approved' ? '해체' : '삭제') + '</button><span class="sp"></span>' + acts;
       var ent = st === 'approved' && t.entry === 'confirmed';
       var live = st === 'approved' ? liveScrimOfTeam(t.id) : null, liveVs = live ? (String(live.teamId) === String(t.id) ? live.match && live.match.name : live.teamName) : '';
       return (ent ? '<div class="entry-wrap">' : '') + '<article class="roster ' + st + (ent ? ' entry' : '') + (live ? ' live-scrim' : '') + '" style="--tc:' + esc(t.color) + ';animation-delay:' + (anim ? i * 45 : 0) + 'ms">' +
@@ -1081,8 +1198,8 @@ if (/[?&]demo=/.test(location.search)) document.write('<script src="doom-demo.js
   window.adminDelTeam = async function (tid) {
     var t = S.teams.find(function (x) { return x.id === tid; }); if (!t) return;
     var what = stOf(t) === 'approved' ? '팀' : '신청';
-    if (!confirm('"' + t.name + '" ' + what + '을 삭제할까요?\n되돌릴 수 없어요.')) return;
-    try { var jd = await api('team-delete', { doomId: S.doom.id, team: { id: tid } }); toast(what + '을 삭제했어요'); roleToast(jd && jd.role, false); S.pool = null; await reloadDetail(); }
+    if (!confirm(what === '팀' ? '정말로 팀을 해체하시겠어요?' : '"' + t.name + '" 신청을 삭제할까요?\n되돌릴 수 없어요.')) return;
+    try { var jd = await api('team-delete', { doomId: S.doom.id, team: { id: tid } }); toast(what === '팀' ? '팀을 해체했어요' : '신청을 삭제했어요'); roleToast(jd && jd.role, false); S.pool = null; await reloadDetail(); }
     catch (e) { toast(e.message, true); }
   };
   // 팀장 디스코드 역할 부여 · 회수 결과 알림 (토스트가 겹치지 않게 조금 뒤에 띄워요)
@@ -1221,6 +1338,91 @@ if (/[?&]demo=/.test(location.search)) document.write('<script src="doom-demo.js
     try { var j = await api('banners-save', { doomId: S.doom.id, banners: _bn }); _bn = j.banners; toast('배너를 저장했어요 (' + _bn.length + '개)'); await reloadDetail(); drawBanners(); }
     catch (e) { toast(e.message, true); }
     if (b) b.disabled = false;
+  };
+
+
+  // ══ 최종 라인업: 최종 출전이 확정된 팀을 요청한 순서대로 채우고, 남은 자리는 ? 로 ══
+  //   PC = 한 줄에 한 팀 (순번 · 로고 · 팀 이름 · 5명) / 모바일 = 로고가 큰 카드 2열
+  function luTeams() {
+    return (S.teams || []).filter(function (t) { return t && t.entry === 'confirmed'; })
+      .sort(function (a, b) { return (a.entryReqAt || a.entryAt || 0) - (b.entryReqAt || b.entryAt || 0); });
+  }
+  function luSlots() { return Math.max(+((S.doom && S.doom.lineupSlots) || 0), luTeams().length); }
+  function showLineupTab() { return !!S.doom && (S.isAdmin || luSlots() > 0); }
+  var _TS = { IRON: 'I', BRONZE: 'B', SILVER: 'S', GOLD: 'G', PLATINUM: 'P', EMERALD: 'E', DIAMOND: 'D', MASTER: 'M', GRANDMASTER: 'GM', CHALLENGER: 'C' };
+  var _TC = { I: '#8E8E8E', B: '#C98B5B', S: '#A8B4C0', G: '#F0C661', P: '#3ED3C9', E: '#2FD39A', D: '#5AB0FF', M: '#C77DFF', GM: '#FF6B7A', C: '#F7D774' };
+  function luTier(txt) {   // "DIAMOND II" → D2 · "MASTER 254LP" → M254
+    var s0 = String(txt || '').toUpperCase().trim(); if (!s0) return null;
+    var p = s0.split(/\s+/), k = _TS[p[0]] || (p[0] === 'GRAND' && p[1] === 'MASTER' ? 'GM' : null);
+    if (!k) return { t: String(txt).slice(0, 10), c: '#8A94A6' };
+    var rn = { I: 1, II: 2, III: 3, IV: 4 }, rest = p.slice(k === 'GM' && p[0] === 'GRAND' ? 2 : 1).join(' ');
+    var num = (rest.match(/(\d+)/) || [])[1], div = rn[(rest.match(/\b(IV|III|II|I)\b/) || [])[1]];
+    return { t: k + (['M', 'GM', 'C'].indexOf(k) >= 0 ? (num || '') : (div || num || '')), c: _TC[k] };
+  }
+  function luLogo(t, cls) {
+    if (t.logo) return '<span class="lu-logo ' + (cls || '') + '"><img src="' + esc(t.logo) + '" alt="" loading="lazy" onerror="this.remove()"><b>' + esc(String(t.name || '?').charAt(0)) + '</b></span>';
+    return '<span class="lu-logo mono ' + (cls || '') + '"><b>' + esc(String(t.name || '?').charAt(0)) + '</b></span>';
+  }
+  function luMem(t, l) { var m = (t.members || {})[l]; return m && m.name ? m : null; }
+  function luCap(t, m) { return !!(t.captain && m && m.did && String(t.captain.did) === String(m.did)); }
+  function lineupHtml() {
+    var d = S.doom, list = luTeams(), n = luSlots(), done = list.length;
+    var head = '<div class="lu-head"><div><span class="eb">' + esc(d.name) + ' · FINAL LINEUP</span><h2>최종 확정 팀</h2></div>' +
+      (n ? '<div class="lu-prog">확정 <b>' + done + '</b><span>/ ' + n + '팀</span><i><em style="width:' + Math.round(done / n * 100) + '%"></em></i></div>' : '') + '</div>';
+    if (!n) return head + '<div class="empty"><b>아직 정해진 팀 수가 없어요</b>' + (S.isAdmin ? '설정 탭의 "최종 라인업 전체 팀 수"를 넣으면 자리가 생겨요.' : '관리자가 최종 라인업을 준비하고 있어요.') + '</div>';
+    var rows = '', tiles = '', dots = '';
+    for (var i = 0; i < n; i++) {
+      var t = list[i], no = String(i + 1).padStart(2, '0');
+      dots += '<i class="' + (t ? 'on' : '') + '"></i>';
+      if (t) {
+        var adm = S.isAdmin ? '<button type="button" class="lu-lgbtn" onclick="lgPick(\'' + t.id + '\')">' + (t.logo ? '로고 바꾸기' : '로고 설정') + '</button>' : '';
+        var cap = t.captain && t.captain.name ? '👑 ' + esc(t.captain.name) + ' · ' : '';
+        rows += '<div class="lu-row" style="--tc:' + esc(t.color || '#4FA8FF') + '"><div class="lu-no">' + no + '</div>' + luLogo(t) +
+          '<div class="lu-tn"><b>' + esc(t.name) + '</b><small>' + cap + '✓ 최종 확정</small>' + adm + '</div>' +
+          LANES.map(function (l) {
+            var m = luMem(t, l), tr = m ? luTier(m.tier) : null;
+            return '<div class="lu-pl"><span class="ln">' + KO[l] + '</span>' + (m ? '<span class="nm">' + esc(m.name) + '<i>#' + esc(m.tag || '') + '</i>' + (luCap(t, m) ? ' 👑' : '') + '</span>' + (tr ? '<span class="lu-tier" style="--c:' + tr.c + '">' + esc(tr.t) + '</span>' : '') : '<span class="nm dim">—</span>') + '</div>';
+          }).join('') + '</div>';
+        tiles += '<div class="lu-tile" style="--tc:' + esc(t.color || '#4FA8FF') + '"><div class="art">' + luLogo(t, 'big') + '<span class="no">#' + (i + 1) + '</span><span class="ok">✓ 확정</span><div class="tn">' + esc(t.name) + '</div></div>' +
+          '<div class="mem">' + LANES.map(function (l) {
+            var m = luMem(t, l), tr = m ? luTier(m.tier) : null;
+            return '<div><span class="ln">' + KO[l] + '</span><span class="nm">' + (m ? esc(m.name) + (luCap(t, m) ? ' 👑' : '') : '—') + '</span>' + (tr ? '<span class="lu-tier" style="--c:' + tr.c + '">' + esc(tr.t) + '</span>' : '') + '</div>';
+          }).join('') + '</div>' + (adm ? '<div class="lu-tadm">' + adm + '</div>' : '') + '</div>';
+      } else {
+        var nx = i === done;
+        rows += '<div class="lu-row lu-q' + (nx ? ' next' : '') + '"><div class="lu-no">' + no + '</div><span class="lu-logo q">?</span><div class="lu-tn"><b>확정 대기 중</b><small>' + (nx ? '다음 확정 팀이 여기에 들어와요' : '아직 최종 확정되지 않았어요') + '</small></div>' +
+          LANES.map(function (l) { return '<div class="lu-pl"><span class="ln">' + KO[l] + '</span><span class="nm q">?</span></div>'; }).join('') + '</div>';
+        tiles += '<div class="lu-tile lu-q' + (nx ? ' next' : '') + '"><div class="art"><span class="no">#' + (i + 1) + '</span><span class="qq">?</span>' + (nx ? '<span class="lab">다음 확정 팀</span>' : '') + '</div>' +
+          '<div class="mem">' + LANES.map(function (l) { return '<div><span class="ln">' + KO[l] + '</span><span class="nm lu-bar"></span></div>'; }).join('') + '</div></div>';
+      }
+    }
+    return head + '<div class="lu-dots">' + dots + '</div><div class="lu-list">' + rows + '</div><div class="lu-wall">' + tiles + '</div>';
+  }
+  // 팀 로고 고르기 (관리자): GitHub lolket/image asset/doom_logos 폴더
+  var LG_API = 'https://api.github.com/repos/rdc6087940/lolket/contents/lolket/image%20asset/doom_logos';
+  var LG_RAW = 'https://raw.githubusercontent.com/rdc6087940/lolket/main/lolket/image%20asset/doom_logos/';
+  var _lgImgs = null, _lgTeam = null;
+  window.lgPick = async function (tid) {
+    _lgTeam = tid;
+    var t = (S.teams || []).find(function (x) { return x.id === tid; }); if (!t) return;
+    openModal('<h2>팀 로고 · ' + esc(t.name) + '</h2><div class="sub">GitHub lolket/image asset/doom_logos 폴더 · 정사각형 이미지를 눌러서 골라요</div><div class="ghgrid lg" id="lg-grid"><div class="mini-spin"></div></div>' +
+      '<div class="mact">' + (t.logo ? '<button class="btn ghost" onclick="lgSave(\'\')">로고 빼기</button><span class="sp"></span>' : '') + '<button class="btn" onclick="closeModal()">닫기</button></div>');
+    try {
+      if (!_lgImgs) {
+        var r = await fetch(LG_API, { headers: { Accept: 'application/vnd.github.v3+json' } });
+        if (r.status === 404) throw new Error('GitHub에 doom_logos 폴더가 아직 없어요. 레포 lolket/image asset 안에 doom_logos 폴더를 만들고 정사각형 로고를 올려 주세요.');
+        if (!r.ok) throw new Error('GitHub 목록을 불러오지 못했어요 (' + r.status + (r.status === 403 ? ' · 잠시 후 다시 시도해 주세요' : '') + ')');
+        _lgImgs = (await r.json()).filter(function (f) { return f.type === 'file' && /\.(png|jpe?g|gif|webp|svg)$/i.test(f.name); }).map(function (f) { return { name: f.name, img: LG_RAW + encodeURIComponent(f.name) }; });
+      }
+      var g = $('lg-grid'); if (!g) return;
+      g.innerHTML = _lgImgs.length ? _lgImgs.map(function (x, i) { return '<button type="button" class="ghi' + (x.img === t.logo ? ' on' : '') + '" onclick="lgSave(' + i + ')"><img src="' + esc(x.img) + '" alt="" loading="lazy"><span>' + esc(x.name) + '</span></button>'; }).join('')
+        : '<div class="note">폴더에 이미지가 없어요. png · jpg · gif · webp · svg 파일을 올려 주세요.</div>';
+    } catch (e) { var g2 = $('lg-grid'); if (g2) g2.innerHTML = '<div class="note warn">' + esc(e.message) + '</div>'; }
+  };
+  window.lgSave = async function (i) {
+    var img = i === '' ? '' : (_lgImgs && _lgImgs[i] ? _lgImgs[i].img : '');
+    try { await api('team-logo', { doomId: S.doom.id, teamId: _lgTeam, logo: img }); closeModal(); toast(img ? '팀 로고를 바꿨어요' : '팀 로고를 뺐어요'); await reloadDetail(); }
+    catch (e) { toast(e.message, true); }
   };
 
   // ── 링크 미리보기(OG) 이미지 (설정 탭 · 관리자) ──
@@ -1438,11 +1640,12 @@ if (/[?&]demo=/.test(location.search)) document.write('<script src="doom-demo.js
       '<div class="row2"><div class="f"><label>시작일</label><input class="in" type="date" id="ed-s" value="' + esc(_ed.startDate) + '"></div><div class="f"><label>종료일</label><input class="in" type="date" id="ed-e" value="' + esc(_ed.endDate) + '"></div></div>' +
       '<div class="f"><label>상태</label><div class="seg" id="ed-st">' + Object.keys(ST).map(function (k) { return '<button type="button" data-v="' + k + '" class="' + (_ed.status === k ? 'on' : '') + '" onclick="edSt(\'' + k + '\')">' + ST[k] + '</button>'; }).join('') + '</div><div class="hint">종료되면 팀 신청 · 수정이 막혀요.</div></div>' +
       '<div class="f"><label>설명</label><textarea class="in" id="ed-desc" maxlength="500" placeholder="참가 조건, 일정 안내 등">' + esc(_ed.desc) + '</textarea></div>' +
+      '<div class="f"><label>최종 라인업 전체 팀 수</label><input class="in" type="number" inputmode="numeric" id="ed-slots" min="0" max="64" placeholder="예: 8" value="' + (+_ed.lineupSlots || '') + '"><div class="hint">"최종 라인업" 탭에 이 수만큼 자리가 생기고, 최종 출전이 확정된 팀이 요청한 순서대로 채워져요. 아직 안 채워진 자리는 ? 로 보여요.</div></div>' +
       '<div class="f"><label>최종 출전 확정 주의사항 · 조건</label><textarea class="in" id="ed-terms" maxlength="4000" style="min-height:140px" placeholder="예)\n1. 참가비 1만 원을 ○○일까지 입금해야 해요.\n2. 출전 확정 후에는 팀원을 바꿀 수 없어요.\n3. 본선 당일 지각 시 몰수패예요.">' + esc(_ed.entryTerms || '') + '</textarea><div class="hint">팀장이 "최종 출전 확정"을 누르면 이 글이 팝업으로 나오고, "네 동의합니다"에 체크해야 요청할 수 있어요.</div></div></div>';
     var discord = '<div class="form">' +
       '<div class="f"><label>스크림 개설 가능 역할 (팀장)</label><div class="roles" id="ed-roles"><span class="note">디스코드 역할 불러오는 중…</span></div><div class="hint">이 디스코드 서버 역할이 있는 팀장만 스크림을 열 수 있어요. 아무것도 고르지 않으면 수락된 팀의 팀장 누구나 열 수 있어요. 개인 신청은 누구나 할 수 있고, 팀 단위 신청도 이 역할이 있는 팀장만 할 수 있어요.</div></div>' +
       '<div class="f"><label>스크림 디스코드 채널 (포럼)</label><select class="in" id="ed-ch"><option value="">불러오는 중…</option></select><div class="hint">스크림이 열리면 이 채널에 포스트가 자동으로 올라가요.</div></div>' +
-      '<div class="f"><label>팀 음성 채팅방 카테고리</label><select class="in" id="ed-vcat"><option value="">불러오는 중…</option></select><div class="hint">팀 수정 · 팀 카드의 "음성 채팅방 만들기"를 누르면 이 카테고리 안에 그 팀원만 들어갈 수 있는 음성 채널이 생겨요. 팀을 삭제하면 채널도 같이 지워져요. 봇에 "채널 관리" · "역할 관리" 권한이 필요해요.</div></div>' +
+      '<div class="f"><label>팀 음성 채팅방 카테고리</label><select class="in" id="ed-vcat"><option value="">불러오는 중…</option></select><div class="hint">팀 수정 · 팀 카드의 "음성 채팅방 만들기"를 누르면 이 카테고리 안에 그 팀원만 들어갈 수 있는 음성 채널이 생겨요. 팀을 해체하면 채널도 같이 지워져요. 봇에 "채널 관리" · "역할 관리" 권한이 필요해요.</div></div>' +
       '<div class="f"><label>스크림 음성 채팅방 카테고리</label><select class="in" id="ed-svcat"><option value="">불러오는 중…</option></select><div class="hint">성사된 스크림에서 연 팀장이 "스크림 방 만들기"를 누르면 이 카테고리 안에 대기실 · 두 팀 방, 음성 채널 3개가 생겨요. 누구나 들어갈 수 있고, 스크림을 종료하면 지워져요.</div></div>' +
       '<div class="f"><label>성사 비공개 스레드 채널 (텍스트)</label><select class="in" id="ed-mch"><option value="">불러오는 중…</option></select><div class="hint">스크림이 성사되면 이 채널에 양 팀 참가자만 초대된 비공개 스레드를 만들어요. 봇에 "비공개 스레드 만들기" 권한이 필요해요. 정하지 않으면 DM만 보내요.</div></div></div>';
     var acts = '<div class="' + (inline ? 'factions' : 'mact') + '">' + (_ed.id ? '<button class="btn danger" onclick="delDoom()">멸망전 삭제</button><span class="sp"></span>' : '') + (inline ? '' : '<button class="btn ghost" onclick="closeModal()">취소</button>') + '<button class="btn gold" id="ed-save" onclick="saveDoom()">' + (_ed.id ? '설정 저장' : '만들기') + '</button></div>';
@@ -1484,6 +1687,7 @@ if (/[?&]demo=/.test(location.search)) document.write('<script src="doom-demo.js
   window.edSt = function (k) { _ed.status = k; document.querySelectorAll('#ed-st button').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-v') === k); }); };
   window.edRole = function (id) { var i = _ed.scrimRoleIds.indexOf(id); if (i >= 0) _ed.scrimRoleIds.splice(i, 1); else _ed.scrimRoleIds.push(id); drawRoles(); };
   window.saveDoom = async function () {
+    _ed.lineupSlots = $('ed-slots') ? Math.max(0, Math.min(64, parseInt($('ed-slots').value, 10) || 0)) : (+_ed.lineupSlots || 0);
     _ed.name = $('ed-name').value; _ed.startDate = $('ed-s').value; _ed.endDate = $('ed-e').value; _ed.desc = $('ed-desc').value; _ed.entryTerms = $('ed-terms') ? $('ed-terms').value : (_ed.entryTerms || '');
     var sel = $('ed-ch'); if (sel && S.meta) { _ed.scrimChannelId = sel.value; var c = S.meta.channels.find(function (x) { return x.id === sel.value; }); _ed.scrimChannelName = c ? c.name : ''; }
     var msel = $('ed-mch'); if (msel && S.meta) { _ed.matchChannelId = msel.value; var mc = (S.meta.texts || []).find(function (x) { return x.id === msel.value; }); _ed.matchChannelName = mc ? mc.name : ''; }
@@ -1504,7 +1708,7 @@ if (/[?&]demo=/.test(location.search)) document.write('<script src="doom-demo.js
   };
 
   // ══ 스크림 ══
-  var SST = { open: '모집 중', closed: '모집 마감', matched: '성사', ended: '종료' };
+  var SST = { open: '모집 중', closed: '모집 마감', matched: '성사', ended: '종료', canceled: '모집 취소' };
   // 🔥 진행 중인 스크림: 성사됐고, 종료 전이고, 시작 시간이 지났고 3시간 이내
   function scLive(s) { var now = Date.now(); return !!(s && s.status === 'matched' && s.match && s.startAt && now >= s.startAt && now < s.startAt + 3 * 3600 * 1000); }
   function liveScrimOfTeam(tid) {
@@ -1514,6 +1718,7 @@ if (/[?&]demo=/.test(location.search)) document.write('<script src="doom-demo.js
   function scDone(s) { return (s.status === 'matched' || s.status === 'ended') && !!s.match; }
   function scState(s) {
     if (s.status === 'ended') return 'ended';
+    if (s.status === 'canceled') return 'canceled';
     if (s.status === 'matched') return 'matched';
     var now = Date.now();
     if (s.status !== 'open' || (s.recruitEnd && now > s.recruitEnd) || (s.recruitStart && now < s.recruitStart)) return 'closed';
@@ -1571,7 +1776,7 @@ if (/[?&]demo=/.test(location.search)) document.write('<script src="doom-demo.js
       var st = scState(s), apps = s.apps || {}, nT = Object.keys(apps.teams || {}).length, nS = LANES.reduce(function (a, l) { return a + Object.keys((apps.solo || {})[l] || {}).length; }, 0);
       var opp = scDone(s) && s.match;
       var lv = scLive(s);
-      return '<div class="scard' + (lv ? ' live-scrim' : '') + '" style="animation-delay:' + i * 40 + 'ms" onclick="go(\'#/d/' + d.id + '/scrims/' + s.id + '\')">' + (lv ? flameFx() : '') +
+      return '<div class="scard' + (lv ? ' live-scrim' : '') + (st === 'closed' || st === 'ended' || st === 'canceled' ? ' sc-dim' : '') + '" style="animation-delay:' + i * 40 + 'ms" onclick="go(\'#/d/' + d.id + '/scrims/' + s.id + '\')">' + (lv ? flameFx() : '') +
         '<div class="dtop"><span class="st sc-' + st + '">' + SST[st] + '</span>' + (lv ? '<span class="livetag">🔥 현재 스크림 진행중</span>' : '') + '<span class="sp"></span>' + fmtT(s.startAt) + '</div>' +
         '<div class="nm" title="' + esc(s.name) + '">' + esc(s.name) + '</div>' +
         '<div class="vsrow"><div class="side" style="--tc:' + esc(s.teamColor) + '"><span class="emb sm">' + esc(String(s.teamName).charAt(0)) + '</span><span><b>' + esc(s.teamName) + '</b><em>' + s.total + ' PTS</em></span></div><span class="vsx">VS</span>' +
@@ -1589,7 +1794,9 @@ if (/[?&]demo=/.test(location.search)) document.write('<script src="doom-demo.js
     var solo = apps.solo || {}, did = myDid();
     var max = maxOf([hostSide(s), s.match].concat(teams));
     var h = back + '<section class="shead"><div class="dtop"><span class="st sc-' + st + '">' + SST[st] + '</span><span class="sp"></span>' +
-      (mng ? '<button class="btn sm" onclick="scEdit(\'' + s.id + '\')">수정</button>' : '') + (S.isAdmin ? '<button class="btn sm ghost" onclick="scDelete(\'' + s.id + '\')">삭제</button>' : '') + '</div>' +
+      ((host || S.isAdmin) && st === 'open' ? '<button class="btn sm ghost" onclick="scCancel()">모집 취소</button>' : '') +
+      ((host || S.isAdmin) && st === 'canceled' ? '<button class="btn sm gold" onclick="scReopen()">다시 모집</button>' : '') +
+      (mng || (S.isAdmin && s.status === 'matched') ? '<button class="btn sm" onclick="scEdit(\'' + s.id + '\')">수정</button>' : '') + (S.isAdmin ? '<button class="btn sm ghost" onclick="scDelete(\'' + s.id + '\')">삭제</button>' : '') + '</div>' +
       '<h2 class="disp">' + esc(s.name) + '</h2>' +
       '<div class="sinfo"><div><span>시작</span><b>' + fmtT(s.startAt) + '</b></div><div><span>모집 기간</span><b>' + fmtT(s.recruitStart) + ' ~ ' + fmtT(s.recruitEnd) + '</b></div><div><span>상대 점수 조건</span><b>' + rangeTxt(s) + '</b></div><div><span>개설</span><b>' + esc((s.captain && s.captain.name) || '-') + '</b></div></div>' +
       (s.desc ? '<div class="sdesc">' + esc(s.desc) + '</div>' : '') + (s.note ? '<div class="memo warnm"><b>특이사항 · 요구사항</b>' + esc(s.note) + '</div>' : '') + '</section>';
@@ -1617,7 +1824,7 @@ if (/[?&]demo=/.test(location.search)) document.write('<script src="doom-demo.js
     // 신청하기
     var inHost = Object.values(s.roster || {}).some(function (m) { return m && String(m.did) === did; });
     var myLane = LANES.find(function (l) { return did && solo[l] && solo[l][did]; });
-    var why = st !== 'open' ? (s.recruitStart && Date.now() < s.recruitStart ? '아직 모집 기간이 아니에요.' : '모집이 끝났어요.') : '';
+    var why = st !== 'open' ? (st === 'canceled' ? '모집이 취소된 스크림이에요.' : s.recruitStart && Date.now() < s.recruitStart ? '아직 모집 기간이 아니에요.' : '모집이 끝났어요.') : '';
     h += '<section class="applyb"><div class="ab-h"><b>스크림 신청</b>' + (why ? '<span class="note warn">' + why + '</span>' : '') + '</div><div class="ab-row">' +
       '<div class="ab-solo"><span class="ab-l">개인 신청</span><div class="lanebtns">' + LANES.map(function (l) {
         return '<button class="lb' + (myLane === l ? ' on' : '') + '" onclick="scSolo(\'' + l + '\')"' + (why || inHost ? ' disabled' : '') + '>' + KO[l] + '<small>(개인)</small></button>';
@@ -1680,10 +1887,27 @@ if (/[?&]demo=/.test(location.search)) document.write('<script src="doom-demo.js
     try { var j = await api('scrim-rooms', { doomId: S.doom.id, scrimId: s.id }); s.rooms = j.rooms; toast('스크림 방 3개를 만들었어요'); renderPanel(true); }
     catch (e) { toast(e.message, true); if (b) { b.disabled = false; b.textContent = '🔊 스크림 방 만들기'; } }
   };
+  // 모집 취소 (스크림을 연 팀장): 모집 중인 스크림을 "모집 취소" 상태로
+  window.scCancel = async function () {
+    var s = curScrim(); if (!s) return;
+    if (!confirm('"' + s.name + '" 스크림 모집을 취소할까요?\n더 이상 신청을 받지 않아요. ("다시 모집"으로 되돌릴 수 있어요)')) return;
+    try { await api('scrim-cancel', { doomId: S.doom.id, scrimId: s.id }); toast('스크림 모집을 취소했어요'); await reloadDetail(); }
+    catch (e) { toast(e.message, true); }
+  };
+  // 다시 모집 (스크림을 연 팀장 · 관리자): 취소한 스크림을 모집 중으로
+  window.scReopen = async function () {
+    var s = curScrim(); if (!s) return;
+    if (!confirm('"' + s.name + '" 스크림을 다시 모집할까요?')) return;
+    try {
+      var j = await api('scrim-reopen', { doomId: S.doom.id, scrimId: s.id });
+      toast(j.closedWhy ? '다시 모집으로 바꿨어요 · ' + j.closedWhy + ' "수정"에서 모집 기간을 바꿔 주세요' : '스크림을 다시 모집해요', !!j.closedWhy);
+      await reloadDetail();
+    } catch (e) { toast(e.message, true); }
+  };
   window.scEnd = async function () {
     var s = curScrim(); if (!s) return;
     if (!confirm('"' + s.name + '" 스크림을 종료할까요?\n스크림 방(음성 채널)이 있으면 모두 지워지고, 되돌릴 수 없어요.')) return;
-    try { var j = await api('scrim-end', { doomId: S.doom.id, scrimId: s.id }); toast('스크림을 종료했어요' + (j.deleted ? ' · 스크림 방 ' + j.deleted + '개 삭제' : '')); await reloadDetail(); }
+    try { var j = await api('scrim-end', { doomId: S.doom.id, scrimId: s.id }); toast('스크림을 종료했어요' + (j.deleted ? ' · 스크림 방 ' + j.deleted + '개 삭제' : '') + (j.left ? ' · ' + j.left + '개는 못 지웠어요 (봇 권한 확인)' : ''), !!j.left); await reloadDetail(); }
     catch (e) { toast(e.message, true); }
   };
   window.scMatchTeam = async function (appId) {
@@ -1956,7 +2180,7 @@ if (/[?&]demo=/.test(location.search)) document.write('<script src="doom-demo.js
       '<div class="f"><label>팀 색</label><div class="colors">' + COLORS.map(function (c) { return '<button type="button" data-c="' + c + '" class="' + (c === _tm.color ? 'on' : '') + '" style="background:' + c + '" onclick="_tmColor(\'' + c + '\')" aria-label="팀 색"></button>'; }).join('') + '</div></div>' +
       '<div class="f"><label>로스터 (커뮤니티 멤버 누구나 · <i class="dcm">' + DC_SVG + '</i> = 디스코드 연동)</label><div class="slots">' + slots + '</div></div>' + bonusF +
       '<div class="totbar" id="tm-tot">' + totHtml(sm) + '</div>' + (apply ? memoF : '') + '</div>' +
-      '<div class="mact">' + (_tm.id ? '<button class="btn danger" onclick="delTeam()">' + (apply ? '신청 취소' : '팀 삭제') + '</button>' + (_tm.roleOk ? '<button class="btn" id="tm-role" onclick="regrantRole()" title="수락된 팀의 팀장에게 스크림 개설 가능 역할을 룽봇이 다시 붙여요">🛡️ 팀장 역할 다시 부여</button>' : '') +
+      '<div class="mact">' + (_tm.id ? '<button class="btn danger" onclick="delTeam()">' + (apply ? '신청 취소' : '팀 해체') + '</button>' + (_tm.roleOk ? '<button class="btn" id="tm-role" onclick="regrantRole()" title="수락된 팀의 팀장에게 스크림 개설 가능 역할을 룽봇이 다시 붙여요">🛡️ 팀장 역할 다시 부여</button>' : '') +
         (_tm.voiceOk ? '<button class="btn" id="tm-voice" onclick="teamVoice(_tm.id, true)" title="설정한 카테고리 안에 이 팀원만 들어갈 수 있는 음성 채팅방을 만들어요. 이미 있으면 지금 팀원 기준으로 권한을 다시 맞춰요">🔊 ' + (_tm.voice ? '음성 채팅방 권한 맞추기' : '음성 채팅방 만들기') + '</button>' : '') + '<span class="sp"></span>' : '') + '<button class="btn ghost" onclick="closeModal()">취소</button><button class="btn gold" id="tm-save" onclick="saveTeam()"' + (sm.n === 5 ? '' : ' disabled') + '>' + (apply ? (_tm.id ? '다시 신청' : '신청하기') : (_tm.id ? '저장' : '팀 만들기')) + '</button></div>');
   }
   function totHtml(sm) {
@@ -2027,8 +2251,8 @@ if (/[?&]demo=/.test(location.search)) document.write('<script src="doom-demo.js
     if (b) { b.disabled = false; b.textContent = '🛡️ 팀장 역할 다시 부여'; }
   };
   window.delTeam = async function () {
-    if (!confirm(S.isAdmin ? '"' + _tm.name + '" 팀을 삭제할까요?' : '"' + _tm.name + '" 팀 신청을 취소할까요?')) return;
-    try { var jd = await api('team-delete', { doomId: S.doom.id, team: { id: _tm.id } }); closeModal(); toast(S.isAdmin ? '팀을 삭제했어요' : '신청을 취소했어요'); roleToast(jd && jd.role, false); S.pool = null; await reloadDetail(); }
+    if (!confirm(S.isAdmin ? '정말로 팀을 해체하시겠어요?' : '"' + _tm.name + '" 팀 신청을 취소할까요?')) return;
+    try { var jd = await api('team-delete', { doomId: S.doom.id, team: { id: _tm.id } }); closeModal(); toast(S.isAdmin ? '팀을 해체했어요' : '신청을 취소했어요'); roleToast(jd && jd.role, false); S.pool = null; await reloadDetail(); }
     catch (e) { toast(e.message, true); }
   };
 

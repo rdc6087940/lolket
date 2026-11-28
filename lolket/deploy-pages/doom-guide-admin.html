@@ -2,11 +2,31 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"><!--rg-nozoom-->
+<script>
+/* 모바일 확대 막기: 두 손가락 확대 · 두 번 톡 확대 · 입력칸 누를 때 자동 확대 */
+(function(){
+  document.addEventListener('gesturestart', function(e){ e.preventDefault(); }, { passive: false });   // 아이폰 사파리 두 손가락 확대
+  document.addEventListener('touchmove', function(e){ if (e.touches && e.touches.length > 1) e.preventDefault(); }, { passive: false });
+  // 두 번 톡 확대는 touch-action:manipulation 으로 막아요 (빠르게 여러 번 누르는 버튼은 그대로 동작)
+})();
+</script>
+<style>html{touch-action:manipulation;-webkit-text-size-adjust:100%;text-size-adjust:100%}</style>
+
 <meta name="theme-color" content="#06080C">
 <title>멸망전 운영자 가이드 · 룽잉닷컴</title>
 <link rel="icon" href="favicon.png">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style id="rg-page-transition">
+/* 페이지 이동을 부드럽게: 같은 사이트 안에서 다른 페이지로 갈 때 이전 화면은 살짝 사라지고 새 화면이 떠오르듯 나타나요
+   (크롬 · 엣지 126+, 사파리 18.2+ 지원 / 지원하지 않는 브라우저는 지금처럼 바로 바뀜) */
+@view-transition{navigation:auto}
+::view-transition-old(root){animation:rgVtOut .16s ease-in both}
+::view-transition-new(root){animation:rgVtIn .34s cubic-bezier(.2,.8,.2,1) both}
+@keyframes rgVtOut{to{opacity:0}}
+@keyframes rgVtIn{from{opacity:0;transform:translateY(10px)}}
+@media (prefers-reduced-motion:reduce){::view-transition-group(*),::view-transition-old(*),::view-transition-new(*){animation:none!important}}
+</style>
 </head>
 <body>
 <script>
@@ -45,7 +65,7 @@ window.GUIDE = {
         { t: '저장', d: '보정한 멤버에는 초록색 "보정" 표시가 붙고, 가산점은 카드 아래에 나와요.', act: [['click', '#tm-save']], focus: '.roster.pending@0' },
         { t: '수락', d: '"수락"을 누르면 확인 창에 메모가 한 번 더 나와요. 수락하면 팀장에게 디스코드 DM이 가요 (오른쪽 디스코드 화면).', act: [['click', '.roster.pending@0 >> text:수락'], ['wait', 900], ['click', '#rv-go'], ['dfocus', 'DC:dm']] },
         { t: '거절 (사유 포함)', d: '"거절"은 사유를 적어서 보내요. 사유가 팀장에게 DM으로 가고, 팀장은 팀을 고쳐서 다시 신청할 수 있어요.', act: [['click', '.roster.pending@0 >> text:거절'], ['type', '#rv-reason', '팀 합계가 200점을 넘어요. 한 명을 바꿔서 다시 신청해 주세요.'], ['click', '#rv-go'], ['dfocus', 'DC:dm']] },
-        { t: '삭제 · 직접 만들기', d: '카드 왼쪽 아래 "삭제"로 신청이나 팀을 바로 지울 수 있어요.\n"팀 만들기"로 관리자가 직접 만든 팀은 바로 확정돼요. 다만 팀장이 "관리자"로 들어가서, 그 팀은 스크림을 열 수 없어요. 스크림을 쓸 팀은 팀장이 직접 신청하게 해 주세요.', act: [['focus', '.rfoot .del@0'], ['wait', 1400], ['focus', 'text:팀 만들기']] },
+        { t: '해체 · 삭제 · 직접 만들기', d: '카드 왼쪽 아래 "해체"로 수락된 팀을, "삭제"로 신청을 바로 지울 수 있어요. 누르면 한 번 더 물어봐요.\n"팀 만들기"로 관리자가 직접 만든 팀은 바로 확정돼요. 다만 팀장이 "관리자"로 들어가서, 그 팀은 스크림을 열 수 없어요. 스크림을 쓸 팀은 팀장이 직접 신청하게 해 주세요.', act: [['focus', '.rfoot .del@0'], ['wait', 1400], ['focus', 'text:팀 만들기']] },
       ] },
     { id: 'settings', title: '설정 바꾸기', desc: '상태 · 역할 · 채널', who: '관리자', role: 'admin', seed: 'teams', start: '/d/d1/settings',
       intro: '진행 상황에 맞게 상태를 바꾸고, 디스코드 역할과 채널을 고쳐요.',

@@ -11,7 +11,17 @@ OCTYPE html>
   gtag('config', 'G-MY5Z9P4L0W');
 </script>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"><!--rg-nozoom-->
+<script>
+/* 모바일 확대 막기: 두 손가락 확대 · 두 번 톡 확대 · 입력칸 누를 때 자동 확대 */
+(function(){
+  document.addEventListener('gesturestart', function(e){ e.preventDefault(); }, { passive: false });   // 아이폰 사파리 두 손가락 확대
+  document.addEventListener('touchmove', function(e){ if (e.touches && e.touches.length > 1) e.preventDefault(); }, { passive: false });
+  // 두 번 톡 확대는 touch-action:manipulation 으로 막아요 (빠르게 여러 번 누르는 버튼은 그대로 동작)
+})();
+</script>
+<style>html{touch-action:manipulation;-webkit-text-size-adjust:100%;text-size-adjust:100%}</style>
+
 <meta property="og:title" content="룽잉닷컴 — LoL 내전 전적">
 <meta property="og:description" content="내전 전적, 레이팅, 챔피언 통계를 확인하세요">
 <meta property="og:image" content="https://roonging.com/og-image-v2.png">
@@ -574,7 +584,7 @@ tbody td{padding:.55rem 1rem;font-size:12px;vertical-align:middle;}
   #btn-weekly-mission, #btn-nickname-run, #btn-update-all-peak,
   #btn-deeplol-api-test, #next-update-time { display:none!important; }
   /* 업적/가이드/랭킹/새로고침은 메뉴에 있으니 header-right에서 숨김 */
-  .header-right > button:not(#btn-refresh):not(.btn-ranking) { display:none!important; }
+  .header-right > button:not(#btn-refresh):not(.btn-ranking):not(#btn-doom-m) { display:none!important; }
   .header-right { gap:4px; }
 }
 
@@ -839,6 +849,19 @@ tr.has-bg-effect td {
 
 /* ── 커뮤니티 통계 모바일 레이아웃 ── */
 @media (max-width: 700px) {
+  html,body{overflow-x:clip}   /* 어떤 탭이든 페이지가 좌우로 밀리지 않게 */
+  /* 칸 안의 내용이 길어도 화면 밖으로 밀리지 않게 (좌우 스크롤 방지) */
+  #community-stats-view{padding:.75rem !important;max-width:100vw;overflow-x:hidden}
+  #community-stats-view .stats-layout{align-items:stretch !important}
+  #community-stats-content{width:100%}
+  #community-stats-content [style*="min-width:120px"]{min-width:0 !important}
+  #community-stats-content [style*="display:grid"]{min-width:0}
+  #community-stats-content [style*="display:grid"] > *{min-width:0}
+  #community-stats-content [style*="grid-template-columns:repeat(4,1fr)"]{grid-template-columns:repeat(2,minmax(0,1fr)) !important}
+  #community-stats-content [style*="grid-template-columns:repeat(3,1fr)"]{grid-template-columns:repeat(3,minmax(0,1fr)) !important}
+  #community-stats-content [style*="grid-template-columns:1fr 1fr"]{grid-template-columns:minmax(0,1fr) !important}
+  #community-stats-content svg{max-width:100%;height:auto}
+  #community-stats-content table{display:block;max-width:100%;overflow-x:auto}
   .stats-layout {
     flex-direction: column !important;
   }
@@ -935,7 +958,10 @@ tr.has-bg-effect td {
 /* 멸망전 화면에서는 캘린더 플로팅 버튼 숨김 (데스크톱 포함) */
 body:has(#doom-sim-view[style*="display: block"]) #cal-float-btn,body:has(#doom-sim-view:not([style*="display: none"]):not([style*="display:none"])) #cal-float-btn{display:none!important}
 </style>
-<link rel="manifest" href="/stats-manifest.json">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-title" content="룽잉닷컴">
+<script src="/pwa.js" defer></script>
 <meta name="theme-color" content="#0c1117">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1424,6 +1450,183 @@ select.ds-input{padding-right:4px}
 .ds-rc-x{flex:0 0 auto;min-height:24px;padding:0 7px;border-radius:6px;border:1px solid var(--ds-line);background:transparent;color:var(--muted);font-family:inherit;font-size:10.5px;font-weight:700;cursor:pointer}
 .ds-rc-x:hover{color:#FF8A8A;border-color:rgba(255,120,120,.4)}
 @media (max-width:700px){.ds-excl .ds-input.sm{font-size:16px}.ds-chip{font-size:12.5px}.ds-chip button{width:28px;height:28px}.ds-rc-x{min-height:30px}}
+/* ══ 캘린더 (개편) ══ */
+#cal-float-btn{position:fixed;bottom:1.5rem;right:5rem;z-index:8000;width:52px;height:52px;border-radius:16px;border:0;background:linear-gradient(150deg,#2A2150,#191630);color:#CDBDFF;box-shadow:0 10px 28px -8px rgba(0,0,0,.7),0 0 0 1px rgba(167,139,250,.38);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .25s cubic-bezier(.34,1.56,.64,1),box-shadow .2s}
+#cal-float-btn:hover{transform:translateY(-3px);box-shadow:0 14px 32px -8px rgba(0,0,0,.75),0 0 0 1px rgba(167,139,250,.65)}
+#cal-float-btn:active{transform:scale(.94)}
+#cal-modal{position:fixed;inset:0;z-index:9000;background:rgba(5,7,10,.7);align-items:center;justify-content:center;padding:16px}
+#cal-modal > .calx{width:min(760px,100%)!important;max-height:min(90vh,860px);display:flex;flex-direction:column;overflow:hidden;padding:0!important}
+.calx-grab{display:none}
+.calx-hd{display:flex;align-items:center;gap:8px;padding:16px 16px 12px}
+.calx-nav{display:flex;align-items:center;gap:4px;flex:1;min-width:0}
+.calx-nav button,.calx-x{flex-shrink:0;width:36px;height:36px;border:0;border-radius:10px;background:transparent;color:var(--rg-t3);display:grid;place-items:center;cursor:pointer;transition:background-color .15s,color .15s}
+.calx-nav button:hover,.calx-x:hover{background:var(--rg-s3);color:var(--rg-t1)}
+.calx-title{min-width:0;padding:0 6px;font-size:20px;font-weight:700;letter-spacing:-.2px;color:var(--rg-t1);white-space:nowrap}
+.calx-today{flex-shrink:0;height:32px;padding:0 12px;border:0;border-radius:999px;background:rgba(167,139,250,.12);color:#C9B8FF;font:600 12.5px inherit;font-family:inherit;cursor:pointer;transition:background-color .15s}
+.calx-today:hover{background:rgba(167,139,250,.22)}
+.calx-wk{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;padding:0 14px 6px;text-align:center;font-size:11.5px;font-weight:600;color:var(--rg-t4)}
+.calx-wk .sun{color:#EE7B7B}.calx-wk .sat{color:#7FB0E8}
+.calx-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;padding:0 14px 14px;overflow-y:auto;flex:1;min-height:0}
+.calx-day{min-width:0;min-height:84px;padding:6px 6px 5px;border-radius:10px;background:var(--rg-s2);display:flex;flex-direction:column;gap:4px;cursor:pointer;transition:background-color .15s,box-shadow .15s;outline:none}
+.calx-day.blank{background:transparent;cursor:default}
+.calx-day:not(.blank):hover{background:var(--rg-s3)}
+.calx-day:focus-visible{box-shadow:0 0 0 2px rgba(167,139,250,.7)}
+.calx-dn{align-self:flex-start;min-width:24px;height:24px;padding:0 6px;border-radius:999px;display:grid;place-items:center;font-size:13px;font-weight:600;color:var(--rg-t2);font-variant-numeric:tabular-nums}
+.calx-day.sun .calx-dn{color:#EE7B7B}.calx-day.sat .calx-dn{color:#7FB0E8}
+.calx-day.today .calx-dn{background:#8B6CF0;color:#fff}
+.calx-day.sel{background:rgba(139,108,240,.16);box-shadow:inset 0 0 0 1.5px rgba(167,139,250,.75)}
+.calx-chips{display:flex;flex-direction:column;gap:3px;min-width:0}
+.calx-chip{display:block;min-width:0;max-width:100%;padding:2px 6px;border-radius:5px;font-size:11px;line-height:1.35;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.calx-chip.ev{background:rgba(167,139,250,.16);color:#D3C6FF}
+.calx-chip.bd{background:rgba(244,200,116,.15);color:#F4C874}
+.calx-more{font-size:10.5px;color:var(--rg-t4);padding-left:4px}
+.calx-dots{display:none}
+.calx-evs{flex-shrink:0;max-height:34%;overflow-y:auto;padding:12px 16px 16px;border-top:1px solid var(--rg-line)}
+.calx-evs-t{font-size:12.5px;font-weight:700;color:#C9B8FF;margin-bottom:8px}
+.calx-ev{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:12px;background:var(--rg-s2);margin-bottom:6px}
+.calx-ev:last-child{margin-bottom:0}
+.calx-ev-ic{flex-shrink:0;width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:rgba(167,139,250,.14);font-size:15px}
+.calx-ev.bd .calx-ev-ic{background:rgba(244,200,116,.14)}
+.calx-ev-b{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;padding-top:4px}
+.calx-ev-b b{font-size:13.5px;font-weight:600;color:var(--rg-t1);line-height:1.4;overflow-wrap:anywhere;word-break:keep-all}
+.calx-ev.bd .calx-ev-b b{color:#F4C874}
+.calx-ev-b small{font-size:11.5px;color:var(--rg-t4)}
+.calx-ev-b p{margin:2px 0 0;font-size:12.5px;color:var(--rg-t3);line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere}
+.calx-del{flex-shrink:0;margin-top:2px;height:28px;padding:0 10px;border:0;border-radius:8px;background:rgba(224,80,80,.1);color:#F08A8A;font:600 12px inherit;font-family:inherit;cursor:pointer;transition:background-color .15s}
+.calx-del:hover{background:rgba(224,80,80,.2)}
+.calx-none{padding:10px 2px;font-size:13px;color:var(--rg-t4)}
+/* 날짜 팝업 · 일정 추가 · 생일 등록 */
+#cal-action-modal > div,#cal-event-modal > div,#cal-birthday-modal > div{max-width:400px!important;width:calc(100% - 32px)!important}
+#cal-action-modal > div > div:first-child{padding:16px 16px 12px!important;background:none!important;border-bottom:0!important;gap:10px}
+#cal-action-date-label{font-size:17px!important;font-weight:700;letter-spacing:-.2px!important;color:var(--rg-t1)!important;min-width:0}
+#cal-action-modal > div > div:first-child > button{flex-shrink:0;width:34px;height:34px;border-radius:10px!important;display:grid;place-items:center}
+#cal-action-modal > div > div:first-child > button:hover{background:var(--rg-s3)!important;color:var(--rg-t1)!important}
+#cal-action-events{padding:0 16px 4px!important;border-bottom:0!important;max-height:42vh;overflow-y:auto}
+#cal-action-modal > div > div:last-child{flex-direction:row!important;padding:12px 16px 16px!important;gap:8px!important}
+#cal-action-bd-btn,#cal-action-event-btn{flex:1;justify-content:center;height:46px;padding:0 12px!important;border:0!important;border-radius:12px!important;font-size:14px!important;font-weight:600!important;transition:background-color .15s,transform .1s}
+#cal-action-bd-btn{background:rgba(244,200,116,.12)!important}#cal-action-bd-btn:hover{background:rgba(244,200,116,.2)!important}
+#cal-action-event-btn{background:#7C5CE8!important;color:#fff!important}#cal-action-event-btn:hover{background:#8D70F0!important}
+#cal-action-bd-btn:active,#cal-action-event-btn:active{transform:scale(.97)}
+#cal-event-modal input,#cal-event-modal textarea,#cal-birthday-modal input{border:0!important;border-radius:10px!important;background:var(--rg-s2)!important;box-shadow:0 0 0 1px var(--rg-ring);padding:10px 12px!important;font-size:14px!important;color:var(--rg-t1)!important}
+#cal-event-modal input:focus,#cal-event-modal textarea:focus,#cal-birthday-modal input:focus{box-shadow:0 0 0 2px rgba(167,139,250,.6)}
+#cal-event-modal button,#cal-birthday-modal button{height:44px;border-radius:10px!important;font-size:14px!important}
+#cal-event-modal button[onclick^="saveCalEvent"],#cal-birthday-modal button[onclick^="saveBirthday"]{border:0!important;background:#7C5CE8!important;color:#fff!important}
+@keyframes calxUp{from{transform:translateY(100%)}to{transform:none}}
+@media (max-width:700px){
+  #cal-float-btn{right:16px!important;bottom:calc(16px + env(safe-area-inset-bottom,0px))!important;width:50px;height:50px}
+  /* 모바일: 아래에서 올라오는 시트 */
+  #cal-modal,#cal-action-modal,#cal-event-modal,#cal-birthday-modal{align-items:flex-end!important;padding:0!important}
+  #cal-modal > .calx,#cal-action-modal > div,#cal-event-modal > div,#cal-birthday-modal > div{width:100%!important;max-width:none!important;border-radius:22px 22px 0 0!important;animation:calxUp .34s cubic-bezier(.2,.9,.25,1) both!important;padding-bottom:env(safe-area-inset-bottom,0px)!important}
+  #cal-event-modal > div,#cal-birthday-modal > div{padding:20px 16px calc(16px + env(safe-area-inset-bottom,0px))!important}
+  #cal-modal > .calx{max-height:92vh}
+  .calx-grab{display:block;width:40px;height:4px;border-radius:2px;background:var(--rg-ring);margin:8px auto 0}
+  .calx-hd{padding:8px 10px 8px 6px}
+  .calx-title{font-size:18px}
+  .calx-wk,.calx-grid{padding-left:10px;padding-right:10px;gap:3px}
+  .calx-day{min-height:58px;padding:5px 2px 4px;align-items:center;border-radius:9px}
+  .calx-dn{align-self:center;min-width:26px;height:26px;padding:0 4px;font-size:13.5px}
+  .calx-chips{display:none}
+  .calx-dots{display:flex;align-items:center;justify-content:center;gap:3px;height:8px}
+  .calx-dots i{width:6px;height:6px;border-radius:50%;background:#A78BFA}
+  .calx-dots i.bd{background:#F4C874}
+  .calx-dots b{font-size:9.5px;font-weight:600;color:var(--rg-t4);line-height:1}
+  .calx-evs{max-height:none;flex:0 1 auto;min-height:0}
+}
+
+/* ══ 멸망전 시뮬레이션 · 모바일 다듬기 ══ */
+@media (max-width:700px){
+  /* 이 탭에서는 큰 머리 영역을 고정하지 않고, 대신 팀 A/B/찾기 탭을 위에 붙여 둬요 */
+  body:has(#doom-sim-view:not([style*="display: none"]):not([style*="display:none"])) #sticky-top,
+  body:has(#doom-sim-view:not([style*="display: none"]):not([style*="display:none"])) #season-filter-bar{position:relative!important;top:auto!important}
+  #doom-sim-view{padding:.6rem .75rem calc(1.25rem + env(safe-area-inset-bottom,0px))!important}
+  #doom-sim-view .ds-mtabs{position:sticky;top:0;z-index:60;margin:0 -.75rem 8px;padding:8px .75rem;background:rgba(8,11,17,.92);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-bottom:1px solid var(--ds-line)}
+  #doom-sim-view .ds-mtabs button{min-height:44px;font-size:13px}
+  #doom-sim-view .ds-mtabs button b{font-variant-numeric:tabular-nums}
+  /* 위쪽: 한도 입력은 한 줄 전체 */
+  #doom-sim-view .ds-topbar{gap:6px}
+  #doom-sim-view .ds-limit{flex:1 1 100%;white-space:nowrap;min-height:48px;padding:4px 6px 4px 12px;font-size:13px}
+  #doom-sim-view .ds-limit input{flex:0 0 auto;width:96px;min-height:38px}
+  #doom-sim-view .ds-spacer{display:none}
+  #doom-sim-view .ds-src{font-size:11.5px}
+  /* 팀 카드 */
+  #doom-sim-view .ds-team{padding:12px 10px;border-radius:14px}
+  #doom-sim-view .ds-team-h{gap:6px 8px;margin-bottom:10px}
+  #doom-sim-view .ds-team-left{flex:1 1 100%;order:9;font-size:12px}
+  /* 채워진 자리: 1줄 = 라인 · 이름 · 빼기 / 2줄 = 티어 · 점수 · adv (이름이 잘리지 않게) */
+  #doom-sim-view .ds-slot.filled{display:grid;grid-template-columns:40px minmax(0,1fr) auto auto;grid-template-rows:auto auto;column-gap:8px;row-gap:6px;align-items:center;padding:8px 6px 8px 10px;min-height:0}
+  #doom-sim-view .ds-slot.filled .ds-ln{grid-column:1;grid-row:1 / span 2;align-self:center}
+  #doom-sim-view .ds-slot.filled .ds-nm{grid-column:2 / 4;grid-row:1;font-size:14.5px}
+  #doom-sim-view .ds-slot.filled .ds-rm{grid-column:4;grid-row:1;justify-self:end;width:34px;height:34px;margin:-4px 0}
+  #doom-sim-view .ds-slot.filled .ds-tierbtn{grid-column:2;grid-row:2;justify-self:start;flex-direction:row;gap:5px;min-height:32px;padding:0 10px}
+  #doom-sim-view .ds-slot.filled .ds-tierbtn small{font-size:10px}
+  #doom-sim-view .ds-slot.filled .ds-sc{grid-column:3;grid-row:2;justify-self:end;font-size:17px}
+  #doom-sim-view .ds-slot.filled .ds-padv{grid-column:4;grid-row:2;width:56px;min-height:36px}
+  #doom-sim-view .ds-slot.empty{min-height:54px;padding:0 12px}
+  #doom-sim-view .ds-team-act{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+  #doom-sim-view .ds-team-act .ds-btn{min-height:44px;padding:0 6px}
+  /* 찾기 · 추천 */
+  #doom-sim-view .ds-side{padding:12px 10px;border-radius:14px}
+  #doom-sim-view .ds-stabs button{min-height:40px}
+  #doom-sim-view .ds-hint{font-size:12.5px;padding:8px 10px;border-radius:10px;background:rgba(167,139,250,.08);color:#CFC2F5}
+  #doom-sim-view .ds-input{font-size:16px;min-height:44px}
+  #doom-sim-view #doom-sim-results{max-height:none!important}
+  #doom-sim-view .ds-row{min-height:52px;padding:0 10px;gap:8px}
+  #doom-sim-view .ds-row .ds-meta{font-size:11.5px;white-space:nowrap}
+  #doom-sim-view .ds-rec-row{flex-wrap:wrap;row-gap:6px}
+  #doom-sim-view .ds-fgrid{grid-template-columns:1fr!important;gap:8px}
+  #doom-sim-view .ds-fgrid label{min-width:0;display:flex;align-items:center;gap:8px;font-size:13px}
+  #doom-sim-view .ds-fgrid label:not(.ck) .ds-input{flex:1;min-width:0}
+  #doom-sim-view .ds-fgrid label.ck{min-height:40px}
+  #doom-sim-view .ds-btn.primary.wide{min-height:48px;font-size:14.5px}
+  /* 티어 수정 창은 아래에서 올라오는 시트로 */
+  #ds-tier-pop{left:8px!important;right:8px!important;width:auto!important;top:auto!important;bottom:calc(8px + env(safe-area-inset-bottom,0px))!important;padding:14px;border-radius:16px;animation:calxUp .3s cubic-bezier(.2,.9,.25,1) both}
+  #ds-tier-pop .ds-input{min-height:44px;font-size:16px}
+  #ds-tier-pop .ds-btn{min-height:44px;flex:1}
+  #ds-perm-modal .ds-modal-box{width:100%;max-width:none;border-radius:20px 20px 0 0}
+}
+
+/* 다시 그릴 때는 등장 애니메이션 없이 (깜빡임 방지) */
+#mobile-card-list.rg-noanim .mc{animation:none!important}
+#stats-body.rg-noanim tr:not([class*="effect-"]):not(.has-bg-effect){animation:none!important}
+
+/* ══ 모바일 멸망전 버튼 (검색창 아래 · 주간 랭킹 왼쪽) ══ */
+#btn-doom-m{display:none}
+@media(max-width:768px){
+  #btn-doom-m{position:relative;display:inline-flex!important;align-items:center;gap:6px;height:42px;padding:0 14px 0 12px!important;border:none!important;border-radius:10px!important;background:linear-gradient(135deg,rgba(232,203,134,.2),rgba(232,203,134,.08))!important;color:#F1D58F!important;font-family:inherit!important;font-size:13px!important;font-weight:700!important;cursor:pointer;overflow:hidden;isolation:isolate;transition:transform .12s}
+  #btn-doom-m:active{transform:scale(.96)}
+  #btn-doom-m .bdm-ic{display:grid;place-items:center}
+  #btn-doom-m .bdm-live{display:none}
+}
+/* 진행 중 효과 (모바일 버튼 · PC 머리 버튼): 불꽃이 아래에서 일렁이고, 테두리가 맥박처럼 빛나요 */
+html.doom-live #btn-doom{position:relative!important;overflow:hidden;isolation:isolate;border-color:rgba(255,138,61,.7)!important}
+html.doom-live #btn-doom-m,html.doom-live #btn-doom{background:linear-gradient(135deg,#3A1608,#1E0D08)!important;color:#FFD9A0!important;box-shadow:0 0 0 1px rgba(255,138,61,.65),0 0 18px -2px rgba(255,102,0,.55);animation:bdmPulse 1.8s ease-in-out infinite}
+html.doom-live #btn-doom-m::before,html.doom-live #btn-doom::before{content:'';position:absolute;inset:auto -10% -55% -10%;height:120%;z-index:-1;background:radial-gradient(60% 55% at 22% 100%,rgba(255,90,0,.85),transparent 70%),radial-gradient(55% 60% at 55% 100%,rgba(255,170,40,.75),transparent 70%),radial-gradient(50% 50% at 85% 100%,rgba(255,60,20,.8),transparent 70%);filter:blur(5px);animation:bdmFlame 1.1s ease-in-out infinite alternate;transform-origin:50% 100%}
+html.doom-live #btn-doom-m::after,html.doom-live #btn-doom::after{content:'';position:absolute;inset:0;z-index:-1;background:linear-gradient(110deg,transparent 30%,rgba(255,220,150,.22) 50%,transparent 70%);background-size:250% 100%;animation:bdmShine 2.6s linear infinite}
+html.doom-live #btn-doom-m .bdm-ic,html.doom-live #btn-doom svg{color:#FFB347;animation:bdmFlick 1.3s ease-in-out infinite}
+#btn-doom .bdm-live{display:none}
+html.doom-live #btn-doom-m .bdm-live,html.doom-live #btn-doom .bdm-live{display:inline-flex;align-items:center;gap:4px;margin-left:2px;padding:2px 6px;border-radius:999px;background:rgba(255,90,40,.25);color:#FFC48A;font-size:10.5px;font-weight:800;letter-spacing:.2px}
+html.doom-live #btn-doom-m .bdm-live::before,html.doom-live #btn-doom .bdm-live::before{content:'';width:6px;height:6px;border-radius:50%;background:#FF6A2B;box-shadow:0 0 6px #FF6A2B;animation:bdmDot 1s ease-in-out infinite}
+html.doom-live #mm-doom-live{display:inline-block!important}
+@keyframes bdmPulse{0%,100%{box-shadow:0 0 0 1px rgba(255,138,61,.55),0 0 12px -4px rgba(255,102,0,.5)}50%{box-shadow:0 0 0 1px rgba(255,170,90,.95),0 0 22px 0 rgba(255,102,0,.6)}}
+@keyframes bdmFlame{0%{transform:scaleY(.82) translateX(-3%);opacity:.8}50%{transform:scaleY(1.05) translateX(2%);opacity:1}100%{transform:scaleY(.9) translateX(4%);opacity:.85}}
+@keyframes bdmShine{0%{background-position:150% 0}100%{background-position:-100% 0}}
+@keyframes bdmFlick{0%,100%{transform:none;filter:drop-shadow(0 0 2px rgba(255,150,40,.6))}50%{transform:rotate(-6deg) scale(1.08);filter:drop-shadow(0 0 5px rgba(255,120,30,.9))}}
+@keyframes bdmDot{50%{opacity:.35}}
+@media (prefers-reduced-motion:reduce){html.doom-live #btn-doom-m,html.doom-live #btn-doom-m::before,html.doom-live #btn-doom-m::after,html.doom-live #btn-doom-m .bdm-ic,html.doom-live #btn-doom-m .bdm-live::before,html.doom-live #btn-doom,html.doom-live #btn-doom::before,html.doom-live #btn-doom::after,html.doom-live #btn-doom svg,html.doom-live #btn-doom .bdm-live::before{animation:none!important}}
+</style>
+<style id="rg-page-transition">
+/* 페이지 이동을 부드럽게: 같은 사이트 안에서 다른 페이지로 갈 때 이전 화면은 살짝 사라지고 새 화면이 떠오르듯 나타나요
+   (크롬 · 엣지 126+, 사파리 18.2+ 지원 / 지원하지 않는 브라우저는 지금처럼 바로 바뀜) */
+@view-transition{navigation:auto}
+/* 전적 페이지 탭 전환: 새 탭 내용이 부드럽게 나타나요 */
+#table-body-wrap,#rating-rank-view,#community-stats-view,#scout-view,#nickname-log-view,#doom-sim-view,#temp-tier-view,#member-compare-view{animation:rgTabIn .3s ease both}
+@keyframes rgTabIn{from{opacity:0}}
+@media (prefers-reduced-motion:reduce){#table-body-wrap,#rating-rank-view,#community-stats-view,#scout-view,#nickname-log-view,#doom-sim-view,#temp-tier-view,#member-compare-view{animation:none}}
+::view-transition-old(root){animation:rgVtOut .16s ease-in both}
+::view-transition-new(root){animation:rgVtIn .34s cubic-bezier(.2,.8,.2,1) both}
+@keyframes rgVtOut{to{opacity:0}}
+@keyframes rgVtIn{from{opacity:0;transform:translateY(10px)}}
+@media (prefers-reduced-motion:reduce){::view-transition-group(*),::view-transition-old(*),::view-transition-new(*){animation:none!important}}
 </style>
 </head>
 <body>
@@ -1445,7 +1648,7 @@ select.ds-input{padding-right:4px}
         <!-- 우측: 디스코드 + 구분선 + 관리자 -->
         <div class="header-account">
           <!-- 멸망전 -->
-          <button id="btn-doom" onclick="goDoom()" style="display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:3px;border:1px solid rgba(226,190,106,.45);background:linear-gradient(180deg,rgba(226,190,106,.18),rgba(226,190,106,.06));color:#E2BE6A;font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:800;cursor:pointer;white-space:nowrap;"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:block;"><path d="M14.5 17.5L3 6V3h3l11.5 11.5"/><path d="M13 19l6-6"/><path d="M16 16l4 4"/><path d="M19 21l2-2"/></svg>멸망전</button>
+          <button id="btn-doom" onclick="goDoom()" style="display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:3px;border:1px solid rgba(226,190,106,.45);background:linear-gradient(180deg,rgba(226,190,106,.18),rgba(226,190,106,.06));color:#E2BE6A;font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:800;cursor:pointer;white-space:nowrap;"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;display:block;"><path d="M14.5 17.5L3 6V3h3l11.5 11.5"/><path d="M13 19l6-6"/><path d="M16 16l4 4"/><path d="M19 21l2-2"/></svg>멸망전<span class="bdm-live" aria-hidden="true">진행 중</span></button>
           <!-- PWA 설치 버튼 -->
           <button id="btn-pwa-install" onclick="_pwaInstall()">앱 설치</button>
           <!-- 디스코드 -->
@@ -1507,6 +1710,7 @@ select.ds-input{padding-right:4px}
         </button>
         <button onclick="openAchievementsPopup()" style="padding:4px 10px;border-radius:3px;border:1px solid rgba(245,158,11,.35);background:rgba(245,158,11,.08);color:#F59E0B;font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;letter-spacing:.5px;cursor:pointer;white-space:nowrap;transition:all .15s;" onmouseover="this.style.background='rgba(245,158,11,.18)';this.style.borderColor='rgba(245,158,11,.6)'" onmouseout="this.style.background='rgba(245,158,11,.08)';this.style.borderColor='rgba(245,158,11,.35)'">업적 목록</button>
         <button onclick="window.open('/guide','_blank')" style="padding:4px 10px;border-radius:3px;border:1px solid rgba(10,200,185,.35);background:rgba(10,200,185,.08);color:#0AC8B9;font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;letter-spacing:.5px;cursor:pointer;white-space:nowrap;transition:all .15s;" onmouseover="this.style.background='rgba(10,200,185,.18)';this.style.borderColor='rgba(10,200,185,.6)'" onmouseout="this.style.background='rgba(10,200,185,.08)';this.style.borderColor='rgba(10,200,185,.35)'">가이드</button>
+        <button id="btn-doom-m" onclick="goDoom()" aria-label="멸망전"><span class="bdm-ic" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 17.5L3 6V3h3l11.5 11.5"/><path d="M13 19l6-6"/><path d="M16 16l4 4"/><path d="M19 21l2-2"/></svg></span><span class="bdm-t">멸망전</span><span class="bdm-live" aria-hidden="true">진행 중</span></button>
         <button class="btn-ranking" id="btn-ranking" onclick="goRanking()">주간 랭킹</button>
         <button class="btn-refresh" id="btn-refresh"><span class="ri">↻</span> 새로고침</button>
         <span id="next-update-time" style="font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;color:var(--muted);white-space:nowrap;"></span>
@@ -1568,10 +1772,7 @@ select.ds-input{padding-right:4px}
       style="padding:5px 14px;border-radius:2px 2px 0 0;border:1px solid var(--border);border-bottom:2px solid var(--blue);background:rgba(10,200,185,.08);color:var(--blue);font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;white-space:nowrap;flex-shrink:0;">
       전적
     </button>
-    <button class="main-tab-btn" id="main-tab-rating" onclick="switchMainTab('rating')"
-      style="padding:5px 14px;border-radius:2px 2px 0 0;border:1px solid var(--border);border-bottom:none;background:transparent;color:var(--muted);font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;white-space:nowrap;flex-shrink:0;">
-      레이팅 변화
-    </button>
+    <!-- 레이팅 변화 탭은 없앴어요 (화면 코드는 남겨 둠) -->
     <button class="main-tab-btn" id="tab-community" onclick="switchMainTab('community')"
       style="padding:5px 14px;border-radius:2px 2px 0 0;border:1px solid var(--border);border-bottom:none;background:transparent;color:var(--muted);font-family:'IBM Plex Sans KR',sans-serif;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.5px;white-space:nowrap;flex-shrink:0;">
       커뮤니티 통계
@@ -2545,14 +2746,19 @@ function renderPage(){
 
   if(!slice.length){
     document.getElementById('stats-body').innerHTML='<tr><td colspan="13"><div class="state" style="color:var(--muted);">검색 결과가 없습니다</div></td></tr>';
+    document.getElementById('stats-body')._rgHtml=null;
+    var _mcl=document.getElementById('mobile-card-list'); if(_mcl){ _mcl._rgHtml=null; }
     document.getElementById('pagination').style.display='none';
     return;
   }
 
-  document.getElementById('stats-body').innerHTML=slice.map((m,i)=>{
+  var _sb=document.getElementById('stats-body');
+  var _sbHtml=slice.map((m,i)=>{
     // 본계정 다음에 부계정 행 (접어두고 토글)
     return _statsRowHtml(m, start+i+1, null) + (m._subRows || []).map(function(x){ return _statsRowHtml(x, '', m.puu_id); }).join('');
   }).join('');
+  // 같은 내용이면 다시 그리지 않고(깜빡임 방지), 두 번째부터는 등장 애니메이션 없이 바꿔요
+  if(_sb._rgHtml!==_sbHtml){ if(_sb._rgHtml!=null) _sb.classList.add('rg-noanim'); _sb._rgHtml=_sbHtml; _sb.innerHTML=_sbHtml; }
 
   renderPagination(pages);
   renderMobileCards(slice, start);
@@ -2567,7 +2773,7 @@ function renderMobileCards(slice, start) {
     _flat.push({ m: m, rank: start + i + 1 });
     (m._subRows || []).forEach(function (x) { _flat.push({ m: Object.assign(Object.create(x), { __subOf: m.puu_id }), rank: '' }); });
   });
-  el.innerHTML = _flat.map(function(it) {
+  var __html = _flat.map(function(it) {
     var m = it.m;
     var rank = it.rank;
     var normPos = normalizePos(m.most_position);
@@ -2619,6 +2825,12 @@ function renderMobileCards(slice, start) {
       '</div>' : '') +
     '</div>';
   }).join('');
+  // 데이터를 여러 번 불러오며 다시 그릴 때 카드가 깜빡이지 않게:
+  //   내용이 같으면 그대로 두고, 처음 한 번만 등장 애니메이션을 보여 줘요
+  if (el._rgHtml === __html) return;
+  if (el._rgHtml != null) el.classList.add('rg-noanim');
+  el._rgHtml = __html;
+  el.innerHTML = __html;
 
   // 카드 클릭 → 상세
   el.querySelectorAll('.mc[data-puu]').forEach(function(card) {
@@ -2760,7 +2972,11 @@ document.getElementById('btn-refresh').addEventListener('click',loadData);
 
 function goDoom(){
   if(!COMMUNITY_ID){ alert('커뮤니티 정보가 없어요'); return; }
-  window.open('/doom?cid='+encodeURIComponent(COMMUNITY_ID), '_blank');
+  // 멸망전에서 이 전적 페이지로 돌아올 수 있게 지금 주소를 같이 넘겨요
+  var url='/doom?cid='+encodeURIComponent(COMMUNITY_ID)+'&from='+encodeURIComponent(location.pathname+location.search);
+  // 모바일 · 앱(PWA)에서는 같은 탭으로 이동 (새 탭으로 열지 않음), PC는 지금처럼 새 탭
+  var mobile=window.innerWidth<=700||(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true||/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  if(mobile) location.href=url; else window.open(url,'_blank');
 }
 function goRanking(){
   const q=new URLSearchParams();
@@ -6210,7 +6426,7 @@ function switchMainTab(tab) {
     if (filterBar) filterBar.style.display = '';
     if (mobileCards) mobileCards.style.display = '';
     if (pagination) pagination.style.display = '';
-  } else if (tab === 'rating') {
+  } else if (tab === 'rating' && ratingTab) {
     ratingTab.style.borderBottom = '2px solid var(--gold)';
     ratingTab.style.background   = 'rgba(200,170,110,.08)';
     ratingTab.style.color        = 'var(--gold)';
@@ -9886,11 +10102,16 @@ function scoutFilterChamp(btn) {
 async function loadStatsPublic() {
   if (!COMMUNITY_ID) return;
   try {
-    var _cmRes = await fetch(WORKER_URL + '/db-public-read', {
-      method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ path: 'communities_info/' + COMMUNITY_ID, _nocache: Date.now() })
-    });
-    var _cmJson = await _cmRes.json();
+    // 커뮤니티 정보 전체(communities_info/{cid})는 서버가 30분 캐시해서, 설정을 바꿔도 다른 유저에겐 늦게 반영됐어요
+    // → 캐시하지 않는 하위 경로 두 개(공개 여부 · 공개 요일)만 바로 읽어요
+    var _rdPub = function (k) {
+      return fetch(WORKER_URL + '/db-public-read', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ path: 'communities_info/' + COMMUNITY_ID + '/' + k })
+      }).then(function (r) { return r.json(); });
+    };
+    var _pr = await Promise.all([_rdPub('statsPublic'), _rdPub('statsPublicDays')]);
+    var _cmJson = { ok: _pr[0] && _pr[0].ok, data: { statsPublic: _pr[0] && _pr[0].data, statsPublicDays: _pr[1] && _pr[1].ok ? _pr[1].data : null } };
     if (_cmJson.ok && _cmJson.data && (_cmJson.data.statsPublic === true || _cmJson.data.statsPublic === 'true')) {
       // KST(UTC+9) 기준 오늘 요일 계산 (모바일 기기 타임존 무관)
       var _kstNow = new Date(new Date().getTime() + 9 * 60 * 60 * 1000);
@@ -11571,6 +11792,8 @@ function dsTierSave(puu, reset) {
 // ── 모바일 탭 / 옆 패널 탭 ──
 function dsMTab(v) {
   var w = document.getElementById('ds-wrap'); w.dataset.mt = v;
+  // 모바일: 아래로 내려 본 상태에서 탭을 바꾸면 새 화면 맨 위가 보이게
+  if (window.innerWidth <= 700) { var _tb = document.querySelector('#doom-sim-view .ds-mtabs'); if (_tb && w.getBoundingClientRect().top < _tb.offsetHeight) window.scrollTo({ top: window.scrollY + w.getBoundingClientRect().top - _tb.offsetHeight - 4 }); }
   document.querySelectorAll('.ds-mtabs button').forEach(function (b) { b.classList.toggle('on', b.dataset.mt === v); });
   if (v === 'a' || v === 'b') _dsLastTeam = v;
 }
@@ -12814,49 +13037,45 @@ function renderCalendar() {
 
   var html = '';
   // 빈 칸
-  for (var i = 0; i < firstDay; i++) {
-    html += '<div style="min-height:44px;"></div>';
-  }
+  for (var i = 0; i < firstDay; i++) html += '<div class="calx-day blank" aria-hidden="true"></div>';
   for (var d = 1; d <= daysInMonth; d++) {
     var dateStr = _calYear + '-' + String(_calMonth+1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
-    var isToday = dateStr === todayStr;
-    var isSelected = dateStr === _calSelectedDate;
-    var isSun = (firstDay + d - 1) % 7 === 0;
-    var isSat = (firstDay + d - 1) % 7 === 6;
+    var wd = (firstDay + d - 1) % 7;
     var events = _calEvents[dateStr] || [];
-    var hasEvents = events.length > 0;
-
-    var bg = isSelected ? 'rgba(167,139,250,.25)' : isToday ? 'rgba(167,139,250,.08)' : 'transparent';
-    var border = isSelected ? '1px solid rgba(167,139,250,.6)' : isToday ? '1px solid rgba(167,139,250,.3)' : '1px solid transparent';
-    var color = isSun ? '#E05050' : isSat ? '#5B9BD5' : 'var(--white)';
-
-    html += '<div class="cal-day-cell" data-date="' + dateStr + '" style="min-height:72px;border-radius:4px;padding:4px 4px 3px;cursor:pointer;background:' + bg + ';border:' + border + ';display:flex;flex-direction:column;align-items:flex-start;gap:1px;transition:background .15s;">' +
-      '<span style="font-family:IBM Plex Sans KR,sans-serif;font-size:13px;font-weight:700;color:' + color + ';width:100%;text-align:center;">' + d + '</span>';
-
-    // 이벤트 목록 표시
-    if (hasEvents) {
-      events.slice(0, 2).forEach(function(ev) {
+    var cls = 'cal-day-cell calx-day' + (dateStr === todayStr ? ' today' : '') + (dateStr === _calSelectedDate ? ' sel' : '') + (wd === 0 ? ' sun' : wd === 6 ? ' sat' : '') + (events.length ? ' has' : '');
+    html += '<div class="' + cls + '" data-date="' + dateStr + '" role="button" tabindex="0" aria-label="' + (_calMonth+1) + '월 ' + d + '일' + (events.length ? ', 일정 ' + events.length + '개' : '') + '">' +
+      '<span class="calx-dn">' + d + '</span>';
+    if (events.length) {
+      // PC: 일정 이름 2개 + 나머지 개수 · 모바일: 색 점 + 개수 (칸이 좁아서)
+      html += '<div class="calx-chips">' + events.slice(0, 2).map(function(ev) {
         if (ev.type === 'birthday') {
           var bMember = allData.find(function(m){ return m.puu_id === ev.puuId; });
-          var bName = bMember ? bMember.riot_name : '?';
-          html += '<div style="width:100%;font-size:9px;font-family:IBM Plex Sans KR,sans-serif;background:rgba(244,200,116,.15);border-radius:2px;padding:1px 3px;color:#F4C874;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">🎂 ' + bName + '</div>';
-        } else if (ev.type === 'event') {
-          html += '<div style="width:100%;font-size:9px;font-family:IBM Plex Sans KR,sans-serif;background:rgba(167,139,250,.15);border-radius:2px;padding:1px 3px;color:#A78BFA;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">📌 ' + (ev.title || '') + '</div>';
+          return '<span class="calx-chip bd" title="' + esc(bMember ? bMember.riot_name : '?') + ' 생일">🎂 ' + esc(bMember ? bMember.riot_name : '?') + '</span>';
         }
-      });
-      if (events.length > 2) {
-        html += '<div style="font-size:9px;color:var(--muted);font-family:IBM Plex Sans KR,sans-serif;padding-left:2px;">+' + (events.length - 2) + '</div>';
-      }
+        return '<span class="calx-chip ev" title="' + esc(ev.title || '') + '">' + esc(ev.title || '') + '</span>';
+      }).join('') + (events.length > 2 ? '<span class="calx-more">+' + (events.length - 2) + '</span>' : '') + '</div>' +
+      '<div class="calx-dots" aria-hidden="true">' + events.slice(0, 3).map(function(ev) { return '<i class="' + (ev.type === 'birthday' ? 'bd' : 'ev') + '"></i>'; }).join('') + (events.length > 3 ? '<b>+' + (events.length - 3) + '</b>' : '') + '</div>';
     }
     html += '</div>';
   }
   grid.innerHTML = html;
 
-  // 그리드에 직접 이벤트 등록 (stopPropagation 우회)
-  grid.addEventListener('click', function(e) {
+  // 그리드 클릭 (다시 그릴 때마다 덧붙지 않게 한 번만)
+  grid.onclick = function(e) {
     var cell = e.target.closest('.cal-day-cell');
     if (cell) calSelectDate(cell.dataset.date);
-  });
+  };
+  grid.onkeydown = function(e) {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    var cell = e.target.closest('.cal-day-cell');
+    if (cell) { e.preventDefault(); calSelectDate(cell.dataset.date); }
+  };
+}
+function calGoToday() {
+  var t = new Date();
+  _calYear = t.getFullYear(); _calMonth = t.getMonth();
+  renderCalendar();
+  loadCalendarMonth(_calYear, _calMonth);
 }
 
 // 공통 이벤트 위임 (모달 내부 버튼들)
@@ -12900,16 +13119,13 @@ function showCalActionModal(dateStr) {
     eventsEl.innerHTML = events.map(function(ev) {
       var isOwn = ev.registeredBy === _getDiscordUserId();
       var canDel = isOwn || _statsAdminRole === 'admin' || _statsAdminRole === 'master';
-      var delBtn = canDel ? '<button class="cal-del-btn" data-id="' + ev.id + '" data-date="' + dateStr + '" style="margin-left:4px;padding:1px 5px;border-radius:2px;border:1px solid rgba(192,48,48,.3);background:transparent;color:#E05050;font-size:9px;cursor:pointer;">삭제</button>' : '';
+      var delBtn = canDel ? '<button class="cal-del-btn calx-del" data-id="' + ev.id + '" data-date="' + dateStr + '">삭제</button>' : '';
       if (ev.type === 'birthday') {
         var bm = allData.find(function(m){ return m.puu_id === ev.puuId; });
-        var bn = bm ? bm.riot_name : '?';
-        return '<div style="font-size:11px;font-family:IBM Plex Sans KR,sans-serif;color:#F4C874;padding:2px 0;display:flex;align-items:center;">🎂 ' + bn + delBtn + '</div>';
+        return '<div class="calx-ev bd"><span class="calx-ev-ic">🎂</span><div class="calx-ev-b"><b>' + esc(bm ? bm.riot_name : '?') + '</b><small>생일</small></div>' + delBtn + '</div>';
       }
-      return '<div style="font-size:11px;font-family:IBM Plex Sans KR,sans-serif;color:#A78BFA;padding:3px 0;display:flex;flex-direction:column;gap:2px;">' +
-        '<div style="display:flex;align-items:center;">📌 <span style="font-weight:700;margin-left:4px;">' + (ev.title || '') + '</span>' + delBtn + '</div>' +
-        (ev.content ? '<div style="font-size:10px;color:var(--muted);padding-left:18px;line-height:1.4;">' + ev.content + '</div>' : '') +
-        '</div>';
+      return '<div class="calx-ev"><span class="calx-ev-ic">📌</span><div class="calx-ev-b"><b>' + esc(ev.title || '') + '</b>' +
+        (ev.content ? '<p>' + esc(ev.content) + '</p>' : '') + '</div>' + delBtn + '</div>';
     }).join('');
     // 삭제 버튼 직접 이벤트 등록
     eventsEl.querySelectorAll('.cal-del-btn').forEach(function(btn) {
@@ -12919,9 +13135,13 @@ function showCalActionModal(dateStr) {
     });
     eventsEl.style.display = '';
   } else {
-    eventsEl.innerHTML = '<div style="font-size:11px;color:var(--muted);font-family:IBM Plex Sans KR,sans-serif;">일정 없음</div>';
+    eventsEl.innerHTML = '<div class="calx-none">아직 일정이 없어요</div>';
     eventsEl.style.display = '';
   }
+
+  // 일정 추가는 관리자만 할 수 있어서, 관리자가 아니면 버튼을 숨겨요
+  var _evBtn = document.getElementById('cal-action-event-btn');
+  if (_evBtn) _evBtn.style.display = (_statsAdminRole === 'admin' || _statsAdminRole === 'master') ? '' : 'none';
 
   modal.style.display = 'flex';
 }
@@ -13016,28 +13236,19 @@ function showCalEvents(dateStr) {
 
   var events = _calEvents[dateStr] || [];
   if (!events.length) {
-    list.innerHTML = '<div style="font-size:11px;color:var(--muted);font-family:IBM Plex Sans KR,sans-serif;">일정 없음</div>';
+    list.innerHTML = '<div class="calx-none">아직 일정이 없어요</div>';
   } else {
     list.innerHTML = events.map(function(ev) {
       var canDel = ev.registeredBy === _getDiscordUserId() || _statsAdminRole === 'admin' || _statsAdminRole === 'master';
-      var delBtn = canDel ? '<button class="cal-del-btn" data-id="' + ev.id + '" data-date="' + dateStr + '" style="margin-left:auto;padding:1px 6px;border-radius:2px;border:1px solid rgba(192,48,48,.3);background:transparent;color:#E05050;font-size:9px;cursor:pointer;">삭제</button>' : '';
+      var delBtn = canDel ? '<button class="cal-del-btn calx-del" data-id="' + ev.id + '" data-date="' + dateStr + '">삭제</button>' : '';
       if (ev.type === 'birthday') {
         var member = allData.find(function(m){ return m.puu_id === ev.puuId; });
         var name = member ? member.riot_name + '#' + member.riot_tag : '(알 수 없음)';
-        return '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">' +
-          '<span style="font-size:13px;">🎂</span>' +
-          '<span style="font-family:IBM Plex Sans KR,sans-serif;font-size:12px;color:#F4C874;">' + name + '</span>' +
-          delBtn + '</div>';
+        return '<div class="calx-ev bd"><span class="calx-ev-ic">🎂</span><div class="calx-ev-b"><b>' + esc(name) + '</b><small>생일</small></div>' + delBtn + '</div>';
       }
       if (ev.type === 'event') {
-        return '<div style="margin-bottom:6px;">' +
-          '<div style="display:flex;align-items:center;gap:6px;">' +
-            '<span style="font-size:13px;">📌</span>' +
-            '<span style="font-family:IBM Plex Sans KR,sans-serif;font-size:12px;font-weight:700;color:#A78BFA;">' + (ev.title || '') + '</span>' +
-            delBtn +
-          '</div>' +
-          (ev.content ? '<div style="font-size:11px;color:var(--muted);padding-left:20px;margin-top:2px;line-height:1.5;white-space:pre-wrap;">' + ev.content + '</div>' : '') +
-          '</div>';
+        return '<div class="calx-ev"><span class="calx-ev-ic">📌</span><div class="calx-ev-b"><b>' + esc(ev.title || '') + '</b>' +
+          (ev.content ? '<p>' + esc(ev.content) + '</p>' : '') + '</div>' + delBtn + '</div>';
       }
       return '';
     }).join('');
@@ -13374,38 +13585,29 @@ function _getDiscordUserId() { return _discordUser && _discordUser.id ? _discord
 
 
 <!-- 📅 캘린더 플로팅 버튼 -->
-<button id="cal-float-btn" onclick="toggleCalendar()" title="캘린더"
-  style="position:fixed;bottom:1.5rem;right:5rem;z-index:8000;width:52px;height:52px;border-radius:50%;border:none;background:#0D1B2E;box-shadow:0 4px 16px rgba(0,0,0,.4),0 0 0 1px rgba(167,139,250,.3);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .3s cubic-bezier(.34,1.56,.64,1);">
-  <span style="font-size:24px;">📅</span>
+<button id="cal-float-btn" onclick="toggleCalendar()" title="캘린더" aria-label="캘린더 열기">
+  <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/><circle cx="8.5" cy="14.5" r="1" fill="currentColor" stroke="none"/><circle cx="12" cy="14.5" r="1" fill="currentColor" stroke="none"/></svg>
 </button>
 
 <!-- 📅 캘린더 모달 -->
-<div id="cal-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9000;align-items:center;justify-content:center;" onclick="if(event.target===this)closeCalendar()">
-  <div style="background:#0D1B2E;border:1px solid rgba(167,139,250,.3);border-radius:10px;width:95%;max-width:680px;max-height:92vh;overflow:hidden;display:flex;flex-direction:column;" onclick="event.stopPropagation()">
-    <!-- 헤더 -->
-    <div style="display:flex;align-items:center;padding:.75rem 1rem;border-bottom:1px solid rgba(167,139,250,.2);">
-      <button onclick="calNavMonth(-1)" style="background:transparent;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:4px 8px;">‹</button>
-      <div id="cal-title" style="flex:1;text-align:center;font-family:'IBM Plex Sans KR',sans-serif;font-size:18px;letter-spacing:2px;color:#A78BFA;"></div>
-      <button onclick="calNavMonth(1)" style="background:transparent;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:4px 8px;">›</button>
-      <button onclick="closeCalendar()" style="background:transparent;border:none;color:var(--muted);font-size:16px;cursor:pointer;margin-left:4px;">✕</button>
+<div id="cal-modal" style="display:none;" onclick="if(event.target===this)closeCalendar()">
+  <div class="calx" onclick="event.stopPropagation()">
+    <i class="calx-grab" aria-hidden="true"></i>
+    <div class="calx-hd">
+      <div class="calx-nav">
+        <button type="button" onclick="calNavMonth(-1)" aria-label="이전 달"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+        <div id="cal-title" class="calx-title"></div>
+        <button type="button" onclick="calNavMonth(1)" aria-label="다음 달"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
+      </div>
+      <button type="button" class="calx-today" onclick="calGoToday()">오늘</button>
+      <button type="button" class="calx-x" onclick="closeCalendar()" aria-label="닫기"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
     </div>
-    <!-- 요일 헤더 -->
-    <div style="display:grid;grid-template-columns:repeat(7,1fr);text-align:center;padding:.4rem .5rem 0;gap:2px;">
-      <div style="font-size:10px;color:#E05050;font-family:IBM Plex Sans KR,sans-serif;font-weight:700;">일</div>
-      <div style="font-size:10px;color:var(--muted);font-family:IBM Plex Sans KR,sans-serif;font-weight:700;">월</div>
-      <div style="font-size:10px;color:var(--muted);font-family:IBM Plex Sans KR,sans-serif;font-weight:700;">화</div>
-      <div style="font-size:10px;color:var(--muted);font-family:IBM Plex Sans KR,sans-serif;font-weight:700;">수</div>
-      <div style="font-size:10px;color:var(--muted);font-family:IBM Plex Sans KR,sans-serif;font-weight:700;">목</div>
-      <div style="font-size:10px;color:var(--muted);font-family:IBM Plex Sans KR,sans-serif;font-weight:700;">금</div>
-      <div style="font-size:10px;color:#5B9BD5;font-family:IBM Plex Sans KR,sans-serif;font-weight:700;">토</div>
-    </div>
-    <!-- 날짜 그리드 -->
-    <div id="cal-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;padding:.3rem .75rem .5rem;overflow-y:auto;flex:1;"></div>
-    <!-- 선택된 날짜 일정 -->
-    <div id="cal-events" style="border-top:1px solid rgba(167,139,250,.15);padding:.75rem 1rem;min-height:60px;max-height:180px;overflow-y:auto;display:none;">
-      <div id="cal-events-title" style="font-size:11px;font-family:IBM Plex Sans KR,sans-serif;font-weight:700;color:#A78BFA;margin-bottom:6px;"></div>
+    <div class="calx-wk"><span class="sun">일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span class="sat">토</span></div>
+    <div id="cal-grid" class="calx-grid"></div>
+    <div id="cal-events" class="calx-evs" style="display:none;">
+      <div id="cal-events-title" class="calx-evs-t"></div>
       <div id="cal-events-list"></div>
-      <div id="cal-events-actions" style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;"></div>
+      <div id="cal-events-actions" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
     </div>
   </div>
 </div>
@@ -13561,7 +13763,7 @@ function _getDiscordUserId() { return _discordUser && _discordUser.id ? _discord
       <span class="mmi-icon">🏆</span>주간 랭킹
     </button>
     <button class="mobile-menu-item" onclick="closeMobileMenu();goDoom();">
-      <span class="mmi-icon">⚔️</span><span style="color:var(--gold);">멸망전</span>
+      <span class="mmi-icon">⚔️</span><span style="color:var(--gold);">멸망전</span><span id="mm-doom-live" style="display:none;margin-left:8px;padding:2px 8px;border-radius:999px;background:rgba(255,90,40,.2);color:#FFB07A;font-size:11px;font-weight:800;">🔥 진행 중</span>
     </button>
     <button class="mobile-menu-item" onclick="closeMobileMenu();window.open('/guide','_blank');">
       <span class="mmi-icon">📖</span>가이드
@@ -13650,33 +13852,8 @@ function _syncMobileMenu() {
   }
 
   // 커뮤니티 이름 로드 후 manifest start_url + 앱 이름 업데이트
-  window._injectPwaManifest = function(serverName){
-    var cid = (new URLSearchParams(location.search)).get('cid') || '';
-    var startUrl = '/stats.html' + (cid ? '?cid=' + encodeURIComponent(cid) : '');
-    // 기존 manifest 링크 교체 (cid + 이름 반영)
-    var manifest = {
-      name: serverName + ' 전적 페이지',
-      short_name: serverName + ' 전적',
-      description: serverName + ' 커뮤니티 전적 페이지',
-      start_url: startUrl,
-      scope: '/',
-      display: 'standalone',
-      background_color: '#0c1117',
-      theme_color: '#0c1117',
-      orientation: 'portrait-primary',
-      icons: [{ src: '/pwa-icon.png', sizes: 'any', type: 'image/png', purpose: 'any maskable' }]
-    };
-    var blob = new Blob([JSON.stringify(manifest)], {type:'application/json'});
-    var blobUrl = URL.createObjectURL(blob);
-    // 기존 <link rel="manifest"> 교체
-    var existing = document.querySelector('link[rel="manifest"]');
-    if(existing){ existing.href = blobUrl; }
-    else { var l=document.createElement('link'); l.rel='manifest'; l.href=blobUrl; document.head.appendChild(l); }
-    // apple 앱 이름
-    var am = document.querySelector('meta[name="apple-mobile-web-app-title"]');
-    if(!am){ am=document.createElement('meta'); am.name='apple-mobile-web-app-title'; document.head.appendChild(am); }
-    am.content = serverName + ' 전적';
-  };
+  // 앱 설치는 룽잉닷컴 앱 하나로 통일했어요 (/manifest.json). 커뮤니티별 manifest는 더 이상 만들지 않아요
+  window._injectPwaManifest = function(){};
 
   // beforeinstallprompt 가로채기 — 버튼 표시
   window.addEventListener('beforeinstallprompt', function(e){
@@ -13709,6 +13886,7 @@ function _syncMobileMenu() {
       });
     } else {
       // prompt가 아직 없거나 이미 설치된 경우 — 크롬 주소창 설치 아이콘 안내
+      if(window.RGPWA && (RGPWA.isIOS || /KAKAOTALK/i.test(navigator.userAgent))){ RGPWA.install(); return; }   // 아이폰: 홈 화면에 추가 안내
       alert('주소창 오른쪽의 설치(⊕) 아이콘을 눌러 설치하거나,\n이미 설치되어 있을 수 있습니다.');
     }
   };
@@ -14351,6 +14529,43 @@ function _syncMobileMenu() {
     document.body.appendChild(ov);
   }
   window._ttNormTier = normTier; window._ttParseCsv = parseCsv;
+})();
+</script>
+<script>
+/* 모바일: 입력칸에서 엔터(이동 · 검색 · 완료)를 누르면 키패드가 내려가게 — 입력칸의 원래 엔터 동작이 먼저 실행된 뒤 닫아요 */
+(function(){
+  var touch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+  if (!touch) return;
+  // 안드로이드 한글 키보드는 keydown 에서 엔터를 229로 주는 경우가 많아서 keyup 으로 받아요
+  document.addEventListener('keyup', function(e){
+    if (!(e.key === 'Enter' || e.keyCode === 13) || e.isComposing) return;
+    var t = e.target;
+    if (!t || t.tagName !== 'INPUT') return;
+    var ty = (t.type || 'text').toLowerCase();
+    if (['text','search','number','tel','email','url','password'].indexOf(ty) < 0) return;
+    setTimeout(function(){ try { t.blur(); } catch(_){} }, 0);
+  });
+  // 검색칸은 키패드 엔터 키를 "검색"으로 보여 줘요
+  var mark = function(){ document.querySelectorAll('input[type="search"]:not([enterkeyhint])').forEach(function(i){ i.setAttribute('enterkeyhint','search'); }); };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mark); else mark();
+})();
+</script>
+<script>
+/* 멸망전 버튼: 이 커뮤니티에 '종료'가 아닌 멸망전(준비 중 · 팀 모집 · 진행 중)이 하나라도 있으면 불꽃 효과 */
+(function(){
+  if (!COMMUNITY_ID) return;
+  var chk = function(){
+    fetch(WORKER_URL + '/doom', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ action:'list', cid: COMMUNITY_ID }) })
+      .then(function(r){ return r.json(); })
+      .then(function(j){
+        var live = !!(j && j.ok && (j.dooms || []).some(function(d){ return d && (d.status || 'open') !== 'ended'; }));
+        document.documentElement.classList.toggle('doom-live', live);   // 버튼이 다시 그려져도 효과가 유지되게 페이지 전체에 표시
+        ['btn-doom-m','btn-doom'].forEach(function(id){ var b = document.getElementById(id); if (b) b.setAttribute('aria-label', live ? '멸망전 (진행 중)' : '멸망전'); });
+        try { console.info('[멸망전 진행 중 확인]', live ? '진행 중 있음' : '진행 중 없음', (j && j.dooms || []).map(function(d){ return d && (d.name + ':' + d.status); })); } catch(e) {}
+      }).catch(function(){});
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', chk); else chk();
+  document.addEventListener('visibilitychange', function(){ if (!document.hidden) chk(); });
 })();
 </script>
 </body>

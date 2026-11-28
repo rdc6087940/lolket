@@ -2,7 +2,17 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"><!--rg-nozoom-->
+<script>
+/* 모바일 확대 막기: 두 손가락 확대 · 두 번 톡 확대 · 입력칸 누를 때 자동 확대 */
+(function(){
+  document.addEventListener('gesturestart', function(e){ e.preventDefault(); }, { passive: false });   // 아이폰 사파리 두 손가락 확대
+  document.addEventListener('touchmove', function(e){ if (e.touches && e.touches.length > 1) e.preventDefault(); }, { passive: false });
+  // 두 번 톡 확대는 touch-action:manipulation 으로 막아요 (빠르게 여러 번 누르는 버튼은 그대로 동작)
+})();
+</script>
+<style>html{touch-action:manipulation;-webkit-text-size-adjust:100%;text-size-adjust:100%}</style>
+
 <title>이용 가이드 - 룽잉닷컴</title>
 <meta name="description" content="룽잉닷컴 내전 관리 플랫폼 이용 가이드. 관리자·비회원 기능을 단계별로 안내합니다.">
 <meta property="og:title" content="이용 가이드 - 룽잉닷컴">
@@ -273,6 +283,23 @@ ul.guide-list { padding-left: 1.25rem; list-style: none; display: flex; flex-dir
 ul.guide-list li { font-size: 13px; color: var(--text-muted); line-height: 1.7; position: relative; padding-left: .5rem; }
 ul.guide-list li::before { content: '·'; position: absolute; left: -0.75rem; color: var(--blue); font-size: 16px; line-height: 1.2; }
 ul.guide-list li b { color: var(--text-white); }
+</style>
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="룽잉닷컴">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<script src="/pwa.js" defer></script>
+<style id="rg-page-transition">
+/* 페이지 이동을 부드럽게: 같은 사이트 안에서 다른 페이지로 갈 때 이전 화면은 살짝 사라지고 새 화면이 떠오르듯 나타나요
+   (크롬 · 엣지 126+, 사파리 18.2+ 지원 / 지원하지 않는 브라우저는 지금처럼 바로 바뀜) */
+@view-transition{navigation:auto}
+::view-transition-old(root){animation:rgVtOut .16s ease-in both}
+::view-transition-new(root){animation:rgVtIn .34s cubic-bezier(.2,.8,.2,1) both}
+@keyframes rgVtOut{to{opacity:0}}
+@keyframes rgVtIn{from{opacity:0;transform:translateY(10px)}}
+@media (prefers-reduced-motion:reduce){::view-transition-group(*),::view-transition-old(*),::view-transition-new(*){animation:none!important}}
 </style>
 </head>
 <body>

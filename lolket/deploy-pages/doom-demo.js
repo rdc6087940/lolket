@@ -225,6 +225,9 @@
       var p = post(st.scrims[d.id][id]); p.fresh = !s; emit(p);
       return { scrim: clone(st.scrims[d.id][id]), posted: true };
     },
+    'scrim-cancel': function (b) { var s = st.scrims[b.doomId][b.scrimId]; if (s.status !== 'open') err('모집 중인 스크림만 취소할 수 있어요'); s.status = 'canceled'; s.canceledAt = Date.now(); emit(post(s)); return {}; },
+    'scrim-reopen': function (b) { var s = st.scrims[b.doomId][b.scrimId]; if (s.status !== 'canceled') err('모집이 취소된 스크림만 다시 모집할 수 있어요'); s.status = 'open'; delete s.canceledAt; emit(post(s)); return {}; },
+    'team-logo': function (b) { var t = st.teams[b.doomId][b.teamId]; if (!t) err('없는 팀이에요'); t.logo = b.logo || null; return { logo: t.logo }; },
     'scrim-delete': function (b) { if (!isAdmin) err('스크림 삭제는 관리자만 할 수 있어요'); delete st.scrims[b.doomId][b.scrimId]; emit({ kind: 'post-delete', id: b.scrimId }); return {}; },
     'scrim-solo': function (b) { return soloApply(b.scrimId, b.lane); },
     'scrim-solo-leave': function (b) { var s = st.scrims.d1[b.scrimId], u = me(); LANES.forEach(function (l) { if (s.apps.solo[l]) delete s.apps.solo[l][u.did]; }); emit(post(s)); return {}; },

@@ -2,14 +2,26 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"><!--rg-nozoom-->
+<script>
+/* 모바일 확대 막기: 두 손가락 확대 · 두 번 톡 확대 · 입력칸 누를 때 자동 확대 */
+(function(){
+  document.addEventListener('gesturestart', function(e){ e.preventDefault(); }, { passive: false });   // 아이폰 사파리 두 손가락 확대
+  document.addEventListener('touchmove', function(e){ if (e.touches && e.touches.length > 1) e.preventDefault(); }, { passive: false });
+  // 두 번 톡 확대는 touch-action:manipulation 으로 막아요 (빠르게 여러 번 누르는 버튼은 그대로 동작)
+})();
+</script>
+<style>html{touch-action:manipulation;-webkit-text-size-adjust:100%;text-size-adjust:100%}</style>
+
   <title>내 페이지 — Roonging</title>
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#0c1117">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Roonging">
+  <meta name="apple-mobile-web-app-title" content="룽잉닷컴">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <script src="/pwa.js" defer></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Bebas+Neue&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
   <style>
@@ -412,6 +424,16 @@
       .nc-stats{grid-template-columns:repeat(2,1fr)}
     }
   </style>
+<style id="rg-page-transition">
+/* 페이지 이동을 부드럽게: 같은 사이트 안에서 다른 페이지로 갈 때 이전 화면은 살짝 사라지고 새 화면이 떠오르듯 나타나요
+   (크롬 · 엣지 126+, 사파리 18.2+ 지원 / 지원하지 않는 브라우저는 지금처럼 바로 바뀜) */
+@view-transition{navigation:auto}
+::view-transition-old(root){animation:rgVtOut .16s ease-in both}
+::view-transition-new(root){animation:rgVtIn .34s cubic-bezier(.2,.8,.2,1) both}
+@keyframes rgVtOut{to{opacity:0}}
+@keyframes rgVtIn{from{opacity:0;transform:translateY(10px)}}
+@media (prefers-reduced-motion:reduce){::view-transition-group(*),::view-transition-old(*),::view-transition-new(*){animation:none!important}}
+</style>
 </head>
 <body>
 
@@ -2457,7 +2479,7 @@ init();
 
   // 버튼 클릭 핸들러
   window._pwaInstall = function(){
-    if(!_pwaPrompt) return;
+    if(!_pwaPrompt){ if(window.RGPWA) RGPWA.install(); return; }   // 아이폰: 홈 화면에 추가 안내
     _pwaPrompt.prompt();
     _pwaPrompt.userChoice.then(function(result){
       if(result.outcome === 'accepted'){

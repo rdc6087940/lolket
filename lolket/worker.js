@@ -1046,6 +1046,18 @@ const _WORKER = {
     if (path === '/discord-oauth-callback' && request.method === 'POST') {
       return handleDiscordOAuthCallback(request, env);
     }
+    // 메인(앱) 디스코드 로그인: 다른 창(아이폰 앱의 사파리 화면 등)에서 끝난 로그인을 원래 앱이 받아 가요
+    if (path === '/discord-login-relay' && request.method === 'POST') {
+      return handleDiscordLoginRelay(request, env);
+    }
+    // 내가 등록된(디스코드 연동) 커뮤니티 목록 + 로그인 토큰 연장
+    // 메인 페이지 홍보: 모든 커뮤니티에서 '종료'가 아닌 멸망전 목록 (5분 캐시)
+    if (path === '/dooms-live' && (request.method === 'GET' || request.method === 'POST')) {
+      return handleDoomsLive(request, env);
+    }
+    if (path === '/my-communities' && request.method === 'POST') {
+      return handleMyCommunities(request, env);
+    }
     // 코멘트
     if (path === '/comment-write' && request.method === 'POST') {
       return handleCommentWrite(request, env);
@@ -2103,8 +2115,13 @@ async function _postTeamInfo(cid, matchId, text, env) {
   const hash = _simpleHash(String(channelId) + '|' + JSON.stringify(chunks));
   const sameCh = old.channelId && String(old.channelId) === String(channelId);
   let ids = sameCh ? _rcArr(old.msgIds).map(String) : [];
-  if (sameCh && old.hash === hash && ids.length === chunks.length) return { ok: true, skipped: '변경 없음' };
   const H = { 'Content-Type': 'application/json', 'Authorization': 'Bot ' + botToken };
+  if (sameCh && old.hash === hash && ids.length === chunks.length) {
+    // 내용이 같아도, 디스코드에서 메시지가 지워졌으면 다시 올려요
+    const chk = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages/${ids[0]}`, { headers: H }).catch(() => null);
+    if (!chk || chk.ok || chk.status !== 404) return { ok: true, skipped: '변경 없음' };
+    ids = [];
+  }
   // 채널이 바뀌었으면 예전 채널의 메시지는 지움
   if (!sameCh && old.channelId) {
     for (const id of _rcArr(old.msgIds)) await fetch(`https://discord.com/api/v10/channels/${old.channelId}/messages/${id}`, { method: 'DELETE', headers: H }).catch(() => {});
@@ -5060,6 +5077,7 @@ function _scClosedWhy(s) {
   const now = Date.now();
   if (s.status === 'matched') return '이미 성사된 스크림이에요';
   if (s.status === 'ended') return '끝난 스크림이에요';
+  if (s.status === 'canceled') return '모집이 취소된 스크림이에요';
   if (s.status !== 'open') return '모집이 끝난 스크림이에요';
   if (s.recruitStart && now < s.recruitStart) return '아직 모집 기간이 아니에요';
   if (s.recruitEnd && now > s.recruitEnd) return '모집 기간이 끝났어요';
@@ -5071,7 +5089,7 @@ function _scLine(l, m) {
 }
 function _scPostContent(doom, s) {
   const L = [];
-  const st = s.status === 'ended' ? '🏁 종료' : s.status === 'matched' ? '✅ 성사' : (_scClosedWhy(s) ? '⏸ 모집 마감' : '🟢 모집 중');
+  const st = s.status === 'ended' ? '🏁 종료' : s.status === 'matched' ? '✅ 성사' : s.status === 'canceled' ? '🚫 모집 취소' : (_scClosedWhy(s) ? '⏸ 모집 마감' : '🟢 모집 중');
   L.push(`⚔️ **${s.name}**  ·  ${doom.name || '멸망전'}  ·  **${st}**`);
   L.push(`🛡️ **${s.teamName}** (${s.total}점) · 팀장 ${s.captain && s.captain.name || '-'}`);
   L.push(`⏰ 시작: **${_scFmt(s.startAt)}**`);
@@ -5443,6 +5461,7 @@ async function handleDoom(request, env) {
       scrimVoiceCategoryId: /^\d{5,25}$/.test(String(x.scrimVoiceCategoryId || '')) ? String(x.scrimVoiceCategoryId) : '',   // 스크림 방(음성 3개)을 만들 카테고리
       scrimVoiceCategoryName: String(x.scrimVoiceCategoryName || '').slice(0, 60),
       entryTerms: String(x.entryTerms || '').slice(0, 4000),   // 최종 출전 확정 주의사항 · 조건
+      lineupSlots: Math.max(0, Math.min(64, parseInt(x.lineupSlots, 10) || 0)),   // 최종 라인업 전체 팀 수 (빈 자리는 ? 로 보여요)
       createdAt: prev ? prev.createdAt : Date.now(), updatedAt: Date.now(),
     });
     await put(`${C}/dooms/${id}.json${authQ}`, d);
@@ -5481,6 +5500,21 @@ async function handleDoom(request, env) {
     if (img && !OGI.test(img)) return json({ ok: false, error: 'GitHub doom_og 폴더의 이미지만 쓸 수 있어요' }, 400);
     await put(`${C}/dooms/${d.id}/ogImage.json${authQ}`, img || null);
     return json({ ok: true, ogImage: img || null });
+  }
+  // 팀 로고 (관리자): GitHub doom_logos 폴더 이미지 · 최종 라인업에 보여요
+  if (action === 'team-logo') {
+    if (!isAdmin) return json({ ok: false, error: '관리자만 팀 로고를 설정할 수 있어요' }, 403);
+    const d = body.doomId && idOk(String(body.doomId)) ? await doomOf(body.doomId) : null;
+    if (!d) return json({ ok: false, error: '없는 멸망전이에요' }, 404);
+    const tid = String(body.teamId || '');
+    if (!idOk(tid)) return json({ ok: false, error: '팀을 골라 주세요' }, 400);
+    const t = await rd(`${C}/doom_teams/${d.id}/${tid}.json${authQ}`);
+    if (!t) return json({ ok: false, error: '없는 팀이에요' }, 404);
+    const LGI = /^https:\/\/raw\.githubusercontent\.com\/rdc6087940\/lolket\/main\/lolket\/image%20asset\/doom_logos\/[^?#\s]+$/;
+    const img = String(body.logo || '').trim();
+    if (img && !LGI.test(img)) return json({ ok: false, error: 'GitHub doom_logos 폴더의 이미지만 쓸 수 있어요' }, 400);
+    await put(`${C}/doom_teams/${d.id}/${tid}/logo.json${authQ}`, img || null);
+    return json({ ok: true, logo: img || null });
   }
   if (action === 'banners-save') {
     if (!isMaster) return json({ ok: false, error: '마스터 관리자만 배너를 설정할 수 있어요' }, 403);
@@ -5726,6 +5760,7 @@ async function handleDoom(request, env) {
       rejectReason: isAdmin && prev ? (prev.rejectReason || null) : null,
       // 최종 출전 확정 상태는 팀을 고쳐도 그대로 둬요
       voice: prev ? prev.voice || null : null,
+      logo: prev ? prev.logo || null : null,   // 팀 로고 (관리자가 GitHub doom_logos 폴더 이미지로 설정)
       entry: prev ? prev.entry || null : null, entryReqAt: prev ? prev.entryReqAt || null : null, entryAt: prev ? prev.entryAt || null : null, entryNote: prev ? prev.entryNote || null : null,
     };
     await put(`${C}/doom_teams/${d.id}/${id}.json${authQ}`, team);
@@ -5757,11 +5792,43 @@ async function handleDoom(request, env) {
     const sync = async () => { const f = await rd(`${SP}/${s.id}.json${authQ}`); if (f && f.threadId) await _scPost(env, cid, d, f); return f; };
     const byDidOf = async () => { const pool = await loadPool(), m = {}; pool.forEach(p => { m[p.did] = p; }); return m; };
     // 스크림 방(음성 채널) 지우기 → 지운 개수
+    // 스크림 방(구분선 · 대기실 · 두 팀 방) 지우기
+    //   한꺼번에 지우면 디스코드가 일부를 거절(429)할 수 있어서 하나씩, 거절되면 기다렸다 다시 지워요
+    //   저장된 목록에서 빠진 구분선 · 대기실(두 번 눌러 생긴 것 등)도 카테고리에서 이름으로 찾아 같이 지워요
+    //   → { n: 지운 개수, left: 못 지운 방 }
     const delRooms = async (sc) => {
       const rs = (Array.isArray(sc && sc.rooms) ? sc.rooms : Object.values((sc && sc.rooms) || {})).filter(r => r && r.id);
-      if (!BOT || !rs.length) return 0;
-      const res = await Promise.all(rs.map(r => fetch(`https://discord.com/api/v10/channels/${r.id}`, { method: 'DELETE', headers: { Authorization: 'Bot ' + BOT } }).then(x => x.ok || x.status === 404).catch(() => false)));
-      return res.filter(Boolean).length;
+      if (!BOT) return { n: 0, left: rs };
+      const H = { Authorization: 'Bot ' + BOT };
+      const del1 = async (id) => {
+        for (let i = 0; i < 4; i++) {
+          const x = await fetch(`https://discord.com/api/v10/channels/${id}`, { method: 'DELETE', headers: H }).catch(() => null);
+          if (x && (x.ok || x.status === 404)) return true;
+          if (x && x.status === 429) { let w = 1; try { w = Number((await x.json()).retry_after) || 1; } catch (e) {} await new Promise(r => setTimeout(r, Math.min(5000, w * 1000 + 150))); continue; }
+          if (i < 1) { await new Promise(r => setTimeout(r, 400)); continue; }
+          return false;
+        }
+        return false;
+      };
+      let n = 0; const left = [], done = {};
+      for (const r of rs) { if (await del1(r.id)) { n++; done[r.id] = 1; } else left.push(r); }
+      // 남은 구분선 · 대기실 찾기 (다른 스크림이 쓰는 방은 건드리지 않아요)
+      try {
+        const cat = d.scrimVoiceCategoryId, gid = cat ? await guildId() : null;
+        if (gid && sc && sc.match) {
+          const A = String(sc.teamName || '팀'), B = String(sc.match.name || '상대 팀');
+          const names = [`══════ [스크림] ${A} vs ${B} ══════`, `[스크림] ${A} vs ${B} 대기실`].map(x => x.slice(0, 100));
+          const others = {};
+          Object.values(await rd(`${SP}.json${authQ}`) || {}).forEach(o => { if (o && o.id !== sc.id) (Array.isArray(o.rooms) ? o.rooms : Object.values(o.rooms || {})).forEach(r => { if (r && r.id) others[r.id] = 1; }); });
+          const ch = await fetch(`https://discord.com/api/v10/guilds/${gid}/channels`, { headers: H }).catch(() => null);
+          const all = ch && ch.ok ? await ch.json() : [];
+          for (const c of (Array.isArray(all) ? all : [])) {
+            if (c.parent_id !== cat || done[c.id] || others[c.id] || names.indexOf(c.name) < 0) continue;
+            if (await del1(c.id)) n++;
+          }
+        }
+      } catch (e) {}
+      return { n, left };
     };
 
     if (action === 'scrim-save') {
@@ -5770,7 +5837,7 @@ async function handleDoom(request, env) {
       let team;
       if (s) {
         if (!isAdmin && !isHost) return bad('스크림을 만든 팀장 또는 관리자만 고칠 수 있어요', 403);
-        if (s.status !== 'open') return bad('성사된 스크림은 고칠 수 없어요');
+        if (s.status !== 'open' && !(isAdmin && s.status === 'matched')) return bad(isAdmin ? '종료된 스크림은 고칠 수 없어요' : '성사된 스크림은 관리자만 고칠 수 있어요');
         team = await rd(`${C}/doom_teams/${d.id}/${s.teamId}.json${authQ}`);
       } else if (isAdmin && x.teamId) {
         team = idOk(String(x.teamId)) ? await rd(`${C}/doom_teams/${d.id}/${x.teamId}.json${authQ}`) : null;
@@ -5793,6 +5860,8 @@ async function handleDoom(request, env) {
       if (minScore !== '' && maxScore !== '' && minScore > maxScore) return bad('최소 점수가 최대 점수보다 커요');
       const subs = {}; _DM_LANES.forEach(l => { const v = x.subs && x.subs[l]; if (v) subs[l] = String(v); });
       const R = _scBuildRoster(team, subs, await byDidOf()); if (R.error) return bad(R.error);
+      // 성사된 스크림을 관리자가 고칠 때: 바꾼 우리 팀 로스터에 상대 쪽 사람이 겹치면 막아요
+      if (s && s.match) { const ov = _scOverlap(R.roster, s.match.roster); if (ov) return bad(`${ov.name || '같은 사람'}님이 상대 쪽에도 들어가 있어요`); }
       const id = s ? s.id : 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
       const fields = {
         id, doomId: d.id, name, desc: String(x.desc || '').trim().slice(0, 600), note: String(x.note || '').trim().slice(0, 400),
@@ -5849,13 +5918,30 @@ async function handleDoom(request, env) {
       return json({ ok: true, rooms });
     }
     // 스크림 종료: 상태를 "종료"로 바꾸고 스크림 방 3개를 지워요
+    // 모집 취소: 스크림을 연 팀장(또는 관리자)이 모집 중인 스크림을 "모집 취소" 상태로 바꿔요 (신청 목록은 그대로 남아요)
+    if (action === 'scrim-cancel') {
+      if (!isHost && !isAdmin) return bad('스크림을 연 팀장 또는 관리자만 모집을 취소할 수 있어요', 403);
+      if (s.status !== 'open' || _scClosedWhy(s)) return bad(s.status === 'canceled' ? '이미 모집이 취소된 스크림이에요' : '모집 중인 스크림만 취소할 수 있어요');
+      await patch(`${SP}/${s.id}.json${authQ}`, { status: 'canceled', canceledAt: Date.now(), updatedAt: Date.now() });
+      await sync();
+      return json({ ok: true });
+    }
+    // 다시 모집: 취소한 스크림을 "모집 중"으로 되돌려요 (모집 기간이 지났으면 수정에서 기간을 바꾸면 돼요)
+    if (action === 'scrim-reopen') {
+      if (!isHost && !isAdmin) return bad('스크림을 연 팀장 또는 관리자만 다시 모집할 수 있어요', 403);
+      if (s.status !== 'canceled') return bad('모집이 취소된 스크림만 다시 모집할 수 있어요');
+      await patch(`${SP}/${s.id}.json${authQ}`, { status: 'open', canceledAt: null, updatedAt: Date.now() });
+      await sync();
+      return json({ ok: true, closedWhy: _scClosedWhy(Object.assign({}, s, { status: 'open' })) });
+    }
     if (action === 'scrim-end') {
       if (!isAdmin && !isHost) return bad('스크림을 연 팀장 또는 관리자만 종료할 수 있어요', 403);
       if (s.status !== 'matched') return bad(s.status === 'ended' ? '이미 끝난 스크림이에요' : '성사된 스크림만 종료할 수 있어요');
-      const n = await delRooms(s);
-      await patch(`${SP}/${s.id}.json${authQ}`, { status: 'ended', endedAt: Date.now(), rooms: null, updatedAt: Date.now() });
+      const dr = await delRooms(s);
+      // 못 지운 방은 목록에 남겨 둬서 나중에 다시 지울 수 있게 해요
+      await patch(`${SP}/${s.id}.json${authQ}`, { status: 'ended', endedAt: Date.now(), rooms: dr.left.length ? dr.left : null, updatedAt: Date.now() });
       await sync();
-      return json({ ok: true, deleted: n });
+      return json({ ok: true, deleted: dr.n, left: dr.left.length });
     }
     if (action === 'scrim-solo' || action === 'scrim-solo-leave') {
       if (!dUser) return bad('디스코드 로그인이 필요해요', 401);
@@ -5939,10 +6025,12 @@ async function handleDoom(request, env) {
 // Discord OAuth URL 생성
 async function handleDiscordOAuthUrl(request, env) {
   let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
-  const { communityId, puuId, redirectUri } = body;
+  const { communityId, puuId, redirectUri, nonce } = body;
   if (!env.DISCORD_CLIENT_ID) return json({ok:false,error:'DISCORD_CLIENT_ID 없음'},500);
 
-  const state = btoa(JSON.stringify({ communityId, puuId, ts: Date.now() }));
+  const st = { communityId, puuId, ts: Date.now() };
+  if (_dlNonceOk(nonce)) st.nonce = nonce;   // 메인(앱) 로그인 — 돌아온 창이 원래 앱이 아니어도 이어 받게
+  const state = btoa(JSON.stringify(st));
   const params = new URLSearchParams({
     client_id: env.DISCORD_CLIENT_ID,
     redirect_uri: redirectUri,
@@ -6011,7 +6099,78 @@ async function handleDiscordOAuthCallback(request, env) {
   }
 
   // 텍스트 없이 인증만 한 경우 - 유저 정보만 반환
-  return json({ ok: true, dtoken: _dtoken, user: { id: user.id, username: user.username, displayName: user.global_name || user.username, avatar: user.avatar ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png` : null, banner: user.banner || null } });
+  const _u = { id: user.id, username: user.username, displayName: user.global_name || user.username, avatar: user.avatar ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png` : null, banner: user.banner || null };
+  // 메인(앱) 로그인: 원래 앱이 받아 갈 수 있게 잠깐(15분) 맡겨 둬요
+  if (_dlNonceOk(body.nonce) && _dtoken && env.FB_DATABASE_URL) {
+    const aq = env.FB_DB_SECRET ? '?auth=' + env.FB_DB_SECRET : '';
+    try { await fetch(`${env.FB_DATABASE_URL}/discord_login_relay/${body.nonce}.json${aq}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ dtoken: _dtoken, user: _u, at: Date.now() }) }); } catch (e) {}
+  }
+  return json({ ok: true, dtoken: _dtoken, user: _u });
+}
+
+// ── 메인 페이지 멸망전 홍보 캐러셀 ──
+async function handleDoomsLive(request, env) {
+  const dbUrl = env.FB_DATABASE_URL, aq = env.FB_DB_SECRET ? '?auth=' + env.FB_DB_SECRET : '';
+  const sep = aq ? '&' : '?';
+  const rd = async (u) => { try { const r = await fetch(u); return r.ok ? await r.json() : null; } catch (e) { return null; } };
+  const data = await cachedFetch('dooms-live-v1', async () => {
+    const keys = Object.keys(await rd(`${dbUrl}/communities_info.json${aq}${sep}shallow=true`) || {}).filter(c => /^[A-Za-z0-9_-]{1,80}$/.test(c)).slice(0, 300);
+    const out = [];
+    for (let i = 0; i < keys.length; i += 25) {
+      await Promise.all(keys.slice(i, i + 25).map(async cid => {
+        const ds = await rd(`${dbUrl}/communities/${cid}/dooms.json${aq}`);
+        const live = Object.values(ds || {}).filter(d => d && d.id && (d.status || 'open') !== 'ended');
+        if (!live.length) return;
+        const [name, teams] = await Promise.all([rd(`${dbUrl}/communities_info/${cid}/name.json${aq}`), Promise.all(live.map(d => rd(`${dbUrl}/communities/${cid}/doom_teams/${d.id}.json${aq}${sep}shallow=true`)))]);
+        live.forEach((d, k) => out.push({
+          cid, community: String(name || ''), id: d.id, name: String(d.name || '멸망전').slice(0, 40), desc: String(d.desc || '').slice(0, 120),
+          status: d.status || 'open', startDate: d.startDate || '', endDate: d.endDate || '', ogImage: d.ogImage || '',
+          teams: Object.keys(teams[k] || {}).length, updatedAt: d.updatedAt || d.createdAt || 0,
+        }));
+      }));
+    }
+    const rank = { running: 0, open: 1, ready: 2 };
+    out.sort((a, b) => ((rank[a.status] ?? 3) - (rank[b.status] ?? 3)) || (b.updatedAt - a.updatedAt));
+    return { list: out.slice(0, 20), at: Date.now() };
+  }, 300);
+  return json({ ok: true, dooms: (data && data.list) || [] });
+}
+
+// ── 메인(앱) 디스코드 로그인 ──
+function _dlNonceOk(n) { return typeof n === 'string' && /^[A-Za-z0-9_-]{24,64}$/.test(n); }
+// 맡겨 둔 로그인 결과 받아 가기 (한 번 받으면 지워요)
+async function handleDiscordLoginRelay(request, env) {
+  let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
+  if (!_dlNonceOk(body.nonce)) return json({ ok: false, error: 'nonce' }, 400);
+  const aq = env.FB_DB_SECRET ? '?auth=' + env.FB_DB_SECRET : '';
+  const url = `${env.FB_DATABASE_URL}/discord_login_relay/${body.nonce}.json${aq}`;
+  const r = await fetch(url); const v = r.ok ? await r.json() : null;
+  if (!v) return json({ ok: true, pending: true });
+  await fetch(url, { method: 'DELETE' }).catch(() => {});
+  if (!v.at || Date.now() - v.at > 15 * 60 * 1000 || !_dmVerifyDiscord(v.dtoken)) return json({ ok: false, error: '로그인이 만료됐어요. 다시 로그인해 주세요' });
+  return json({ ok: true, dtoken: v.dtoken, user: v.user });
+}
+// 내가 등록된 커뮤니티: communities/{cid}/discord_profiles/{did} 에 소환사가 등록돼 있으면 소속
+//   요청할 때마다 로그인 토큰을 30일 새로 늘려 줘요 (앱을 계속 쓰면 로그인이 안 풀려요)
+async function handleMyCommunities(request, env) {
+  let body; try { body = await request.json(); } catch { return json({ok:false,error:'bad request'},400); }
+  _setSignKey(env);
+  const d = _dmVerifyDiscord(body.dtoken);
+  if (!d) return json({ ok: false, expired: true, error: '디스코드 로그인이 만료됐어요' });
+  const cids = (Array.isArray(body.cids) ? body.cids : []).map(String).filter(c => /^[A-Za-z0-9_-]{1,80}$/.test(c)).slice(0, 300);
+  const aq = env.FB_DB_SECRET ? '?auth=' + env.FB_DB_SECRET : '';
+  const mine = [];
+  for (let i = 0; i < cids.length; i += 25) {
+    await Promise.all(cids.slice(i, i + 25).map(async cid => {
+      try {
+        const r = await fetch(`${env.FB_DATABASE_URL}/communities/${cid}/discord_profiles/${d.did}/riotName.json${aq}`);
+        const v = r.ok ? await r.json() : null;
+        if (v) mine.push(cid);
+      } catch (e) {}
+    }));
+  }
+  const dtoken = _dmSignDiscord({ id: d.did, displayName: d.name, avatar: d.av });
+  return json({ ok: true, cids: mine, dtoken, user: { id: d.did, displayName: d.name } });
 }
 
 // 코멘트 읽기

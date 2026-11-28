@@ -2,9 +2,41 @@
 <html lang="ko">
 <head>
 <script>
+/* 메인 디스코드 로그인 콜백 (state 안에 nonce가 있는 것만) — 진행자 연동 · 신청 콜백보다 먼저 처리
+   앱(PWA)에서 시작한 로그인이 다른 창(아이폰 앱의 사파리 화면 등)에서 끝나도, 서버에 잠깐 맡겨 두면 원래 앱이 받아 가요 */
+(function(){
+  try {
+    var sp = new URLSearchParams(location.search), stt = sp.get('state');
+    if (!stt) return;
+    var st = null; try { st = JSON.parse(atob(stt)); } catch (e) {}
+    if (!st || !st.nonce) return;
+    var code = sp.get('code');
+    history.replaceState({}, '', location.pathname);
+    var mine = null; try { mine = JSON.parse(localStorage.getItem('rg_dc_login_pending') || 'null'); } catch (e) {}
+    var same = !!(mine && mine.n === st.nonce);
+    if (!code) { if (same) localStorage.removeItem('rg_dc_login_pending'); window.__rgDcLanding = Promise.resolve({ ok: false, cancel: true, same: same }); return; }
+    window.__rgDcLanding = fetch('https://api.roonging.com/discord-oauth-callback', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: code, redirectUri: location.origin + '/', nonce: st.nonce })
+    }).then(function(r){ return r.json(); }).then(function(j){
+      if (j && j.ok && j.dtoken) {
+        try { localStorage.setItem('doom_discord', JSON.stringify({ dtoken: j.dtoken, user: j.user })); } catch (e) {}
+        if (same) {   // 원래 창으로 바로 돌아온 경우: 맡겨 둔 것도 치워요
+          try { localStorage.removeItem('rg_dc_login_pending'); } catch (e) {}
+          fetch('https://api.roonging.com/discord-login-relay', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nonce: st.nonce }) }).catch(function(){});
+        }
+        return { ok: true, user: j.user, same: same };
+      }
+      return { ok: false, error: (j && j.error) || '인증 실패', same: same };
+    }).catch(function(e){ return { ok: false, error: e.message, same: same }; });
+  } catch(e) {}
+})();
+</script>
+<script>
 /* 진행자 디스코드 연동 OAuth 콜백 (index로 돌아옴) — 다른 코드보다 먼저 처리 */
 (function(){
   try {
+    if (window.__rgDcLanding) return;   // 메인 디스코드 로그인 콜백은 위에서 처리
     // 진행자 연동 또는 커뮤니티 신청(디스코드) 중 대기 중인 것
     var kind = localStorage.getItem('rg_host_discord_pending') ? 'host' : (localStorage.getItem('rg_apply_discord_pending') ? 'apply' : null);
     if (!kind) return;
@@ -48,7 +80,17 @@
   gtag('config', 'G-MY5Z9P4L0W');
 </script>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"><!--rg-nozoom-->
+<script>
+/* 모바일 확대 막기: 두 손가락 확대 · 두 번 톡 확대 · 입력칸 누를 때 자동 확대 */
+(function(){
+  document.addEventListener('gesturestart', function(e){ e.preventDefault(); }, { passive: false });   // 아이폰 사파리 두 손가락 확대
+  document.addEventListener('touchmove', function(e){ if (e.touches && e.touches.length > 1) e.preventDefault(); }, { passive: false });
+  // 두 번 톡 확대는 touch-action:manipulation 으로 막아요 (빠르게 여러 번 누르는 버튼은 그대로 동작)
+})();
+</script>
+<style>html{touch-action:manipulation;-webkit-text-size-adjust:100%;text-size-adjust:100%}</style>
+
 <title>룽잉닷컴 — 내전 관리</title>
 <meta name="description" content="룽잉닷컴 리그오브레전드 내전 관리 플랫폼. 경매/일반 내전, 팀 구성, 대진표, 결과 기록까지.">
 
@@ -71,7 +113,6 @@
 
 <!-- Favicon -->
 <link rel="icon" type="image/png" href="/favicon.png">
-<link rel="apple-touch-icon"      href="/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
@@ -2731,6 +2772,18 @@ body:has(#screen-community.active){background-color:var(--rg-bg)!important;backg
 #community-search-clear[style*="block"]{display:flex!important}
 #community-search-clear:hover{background:var(--rg-s4);color:var(--rg-t1)!important}
 .rg-apply-btn{display:inline-flex!important;margin:0!important}
+.rg-dc-bar{display:flex;align-items:center;gap:12px;margin:0 0 16px;padding:14px 16px;border-radius:14px;background:linear-gradient(120deg,rgba(88,101,242,.16),rgba(88,101,242,.05) 60%),var(--rg-s1);box-shadow:0 0 0 1px rgba(88,101,242,.32);animation:rgDcIn .35s cubic-bezier(.22,1,.36,1) both}
+.rg-dc-bar.on{background:var(--rg-s1);box-shadow:0 0 0 1px var(--rg-ring)}
+@keyframes rgDcIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.rg-dc-ico{flex-shrink:0;width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:rgba(88,101,242,.18);color:#A5AEFF}
+.rg-dc-av{flex-shrink:0;width:40px;height:40px;border-radius:50%;object-fit:cover;box-shadow:0 0 0 2px rgba(88,101,242,.45)}
+.rg-dc-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.rg-dc-txt b{font-size:14px;font-weight:600;color:var(--rg-t1)}
+.rg-dc-txt span{font-size:12.5px;color:var(--rg-t3);line-height:1.45}
+.rg-dc-btn{flex-shrink:0;display:inline-flex;align-items:center;gap:8px;height:42px;padding:0 16px;border:0;border-radius:10px;background:#5865F2;color:#fff;font:600 14px/1 inherit;font-family:inherit;cursor:pointer;transition:background-color .15s,transform .1s}
+.rg-dc-btn:hover{background:#4752C4}.rg-dc-btn:active{transform:scale(.97)}.rg-dc-btn:disabled{opacity:.6;cursor:wait}
+.rg-dc-out{flex-shrink:0;height:34px;padding:0 12px;border:0;border-radius:8px;background:var(--rg-s2);color:var(--rg-t3);font:500 13px inherit;font-family:inherit;cursor:pointer;transition:background-color .15s,color .15s}
+.rg-dc-out:hover{background:var(--rg-s4);color:var(--rg-t1)}
 .rg-apply-btn,#master-actions .btn-secondary{align-items:center;gap:6px;height:44px;padding:0 16px!important;border:none!important;border-radius:10px!important;background:var(--rg-s2)!important;color:var(--rg-t1)!important;font-family:inherit!important;font-size:14px!important;font-weight:500!important;letter-spacing:0!important;transition:background-color .15s,transform .1s!important}
 .rg-apply-btn:hover,#master-actions .btn-secondary:hover{background:var(--rg-s4)!important}
 #master-actions .btn-primary{height:44px;padding:0 16px!important;border:none!important;border-radius:10px!important;background:var(--rg-accent)!important;color:var(--rg-bg)!important;font-family:inherit!important;font-size:14px!important;font-weight:600!important;letter-spacing:0!important}
@@ -2862,7 +2915,7 @@ body:has(#screen-community.active){background-color:var(--rg-bg)!important;backg
 .gd-body .rgmd{margin-top:8px;border-top:0;padding-top:0}
 @media (max-width:768px){.gd-btn .gd-sub{display:none}}
 
-/* 레이팅 배치중 — 티어 확인 배지 (딥롤 연결) */
+/* 레이팅 배치중 — 티어 확인 배지 (포우 연결) */
 .placing-badge{display:inline-flex;align-items:center;gap:4px;margin-top:4px;padding:2px 8px;border-radius:999px;border:1px solid rgba(255,148,85,.5);background:rgba(255,148,85,.1);color:#FF9455;font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;text-decoration:none;white-space:nowrap;cursor:pointer;transition:background .2s,border-color .2s,transform .12s}
 .placing-badge:hover{background:rgba(255,148,85,.2);border-color:rgba(255,148,85,.8)}
 .placing-badge:active{transform:scale(.97)}
@@ -3297,6 +3350,17 @@ button.rd-tile:hover{border-color:var(--rd-gold)!important}
   .rg-search{flex:1 1 100%;width:auto;height:48px}
   .rg-apply-btn{flex:1}
   .community-grid{grid-template-columns:1fr!important;gap:10px!important}
+  /* 모바일: 검색창 + 커뮤니티 신청을 한 줄로, 관리자 버튼은 그 아래 줄 */
+  .rg-topbar-actions{flex-wrap:wrap;gap:8px!important}
+  .rg-topbar-actions .rg-search{flex:1 1 0;min-width:0;width:auto;height:48px}
+  .rg-topbar-actions .rg-apply-btn{flex:0 0 auto!important;height:48px!important;padding:0 14px!important;white-space:nowrap}
+  .rg-topbar-actions #master-actions{order:3;flex:1 1 100%;gap:8px!important}
+  .rg-topbar-actions #master-actions button{flex:1;height:40px;font-size:13px!important}
+  .rg-topbar-actions #master-actions:not(:has(> button:not([style*="display: none"]):not([style*="display:none"]))){display:none!important}
+  .rg-dc-bar{flex-wrap:wrap;padding:14px!important}
+  .rg-dc-bar .rg-dc-btn{flex:1 1 100%;justify-content:center}
+  .rg-dc-bar.on{flex-wrap:nowrap}
+  .rg-dc-bar.on .rg-dc-out{flex:0 0 auto}
   .community-card{flex-direction:row!important;flex-wrap:wrap!important;align-items:center;padding:12px;gap:14px}
   .community-card .rg-card-banner{width:56px;height:56px;border-radius:12px}
   .community-card .rg-card-mono{justify-content:center;padding:0;font-size:22px;color:rgba(255,255,255,.55)}
@@ -3311,9 +3375,14 @@ button.rd-tile:hover{border-color:var(--rd-gold)!important}
   .rg-sk-body{flex:1;padding:0}
   #patch-section,.rtube-section{margin-top:36px!important}
   #patch-section .rg-patch-box > div{flex-direction:column;align-items:flex-start;gap:8px}
-  #patch-champions-list,#patch-items-list{flex-wrap:nowrap!important;overflow-x:auto;width:100%;scrollbar-width:none;padding-bottom:2px}
-  #patch-champions-list::-webkit-scrollbar,#patch-items-list::-webkit-scrollbar{display:none}
-  .rg-pchip,.rg-sk-chip{flex-shrink:0}
+  /* 모바일: 가로 스크롤 대신 2열로 펼쳐서 한눈에 */
+  #patch-champions-list,#patch-items-list{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px!important;width:100%}
+  #patch-section .rg-patch-box > div{align-items:stretch}
+  .rg-pchip{width:100%;min-width:0;gap:8px;padding:0 10px 0 5px;font-size:13.5px}
+  .rg-pchip-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;text-align:left}
+  .rg-pchip-tag{flex-shrink:0;font-size:11.5px}
+  .rg-pchip:hover,.rg-pchip:focus-visible{transform:none}
+  .rg-sk-chip{width:100%!important}
   #rtube-search-input{width:100%!important}
   .rtube-header > div{width:100%}
   #rtube-cats{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
@@ -3641,6 +3710,97 @@ body:has(#btn-back.visible) #fab-trigger,body:has(#btn-back.visible) #fab-menu{d
 #mobile-move-sheet .mms-lane small{font-size:9.5px;font-weight:600;color:var(--text-muted,#8a93a3);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #mobile-move-sheet .mms-lane.empty small{color:#2BD9C5}
 #mobile-move-sheet .mms-lane.here{border-color:rgba(43,217,197,.55);background:rgba(43,217,197,.1)}
+
+/* ══ 모바일 커뮤니티 커버플로 ══ */
+@media (max-width:768px){
+  .community-grid.rg-cf{--cfw:min(74vw,300px);position:relative;display:flex!important;grid-template-columns:none!important;gap:0!important;overflow-x:auto;overflow-y:hidden;touch-action:pan-y;scroll-behavior:auto;padding:14px calc(50% - var(--cfw) / 2) 20px!important;margin:0 -16px!important;perspective:1100px;scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
+  .community-grid.rg-cf::-webkit-scrollbar{display:none}
+  .community-grid.rg-cf .community-card{flex:0 0 var(--cfw)!important;width:var(--cfw);flex-direction:column!important;flex-wrap:nowrap!important;align-items:stretch!important;padding:0!important;gap:0!important;animation:none!important;-webkit-user-select:none;user-select:none;-webkit-user-drag:none;transition:none!important;will-change:transform,opacity;-webkit-backface-visibility:hidden;backface-visibility:hidden;transform-origin:50% 50%}
+  .community-grid.rg-cf .community-card .rg-card-banner{width:100%!important;height:150px!important;border-radius:0!important}
+  .community-grid.rg-cf .community-card .rg-card-mono{justify-content:flex-end;padding-right:18px;font-size:88px;color:rgba(255,255,255,.08)}
+  .community-grid.rg-cf .community-card .rg-official{display:inline-flex!important}
+  .community-grid.rg-cf .rg-official-inline{display:none!important}
+  .community-grid.rg-cf .community-card .community-card-body{flex:1 1 auto;padding:14px 14px 16px!important}
+  .community-grid.rg-cf .community-card .community-card-desc{white-space:normal!important;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+  .community-grid.rg-cf .community-card .community-card-footer{flex:0 0 auto!important;margin:0!important}
+  .community-grid.rg-cf .community-card.cf-on{box-shadow:0 26px 50px -22px rgba(0,0,0,.95),0 0 0 1px rgba(43,217,197,.4)!important}
+  .rg-cf-ind{display:flex;align-items:center;justify-content:center;gap:6px;min-height:20px;margin:0 0 8px}
+  .rg-cf-ind i{width:6px;height:6px;border-radius:3px;background:var(--rg-ring);transition:width .25s,background-color .25s;cursor:pointer}
+  .rg-cf-ind i.on{width:18px;background:var(--rg-accent)}
+  .rg-cf-ind span{margin-left:6px;font-size:12px;color:var(--rg-t4);font-variant-numeric:tabular-nums}
+}
+@media (max-width:768px) and (prefers-reduced-motion:reduce){.community-grid.rg-cf{scroll-behavior:auto}}
+/* 스크롤과 같이 움직이는 커버플로 (지원 브라우저): 카드가 오른쪽 끝에서 들어와(0%) 가운데(50%)를 지나 왼쪽으로 나가요(100%) */
+@keyframes rgCf{
+  0%{transform:translateX(-35%) rotateY(-40deg) scale(.86);opacity:.7;z-index:1}
+  50%{transform:none;opacity:1;z-index:100}
+  100%{transform:translateX(35%) rotateY(40deg) scale(.86);opacity:.7;z-index:1}
+}
+@media (max-width:768px){
+  .community-grid.rg-cf.cf-css .community-card{animation:rgCf linear both!important;animation-timeline:view(inline)!important;animation-range:cover 0% cover 100%!important}
+}
+</style>
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="룽잉닷컴">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<script src="/pwa.js" defer></script>
+<style id="rg-page-transition">
+/* 페이지 이동을 부드럽게: 같은 사이트 안에서 다른 페이지로 갈 때 이전 화면은 살짝 사라지고 새 화면이 떠오르듯 나타나요
+   (크롬 · 엣지 126+, 사파리 18.2+ 지원 / 지원하지 않는 브라우저는 지금처럼 바로 바뀜) */
+@view-transition{navigation:auto}
+::view-transition-old(root){animation:rgVtOut .16s ease-in both}
+::view-transition-new(root){animation:rgVtIn .34s cubic-bezier(.2,.8,.2,1) both}
+@keyframes rgVtOut{to{opacity:0}}
+@keyframes rgVtIn{from{opacity:0;transform:translateY(10px)}}
+@media (prefers-reduced-motion:reduce){::view-transition-group(*),::view-transition-old(*),::view-transition-new(*){animation:none!important}}
+
+/* ══ 메인: 지금 열린 멸망전 캐러셀 ══ */
+.rg-dp{margin:0 0 28px;animation:rgDpIn .5s cubic-bezier(.2,.8,.2,1) both}
+.rg-dp[hidden]{display:none}
+@keyframes rgDpIn{from{opacity:0;transform:translateY(8px)}}
+.rg-dp-h{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.rg-dp-h h2{margin:0;font-size:18px;font-weight:700;letter-spacing:-.2px;color:var(--rg-t1)}
+.rg-dp-n{min-width:22px;height:22px;padding:0 7px;border-radius:999px;display:grid;place-items:center;background:rgba(255,106,43,.16);color:#FF9A5C;font-size:12px;font-weight:700}
+.rg-dp-sp{flex:1}
+.rg-dp-arr{width:34px;height:34px;border:0;border-radius:10px;background:var(--rg-s2);color:var(--rg-t2);display:grid;place-items:center;cursor:pointer;transition:background-color .15s,color .15s}
+.rg-dp-arr:hover{background:var(--rg-s3);color:var(--rg-t1)}
+.rg-dp-track{position:relative;display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;padding:2px 2px 4px}
+.rg-dp-track::-webkit-scrollbar{display:none}
+.rg-dp-card{position:relative;flex:0 0 min(560px,calc(50% - 7px));aspect-ratio:1200/560;border-radius:18px;overflow:hidden;scroll-snap-align:start;text-decoration:none;color:#fff;background:radial-gradient(120% 140% at 85% 0%,rgba(255,61,87,.35),transparent 55%),radial-gradient(120% 140% at 0% 100%,rgba(240,198,97,.28),transparent 55%),#0B0F16;box-shadow:0 0 0 1px #1C222D;isolation:isolate;transition:transform .25s cubic-bezier(.2,.8,.2,1),box-shadow .25s}
+.rg-dp-track.one .rg-dp-card{flex-basis:100%;aspect-ratio:auto;min-height:200px}
+.rg-dp-card:hover{transform:translateY(-3px);box-shadow:0 18px 40px -18px rgba(0,0,0,.9),0 0 0 1px rgba(240,198,97,.45)}
+.rg-dp-card:active{transform:scale(.985)}
+.rg-dp-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:-2;transition:transform .6s cubic-bezier(.2,.8,.2,1)}
+.rg-dp-card:hover .rg-dp-img{transform:scale(1.04)}
+.rg-dp-wm{position:absolute;right:-10px;top:50%;transform:translateY(-50%);z-index:-2;font:900 120px/1 'Space Grotesk','IBM Plex Sans KR',sans-serif;letter-spacing:-.04em;color:rgba(255,255,255,.05)}
+.rg-dp-shade{position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,rgba(6,8,12,0) 30%,rgba(6,8,12,.85) 100%),linear-gradient(90deg,rgba(6,8,12,.55),transparent 60%)}
+.rg-dp-body{position:absolute;left:18px;right:120px;bottom:16px;display:flex;flex-direction:column;align-items:flex-start;gap:6px;min-width:0}
+.rg-dp-st{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px;border-radius:999px;background:rgba(53,224,138,.18);color:#5BEBA3;font-size:12px;font-weight:700;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.st-ready .rg-dp-st{background:rgba(255,255,255,.12);color:#D5DAE3}
+.st-running .rg-dp-st{background:rgba(255,90,40,.25);color:#FFB07A}
+.st-running .rg-dp-st i{width:7px;height:7px;border-radius:50%;background:#FF6A2B;box-shadow:0 0 8px #FF6A2B;animation:rgDpDot 1s ease-in-out infinite}
+@keyframes rgDpDot{50%{opacity:.35}}
+.rg-dp-name{max-width:100%;font-size:24px;font-weight:800;letter-spacing:-.4px;line-height:1.2;text-shadow:0 2px 12px rgba(0,0,0,.5);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rg-dp-meta{max-width:100%;font-size:13px;color:rgba(255,255,255,.75);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rg-dp-go{position:absolute;right:16px;bottom:16px;display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 14px;border-radius:999px;background:rgba(240,198,97,.95);color:#1A1204;font-size:13px;font-weight:700;transition:transform .2s}
+.rg-dp-card:hover .rg-dp-go{transform:translateX(3px)}
+.rg-dp-dots{display:flex;justify-content:center;gap:6px;margin-top:10px}
+.rg-dp-dots i{width:6px;height:6px;border-radius:3px;background:var(--rg-ring);cursor:pointer;transition:width .25s,background-color .25s}
+.rg-dp-dots i.on{width:18px;background:#F0C661}
+@media (max-width:768px){
+  .rg-dp{margin-bottom:22px}
+  .rg-dp-arr{display:none}
+  .rg-dp-track{gap:10px;margin:0 -16px;padding:2px 16px 4px;scroll-padding:0 16px}
+  .rg-dp-card{flex-basis:86%;aspect-ratio:16/10;border-radius:16px}
+  .rg-dp-track.one .rg-dp-card{flex-basis:100%;aspect-ratio:16/9}
+  .rg-dp-body{left:14px;right:14px;bottom:56px}
+  .rg-dp-name{font-size:20px;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+  .rg-dp-go{left:14px;right:auto;bottom:12px;height:34px}
+}
+@media (prefers-reduced-motion:reduce){.rg-dp,.rg-dp-card,.rg-dp-img,.st-running .rg-dp-st i{animation:none;transition:none}}
 </style>
 </head>
 <body> <header class="header"> <div class="header-inner"> <div style="display:flex;align-items:center;gap:14px;"> <div class="logo" style="cursor:pointer;" onclick="goHome()"><div class="logo-diamond"></div><span class="logo-morph" id="logo-morph" role="img" aria-label="룽잉닷컴"><span class="lm-w" id="lm-a" aria-hidden="true">룽잉닷컴</span><span class="lm-w" id="lm-b" aria-hidden="true"></span></span><svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="lm-melt" x="-30%" y="-60%" width="160%" height="220%"><feColorMatrix in="SourceGraphic" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 255 -140"/></filter></svg></div><span id="app-version" onclick="isMaster && openVersionModal()" style="font-family:'IBM Plex Sans KR',sans-serif;font-size:9px;color:var(--text-muted);letter-spacing:1px;opacity:.7;margin-left:2px;transition:all .15s;">v1.1.005</span> <button class="btn-back" id="btn-back" onclick="goToList()" style="display:none;">← 목록</button> <div class="community-indicator" id="community-indicator" onclick="goToList()" title="커뮤니티 홈" style="cursor:pointer;"> <div class="community-indicator-dot"></div> <span id="community-indicator-name"></span> </div> </div> <div class="stage-indicator hidden" id="stage-indicator"> <div class="stage-pip" id="pip-1"><div class="stage-pip-dot"></div>1. 내전 대기</div> <div class="stage-pip" id="pip-2"><div class="stage-pip-dot"></div>2. 종류 선택</div> <div class="stage-pip" id="pip-3"><div class="stage-pip-dot"></div>3. 팀 짜기</div> <div class="stage-pip" id="pip-4"><div class="stage-pip-dot"></div>4. 대진표</div> <div class="stage-pip" id="pip-5"><div class="stage-pip-dot"></div>5. 결과</div> </div> <div class="header-actions"><button type="button" class="hdr-link" onclick="window.open('/guide','_blank')" title="룽잉닷컴 가이드 페이지"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5V5a2 2 0 0 1 2-2h13v16H6.5a2.5 2.5 0 0 0 0 5H19"/></svg><span>가이드</span></button><button type="button" class="hdr-icon" onclick="openGuide()" aria-label="이용 가이드" title="이용 가이드"><svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.2a2.6 2.6 0 0 1 5 .8c0 1.7-2.5 2.3-2.5 3.8"/><path d="M12 17.2h.01"/></svg></button><div class="hdr-divider" aria-hidden="true"></div><div class="hdr-account" id="hdr-account"><button type="button" class="hdr-account-btn" id="hdr-account-btn" onclick="toggleAccountMenu(event)" aria-haspopup="menu" aria-expanded="false" aria-controls="hdr-account-menu"><span class="hdr-login-text">로그인</span><span class="role-badge user" id="role-badge"><span class="role-dot"></span><span id="role-label">일반 유저</span></span><span class="hdr-msg-dot" id="hdr-msg-dot" aria-hidden="true"></span><svg class="hdr-chev" aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button><div class="hdr-menu" id="hdr-account-menu" role="menu" aria-label="계정 메뉴"><button type="button" role="menuitem" class="hdr-item" id="btn-admin-login" onclick="closeAccountMenu();openLoginModal()"><span class="hdr-item-text"><span class="hdr-item-title">관리자 로그인</span><span class="hdr-item-sub">커뮤니티 내전 생성·관리</span></span></button><button type="button" role="menuitem" class="hdr-item" id="btn-master-login" onclick="closeAccountMenu();openMasterLoginModal()"><span class="hdr-item-text"><span class="hdr-item-title">마스터 로그인</span><span class="hdr-item-sub">전체 커뮤니티 운영</span></span></button><button type="button" role="menuitem" class="hdr-item admin-only" id="btn-msg" onclick="closeAccountMenu();toggleMsgPanel()" style="display:none;"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg><span class="hdr-item-title">메시지</span><span id="msg-badge" style="display:none;">0</span></button><button type="button" role="menuitem" class="hdr-item admin-only" id="btn-blacklist" onclick="closeAccountMenu();openBlacklist()" style="display:none;"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg><span class="hdr-item-title">블랙리스트</span></button><div class="patch-toggle-wrap master-only hdr-toggle" id="patch-toggle-wrap" style="display:none;"><span class="patch-toggle-label" id="patch-toggle-label">패치중</span><label class="patch-toggle"><input type="checkbox" id="patch-toggle-input" onchange="onPatchToggle(this.checked)" aria-label="패치중 모드"><span class="patch-toggle-slider"></span></label></div><div class="hdr-sep admin-only" style="display:none;" aria-hidden="true"></div><button type="button" role="menuitem" class="btn-auth" id="btn-auth" onclick="openLoginModal()" style="display:none;">로그아웃</button></div></div></div>
@@ -3660,9 +3820,9 @@ body:has(#btn-back.visible) #fab-trigger,body:has(#btn-back.visible) #fab-menu{d
     <button id="btn-recruit-write" onclick="openRecruitForm()" style="display:none;padding:3px 8px;background:rgba(200,170,110,.1);border:1px solid rgba(200,170,110,.3);border-radius:2px;color:var(--gold);font-family:'IBM Plex Sans KR',sans-serif;font-size:9px;font-weight:700;letter-spacing:1px;cursor:pointer;">+ 작성</button>
   </div>
   <div id="recruit-list"><div class="rg-sk-row" aria-hidden="true"><span class="rg-sk" style="width:66%"></span><span class="rg-sk" style="width:30px"></span></div><div class="rg-sk-row" aria-hidden="true"><span class="rg-sk" style="width:74%"></span><span class="rg-sk" style="width:30px"></span></div></div>
-</div></div> <div> <div class="community-wrap"> <div class="community-topbar"> <div class="rg-head"><h1 class="community-heading">커뮤니티</h1><p class="rg-sub">소속 커뮤니티를 찾아 내전에 입장하세요.</p></div> <div class="rg-topbar-actions"> <label class="rg-search"> <svg class="rg-search-ico" aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><span class="rg-sr">커뮤니티 검색</span><input id="community-search" type="search" placeholder="커뮤니티 이름으로 검색" oninput="filterCommunityList()" autocomplete="off"> <span onclick="clearCommunitySearch()" id="community-search-clear"
+</div></div> <div> <div class="community-wrap"> <section id="rg-dp" class="rg-dp" hidden aria-label="지금 열린 멸망전"></section> <div class="community-topbar"> <div class="rg-head"><h1 class="community-heading">커뮤니티</h1><p class="rg-sub">소속 커뮤니티를 찾아 내전에 입장하세요.</p></div> <div class="rg-topbar-actions"> <label class="rg-search"> <svg class="rg-search-ico" aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><span class="rg-sr">커뮤니티 검색</span><input id="community-search" type="search" placeholder="커뮤니티 이름으로 검색" oninput="filterCommunityList()" autocomplete="off"> <span onclick="clearCommunitySearch()" id="community-search-clear"
  style="position:absolute;right:8px;top:50%;transform:translateY(-50%);
- color:var(--text-muted);cursor:pointer;font-size:12px;display:none;" role="button" aria-label="검색어 지우기">✕</span> </label> <div style="display:flex;gap:8px;" id="master-actions"> <button class="btn-secondary" onclick="openInviteManageModal()" id="btn-invite-manage" style="display:none;">초대 링크 관리</button> <button class="btn-primary" onclick="openCommunityCreateModal()" id="btn-community-create" style="display:none;">+ 커뮤니티 생성</button> </div> <button class="btn-secondary rg-apply-btn" onclick="openApplyModal()"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg><span>커뮤니티 신청</span></button> </div> </div> <div class="community-grid" id="community-grid"><div class="rg-sk-card" aria-hidden="true"><div class="rg-sk rg-sk-banner"></div><div class="rg-sk-body"><span class="rg-sk" style="width:58%;height:14px"></span><span class="rg-sk" style="width:84%"></span></div></div><div class="rg-sk-card" aria-hidden="true"><div class="rg-sk rg-sk-banner"></div><div class="rg-sk-body"><span class="rg-sk" style="width:58%;height:14px"></span><span class="rg-sk" style="width:84%"></span></div></div><div class="rg-sk-card" aria-hidden="true"><div class="rg-sk rg-sk-banner"></div><div class="rg-sk-body"><span class="rg-sk" style="width:58%;height:14px"></span><span class="rg-sk" style="width:84%"></span></div></div><div class="rg-sk-card" aria-hidden="true"><div class="rg-sk rg-sk-banner"></div><div class="rg-sk-body"><span class="rg-sk" style="width:58%;height:14px"></span><span class="rg-sk" style="width:84%"></span></div></div><div class="rg-sk-card" aria-hidden="true"><div class="rg-sk rg-sk-banner"></div><div class="rg-sk-body"><span class="rg-sk" style="width:58%;height:14px"></span><span class="rg-sk" style="width:84%"></span></div></div><div class="rg-sk-card" aria-hidden="true"><div class="rg-sk rg-sk-banner"></div><div class="rg-sk-body"><span class="rg-sk" style="width:58%;height:14px"></span><span class="rg-sk" style="width:84%"></span></div></div></div>
+ color:var(--text-muted);cursor:pointer;font-size:12px;display:none;" role="button" aria-label="검색어 지우기">✕</span> </label> <div style="display:flex;gap:8px;" id="master-actions"> <button class="btn-secondary" onclick="openInviteManageModal()" id="btn-invite-manage" style="display:none;">초대 링크 관리</button> <button class="btn-primary" onclick="openCommunityCreateModal()" id="btn-community-create" style="display:none;">+ 커뮤니티 생성</button> </div> <button class="btn-secondary rg-apply-btn" onclick="openApplyModal()"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg><span>커뮤니티 신청</span></button> </div> </div> <div id="rg-dc-bar" class="rg-dc-bar" style="display:none;"></div><div class="community-grid" id="community-grid"><div class="rg-sk-card" aria-hidden="true"><div class="rg-sk rg-sk-banner"></div><div class="rg-sk-body"><span class="rg-sk" style="width:58%;height:14px"></span><span class="rg-sk" style="width:84%"></span></div></div><div class="rg-sk-card" aria-hidden="true"><div class="rg-sk rg-sk-banner"></div><div class="rg-sk-body"><span class="rg-sk" style="width:58%;height:14px"></span><span class="rg-sk" style="width:84%"></span></div></div><div class="rg-sk-card" aria-hidden="true"><div class="rg-sk rg-sk-banner"></div><div class="rg-sk-body"><span class="rg-sk" style="width:58%;height:14px"></span><span class="rg-sk" style="width:84%"></span></div></div><div class="rg-sk-card" aria-hidden="true"><div class="rg-sk rg-sk-banner"></div><div class="rg-sk-body"><span class="rg-sk" style="width:58%;height:14px"></span><span class="rg-sk" style="width:84%"></span></div></div><div class="rg-sk-card" aria-hidden="true"><div class="rg-sk rg-sk-banner"></div><div class="rg-sk-body"><span class="rg-sk" style="width:58%;height:14px"></span><span class="rg-sk" style="width:84%"></span></div></div><div class="rg-sk-card" aria-hidden="true"><div class="rg-sk rg-sk-banner"></div><div class="rg-sk-body"><span class="rg-sk" style="width:58%;height:14px"></span><span class="rg-sk" style="width:84%"></span></div></div></div>
 <div id="community-show-more" class="community-show-more" style="display:none;">
   <button class="community-show-more-btn" id="community-show-more-btn" onclick="toggleCommunityExpand()">▼ 더보기</button>
 </div>
@@ -7063,13 +7223,13 @@ const _ratingVal = (function() {
   if (!r) return '<span class="member-score-unranked">배치중</span>';
   return '<span class="member-score-val" style="color:var(--gold);">⭐ ' + Math.round(r.current) + '</span>';
 })();
-// 레이팅 배치중(커뮤니티 레이팅 없음) → 관리자가 입력 티어를 확인할 수 있게 딥롤 바로가기 배지
+// 레이팅 배치중(커뮤니티 레이팅 없음) → 관리자가 입력 티어를 확인할 수 있게 포우(fow.lol) 바로가기 배지
 const _placingBadge = (function() {
   var _key = (m.name || '').toLowerCase() + '#' + (m.tag || '').toLowerCase();
   var _dpId = _communityPuuMap[_key];
   if (_dpId && _communityRatings[_dpId]) return '';
-  var url = 'https://www.deeplol.gg/summoner/kr/' + encodeURIComponent(m.name || '') + '-' + encodeURIComponent(m.tag || '');
-  return '<a class="placing-badge" href="' + url + '" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="레이팅 배치중인 유저예요. 눌러서 딥롤에서 입력한 티어가 맞는지 확인하세요">🔎 배치중 · 티어 확인<span class="pb-arrow">↗</span></a>';
+  var url = 'https://www.fow.lol/find/kr/' + encodeURIComponent(m.name || '') + '-' + encodeURIComponent(m.tag || 'KR1');
+  return '<a class="placing-badge" href="' + url + '" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="레이팅 배치중인 유저예요. 눌러서 포우에서 입력한 티어가 맞는지 확인하세요">🔎 배치중 · 티어 확인<span class="pb-arrow">↗</span></a>';
 })();
 const _scoreRow = `<div style="display:flex;align-items:center;gap:6px;margin-top:5px;padding-top:5px;border-top:1px solid rgba(255,255,255,.06);flex-wrap:nowrap;">
     <span style="font-family:'IBM Plex Sans KR',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;color:var(--text-muted);">레이팅</span>${_ratingVal}
@@ -7520,21 +7680,43 @@ ctx.closePath();
 }
 
 // 4단계 진입 시 팀 정보를 커뮤니티의 '디스코드 내전 기록 채널'에 룽잉봇이 올림 (다시 들어오면 같은 메시지를 수정)
-function _postTeamInfoToDiscord() {
-  try {
-    var cid = window._currentCommunityId || (match && match.communityId);
-    if (!cid || !match || !match.id) return;
-    // 라인고정 내전은 라인별 포맷, 그 외는 일반 포맷 (서버가 디스코드용으로 꾸며서 올림)
-    var data = _teamPostData();
-    fetch(RIOT_PROXY_URL + '/match-team-post', {
+// 관리자 로그인 세션(8시간)이 끝나 있으면 서버가 거절(403)해서, 저장된 로그인으로 다시 로그인한 뒤 한 번 더 보내요
+// (긴 내전은 진행 중에 세션이 끝나서 팀 정보가 안 올라가던 문제) · 결과는 진단 로그(diag_logs)에도 남겨요
+async function _postTeamInfoToDiscord() {
+  var cid = window._currentCommunityId || (match && match.communityId);
+  if (!cid || !match || !match.id) { try { _diag('team-post-skip', '팀 정보 전송: 커뮤니티 · 내전 정보 없음'); } catch (e) {} return; }
+  var data;
+  try { data = _teamPostData(); }   // 라인고정 내전은 라인별 포맷, 그 외는 일반 포맷 (서버가 디스코드용으로 꾸며서 올림)
+  catch (e) {
+    console.warn('[team-post]', e.message);
+    try { _diag('team-post-error', '팀 정보 만들기 오류: ' + e.message, { mt: matchType }); } catch (e2) {}
+    toast('디스코드 팀 정보 전송 오류: ' + e.message, 'err'); return;
+  }
+  var send = async function () {
+    var res = await fetch(RIOT_PROXY_URL + '/match-team-post', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ cid: cid, matchId: match.id, data: data, token: _sessionToken }),
-    }).then(function (r) { return r.json(); }).then(function (r) {
-      if (!r || r.skipped) return;
-      if (r.ok) toast(r.edited ? '디스코드 팀 정보 메시지를 수정했습니다' : '디스코드 기록 채널에 팀 정보를 올렸습니다', 'ok');
-      else toast('디스코드 팀 정보 전송 실패: ' + (r.error || ''), 'err');
-    }).catch(function () {});
-  } catch (e) { console.warn('[team-post]', e.message); }
+    });
+    var j = null; try { j = await res.json(); } catch (e) {}
+    return { status: res.status, j: j || {} };
+  };
+  try {
+    var r = await send();
+    if (r.status === 403 && await _tryRelogin()) r = await send();
+    var j = r.j;
+    var info = { status: r.status, mt: matchType, lane: !!data.lane, teams: (data.teams || []).length };
+    if (j.skipped) { _diag('team-post-skip', '팀 정보 전송 건너뜀: ' + j.skipped, info); return; }
+    if (j.ok) {
+      if (j.error) _diag('team-post-partial', '팀 정보 일부만 전송: ' + j.error, info);
+      toast(j.edited ? '디스코드 팀 정보 메시지를 수정했습니다' : '디스코드 기록 채널에 팀 정보를 올렸습니다', 'ok');
+    } else {
+      _diag('team-post-fail', '팀 정보 전송 실패: ' + (j.error || ('HTTP ' + r.status)), info);
+      toast('디스코드 팀 정보 전송 실패: ' + (j.error || ('HTTP ' + r.status)), 'err');
+    }
+  } catch (e) {
+    try { _diag('team-post-fail', '팀 정보 전송 오류: ' + e.message, { mt: matchType }); } catch (e2) {}
+    toast('디스코드 팀 정보 전송 오류: ' + e.message, 'err');
+  }
 }
 // 디스코드 팀 정보 메시지용 데이터 (팀 정보 복사와 같은 정보: 1단계 등록 티어 · 주/부라인 · 라인고정 슬롯)
 function _teamPostData() {
@@ -7547,9 +7729,10 @@ function _teamPostData() {
     return { name: m.name || '?', tag: m.tag || '', tier: _teamCopyTierText(m), tk: tierKey(m), main: POS_KO[m.mainLane] || m.mainLane || '—', sub: _teamCopySubLanes(m), cap: capId != null && m.id === capId };
   };
   var out = { name: match.name || '내전', admin: match.admin || '', type: typeLabel, lane: false, teams: [] };
-  if (matchType === 'lane' && Array.isArray(laneTeams) && laneTeams.length) {
+  var _lt = (Array.isArray(laneTeams) ? laneTeams : Object.values(laneTeams || {})).filter(function (t) { return t && t.slots; });
+  if (matchType === 'lane' && _lt.length) {
     out.lane = true;
-    laneTeams.forEach(function (t, ti) {
+    _lt.forEach(function (t, ti) {
       var tName = String(t.name || '').trim();
       if (!tName || tName === '팀') tName = '팀 ' + (ti + 1);
       out.teams.push({ name: tName, slots: ['top','jg','mid','bot','sup'].map(function (sl) {
@@ -7558,7 +7741,7 @@ function _teamPostData() {
       }) });
     });
   } else {
-    [].concat(teams).sort(function (a, b) { return a.id - b.id; }).forEach(function (t, ti) {
+    [].concat(teams).filter(Boolean).sort(function (a, b) { return a.id - b.id; }).forEach(function (t, ti) {
       var mem = Array.isArray(t.members) ? t.members : Object.values(t.members || {});
       // 팀장이 있으면 '팀장명 팀' (getTeamName), 없으면 기존처럼 N팀
       var _tn = t.captainId ? getTeamName(t) : '';
@@ -12341,6 +12524,103 @@ renderCommunityList();
   await loadPatchNotes();
 })();
 }
+// ══ 메인 디스코드 로그인 (소속 커뮤니티 전적 바로가기) ══
+//   로그인 정보는 멸망전 페이지와 같은 곳(localStorage doom_discord)에 둬서 한 번 로그인하면 같이 써요
+//   앱(PWA)을 열 때마다 서버가 로그인 토큰을 30일 새로 늘려 줘서, 계속 쓰면 로그인이 풀리지 않아요
+var _dcMine = null;   // 소속 커뮤니티 id 목록 (null = 아직 모름)
+function _dcGet() { try { var v = JSON.parse(localStorage.getItem('doom_discord') || 'null'); return v && v.dtoken ? v : null; } catch (e) { return null; } }
+function _dcSet(v) { try { if (v) localStorage.setItem('doom_discord', JSON.stringify(v)); else localStorage.removeItem('doom_discord'); } catch (e) {} }
+function _dcIsMine(cid) { return !!(_dcMine && _dcGet() && _dcMine.indexOf(cid) >= 0); }
+function _dcNonce() { var a = new Uint8Array(24); crypto.getRandomValues(a); return Array.from(a, function (b) { return ('0' + b.toString(16)).slice(-2); }).join(''); }
+async function dcMainLogin() {
+  var btn = document.getElementById('rg-dc-login'); if (btn) btn.disabled = true;
+  try {
+    var n = _dcNonce();
+    var r = await fetch(RIOT_PROXY_URL + '/discord-oauth-url', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ communityId: null, puuId: null, redirectUri: location.origin + '/', nonce: n }) });
+    var j = await r.json();
+    if (!j.ok || !j.url) throw new Error(j.error || '로그인 주소를 만들지 못했어요');
+    try { localStorage.setItem('rg_dc_login_pending', JSON.stringify({ n: n, ts: Date.now() })); } catch (e) {}
+    location.href = j.url;
+  } catch (e) { if (btn) btn.disabled = false; toast('디스코드 로그인 오류: ' + e.message, 'err'); }
+}
+function dcMainLogout() {
+  if (!confirm('디스코드 로그아웃할까요?')) return;
+  _dcSet(null); _dcMine = null; _dcRenderBar(); renderCommunityGrid(_allCommunities);
+}
+async function _dcRefreshMine() {
+  var d = _dcGet();
+  if (!d) { _dcMine = null; _dcRenderBar(); return; }
+  _dcRenderBar();
+  try {
+    var r = await fetch(RIOT_PROXY_URL + '/my-communities', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dtoken: d.dtoken, cids: (_allCommunities || []).map(function (c) { return c.id; }) }) });
+    var j = await r.json();
+    if (j.expired) { _dcSet(null); _dcMine = null; _dcRenderBar(); renderCommunityGrid(_allCommunities); toast('디스코드 로그인이 만료됐어요. 다시 로그인해 주세요', 'err'); return; }
+    if (!j.ok) return;
+    if (j.dtoken) _dcSet({ dtoken: j.dtoken, user: d.user || j.user });   // 로그인 30일 연장
+    _dcMine = j.cids || [];
+    _dcRenderBar(); renderCommunityGrid(_allCommunities);
+  } catch (e) {}
+}
+function _dcRenderBar() {
+  var el = document.getElementById('rg-dc-bar'); if (!el) return;
+  var d = _dcGet();
+  var DC = '<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M19.6 5.2A17 17 0 0 0 15.4 4l-.5 1.1a15.6 15.6 0 0 0-5.8 0L8.6 4a17 17 0 0 0-4.2 1.3C1.7 9.3 1 13.2 1.3 17a17.2 17.2 0 0 0 5.2 2.6l1.1-1.8a11 11 0 0 1-1.7-.8l.4-.3a12.2 12.2 0 0 0 10.4 0l.4.3c-.5.3-1.1.6-1.7.8l1.1 1.8a17.1 17.1 0 0 0 5.2-2.6c.4-4.4-.7-8.3-3.1-11.8zM8.5 14.7c-1 0-1.9-1-1.9-2.1s.8-2.1 1.9-2.1 1.9 1 1.9 2.1-.8 2.1-1.9 2.1zm7 0c-1 0-1.9-1-1.9-2.1s.8-2.1 1.9-2.1 1.9 1 1.9 2.1-.8 2.1-1.9 2.1z"/></svg>';
+  el.style.display = '';
+  if (!d) {
+    el.className = 'rg-dc-bar';
+    el.innerHTML = '<div class="rg-dc-ico">' + DC + '</div><div class="rg-dc-txt"><b>디스코드로 로그인해 보세요</b><span>내가 등록된 커뮤니티의 전적 페이지로 바로 갈 수 있어요</span></div>' +
+      '<button type="button" class="rg-dc-btn" id="rg-dc-login" onclick="dcMainLogin()">' + DC + '<span>디스코드 로그인</span></button>';
+    return;
+  }
+  var u = d.user || {}, nm = u.displayName || u.username || '디스코드 사용자';
+  var n = _dcMine ? _dcMine.length : null;
+  el.className = 'rg-dc-bar on';
+  el.innerHTML = (u.avatar ? '<img class="rg-dc-av" src="' + _escHtml(u.avatar) + '" alt="">' : '<div class="rg-dc-ico">' + DC + '</div>') +
+    '<div class="rg-dc-txt"><b>' + _escHtml(nm) + ' 님</b><span>' + (n == null ? '내 커뮤니티를 확인하는 중…' : n ? '등록된 커뮤니티 ' + n + '곳 · 카드를 누르면 전적 페이지로 가요' : '아직 등록된 커뮤니티가 없어요 · 디스코드에서 /룽봇 소환사등록') + '</span></div>' +
+    '<button type="button" class="rg-dc-out" onclick="dcMainLogout()">로그아웃</button>';
+}
+// 앱에서 시작한 로그인이 다른 창에서 끝났으면 받아 와요 (앱으로 돌아올 때 · 열려 있는 동안 몇 초마다)
+var _dcPollT = null;
+async function _dcPollRelay() {
+  var p = null; try { p = JSON.parse(localStorage.getItem('rg_dc_login_pending') || 'null'); } catch (e) {}
+  if (!p || !p.n) return;
+  if (Date.now() - (p.ts || 0) > 15 * 60 * 1000) { try { localStorage.removeItem('rg_dc_login_pending'); } catch (e) {} return; }
+  try {
+    var r = await fetch(RIOT_PROXY_URL + '/discord-login-relay', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nonce: p.n }) });
+    var j = await r.json();
+    if (j.pending) return;
+    try { localStorage.removeItem('rg_dc_login_pending'); } catch (e) {}
+    if (j.ok && j.dtoken) { _dcSet({ dtoken: j.dtoken, user: j.user }); toast(((j.user && (j.user.displayName || j.user.username)) || '') + ' 님, 디스코드로 로그인했어요'); _dcRefreshMine(); }
+    else if (j.error) toast(j.error, 'err');
+  } catch (e) {}
+}
+function _dcStartPoll() {
+  clearInterval(_dcPollT);
+  _dcPollT = setInterval(function () {
+    var p = null; try { p = localStorage.getItem('rg_dc_login_pending'); } catch (e) {}
+    if (!p) { clearInterval(_dcPollT); return; }
+    if (!document.hidden) _dcPollRelay();
+  }, 3000);
+}
+document.addEventListener('visibilitychange', function () { if (!document.hidden) { _dcPollRelay(); _dcStartPoll(); } });
+window.addEventListener('focus', function () { _dcPollRelay(); });
+(function () {
+  var after = function () {
+    if (window.__rgDcLanding) {
+      window.__rgDcLanding.then(function (res) {
+        if (res && res.ok) {
+          if (res.same) toast(((res.user && (res.user.displayName || res.user.username)) || '') + ' 님, 디스코드로 로그인했어요');
+          else toast('로그인했어요! 룽잉닷컴 앱으로 돌아가면 로그인돼 있어요');
+          _dcRefreshMine();
+        } else if (res && !res.cancel) toast('디스코드 로그인 실패: ' + (res.error || ''), 'err');
+      });
+    } else { _dcPollRelay(); _dcStartPoll(); }
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', after); else after();
+})();
+
 function enterCommunity(community) {
 // 일반 관리자는 자신의 커뮤니티만 진입 가능
 if (isAdmin && !isMaster && currentAdminData?.communityId && currentAdminData.communityId !== community.id) {
@@ -12398,6 +12678,7 @@ communities = await window._fb.fbGetCommunities();
 }
 _allCommunities = communities;
 renderCommunityGrid(communities);
+_dcRefreshMine();
 // 패치노트 로드 (비동기 - 화면 렌더링과 병렬)
 if (typeof loadDDVersion === 'function' && typeof loadPatchNotes === 'function') {
   loadDDVersion().then(loadPatchNotes);
@@ -13147,6 +13428,139 @@ async function _applyDeeplolBanner(communityId, serverId) {
   }
 }
 
+// ── 모바일 커뮤니티 카드: 커버플로(가운데 카드가 정면, 양옆은 3D로 기울어짐) ──
+function _rgCfMobile() { return !!(window.matchMedia && window.matchMedia('(max-width:768px)').matches); }
+function _rgCfLeftOf(grid, el) { return el.offsetLeft + el.offsetWidth / 2 - grid.clientWidth / 2; }
+// 부드럽게 미끄러지듯 멈추기 (처음엔 빠르고 끝에서 천천히)
+function _rgCfAnim(grid, to, dur) {
+  cancelAnimationFrame(grid._cfRaf);
+  var max = grid.scrollWidth - grid.clientWidth, from = grid.scrollLeft, t0 = 0;
+  to = Math.max(0, Math.min(max, to));
+  if (Math.abs(to - from) < 1) { grid.scrollLeft = to; return; }
+  dur = dur || 420;
+  var step = function (now) {
+    if (!t0) t0 = now;
+    var p = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - p, 4);
+    grid.scrollLeft = from + (to - from) * e;
+    if (p < 1) grid._cfRaf = requestAnimationFrame(step);
+  };
+  grid._cfRaf = requestAnimationFrame(step);
+}
+function _rgCfGo(grid, el, smooth) {
+  if (smooth === false) { cancelAnimationFrame(grid._cfRaf); grid.scrollLeft = _rgCfLeftOf(grid, el); return; }
+  _rgCfAnim(grid, _rgCfLeftOf(grid, el), 460);
+}
+// 손가락으로 넘기기: 손가락을 그대로 따라오고, 놓으면 던진 속도만큼 살짝 더 미끄러진 뒤 가장 가까운 카드에 멈춰요
+function _rgCfDrag(grid) {
+  var st = null;
+  var cardsOf = function () { return [].slice.call(grid.querySelectorAll('.community-card')); };
+  var settle = function (v) {
+    var cards = cardsOf(); if (!cards.length) return;
+    var w = cards[0].offsetWidth || 1, cur = grid.scrollLeft;
+    var proj = cur - v * 260;                       // 던진 속도(px/ms) × 0.26초 만큼 더 가요 (아주 살짝)
+    var best = 0, bd = 1e9;
+    cards.forEach(function (el, i) { var d = Math.abs(_rgCfLeftOf(grid, el) - proj); if (d < bd) { bd = d; best = i; } });
+    // 살짝만 밀어도 던진 방향으로 한 장은 넘어가게
+    var nowIdx = 0, nd = 1e9;
+    cards.forEach(function (el, i) { var d = Math.abs(_rgCfLeftOf(grid, el) - cur); if (d < nd) { nd = d; nowIdx = i; } });
+    if (best === nowIdx && Math.abs(v) > 0.25) best = Math.max(0, Math.min(cards.length - 1, nowIdx + (v < 0 ? 1 : -1)));
+    var to = _rgCfLeftOf(grid, cards[best]), dist = Math.abs(to - cur);
+    _rgCfAnim(grid, to, Math.max(320, Math.min(720, 300 + dist * 0.55)));
+  };
+  grid.addEventListener('pointerdown', function (e) {
+    if (!grid.classList.contains('rg-cf') || (e.pointerType === 'mouse' && e.button !== 0)) return;
+    cancelAnimationFrame(grid._cfRaf);
+    st = { id: e.pointerId, x: e.clientX, y: e.clientY, left: grid.scrollLeft, moved: false, pts: [{ t: e.timeStamp, x: e.clientX }] };
+  });
+  grid.addEventListener('pointermove', function (e) {
+    if (!st || e.pointerId !== st.id) return;
+    var dx = e.clientX - st.x;
+    if (!st.moved) {
+      if (Math.abs(dx) < 6) return;
+      if (Math.abs(e.clientY - st.y) > Math.abs(dx)) { st = null; return; }   // 세로로 미는 건 페이지 스크롤
+      st.moved = true; st.x = e.clientX; st.left = grid.scrollLeft; dx = 0;
+      try { grid.setPointerCapture(e.pointerId); } catch (er) {}
+    }
+    grid.scrollLeft = st.left - dx;
+    st.pts.push({ t: e.timeStamp, x: e.clientX });
+    while (st.pts.length > 2 && e.timeStamp - st.pts[0].t > 90) st.pts.shift();
+  });
+  var end = function (e, cancel) {
+    if (!st || e.pointerId !== st.id) return;
+    var s0 = st; st = null;
+    if (!s0.moved) return;
+    grid._cfDragged = Date.now();
+    var a = s0.pts[0], b = s0.pts[s0.pts.length - 1], dt = Math.max(1, b.t - a.t);
+    var v = (e.timeStamp - b.t > 80 || cancel) ? 0 : (b.x - a.x) / dt;   // 멈췄다 놓으면 속도 0
+    settle(Math.max(-3, Math.min(3, v)));
+  };
+  grid.addEventListener('pointerup', function (e) { end(e, false); });
+  grid.addEventListener('pointercancel', function (e) { end(e, true); });
+}
+function _rgCfSetup(grid, on) {
+  var ind = document.getElementById('rg-cf-ind');
+  if (!on) {
+    grid.classList.remove('rg-cf'); grid.onscroll = null; grid._cfUpd = null;
+    if (ind) ind.remove();
+    grid.querySelectorAll('.community-card').forEach(function (el) { el.style.removeProperty('transform'); el.style.zIndex = ''; el.style.opacity = ''; });
+    return;
+  }
+  grid.classList.add('rg-cf');
+  // 스크롤에 맞춰 움직이는 애니메이션(scroll-driven)을 지원하면 CSS가 화면 스크롤과 같은 프레임에 바로 그려서 떨림이 없어요
+  // 지원하지 않는 브라우저만 스크립트로 계산해요
+  var cssMode = !!(window.CSS && CSS.supports && CSS.supports('animation-timeline: view()'));
+  grid.classList.toggle('cf-css', cssMode);
+  var cards = [].slice.call(grid.querySelectorAll('.community-card'));
+  if (!ind) { ind = document.createElement('div'); ind.id = 'rg-cf-ind'; ind.className = 'rg-cf-ind'; grid.parentNode.insertBefore(ind, grid.nextSibling); }
+  ind.style.display = cards.length > 1 ? '' : 'none';
+  ind.onclick = function (e) { var d = e.target.closest('[data-i]'); if (d && cards[+d.dataset.i]) _rgCfGo(grid, cards[+d.dataset.i]); };
+  var raf = 0, last = -1;
+  var upd = function () {
+    raf = 0;
+    var mid = grid.scrollLeft + grid.clientWidth / 2, best = 0, bd = 1e9;
+    cards.forEach(function (el, i) {
+      var w = el.offsetWidth || 1, o = (el.offsetLeft + w / 2 - mid) / w, a = Math.min(Math.abs(o), 3), sg = o < 0 ? -1 : 1, r = Math.min(a, 1);
+      el._cfOff = o;
+      if (a < bd) { bd = a; best = i; }
+      if (cssMode) return;
+      el.style.setProperty('transform', 'translateX(' + (-sg * Math.min(a, 2.4) * w * 0.3).toFixed(1) + 'px) rotateY(' + (-sg * r * 40).toFixed(1) + 'deg) scale(' + (1 - Math.min(a, 2) * 0.12).toFixed(3) + ')', 'important');
+      el.style.zIndex = String(100 - Math.round(a * 10));
+      el.style.opacity = String(Math.max(0, Math.min(1, 1 - Math.min(a, 1.5) * 0.22 - Math.max(0, a - 1.5) * 0.7)).toFixed(2));
+    });
+    if (best !== last) {
+      cards.forEach(function (el, i) { el.classList.toggle('cf-on', i === best); });
+      last = best;
+      ind.innerHTML = (cards.length <= 12 ? cards.map(function (c, i) { return '<i data-i="' + i + '" class="' + (i === best ? 'on' : '') + '"></i>'; }).join('') : '') + '<span>' + (best + 1) + ' / ' + cards.length + '</span>';
+    }
+  };
+  grid._cfUpd = upd;
+  grid.onscroll = function () { if (!raf) raf = requestAnimationFrame(upd); };
+  // 옆 카드를 누르면 들어가지 않고 가운데로 가져와요 (캡처 단계에서 먼저 받아서 카드 안 버튼도 막아요)
+  if (!grid._cfTap) {
+    grid._cfTap = true;
+    grid.addEventListener('click', function (e) {
+      if (!grid.classList.contains('rg-cf')) return;
+      if (grid._cfDragged && Date.now() - grid._cfDragged < 400) { e.preventDefault(); e.stopPropagation(); return; }   // 넘기다 손을 뗀 건 클릭 아님
+      var cd = e.target.closest('.community-card');
+      if (cd && Math.abs(cd._cfOff || 0) > 0.35) { e.preventDefault(); e.stopPropagation(); _rgCfGo(grid, cd); }
+    }, true);
+    _rgCfDrag(grid);
+  }
+  grid.scrollLeft = 0;
+  upd();
+  requestAnimationFrame(upd);
+}
+(function () {
+  if (!window.matchMedia) return;
+  var mq = window.matchMedia('(max-width:768px)'), prev = mq.matches;
+  var re = function () {
+    var g = document.getElementById('community-grid'); if (!g) return;
+    if (mq.matches !== prev) { prev = mq.matches; if (g._rgList) renderCommunityGrid(g._rgList); }
+    else if (g._cfUpd) g._cfUpd();
+  };
+  window.addEventListener('resize', re);
+})();
+
 function renderCommunityGrid(communities) {
   const grid   = document.getElementById('community-grid');
   const empty  = document.getElementById('community-empty');
@@ -13155,8 +13569,15 @@ function renderCommunityGrid(communities) {
   if (!grid) return;
   grid.innerHTML = '';
 
-  const sorted = _sortCommunities(communities);
-  const showAll = _communityExpanded;
+  let sorted = _sortCommunities(communities);
+  // 모바일: 커버플로 카드 넘기기 · 디스코드 로그인했으면 내가 들어갈 수 있는 커뮤니티를 맨 앞에
+  const _cfOn = _rgCfMobile();
+  grid._rgList = communities;
+  if (_cfOn && _dcGet()) {
+    const _canGo = c => isMaster || (isAdmin && currentAdminData?.communityId === c.id) || (_dcIsMine(c.id) && !!c.deeplolServerId);
+    sorted = sorted.filter(_canGo).concat(sorted.filter(c => !_canGo(c)));
+  }
+  const showAll = _communityExpanded || _cfOn;
   const visible = showAll ? sorted : sorted.slice(0, COMMUNITY_DEFAULT_COUNT);
 
   if (sorted.length === 0) {
@@ -13183,7 +13604,10 @@ function renderCommunityGrid(communities) {
   visible.forEach(c => {
     const isMyCommunity = isAdmin && !isMaster && currentAdminData?.communityId === c.id;
     const canManage = isMaster || isMyCommunity;
-    const canEnter = isAdmin || isMaster; // 관리자/마스터만 입장 가능
+    const isCardAdmin = isMaster || isMyCommunity;
+    // 디스코드 로그인 + 이 커뮤니티에 등록된 유저면 전적 페이지로 갈 수 있어요 (전적 페이지가 있는 커뮤니티만)
+    const isMemberStats = !isCardAdmin && _dcIsMine(c.id) && !!c.deeplolServerId;
+    const canEnter = isAdmin || isMaster || isMemberStats; // 관리자/마스터: 내전 목록 · 소속 유저: 전적
     const card = document.createElement('div');
     card.className = 'community-card';
     card.dataset.cid = c.id;
@@ -13216,7 +13640,7 @@ function renderCommunityGrid(communities) {
           (c.description ? '<div class="community-card-desc">' + c.description + '</div>' : '') +
         '</div>' +
         (canEnter
-          ? '<button class="btn-xs enter rg-go" data-cid="' + c.id + '" aria-label="' + _escHtml(c.name || '') + ' 입장"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>'
+          ? '<button class="btn-xs enter rg-go" data-cid="' + c.id + '" aria-label="' + _escHtml(c.name || '') + (isMemberStats ? ' 전적 보기' : ' 입장') + '"' + (isMemberStats ? ' title="전적 페이지로 이동"' : '') + '><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>'
           : '<span class="rg-lock" title="관리자 전용" aria-label="관리자 전용" role="img"><svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>') +
       '</div>' +
       (_rgActions ? '<div class="community-card-footer"><span class="community-card-meta" style="display:none;">' + c.id + '</span><div class="community-card-actions">' + _rgActions + '</div></div>' : '');
@@ -13244,12 +13668,21 @@ function renderCommunityGrid(communities) {
     }
   });
 
+  if (_cfOn && moreWrap) moreWrap.style.display = 'none';
+  _rgCfSetup(grid, _cfOn);
   // 이벤트 위임 - 케밥 메뉴는 body에 붙으므로 document에서 처리
   grid.onclick = function(e) {
     const enter = e.target.closest('.btn-xs.enter');
     const card  = e.target.closest('.community-card');
-    if (enter) { e.stopPropagation(); closeAllKebabMenus(); const _c = _allCommunities.find(x=>x.id===enter.dataset.cid); if(_c) enterCommunity(_c); return; }
-    if (card && (isAdmin || isMaster)) { closeAllKebabMenus(); const _c = _allCommunities.find(x=>x.id===card.dataset.cid); if(_c) enterCommunity(_c); }  // enterCommunity 내부에서 권한 체크
+    const _cid = enter ? enter.dataset.cid : (card ? card.dataset.cid : null);
+    if (!_cid) return;
+    if (enter) e.stopPropagation();
+    closeAllKebabMenus();
+    const _c = _allCommunities.find(x=>x.id===_cid); if (!_c) return;
+    const _isCardAdmin = isMaster || (isAdmin && currentAdminData?.communityId === _c.id);
+    if (_isCardAdmin) { enterCommunity(_c); return; }   // 관리자: 지금처럼 내전 목록
+    if (_dcIsMine(_c.id) && _c.deeplolServerId) { location.href = 'stats.html?server_id=' + encodeURIComponent(_c.deeplolServerId) + '&cid=' + encodeURIComponent(_c.id); return; }   // 소속 유저: 전적 페이지
+    if (isAdmin) enterCommunity(_c);  // enterCommunity 내부에서 권한 체크
   };
   // 케밥 메뉴 아이템은 document 레벨에서 처리 (body에 붙어있으므로)
   if (!document._kebabHandlerAttached) {
@@ -25898,6 +26331,11 @@ async function showPatchPopup(e, type, idx) {
   cancelHidePatchPopup();
   var popup = document.getElementById('patch-popup');
   if (!popup) return;
+  // 이미 그 카드가 열려 있으면(마우스 진입 · focus 가 또 와도) 그대로 둬요 — 다시 누르면 닫히게
+  if (_patchOpenKey === type + ':' + idx && popup.style.display !== 'none') return;
+  var _tok = ++_patchTok;
+  var _tgt = (e && (e.currentTarget || e.target)) || null;
+  _patchOpenKey = type + ':' + idx; _patchShownAt = Date.now(); _patchY0 = window.scrollY;
   var data = _patchVersion && _patchData[_patchVersion];
   // 정렬된 배열 참조 (renderPatchList에서 저장)
   var sorted = type === 'champion' ? window._sortedPatchChamps : window._sortedPatchItems;
@@ -25908,6 +26346,7 @@ async function showPatchPopup(e, type, idx) {
   // 챔피언 스킬 이미지 미리 로드
   if (type === 'champion' && item.champId) {
     await loadChampSkills(item.champId);
+    if (_tok !== _patchTok) return;   // 불러오는 사이에 닫혔거나 다른 카드를 눌렀으면 그리지 않아요
   }
 
   var cfg = PATCH_TYPE_CFG[item.type] || PATCH_TYPE_CFG.adjust;
@@ -25963,7 +26402,7 @@ async function showPatchPopup(e, type, idx) {
 
   popup.innerHTML = html;
   popup.style.display = 'block';
-  positionPatchPopup(e, popup);
+  positionPatchPopup({ currentTarget: _tgt }, popup);
 }
 
 function positionPatchPopup(e, popup) {
@@ -25983,12 +26422,57 @@ function positionPatchPopup(e, popup) {
 }
 
 var _patchPopupHideTimer = null;
+var _patchTok = 0, _patchOpenKey = null, _patchShownAt = 0, _patchY0 = 0, _patchInnerScroll = false;
 function hidePatchPopup() {
-  _patchPopupHideTimer = setTimeout(function() {
-    var popup = document.getElementById('patch-popup');
-    if (popup) popup.style.display = 'none';
-  }, 100);
+  // 터치 화면은 손을 뗄 때 마우스가 떠난 것처럼 신호가 올 수 있어서, 터치일 때는 그 신호로 닫지 않아요
+  var ev = window.event;
+  if (ev && ev.type === 'mouseleave' && _patchTouch) return;
+  _patchPopupHideTimer = setTimeout(hidePatchPopupNow, 100);
 }
+var _patchTouch = false;
+document.addEventListener('pointerdown', function (e) { _patchTouch = e.pointerType !== 'mouse'; }, true);
+// 바로 닫기 (스크롤 · 화면 이동 · 같은 카드 다시 누름)
+function hidePatchPopupNow() {
+  if (_patchPopupHideTimer) { clearTimeout(_patchPopupHideTimer); _patchPopupHideTimer = null; }
+  _patchTok++; _patchOpenKey = null;
+  var popup = document.getElementById('patch-popup');
+  if (popup && popup.style.display !== 'none') popup.style.display = 'none';
+}
+(function () {
+  // 카드를 누르면 열고, 열린 카드를 다시 누르면 닫아요
+  //   (누르는 순간 focus · 마우스 진입으로 이미 열렸으면 그 클릭은 여는 걸로 봐요)
+  document.addEventListener('click', function (e) {
+    var chip = e.target.closest && e.target.closest('.patch-icon-wrap[data-pidx]');
+    if (!chip) return;
+    var key = chip.dataset.ptype + ':' + chip.dataset.pidx;
+    if (_patchOpenKey === key) {
+      if (Date.now() - _patchShownAt < 450) return;
+      hidePatchPopupNow(); try { chip.blur(); } catch (er) {}
+      return;
+    }
+    showPatchPopup({ currentTarget: chip }, chip.dataset.ptype, +chip.dataset.pidx);
+  });
+  // 스크롤하면 닫기 (페이지 · 가로 목록 모두)
+  //   (누르는 순간 브라우저가 살짝 스크롤하는 건 무시: 연 직후 0.35초 · 10px 미만 움직임)
+  window.addEventListener('scroll', function () {
+    if (!_patchOpenKey) return;
+    if (Date.now() - _patchShownAt < 350) { _patchY0 = window.scrollY; return; }
+    if (Math.abs(window.scrollY - _patchY0) < 10 && !_patchInnerScroll) return;
+    hidePatchPopupNow(); var a = document.activeElement; if (a && a.classList && a.classList.contains('patch-icon-wrap')) a.blur();
+  }, { capture: true, passive: true });
+  // 페이지 말고 안쪽 목록이 스크롤돼도 닫기
+  document.addEventListener('scroll', function (e) { if (_patchOpenKey && e.target !== document && Date.now() - _patchShownAt >= 350) { _patchInnerScroll = true; hidePatchPopupNow(); _patchInnerScroll = false; } }, { capture: true, passive: true });
+  window.addEventListener('resize', function () { if (_patchOpenKey) hidePatchPopupNow(); });
+  // 다른 화면으로 이동하면 닫기
+  window.addEventListener('hashchange', hidePatchPopupNow);
+  window.addEventListener('popstate', hidePatchPopupNow);
+  document.addEventListener('visibilitychange', function () { if (document.hidden) hidePatchPopupNow(); });
+  var watch = function () {
+    var mo = new MutationObserver(function () { if (_patchOpenKey) hidePatchPopupNow(); });
+    document.querySelectorAll('.screen').forEach(function (sc) { mo.observe(sc, { attributes: true, attributeFilter: ['class', 'style'] }); });
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', watch); else watch();
+})();
 function cancelHidePatchPopup() {
   if (_patchPopupHideTimer) { clearTimeout(_patchPopupHideTimer); _patchPopupHideTimer = null; }
 }
@@ -32342,6 +32826,65 @@ async function _grOpen(id) {
     pad(); jump(0);
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+})();
+</script>
+<script>
+/* ══ 메인 홍보: 지금 열린 멸망전 캐러셀 (커뮤니티 목록 위) ══
+   모든 커뮤니티에서 '종료'가 아닌 멸망전을 보여 주고, 누르면 그 멸망전으로 가요 */
+(function () {
+  var API = 'https://api.roonging.com';
+  var ST = { running: '진행 중', open: '팀 모집 중', ready: '준비 중' };
+  var esc = function (x) { return String(x == null ? '' : x).replace(/[&<>"']/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]; }); };
+  var per = function (d) { var f = function (v) { return v ? v.slice(5).replace('-', '.') : '?'; }; return d.startDate || d.endDate ? f(d.startDate) + ' – ' + f(d.endDate) : ''; };
+  var timer = 0, idx = 0, hold = false;
+  function render(list) {
+    var el = document.getElementById('rg-dp'); if (!el) return;
+    if (!list.length) { el.hidden = true; el.innerHTML = ''; return; }
+    el.innerHTML = '<div class="rg-dp-h"><h2>🔥 지금 열린 멸망전</h2><span class="rg-dp-n">' + list.length + '</span><span class="rg-dp-sp"></span>' +
+      (list.length > 1 ? '<button type="button" class="rg-dp-arr" data-d="-1" aria-label="이전"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><button type="button" class="rg-dp-arr" data-d="1" aria-label="다음"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>' : '') + '</div>' +
+      '<div class="rg-dp-track' + (list.length === 1 ? ' one' : '') + '">' + list.map(function (d) {
+        var href = '/doom?cid=' + encodeURIComponent(d.cid) + '#/d/' + encodeURIComponent(d.id);
+        var meta = [d.community, per(d), d.teams ? '팀 ' + d.teams : ''].filter(Boolean).map(esc).join(' · ');
+        return '<a class="rg-dp-card st-' + esc(d.status) + '" href="' + href + '">' +
+          (d.ogImage ? '<img class="rg-dp-img" src="' + esc(d.ogImage) + '" alt="" loading="lazy" onerror="this.remove()">' : '<span class="rg-dp-wm" aria-hidden="true">DOOM</span>') +
+          '<span class="rg-dp-shade"></span>' +
+          '<span class="rg-dp-body"><span class="rg-dp-st">' + (d.status === 'running' ? '<i></i>' : '') + esc(ST[d.status] || '진행 중') + '</span>' +
+          '<b class="rg-dp-name">' + esc(d.name) + '</b>' + (meta ? '<span class="rg-dp-meta">' + meta + '</span>' : '') + '</span>' +
+          '<span class="rg-dp-go">보러 가기<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>';
+      }).join('') + '</div>' +
+      (list.length > 1 ? '<div class="rg-dp-dots">' + list.map(function (d, i) { return '<i data-i="' + i + '"' + (i ? '' : ' class="on"') + '></i>'; }).join('') + '</div>' : '');
+    el.hidden = false;
+    var tr = el.querySelector('.rg-dp-track'), cards = [].slice.call(el.querySelectorAll('.rg-dp-card')), dots = [].slice.call(el.querySelectorAll('.rg-dp-dots i'));
+    var go = function (i, smooth) { idx = (i + cards.length) % cards.length; var c = cards[idx]; tr.scrollTo({ left: c.offsetLeft - (parseFloat(getComputedStyle(tr).paddingLeft) || 0), behavior: smooth === false ? 'auto' : 'smooth' }); };
+    var sync = function () {
+      var best = 0, bd = 1e9, mid = tr.scrollLeft + tr.clientWidth / 2;
+      var pl = parseFloat(getComputedStyle(tr).paddingLeft) || 0, sl = tr.scrollLeft;
+      cards.forEach(function (c, i) { var d = Math.abs(c.offsetLeft - pl - sl); if (d < bd) { bd = d; best = i; } });
+      if (tr.scrollLeft + tr.clientWidth >= tr.scrollWidth - 4) best = cards.length - 1;
+      idx = best; dots.forEach(function (d, i) { d.classList.toggle('on', i === best); });
+    };
+    var raf = 0; tr.addEventListener('scroll', function () { if (!raf) raf = requestAnimationFrame(function () { raf = 0; sync(); }); }, { passive: true });
+    el.querySelectorAll('.rg-dp-arr').forEach(function (b) { b.onclick = function () { go(idx + (+b.dataset.d)); restart(); }; });
+    dots.forEach(function (d) { d.onclick = function () { go(+d.dataset.i); restart(); }; });
+    // 자동으로 넘기기 (마우스를 올리거나 손가락으로 만지는 동안 · 화면 밖일 때는 멈춰요)
+    el.onmouseenter = function () { hold = true; }; el.onmouseleave = function () { hold = false; };
+    tr.addEventListener('touchstart', function () { hold = true; }, { passive: true });
+    tr.addEventListener('touchend', function () { setTimeout(function () { hold = false; }, 2500); }, { passive: true });
+    var restart = function () {
+      clearInterval(timer);
+      if (cards.length < 2 || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
+      timer = setInterval(function () {
+        if (hold || document.hidden) return;
+        var r = el.getBoundingClientRect(); if (r.bottom < 0 || r.top > innerHeight) return;
+        go(idx + 1);
+      }, 5500);
+    };
+    restart();
+  }
+  function load() {
+    fetch(API + '/dooms-live').then(function (r) { return r.json(); }).then(function (j) { render((j && j.ok && j.dooms) || []); }).catch(function () {});
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', load); else load();
 })();
 </script>
 </body>
